@@ -349,9 +349,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
             <Icon name="arrow_back_ios_new" />
         </button>
         <h1 className="text-lg font-bold">{t('compare')}</h1>
-        <button className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
-            <Icon name="more_vert" />
-        </button>
+        <div className="size-10" />
       </div>
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-2">
