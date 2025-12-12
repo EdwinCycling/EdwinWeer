@@ -320,6 +320,11 @@ const en: Dictionary = {
     'landing.feature_ai': 'AI-Powered',
     'landing.feature_ai_desc': 'Leverage the latest AI weather models alongside traditional physics-based forecasts.',
     'landing.start': 'Get Started',
+    'landing.models_title': 'Global Weather Models',
+    'landing.models_desc': 'Access high-resolution data from world-leading meteorological institutes.',
+    'landing.privacy_title': 'Privacy First',
+    'landing.privacy_desc': 'Your data belongs to you. We strictly limit data collection to essential service logs.',
+    'landing.copyright': '© 2025 EdwinWeer. All rights reserved.',
 };
 
 const nl: Dictionary = {
@@ -626,6 +631,11 @@ const nl: Dictionary = {
     'landing.feature_ai': 'AI-Gedreven',
     'landing.feature_ai_desc': 'Gebruik de nieuwste AI-weermodellen naast traditionele natuurkundige voorspellingen.',
     'landing.start': 'Start Nu',
+    'landing.models_title': 'Wereldwijde Weermodellen',
+    'landing.models_desc': 'Toegang tot hoge-resolutie data van toonaangevende meteorologische instituten.',
+    'landing.privacy_title': 'Privacy Eerst',
+    'landing.privacy_desc': 'Jouw data is van jou. We beperken dataverzameling strikt tot essentiële logs.',
+    'landing.copyright': '© 2025 EdwinWeer. Alle rechten voorbehouden.',
 };
 
 export const getTranslation = (key: string, lang: AppLanguage): string => {
