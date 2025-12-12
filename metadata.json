@@ -1,5 +1,5 @@
 {
-  "name": "Weer & Rit",
+  "name": "EdwinWeer",
   "description": "Een geavanceerde weerapplicatie met historische vergelijkingen, AI-gestuurde locatieverkenning en Strava-integratie.",
   "requestFramePermissions": [
     "geolocation"

@@ -14,12 +14,16 @@ import { PricingView } from './views/PricingView';
 import { InfoView } from './views/InfoView';
 import { ModelInfoView } from './views/ModelInfoView';
 import { CountryMapView } from './views/CountryMapView';
+import { LoginView } from './views/LoginView';
+import { UserAccountView } from './views/UserAccountView';
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
+import { useAuth } from './contexts/AuthContext';
 
 const App: React.FC = () => {
+  const { user, loading, logout, sessionExpiry } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.CURRENT);
   const [settings, setSettings] = useState<AppSettings>(loadSettings());
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,6 +53,18 @@ const App: React.FC = () => {
       document.title = `${t('app.title_prefix')} - ${viewName}`;
   }, [currentView, settings.language]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginView />;
+  }
+
   const renderView = () => {
     switch (currentView) {
       case ViewState.CURRENT:
@@ -77,6 +93,8 @@ const App: React.FC = () => {
         return <ModelInfoView onNavigate={setCurrentView} settings={settings} />;
       case ViewState.COUNTRY_MAP:
         return <CountryMapView onNavigate={setCurrentView} settings={settings} />;
+      case ViewState.USER_ACCOUNT:
+        return <UserAccountView onNavigate={setCurrentView} settings={settings} />;
       case ViewState.INFO:
         return <InfoView onNavigate={setCurrentView} />;
       default:
@@ -194,7 +212,19 @@ const App: React.FC = () => {
                             </div>
                             <span className="font-bold text-sm">Info</span>
                          </button>
+                         <button onClick={() => { setCurrentView(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-white/60">
+                                <Icon name="account_circle" className="text-xl" />
+                            </div>
+                            <span className="font-bold text-sm">Mijn Account</span>
+                         </button>
                     </div>
+                    
+                    {sessionExpiry && (
+                         <div className="text-center mb-8">
+                            
+                         </div>
+                    )}
                     
                     <div className="flex justify-center gap-8 text-xs font-medium text-slate-500 dark:text-white/40">
                          <button onClick={() => setModal('disclaimer')} className="hover:text-primary transition-colors hover:underline">Disclaimer</button>

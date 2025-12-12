@@ -177,7 +177,8 @@ export enum ViewState {
   INFO = 'INFO',
   MODEL_INFO = 'MODEL_INFO',
   FORECAST = 'FORECAST',
-  COUNTRY_MAP = 'COUNTRY_MAP'
+  COUNTRY_MAP = 'COUNTRY_MAP',
+  USER_ACCOUNT = 'USER_ACCOUNT'
 }
 
 export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';

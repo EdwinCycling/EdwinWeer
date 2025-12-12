@@ -1,5 +1,7 @@
 
 import { API_LIMITS, STORAGE_KEY } from './apiConfig';
+import { db } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export interface UsageStats {
     totalCalls: number;
@@ -37,6 +39,86 @@ const DEFAULT_STATS: UsageStats = {
     monthStart: new Date().toISOString().slice(0, 7)
 };
 
+let currentUserId: string | null = null;
+
+export const setUsageUserId = (uid: string | null) => {
+    currentUserId = uid;
+};
+
+export const loadRemoteUsage = async (uid: string) => {
+    if (!db) return;
+    try {
+        const userRef = doc(db, 'users', uid);
+        const snapshot = await getDoc(userRef);
+        
+        if (snapshot.exists()) {
+            const data = snapshot.data();
+            if (data.usage) {
+                const remoteUsage = data.usage as UsageStats;
+                const localUsage = getUsage();
+
+                // Logic to merge Remote into Local intelligently
+                // We want to enforce limits, so we take the "worst case" (highest usage) 
+                // if the time windows match.
+                
+                const mergedUsage = { ...DEFAULT_STATS, ...localUsage };
+
+                // 1. Total Calls: Always take max (or remote if we trust it more, but max is safe)
+                mergedUsage.totalCalls = Math.max(localUsage.totalCalls, remoteUsage.totalCalls || 0);
+
+                // 2. Month: If same month, take max
+                if (remoteUsage.monthStart === localUsage.monthStart) {
+                    mergedUsage.monthCount = Math.max(localUsage.monthCount, remoteUsage.monthCount);
+                } else if (remoteUsage.monthStart > localUsage.monthStart) {
+                    // Remote is newer (we might have stale local time?)
+                    mergedUsage.monthStart = remoteUsage.monthStart;
+                    mergedUsage.monthCount = remoteUsage.monthCount;
+                }
+
+                // 3. Day: If same day, take max
+                if (remoteUsage.dayStart === localUsage.dayStart) {
+                    mergedUsage.dayCount = Math.max(localUsage.dayCount, remoteUsage.dayCount);
+                } else if (remoteUsage.dayStart > localUsage.dayStart) {
+                    mergedUsage.dayStart = remoteUsage.dayStart;
+                    mergedUsage.dayCount = remoteUsage.dayCount;
+                }
+
+                // 4. Hour: Check timestamp diff (roughly same hour window)
+                // Hour start is a timestamp. 
+                const isSameHour = Math.abs(remoteUsage.hourStart - localUsage.hourStart) < 1000 * 60; // tolerance
+                // Actually, just check if remote is "fresher" or "same block"
+                // If remote hourStart is within the last hour relative to NOW, it's relevant.
+                
+                // Simpler: If remote.hourStart > local.hourStart, take remote.
+                if (remoteUsage.hourStart > localUsage.hourStart) {
+                    mergedUsage.hourStart = remoteUsage.hourStart;
+                    mergedUsage.hourCount = remoteUsage.hourCount;
+                } else if (Math.abs(remoteUsage.hourStart - localUsage.hourStart) < 60000) {
+                    // Same hour block
+                    mergedUsage.hourCount = Math.max(localUsage.hourCount, remoteUsage.hourCount);
+                }
+
+                // Update local storage
+                if (typeof window !== "undefined") {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedUsage));
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error loading remote usage:", e);
+    }
+};
+
+const syncUsageToRemote = async (stats: UsageStats) => {
+    if (!currentUserId || !db) return;
+    try {
+        const userRef = doc(db, 'users', currentUserId);
+        await setDoc(userRef, { usage: stats }, { merge: true });
+    } catch (e) {
+        console.error("Error syncing usage:", e);
+    }
+};
+
 export const getUsage = (): UsageStats => {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -56,6 +138,7 @@ const saveUsage = (stats: UsageStats) => {
     } catch (e) {
         console.error('Failed to save usage stats', e);
     }
+    syncUsageToRemote(stats);
 };
 
 export const checkLimit = (): void => {
@@ -99,37 +182,42 @@ export const trackCall = () => {
     const today = new Date().toISOString().split('T')[0];
     const thisMonth = new Date().toISOString().slice(0, 7);
 
-    // Update Minute
-    if (now - stats.minuteStart >= 60000) {
-        stats.minuteCount = 0;
+    // Update counters
+    stats.totalCalls++;
+
+    // Minute
+    if (now - stats.minuteStart < 60000) {
+        stats.minuteCount++;
+    } else {
+        stats.minuteCount = 1;
         stats.minuteStart = now;
     }
-    stats.minuteCount++;
 
-    // Update Hour
-    if (now - stats.hourStart >= 3600000) {
-        stats.hourCount = 0;
+    // Hour
+    if (now - stats.hourStart < 3600000) {
+        stats.hourCount++;
+    } else {
+        stats.hourCount = 1;
         stats.hourStart = now;
     }
-    stats.hourCount++;
 
-    // Update Day
-    if (stats.dayStart !== today) {
-        stats.dayCount = 0;
+    // Day
+    if (stats.dayStart === today) {
+        stats.dayCount++;
+    } else {
+        stats.dayCount = 1;
         stats.dayStart = today;
     }
-    stats.dayCount++;
 
-    // Update Month
-    if (stats.monthStart !== thisMonth) {
-        stats.monthCount = 0;
+    // Month
+    if (stats.monthStart === thisMonth) {
+        stats.monthCount++;
+    } else {
+        stats.monthCount = 1;
         stats.monthStart = thisMonth;
     }
-    stats.monthCount++;
 
-    stats.totalCalls++;
     saveUsage(stats);
 };
 
-export const getLimit = () => API_LIMITS.DAY; // Default to daily for UI for now
-
+export const getLimit = () => API_LIMITS.DAY;

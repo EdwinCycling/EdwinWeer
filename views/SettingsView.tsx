@@ -388,56 +388,6 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                     </div>
                 </section>
 
-                {/* Usage Section */}
-                <section>
-                    <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.usage')}</h2>
-                    <p className="text-xs text-slate-500 dark:text-white/40 mb-3">{t('usage.desc')}</p>
-                    <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                        {usageStats && (
-                            <>
-                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Icon name="analytics" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('usage.total')}</span>
-                                    </div>
-                                    <div className="font-bold text-slate-800 dark:text-white">
-                                        {usageStats.totalCalls}
-                                    </div>
-                                </div>
-                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Icon name="today" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('usage.today')}</span>
-                                    </div>
-                                    <div className="font-bold text-slate-800 dark:text-white">
-                                        {usageStats.dayCount} / {getLimit()}
-                                    </div>
-                                </div>
-                                <div className="p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <Icon name="verified_user" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('usage.status')}</span>
-                                    </div>
-                                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                        usageStats.dayCount >= getLimit() 
-                                            ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
-                                            : usageStats.dayCount >= getLimit() * 0.8
-                                            ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                            : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                                    }`}>
-                                        {usageStats.dayCount >= getLimit() 
-                                            ? t('usage.limit_reached')
-                                            : usageStats.dayCount >= getLimit() * 0.8
-                                            ? t('usage.warning')
-                                            : t('usage.ok')
-                                        }
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </section>
-
                 <div className="text-center text-xs text-slate-400 dark:text-white/20 pb-4">
                     v0.9251212.1
                 </div>

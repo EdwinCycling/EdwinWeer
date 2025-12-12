@@ -14,7 +14,7 @@ const en: Dictionary = {
     'nav.ensemble': 'Ensemble',
 
     // App
-    'app.title_prefix': 'Weer & Rit',
+    'app.title_prefix': 'EdwinWeer',
 
     // General
     'loading': 'Loading...',
@@ -306,6 +306,20 @@ const en: Dictionary = {
     'usage.ok': 'OK',
     'usage.warning': 'Warning',
     'usage.limit_reached': 'Limit Reached',
+
+    // Landing
+    'landing.hero_title': 'Weather Intelligence Reimagined',
+    'landing.hero_desc': 'Experience weather forecasts with unprecedented precision. Compare models, analyze history, and plan your perfect day.',
+    'landing.login_google': 'Sign in with Google',
+    'landing.feature_ensemble': 'Multi-Model Ensembles',
+    'landing.feature_ensemble_desc': 'Don\'t rely on one guess. See the spread of 50+ simulations to know the certainty of the forecast.',
+    'landing.feature_history': 'Historical Context',
+    'landing.feature_history_desc': 'Is today normal? Compare current weather with the last 40 years of climate data instantly.',
+    'landing.feature_activities': 'Activity Planner',
+    'landing.feature_activities_desc': 'Whether you cycle, sail, or garden, get specialized forecasts tailored to your passions.',
+    'landing.feature_ai': 'AI-Powered',
+    'landing.feature_ai_desc': 'Leverage the latest AI weather models alongside traditional physics-based forecasts.',
+    'landing.start': 'Get Started',
 };
 
 const nl: Dictionary = {
@@ -598,6 +612,20 @@ const nl: Dictionary = {
     'usage.ok': 'OK',
     'usage.warning': 'Waarschuwing',
     'usage.limit_reached': 'Limiet Bereikt',
+
+    // Landing
+    'landing.hero_title': 'Weerintelligentie Opnieuw Uitgevonden',
+    'landing.hero_desc': 'Ervaar weersvoorspellingen met ongekende precisie. Vergelijk modellen, analyseer historie en plan je perfecte dag.',
+    'landing.login_google': 'Inloggen met Google',
+    'landing.feature_ensemble': 'Multi-Model Ensembles',
+    'landing.feature_ensemble_desc': 'Vertrouw niet op één gok. Zie de spreiding van 50+ simulaties om de zekerheid van de verwachting te kennen.',
+    'landing.feature_history': 'Historische Context',
+    'landing.feature_history_desc': 'Is het vandaag normaal? Vergelijk het huidige weer direct met 40 jaar klimaatdata.',
+    'landing.feature_activities': 'Activiteiten Planner',
+    'landing.feature_activities_desc': 'Of je nu fietst, zeilt of tuiniert, krijg gespecialiseerde voorspellingen afgestemd op jouw passies.',
+    'landing.feature_ai': 'AI-Gedreven',
+    'landing.feature_ai_desc': 'Gebruik de nieuwste AI-weermodellen naast traditionele natuurkundige voorspellingen.',
+    'landing.start': 'Start Nu',
 };
 
 export const getTranslation = (key: string, lang: AppLanguage): string => {

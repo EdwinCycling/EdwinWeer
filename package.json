@@ -1,5 +1,5 @@
 {
-  "name": "weer-en-rit",
+  "name": "edwin-weer",
   "private": true,
   "version": "0.9251212.1",
   "type": "module",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",
+    "firebase": "^12.6.0",
     "leaflet": "^1.9.4",
     "openmeteo": "^1.2.3",
     "react": "^19.2.1",

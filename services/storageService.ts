@@ -1,5 +1,7 @@
 
 import { Location, ComparisonType, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, AppTheme, AppLanguage, EnsembleModel, ActivityType } from "../types";
+import { db } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const KEY_CURRENT_LOC = "weather_app_current_location";
 const KEY_HISTORICAL_LOC = "weather_app_historical_location";
@@ -9,6 +11,12 @@ const KEY_ENSEMBLE_MODEL = "weather_app_ensemble_model";
 const KEY_ENSEMBLE_VIEW_MODE = "weather_app_ensemble_view_mode";
 const KEY_ENSEMBLE_TIME_STEP = "weather_app_ensemble_time_step";
 const KEY_ENSEMBLE_PRO_MODE = "weather_app_ensemble_pro_mode";
+
+let currentUserId: string | null = null;
+
+export const setStorageUserId = (uid: string | null) => {
+    currentUserId = uid;
+};
 
 const DEFAULT_LOCATION: Location = { 
   name: "Amsterdam", 
@@ -50,6 +58,82 @@ export const DEFAULT_SETTINGS: AppSettings = {
     enabledActivities: DEFAULT_ENABLED_ACTIVITIES
 };
 
+// --- Remote Sync Helpers ---
+
+const syncSettingsToRemote = async (settings: AppSettings) => {
+    if (!currentUserId || !db) return;
+    try {
+        // Exclude theme from sync (per user request)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { theme, ...settingsToSync } = settings;
+        
+        const userRef = doc(db, 'users', currentUserId);
+        await setDoc(userRef, { settings: settingsToSync }, { merge: true });
+    } catch (e) {
+        console.error("Error syncing settings:", e);
+    }
+};
+
+const syncEnsembleToRemote = async () => {
+    if (!currentUserId || !db) return;
+    try {
+        const preferences = {
+            ensembleModel: loadEnsembleModel(),
+            ensembleViewMode: loadEnsembleViewMode(),
+            ensembleTimeStep: loadEnsembleTimeStep(),
+            ensembleProMode: loadEnsembleProMode()
+        };
+        const userRef = doc(db, 'users', currentUserId);
+        await setDoc(userRef, { preferences }, { merge: true });
+    } catch (e) {
+        console.error("Error syncing ensemble prefs:", e);
+    }
+};
+
+export const loadRemoteData = async (uid: string) => {
+    if (!db) return;
+    try {
+        const userRef = doc(db, 'users', uid);
+        const snapshot = await getDoc(userRef);
+        
+        if (snapshot.exists()) {
+            const data = snapshot.data();
+            
+            // Restore Settings
+            if (data.settings) {
+                // Get current local settings to preserve theme
+                const currentLocalSettings = loadSettings();
+                
+                // Merge: Default -> Remote -> Local Theme override
+                const mergedSettings = { 
+                    ...DEFAULT_SETTINGS, 
+                    ...data.settings,
+                    theme: currentLocalSettings.theme // Keep local theme
+                };
+                
+                // Do NOT sync back to remote here, just save locally
+                if (typeof window !== "undefined") {
+                    localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(mergedSettings));
+                }
+            }
+
+            // Restore Preferences (Ensemble)
+            if (data.preferences) {
+                if (typeof window !== "undefined") {
+                    if (data.preferences.ensembleModel) localStorage.setItem(KEY_ENSEMBLE_MODEL, data.preferences.ensembleModel);
+                    if (data.preferences.ensembleViewMode) localStorage.setItem(KEY_ENSEMBLE_VIEW_MODE, data.preferences.ensembleViewMode);
+                    if (data.preferences.ensembleTimeStep) localStorage.setItem(KEY_ENSEMBLE_TIME_STEP, data.preferences.ensembleTimeStep);
+                    if (data.preferences.ensembleProMode !== undefined) localStorage.setItem(KEY_ENSEMBLE_PRO_MODE, String(data.preferences.ensembleProMode));
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error loading remote data:", e);
+    }
+};
+
+// --- Local Storage Accessors ---
+
 export const saveCurrentLocation = (loc: Location) => {
   if (typeof window !== "undefined") {
     localStorage.setItem(KEY_CURRENT_LOC, JSON.stringify(loc));
@@ -89,6 +173,8 @@ export const saveSettings = (settings: AppSettings) => {
     if (typeof window !== "undefined") {
         localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(settings));
     }
+    // Sync to firestore if logged in
+    syncSettingsToRemote(settings);
 };
 
 export const loadSettings = (): AppSettings => {
@@ -105,6 +191,7 @@ export const saveEnsembleModel = (model: EnsembleModel) => {
     if (typeof window !== "undefined") {
         localStorage.setItem(KEY_ENSEMBLE_MODEL, model);
     }
+    syncEnsembleToRemote();
 };
 
 export const loadEnsembleModel = (): EnsembleModel => {
@@ -116,6 +203,7 @@ export const saveEnsembleViewMode = (mode: string) => {
     if (typeof window !== "undefined") {
         localStorage.setItem(KEY_ENSEMBLE_VIEW_MODE, mode);
     }
+    syncEnsembleToRemote();
 };
 
 export const loadEnsembleViewMode = (): string => {
@@ -127,6 +215,7 @@ export const saveEnsembleTimeStep = (step: 'hourly' | 'daily') => {
     if (typeof window !== "undefined") {
         localStorage.setItem(KEY_ENSEMBLE_TIME_STEP, step);
     }
+    syncEnsembleToRemote();
 };
 
 export const loadEnsembleTimeStep = (): 'hourly' | 'daily' => {
@@ -138,6 +227,7 @@ export const saveEnsembleProMode = (enabled: boolean) => {
     if (typeof window !== "undefined") {
         localStorage.setItem(KEY_ENSEMBLE_PRO_MODE, String(enabled));
     }
+    syncEnsembleToRemote();
 };
 
 export const loadEnsembleProMode = (): boolean => {
