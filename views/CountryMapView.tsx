@@ -212,7 +212,7 @@ const HeatmapLayer = ({ data, layer, settings }: { data: WeatherStation[], layer
         };
     }, [map, data, layer]);
 
-    return <div className="leaflet-layer" style={{ pointerEvents: 'none', zIndex: 200, opacity: 0.7 }}>
+    return <div className="leaflet-layer" style={{ pointerEvents: 'none', zIndex: 450, opacity: 0.7 }}>
         <canvas ref={canvasRef} className="leaflet-zoom-animated" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }} />
     </div>;
 };
@@ -429,7 +429,6 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [showGridPoints, setShowGridPoints] = useState(true);
     
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
@@ -759,43 +758,31 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                         
                         {/* Date Controls */}
                         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                             <button onClick={() => handleDateChange(-1)} className="p-1 hover:bg-white dark:hover:bg-slate-700 rounded-md">
-                                 <Icon name="chevron_left" className="w-4 h-4" />
+                             <button onClick={() => handleDateChange(-1)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md">
+                                 <Icon name="chevron_left" className="w-5 h-5" />
                              </button>
-                             <button onClick={() => setSelectedDate(new Date())} className="text-xs font-bold px-2 hover:text-blue-500">
-                                 Vandaag
-                             </button>
-                             <button onClick={() => handleDateChange(1)} className="p-1 hover:bg-white dark:hover:bg-slate-700 rounded-md">
-                                 <Icon name="chevron_right" className="w-4 h-4" />
+                             <button onClick={() => handleDateChange(1)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md">
+                                 <Icon name="chevron_right" className="w-5 h-5" />
                              </button>
                         </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-2">
                         {/* View Mode Toggles */}
-                        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 w-full">
                             <button 
                                 onClick={() => setViewMode('points')}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'points' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                                className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'points' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
                             >
-                                Punten
+                                Steden
                             </button>
                             <button 
                                 onClick={() => setViewMode('surface')}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'surface' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                                className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'surface' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
                             >
-                                Vlak
+                                Raster
                             </button>
                         </div>
-                        
-                         {/* Grid Toggle */}
-                         <button 
-                            onClick={() => setShowGridPoints(!showGridPoints)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-2 ${showGridPoints ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-500'}`}
-                        >
-                            <Icon name="grid_on" className="w-4 h-4" />
-                            {showGridPoints ? 'Raster Aan' : 'Raster Uit'}
-                        </button>
                     </div>
                     
                     {/* Layer Toggles (Scrollable) */}
@@ -876,7 +863,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
 
                     {/* Markers */}
                     {viewMode === 'points' && weatherData
-                        .filter(station => showGridPoints || !station.isGrid)
+                        .filter(station => !station.isGrid)
                         .map((station, idx) => {
                         let displayVal = '';
                         let unit = '';
