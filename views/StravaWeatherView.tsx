@@ -326,7 +326,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     windDirs.push(windDir);
 
                     weatherDataPoints.push({
-                        time: pt.time!.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        time: pt.time!.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'}),
                         dist: parseFloat(pt.distFromStart.toFixed(1)),
                         ele: Math.round(pt.ele),
                         temp,
@@ -364,8 +364,8 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 id: '1',
                 name: file.name.replace('.gpx', ''),
                 date: startTime.toLocaleDateString(),
-                startTimeStr: startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                endTimeStr: endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                startTimeStr: startTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'}),
+                endTimeStr: endTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'}),
                 distance: parseFloat(totalDist.toFixed(1)),
                 time: `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`,
                 elevation: Math.round(gain),
@@ -391,7 +391,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   };
 
   return (
-    <div className={`flex flex-col min-h-screen bg-background-dark text-slate-800 dark:text-white transition-colors duration-300 ${isFullScreenMap ? 'fixed inset-0 z-[100]' : 'pb-24 overflow-y-auto'}`}>
+    <div className={`flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white transition-colors duration-300 ${isFullScreenMap ? 'fixed inset-0 z-[100]' : 'pb-24 overflow-y-auto'}`}>
       
       {/* Header - Only visible when NOT full screen */}
       {!isFullScreenMap && (
@@ -413,7 +413,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     <Icon name="directions_bike" className="text-6xl text-strava" />
                 </div>
                 <h2 className="text-2xl font-bold mb-2">{t('connect_ride')}</h2>
-                <p className="text-center opacity-60 max-w-xs mb-8">
+                <p className="text-center text-slate-500 dark:text-white/60 max-w-xs mb-8">
                     {t('upload_gpx')}
                 </p>
                 
@@ -466,29 +466,29 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 {/* 2. Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs opacity-50 uppercase font-bold">{t('distance')}</p>
+                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('distance')}</p>
                         <p className="text-xl font-bold">{rideData.distance} km</p>
                     </div>
                     <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs opacity-50 uppercase font-bold">{t('time')}</p>
+                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('time')}</p>
                         <p className="text-xl font-bold">{rideData.time}</p>
                     </div>
                     <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs opacity-50 uppercase font-bold">{t('elevation')}</p>
+                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('elevation')}</p>
                         <p className="text-xl font-bold">{rideData.elevation} m</p>
                     </div>
                     <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs opacity-50 uppercase font-bold">{t('avg_speed')}</p>
+                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('avg_speed')}</p>
                         <p className="text-xl font-bold">{rideData.avgSpeed} km/h</p>
                     </div>
                      {!isRouteOnly && (
                         <>
                              <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                                <p className="text-xs opacity-50 uppercase font-bold">{t('start_time')}</p>
+                                <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('start_time')}</p>
                                 <p className="text-lg font-bold">{rideData.startTimeStr}</p>
                             </div>
                             <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                                <p className="text-xs opacity-50 uppercase font-bold">{t('end_time')}</p>
+                                <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('end_time')}</p>
                                 <p className="text-lg font-bold">{rideData.endTimeStr}</p>
                             </div>
                         </>
@@ -498,26 +498,26 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 {!isRouteOnly && (
                 <>
                 {/* 3. Weather Stats */}
-                <h3 className="text-sm font-bold uppercase opacity-50 mt-2">{t('during_ride')}</h3>
+                <h3 className="text-sm font-bold uppercase text-slate-500 dark:text-white/50 mt-2">{t('during_ride')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                      <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-2xl border border-blue-100 dark:border-blue-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-blue-500"><Icon name="thermostat" /></div>
                         <div>
-                            <p className="text-xs opacity-50 uppercase font-bold">{t('avg_temp')}</p>
+                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('avg_temp')}</p>
                             <p className="text-xl font-bold text-blue-600 dark:text-blue-100">{rideData.weather.temp}°</p>
                         </div>
                     </div>
                      <div className="bg-green-50 dark:bg-green-500/10 p-3 rounded-2xl border border-green-100 dark:border-green-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-green-500"><Icon name="air" /></div>
                         <div>
-                            <p className="text-xs opacity-50 uppercase font-bold">{t('max_wind')}</p>
+                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('max_wind')}</p>
                             <p className="text-xl font-bold text-green-600 dark:text-green-100">{rideData.weather.wind} <span className="text-xs">{settings.windUnit}</span></p>
                         </div>
                     </div>
                      <div className="bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-indigo-500"><Icon name="explore" /></div>
                         <div>
-                             <p className="text-xs opacity-50 uppercase font-bold">{t('wind_dir')}</p>
+                             <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('wind_dir')}</p>
                              <div className="flex items-center gap-2">
                                 <span className="text-xl font-bold text-indigo-600 dark:text-indigo-100">{rideData.avgWindText}</span>
                                 <div style={{ transform: `rotate(${rideData.avgWindDir}deg)` }}>
@@ -530,7 +530,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                         <div className="bg-cyan-50 dark:bg-cyan-500/10 p-3 rounded-2xl border border-cyan-100 dark:border-cyan-500/20 shadow-sm flex items-center gap-3">
                             <div className="bg-white dark:bg-white/10 p-2 rounded-full text-cyan-500"><Icon name="rainy" /></div>
                             <div>
-                                <p className="text-xs opacity-50 uppercase font-bold">{t('total_rain')}</p>
+                                <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('total_rain')}</p>
                                 <p className="text-xl font-bold text-cyan-600 dark:text-cyan-100">{rideData.weather.precip} <span className="text-xs">{settings.precipUnit}</span></p>
                             </div>
                         </div>
@@ -540,7 +540,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 {/* 4. Interactive Chart */}
                 <div className="bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 shadow-sm">
                     <h3 className="font-bold mb-4 flex items-center gap-2">
-                        <Icon name="insights" className="text-strava" /> Analysis
+                        <Icon name="insights" className="text-strava" /> {t('strava.analysis')}
                     </h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">

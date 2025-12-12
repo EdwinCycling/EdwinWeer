@@ -1,34 +1,50 @@
 
-import React, { useState, useEffect } from 'react';
-import { ViewState, AppSettings, Location, OpenMeteoResponse } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { ViewState, AppSettings, Location, OpenMeteoResponse, EnsembleModel, ActivityType } from '../types';
+import { calculateActivityScore, ActivityScore } from '../services/activityService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip } from '../services/weatherService';
-import { loadCurrentLocation, saveCurrentLocation } from '../services/storageService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip, convertPressure, calculateHeatIndex, getWindDirection } from '../services/weatherService';
+import { searchCityByName } from '../services/geoService';
+import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTranslation } from '../services/translations';
+import { ModelInfoModal } from '../components/ModelInfoModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  onUpdateSettings?: (settings: AppSettings) => void;
 }
 
-export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
   const [loadingCity, setLoadingCity] = useState(false);
   const [weatherData, setWeatherData] = useState<OpenMeteoResponse | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
   const [error, setError] = useState('');
+  const [selectedModel, setSelectedModel] = useState<EnsembleModel>(loadEnsembleModel());
   
   const [localTime, setLocalTime] = useState<string>('');
   const [timeDiff, setTimeDiff] = useState<string>('');
   const [moonPhase, setMoonPhase] = useState(0);
-  const [visibleDays, setVisibleDays] = useState<number>(3);
   const [frostWarning, setFrostWarning] = useState(false);
   const [rainAlert, setRainAlert] = useState<{inHours: number, amount: number, time: string} | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Location[]>([]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isModelInfoOpen, setIsModelInfoOpen] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+        searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
 
   useEffect(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -37,12 +53,23 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   }, [location]);
 
   useEffect(() => {
+      saveEnsembleModel(selectedModel);
+      loadWeather();
+  }, [selectedModel]);
+
+  const getLocationTime = () => {
+    if (!weatherData) return new Date();
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utc + (weatherData.utc_offset_seconds * 1000));
+  };
+
+  useEffect(() => {
     if (!weatherData) return;
     const updateLocalClock = () => {
+        const destTime = getLocationTime();
+        setLocalTime(destTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }));
         const now = new Date();
-        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-        const destTime = new Date(utc + (weatherData.utc_offset_seconds * 1000));
-        setLocalTime(destTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit' }));
         const diffHours = (weatherData.utc_offset_seconds / 3600) - (-now.getTimezoneOffset() / 60);
         const sign = diffHours >= 0 ? '+' : '';
         setTimeDiff(diffHours === 0 ? '' : `${sign}${diffHours}h`);
@@ -60,7 +87,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
 
   const checkAlerts = () => {
       if (!weatherData) return;
-      const currentHour = new Date().getHours();
+      const currentHour = getLocationTime().getHours();
       const next48 = weatherData.hourly.temperature_2m.slice(currentHour, currentHour + 48);
       
       const hasFrost = next48.some(temp => temp < 0);
@@ -70,12 +97,12 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
       const firstRainIndex = next48Rain.findIndex(p => p > 0);
       
       if (firstRainIndex !== -1) {
-          const rainTime = new Date();
+          const rainTime = getLocationTime();
           rainTime.setHours(currentHour + firstRainIndex);
           setRainAlert({
               inHours: firstRainIndex,
               amount: convertPrecip(next48Rain[firstRainIndex], settings.precipUnit),
-              time: rainTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute: '2-digit'})
+              time: rainTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h'})
           });
       } else {
           setRainAlert(null);
@@ -85,9 +112,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   const loadWeather = async () => {
     setLoadingWeather(true);
     setError('');
-    setVisibleDays(3);
     try {
-        const data = await fetchForecast(location.lat, location.lon);
+        const data = await fetchForecast(location.lat, location.lon, selectedModel);
         setWeatherData(data);
     } catch (e) {
         console.error(e);
@@ -125,31 +151,88 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
     }
   };
 
+  const searchCities = async () => {
+    if (!searchQuery.trim()) return;
+    setLoadingSearch(true);
+    try {
+        const results = await searchCityByName(searchQuery, settings.language);
+        setSearchResults(results);
+    } catch (e) {
+        console.error(e);
+        setSearchResults([]);
+    } finally {
+        setLoadingSearch(false);
+    }
+  };
+
+  const handleSelectSearchResult = (loc: Location) => {
+    setLocation(loc);
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const isFavorite = (loc: Location) => {
+    return settings.favorites.some(f => f.name === loc.name && f.country === loc.country);
+  };
+
+  const toggleFavorite = () => {
+    if (!onUpdateSettings) return;
+    
+    let newFavorites = [...settings.favorites];
+    if (isFavorite(location)) {
+        newFavorites = newFavorites.filter(f => !(f.name === location.name && f.country === location.country));
+    } else {
+        newFavorites.push(location);
+    }
+    
+    onUpdateSettings({
+        ...settings,
+        favorites: newFavorites
+    });
+  };
+
   const getHourlyForecast = () => {
       if (!weatherData) return [];
-      const currentHour = new Date().getHours();
+      const currentHour = getLocationTime().getHours();
       const startIndex = currentHour;
       const slice = weatherData.hourly.time.slice(startIndex, startIndex + 48);
 
       return slice.map((timeStr, i) => {
-          const date = new Date(timeStr);
-          const index = startIndex + i;
-          const isNight = (weatherData.current.is_day === 0 && i === 0) || (date.getHours() < 6 || date.getHours() > 21);
-          
-          return {
-              time: i === 0 ? t('now') : date.getHours().toString().padStart(2, '0') + ':00',
-              temp: convertTemp(weatherData.hourly.temperature_2m[index], settings.tempUnit),
-              icon: mapWmoCodeToIcon(weatherData.hourly.weather_code[index], isNight),
-              highlight: i === 0
-          };
-      });
+                const date = new Date(timeStr);
+                const index = startIndex + i;
+                const isNight = (weatherData.current.is_day === 0 && i === 0) || (date.getHours() < 6 || date.getHours() > 21);
+                
+                // Fallback to current weather code if hourly code is missing to avoid '?' icon
+                const code = weatherData.hourly.weather_code && weatherData.hourly.weather_code[index] !== undefined
+                    ? weatherData.hourly.weather_code[index]
+                    : weatherData.current.weather_code;
+
+                return {
+                    time: i === 0 ? t('now') : date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }),
+                    temp: convertTemp(weatherData.hourly.temperature_2m[index], settings.tempUnit),
+                    icon: mapWmoCodeToIcon(code, isNight),
+                    highlight: i === 0
+                };
+            });
   };
 
   const getRainGraphData = () => {
       if (!weatherData || !weatherData.minutely_15) return null;
-      const nowIso = new Date().toISOString().slice(0, 13);
+      const d = getLocationTime();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const nowIso = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
+      
       let startIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIso));
-      if (startIndex === -1) startIndex = 0;
+      if (startIndex === -1) {
+        // Fallback: try to find the closest time if exact match fails
+        // But minutely_15 is usually every 15 min.
+        // If we are at 21:10, we want 21:00 or 21:15.
+        // The startWith logic matches 21:xx.
+        // So it finds the first entry with 21h.
+        // If the array starts at 22:00 (past data missing?), we might return -1.
+        startIndex = 0;
+      }
 
       const rainData = weatherData.minutely_15.precipitation.slice(startIndex, startIndex + 8);
       
@@ -162,28 +245,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
       return { data: graphData, totalRain };
   };
 
-  const getDailyForecast = () => {
-      if (!weatherData) return [];
-      return weatherData.daily.time.map((ts, i) => {
-          const date = new Date(ts);
-          const dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long' });
-          const code = weatherData.daily.weather_code[i];
-          const min = convertTemp(weatherData.daily.temperature_2m_min[i], settings.tempUnit);
-          const max = convertTemp(weatherData.daily.temperature_2m_max[i], settings.tempUnit);
-          
-          let color = 'from-cyan-400 to-amber-400';
-          if (code >= 50) color = 'from-sky-400 to-blue-500'; 
-          if (code === 0) color = 'from-yellow-300 to-orange-400';
 
-          return {
-              day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
-              icon: mapWmoCodeToIcon(code),
-              min,
-              max,
-              color
-          };
-      });
-  };
 
   // --- Sun Graph Widget Component ---
   const SunElevationGraph = () => {
@@ -204,14 +266,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                     <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase mb-1">{t('moon_phase')}</p>
                     <p className="text-xl font-bold truncate pr-8">{getMoonPhaseText(moonPhase, settings.language)}</p>
                     
-                    <div className="flex flex-col gap-1 mt-2 text-xs opacity-70">
+                    <div className="flex flex-col gap-1 mt-2 text-xs text-slate-600 dark:text-white/70">
                         <p>{t('moon.days_to_full')}: <span className="font-bold">{daysToFull}</span></p>
                         <p>{t('moon.illumination')}: <span className="font-bold">{illumination}%</span></p>
                     </div>
                 </div>
                 <div className="flex items-center justify-between mt-4">
                     <div className="flex flex-col">
-                        <span className="text-xs opacity-50">{t('tonight')}</span>
+                        <span className="text-xs text-slate-500 dark:text-white/60">{t('tonight')}</span>
                         <span className="text-lg font-medium">{t('visible')}</span>
                     </div>
                     <Icon name={getMoonPhaseIcon(moonPhase)} className="text-5xl text-indigo-400 dark:text-indigo-200" />
@@ -227,12 +289,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
     };
     
     // Adjust sunrise/sunset for UTC offset to get local solar time roughly
-    const offsetHr = weatherData.utc_offset_seconds / 3600;
+    // We use direct parsing of the ISO string from OpenMeteo which is already in the city's timezone
     const sunriseHr = parseTime(weatherData.daily.sunrise[0]);
     const sunsetHr = parseTime(weatherData.daily.sunset[0]);
     
-    const now = new Date();
-    const currentHr = now.getHours() + now.getMinutes() / 60;
+    // Calculate current time at the location
+    // We calculate the city's current hour based on the UTC offset
+    const cityDate = new Date(Date.now() + weatherData.utc_offset_seconds * 1000);
+    const currentHr = cityDate.getUTCHours() + cityDate.getUTCMinutes() / 60;
     
     const width = 300;
     const height = 100;
@@ -300,14 +364,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                 </svg>
             </div>
 
-            <div className="absolute bottom-12 left-4 text-[10px] font-bold opacity-60">
-                {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit'})}
+            <div className="absolute bottom-12 left-4 text-[10px] font-bold text-slate-600 dark:text-white/70">
+                {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
             </div>
-            <div className="absolute bottom-12 right-4 text-[10px] font-bold opacity-60">
-                {new Date(weatherData.daily.sunset[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit'})}
+            <div className="absolute bottom-12 right-4 text-[10px] font-bold text-slate-600 dark:text-white/70">
+                {new Date(weatherData.daily.sunset[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
             </div>
 
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] opacity-60">
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-slate-500 dark:text-white/60">
                 <div className="flex items-center gap-1">
                     <span className="w-3 h-0.5 bg-yellow-500"></span> {t('sun_graph.today')}
                 </div>
@@ -316,13 +380,13 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                 </div>
             </div>
         </div>
-    );
-  };
+      );
+    };
 
 
-  const dailyForecast = getDailyForecast().slice(0, visibleDays);
-  const rainGraph = getRainGraphData();
   
+  const rainGraph = getRainGraphData();
+
   const currentTemp = weatherData ? convertTemp(weatherData.current.temperature_2m, settings.tempUnit) : 0;
   const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
@@ -333,30 +397,116 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
       return T - ((100 - RH) / 5);
   };
   const dewPoint = weatherData ? calculateDewPoint(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
+  const heatIndexRaw = weatherData ? calculateHeatIndex(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
+  const heatIndex = convertTemp(heatIndexRaw, settings.tempUnit);
   
   const getCurrentHourly = (key: keyof OpenMeteoResponse['hourly']) => {
       if (!weatherData) return 0;
-      const currentHour = new Date().getHours();
+      const currentHour = getLocationTime().getHours();
       return weatherData.hourly[key]?.[currentHour] ?? 0;
   };
 
+  const currentActivityScores = React.useMemo(() => {
+      if (!weatherData) return [];
+      
+      const currentHour = getLocationTime().getHours();
+      // Safe access to hourly probability, fallback to 0 if missing
+      const precipProb = weatherData.hourly.precipitation_probability ? weatherData.hourly.precipitation_probability[currentHour] : 0;
+      
+      const activityData = {
+          tempFeelsLike: weatherData.current.apparent_temperature,
+          windKmh: weatherData.current.wind_speed_10m,
+          precipMm: weatherData.current.precipitation,
+          precipProb: precipProb,
+          gustsKmh: weatherData.current.wind_gusts_10m,
+          weatherCode: weatherData.current.weather_code,
+          sunChance: 100 - weatherData.current.cloud_cover,
+          cloudCover: weatherData.current.cloud_cover,
+          visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000
+      };
+
+      const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing'];
+      return activities.map(type => ({
+          type,
+          ...calculateActivityScore(activityData, type)
+      }));
+  }, [weatherData]);
+
+  const activityLabels: Record<string, string> = {
+        bbq: "BBQ / Terras",
+        cycling: "Fietsen",
+        walking: "Wandelen",
+        sailing: "Watersport"
+    };
+
+    const getActivityIcon = (type: ActivityType) => {
+        switch (type) {
+            case 'bbq': return 'outdoor_grill';
+            case 'cycling': return 'directions_bike';
+            case 'walking': return 'hiking';
+            case 'sailing': return 'sailing';
+        }
+    };
+
+    const getScoreColor = (score: number) => {
+        if (score >= 8) return "text-green-500 dark:text-green-400";
+        if (score >= 6) return "text-lime-500 dark:text-lime-400";
+        if (score >= 4) return "text-orange-500 dark:text-orange-400";
+        return "text-red-500 dark:text-red-400";
+    };
+
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-white">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
       {weatherData && (
-        <WeatherBackground 
-            weatherCode={weatherData.current.weather_code} 
-            isDay={weatherData.current.is_day} 
-        />
+        <div className="hidden dark:block absolute inset-0 z-0">
+             <WeatherBackground 
+                weatherCode={weatherData.current.weather_code} 
+                isDay={weatherData.current.is_day} 
+            />
+        </div>
       )}
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
       
+      {/* Refresh Button */}
+      <button 
+          onClick={loadWeather} 
+          className="fixed top-6 right-6 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+          aria-label={t('refresh')}
+      >
+          <Icon name="refresh" className={`text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
+      </button>
+
+      <button
+          onClick={toggleFavorite}
+          className={`fixed top-6 right-[8.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm`}
+          aria-label="Toggle Favorite"
+      >
+          <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
+      </button>
+
+      <button
+          onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
+          className="fixed top-6 right-[12rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+          aria-label="Country Map"
+      >
+          <Icon name="public" className="text-2xl" />
+      </button>
+
+      <button
+          onClick={() => setIsSearchOpen(v => !v)}
+          className="fixed top-6 right-20 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+          aria-label={t('search')}
+      >
+          <Icon name="search" className="text-2xl" />
+      </button>
+
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-6 text-white/60 hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
@@ -368,22 +518,22 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center">
-                            <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md">
+                            <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
                                 <Icon name="location_on" className="text-primary" />
                                 {location.name}, {location.country}
                             </h2>
                             {localTime && (
-                                <p className="text-white/80 text-sm font-medium mt-1 flex items-center gap-2">
+                                <p className="text-slate-500 dark:text-white/80 text-sm font-medium mt-1 flex items-center gap-2">
                                     <Icon name="schedule" className="text-xs" />
                                     {localTime} 
-                                    {timeDiff && <span className="bg-white/10 px-1.5 py-0.5 rounded text-[10px]">{timeDiff}</span>}
+                                    {timeDiff && <span className="bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-white">{timeDiff}</span>}
                                 </p>
                             )}
                         </div>
                     )}
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-6 text-white/60 hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -401,7 +551,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                  }, () => setLoadingCity(false));
                              }
                          }}
-                         className="flex items-center gap-1 px-4 py-2 rounded-full bg-white/10 hover:bg-primary/20 hover:text-primary transition-colors border border-white/5 whitespace-nowrap backdrop-blur-md"
+                         className="flex items-center gap-1 px-4 py-2 rounded-full bg-white/60 dark:bg-white/10 hover:bg-white dark:hover:bg-primary/20 text-slate-800 dark:text-white hover:text-primary dark:hover:text-primary transition-colors border border-slate-200 dark:border-white/5 whitespace-nowrap backdrop-blur-md shadow-sm"
                     >
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
@@ -410,7 +560,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                         <button 
                             key={i}
                             onClick={() => setLocation(fav)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md ${location.name === fav.name ? 'bg-white text-slate-800 font-bold' : 'bg-white/10 text-white hover:bg-white/20 border-white/5'}`}
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold' : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-white/20 border-slate-200 dark:border-white/5'}`}
                         >
                             {fav.name}
                         </button>
@@ -419,35 +569,128 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
             </div>
         </div>
 
+        {isSearchOpen && (
+            <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-3 backdrop-blur-md">
+                <div className="flex gap-2">
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            searchCities();
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && searchCities()}
+                        placeholder={t('search')}
+                        className="flex-1 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                    />
+                    <button
+                        onClick={searchCities}
+                        disabled={loadingSearch || !searchQuery.trim()}
+                        className="px-3 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                    >
+                        <Icon name={loadingSearch ? 'hourglass_empty' : 'arrow_forward'} />
+                    </button>
+                </div>
+                <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                    {searchResults.map((res, idx) => (
+                        <button
+                            key={`${res.name}-${idx}`}
+                            onClick={() => handleSelectSearchResult(res)}
+                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-left"
+                        >
+                            <span className="font-medium">{res.name}</span>
+                            <span className="text-xs opacity-60">{res.country}</span>
+                        </button>
+                    ))}
+                    {searchResults.length === 0 && !loadingSearch && searchQuery.trim() && (
+                        <p className="text-xs text-slate-500 dark:text-white/60 px-2">{t('no_data_available')}</p>
+                    )}
+                </div>
+            </div>
+        )}
+
         {loadingWeather ? (
             <div className="flex-grow flex items-center justify-center min-h-[50vh]">
                 <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
         ) : weatherData ? (
             <>
-                <div className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500">
+                <div className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-slate-800 dark:text-white">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
+                        <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl dark:drop-shadow-2xl font-display">
                             {currentTemp}°
                         </h1>
-                        {feelsLike < 10 && (
-                            <div className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md rounded-xl p-2 border border-white/10">
-                                <Icon name="thermostat" className="text-xl text-blue-300" />
+                        {feelsLike < 10 ? (
+                            <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm">
+                                <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
                                 <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
-                                <span className="text-[9px] uppercase opacity-70">{t('feels_like')}</span>
+                                <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
                             </div>
+                        ) : (
+                            heatIndex > currentTemp && (
+                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm">
+                                    <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
+                                    <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
+                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
+                                </div>
+                            )
                         )}
                     </div>
                     <p className="text-2xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
                          <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                     </p>
-                    <p className="text-white/80 text-lg font-normal drop-shadow-md mt-1">
+                    <p className="text-slate-500 dark:text-white/80 text-lg font-normal drop-shadow-md mt-1">
                         H:{highTemp}° L:{lowTemp}°
+                    </p>
+                    <p className="text-slate-400 dark:text-white/60 text-sm font-normal drop-shadow-md mt-2">
+                        {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            day: 'numeric',
+                            month: 'short',
+                            hour12: settings.timeFormat === '12h'
+                        }) : t('no_data_available')}
                     </p>
                 </div>
 
                 <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors">
+
+                    <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60">{t('ensemble.model')}</label>
+                            <button 
+                                onClick={() => setIsModelInfoOpen(true)}
+                                className="text-primary hover:text-primary/80 transition-colors"
+                            >
+                                <Icon name="info" className="text-lg" />
+                            </button>
+                        </div>
+                        <select 
+                            value={selectedModel} 
+                            onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
+                            className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors"
+                        >
+                            <option value="icon_seamless" className="text-slate-800 bg-white">DWD ICON EPS Seamless</option>
+                            <option value="icon_global" className="text-slate-800 bg-white">DWD ICON EPS Global</option>
+                            <option value="icon_eu" className="text-slate-800 bg-white">DWD ICON EPS EU</option>
+                            <option value="icon_d2" className="text-slate-800 bg-white">DWD ICON EPS D2</option>
+                            <option value="gfs_seamless" className="text-slate-800 bg-white">GFS Ensemble Seamless</option>
+                            <option value="gfs025" className="text-slate-800 bg-white">GFS Ensemble 0.25°</option>
+                            <option value="gfs05" className="text-slate-800 bg-white">GFS Ensemble 0.5°</option>
+                            <option value="ecmwf_ifs025" className="text-slate-800 bg-white">ECMWF IFS 0.25°</option>
+                            <option value="ecmwf_aifs025" className="text-slate-800 bg-white">ECMWF AIFS 0.25°</option>
+                            <option value="gem_global" className="text-slate-800 bg-white">GEM Global Ensemble</option>
+                            <option value="bom_access_global" className="text-slate-800 bg-white">BOM ACCESS Global</option>
+                            <option value="metoffice_global" className="text-slate-800 bg-white">UK MetOffice Global 20km</option>
+                            <option value="metoffice_uk" className="text-slate-800 bg-white">UK MetOffice UK 2km</option>
+                            <option value="icon_ch1_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH1</option>
+                            <option value="icon_ch2_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH2</option>
+                        </select>
+                    </div>
+                    
+                    <ModelInfoModal isOpen={isModelInfoOpen} onClose={() => setIsModelInfoOpen(false)} settings={settings} />
                     
                     {/* Hourly */}
                     <div className="mb-8">
@@ -536,261 +779,284 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                         </div>
                     )}
 
-                    {/* Daily Forecast */}
-                    <div className="flex flex-col gap-1 mb-8">
-                        <div className="flex justify-between items-center px-1 mb-2">
-                            <h3 className="text-slate-500 dark:text-white/60 text-xs font-bold uppercase tracking-wider">{t('next_days')}</h3>
-                        </div>
-                        
-                        <div className="flex flex-col gap-2">
-                            {dailyForecast.map((d, i) => (
-                                <div key={i} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <div className="flex items-center gap-3 w-1/3">
-                                        <div className="size-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center">
-                                            <Icon name={d.icon} className={`text-xl ${i===0 ? 'text-primary' : 'text-slate-600 dark:text-white'}`} />
-                                        </div>
-                                        <p className="font-medium">{d.day}</p>
-                                    </div>
-                                    
-                                    <div className="flex-1 flex items-center gap-3 px-2">
-                                        <span className="opacity-50 text-xs w-8 text-right">{d.min}°</span>
-                                        <div className="h-1.5 flex-1 bg-slate-300 dark:bg-black/40 rounded-full overflow-hidden relative">
-                                            <div className={`absolute h-full rounded-full bg-gradient-to-r ${d.color}`} style={{ left: '10%', width: '80%' }}></div>
-                                        </div>
-                                        <span className="font-bold text-sm w-8">{d.max}°</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex justify-center mt-4 gap-2">
-                            <button onClick={() => setVisibleDays(visibleDays === 3 ? 7 : visibleDays === 7 ? 16 : 3)} className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full text-xs font-medium opacity-70 transition-colors border border-slate-200 dark:border-white/5">
-                                {visibleDays === 3 ? '7 Days' : visibleDays === 7 ? '16 Days' : 'Less'}
-                            </button>
-                        </div>
-                    </div>
-
                     {/* --- MOST COMPLETE DETAIL SECTION --- */}
                     <div className="mt-8">
                         <h3 className="text-lg font-bold mb-4">{t('detail_title')}</h3>
                         
+                        {/* Activities Section */}
+                        {currentActivityScores.length > 0 && (
+                            <>
+                                <p className="text-xs text-slate-500 dark:text-white/60 mb-2 italic">
+                                    Activiteitenscores op basis van actuele weersomstandigheden (momentopname)
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                                    {currentActivityScores.map(score => (
+                                    <div key={score.type} className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg bg-white dark:bg-white/5 ${getScoreColor(score.score10)}`}>
+                                                <Icon name={getActivityIcon(score.type)} className="text-xl" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-sm capitalize">{activityLabels[score.type]}</p>
+                                                <p className="text-[10px] text-slate-500 dark:text-white/60 italic">"{score.text}"</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className={`text-xl font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
+                                            <div className="flex gap-0.5">
+                                                {[1,2,3,4,5].map(s => {
+                                                    const isFull = s <= score.stars;
+                                                    const isHalf = !isFull && (s - 0.5 <= score.stars);
+                                                    
+                                                    if (isHalf) {
+                                                        return (
+                                                            <div key={s} className="relative w-[12px] h-[12px]">
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <Icon name="star" className="text-[12px] text-slate-200 dark:text-white/10" />
+                                                                </div>
+                                                                <div className="absolute inset-y-0 left-0 w-[50%] overflow-hidden">
+                                                                    <div className="w-[12px] h-full flex items-center justify-center">
+                                                                         <Icon name="star" className="text-[12px] text-yellow-400 drop-shadow-sm" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    
+                                                    return (
+                                                        <div key={s} className="w-[12px] h-[12px] flex items-center justify-center">
+                                                            <Icon 
+                                                                name="star" 
+                                                                className={`text-[12px] ${isFull ? "text-yellow-400 drop-shadow-sm" : "text-slate-200 dark:text-white/10"}`} 
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                        )}
+                        
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Thermodynamics */}
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="thermostat" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('feels_like')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</p>
                                     <p className="text-sm font-bold">{Math.round(feelsLike)}°</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="humidity_percentage" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="humidity_percentage" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('humidity')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('humidity')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.relative_humidity_2m}%</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="water_drop" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water_drop" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('dew_point')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('dew_point')}</p>
                                     <p className="text-sm font-bold">{Math.round(convertTemp(dewPoint, settings.tempUnit))}°</p>
                                 </div>
                             </div>
 
                             {/* Clouds & Vis */}
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="visibility" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="visibility" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('visibility')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('visibility')}</p>
                                     <p className="text-sm font-bold">{Math.round(getCurrentHourly('visibility') / 1000)} km</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="cloud" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cloud" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('cloud_cover')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('cloud_cover')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.cloud_cover}%</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="cloud_queue" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cloud_queue" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">L/M/H Clouds</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('current.cloud_levels')}</p>
                                     <p className="text-[10px] font-bold">{getCurrentHourly('cloud_cover_low')}/{getCurrentHourly('cloud_cover_mid')}/{getCurrentHourly('cloud_cover_high')}%</p>
                                 </div>
                             </div>
 
                             {/* Wind */}
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="air" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="air" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('wind')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind')}</p>
                                     <p className="text-sm font-bold">{windSpeed} {settings.windUnit}</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="cyclone" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cyclone" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('wind_gusts')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_gusts')}</p>
                                     <p className="text-sm font-bold">{convertWind(weatherData.current.wind_gusts_10m, settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
                             
                             {/* Atmosphere */}
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="compress" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="compress" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('pressure')}</p>
-                                    <p className="text-sm font-bold">{Math.round(weatherData.current.surface_pressure)} hPa</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('pressure')}</p>
+                                    <p className="text-sm font-bold">{convertPressure(weatherData.current.surface_pressure, settings.pressureUnit)} {settings.pressureUnit}</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="speed" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="speed" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('pressure_msl')}</p>
-                                    <p className="text-sm font-bold">{Math.round(weatherData.current.pressure_msl)} hPa</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('pressure_msl')}</p>
+                                    <p className="text-sm font-bold">{convertPressure(weatherData.current.pressure_msl, settings.pressureUnit)} {settings.pressureUnit}</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="filter_drama" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="filter_drama" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('vapor_pressure')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('vapor_pressure')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('vapour_pressure_deficit')} kPa</p>
                                 </div>
                             </div>
 
                             {/* Sun & Water */}
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="wb_sunny" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_sunny" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('uv_max')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('uv_max')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.uv_index_max[0]}</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="timelapse" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="timelapse" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('sunshine')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('sunshine')}</p>
                                     <p className="text-sm font-bold">{Math.round(weatherData.daily.sunshine_duration[0] / 3600)}h {Math.round((weatherData.daily.sunshine_duration[0] % 3600) / 60)}m</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="opacity" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="opacity" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('evapotranspiration')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('evapotranspiration')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.et0_fao_evapotranspiration[0]}mm</p>
                                 </div>
                             </div>
 
                             {/* Deep Soil Profile Header */}
                             <div className="col-span-2 md:col-span-3 mt-2">
-                                <h4 className="text-xs font-bold uppercase opacity-50 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">Deep Soil Profile</h4>
+                                <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">{t('current.deep_soil_profile')}</h4>
                             </div>
                             
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="grass" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('soil_temp_0cm')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_0cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_0cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="grass" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('soil_temp_6cm')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_6cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_6cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="grass" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('soil_temp_18cm')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_18cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_18cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="water" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('soil_moist_0_1')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_0_1')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_0_to_1cm')} m³/m³</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="water" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('soil_moist_3_9')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_3_9')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_3_to_9cm')} m³/m³</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="water" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('soil_moist_27_81')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_27_81')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_27_to_81cm')} m³/m³</p>
                                 </div>
                             </div>
 
                              {/* Atmosphere Profile Header */}
                              <div className="col-span-2 md:col-span-3 mt-2">
-                                <h4 className="text-xs font-bold uppercase opacity-50 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">Atmosphere Profile</h4>
+                                <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">{t('current.atmosphere_profile')}</h4>
                             </div>
 
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="wind_power" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('wind_80m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_80m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_80m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="wind_power" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('wind_120m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_120m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_120m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="wind_power" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('wind_180m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_180m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_180m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="thermostat" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('temp_80m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp_80m')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('temperature_80m'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="thermostat" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('temp_180m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp_180m')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('temperature_180m'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
                             
                             {/* Precip Daily */}
                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="umbrella" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="umbrella" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('precip_prob')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('precip_prob')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.precipitation_probability_max[0]}%</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="rainy" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="rainy" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('today')} {t('precip')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('today')} {t('precip')}</p>
                                     <p className="text-sm font-bold">{convertPrecip(weatherData.daily.precipitation_sum[0], settings.precipUnit)} {settings.precipUnit}</p>
                                 </div>
                             </div>
                              <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="wb_twilight" /></div>
+                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_twilight" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase opacity-40">{t('daylight')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('daylight')}</p>
                                     <p className="text-sm font-bold">{Math.round(weatherData.daily.daylight_duration[0] / 3600)}h {Math.round((weatherData.daily.daylight_duration[0] % 3600) / 60)}m</p>
                                 </div>
                             </div>
@@ -799,8 +1065,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
 
                     <div className="mt-8 pt-8 border-t border-slate-200 dark:border-white/5">
                         <div className="text-center mb-6">
-                            <h3 className="text-lg font-bold">{t('explore_world')}</h3>
-                            <p className="opacity-50 text-sm">{t('lucky_compass')}</p>
+                            <h3 className="text-lg font-bold mb-4">{t('explore_world')}</h3>
+                            <p className="text-slate-500 dark:text-white/60 text-sm">{t('lucky_compass')}</p>
                         </div>
                         
                         <div className="relative size-64 mx-auto my-4 group">
@@ -817,10 +1083,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                         key={dir}
                                         disabled={loadingCity}
                                         onClick={() => handleCompassSelect(dir)}
-                                        className="absolute top-1/2 left-1/2 -ml-5 -mt-5 size-10 rounded-full bg-white dark:bg-background-dark border border-slate-200 dark:border-white/10 hover:bg-primary hover:border-primary hover:text-white flex items-center justify-center font-bold text-xs opacity-60 transition-all duration-300 disabled:opacity-50 shadow-lg z-10 text-slate-700 dark:text-white"
+                                        className="absolute top-1/2 left-1/2 -ml-5 -mt-5 size-10 rounded-full bg-white dark:bg-background-dark border border-slate-200 dark:border-white/10 hover:bg-primary hover:border-primary hover:text-white flex items-center justify-center font-bold text-xs transition-all duration-300 disabled:opacity-50 shadow-lg z-10 text-slate-700 dark:text-white"
                                         style={style}
                                      >
-                                         {dir}
+                                         {t(`dir.${dir}`)}
                                      </button>
                                  )
                              })}
@@ -835,7 +1101,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                 ) : (
                                     <>
                                         <Icon name="explore" className="text-4xl mb-1" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest">Lucky</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest">{t('current.lucky')}</span>
                                     </>
                                 )}
                              </button>

@@ -347,7 +347,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </button>
                     
                     <div className="flex flex-col items-center">
-                        <span className="font-bold text-sm leading-tight tracking-wide">Global Weather</span>
+                        <span className="font-bold text-sm leading-tight tracking-wide">{t('map.global_weather')}</span>
                         <div className="flex items-center gap-2 h-3">
                             {lastUpdated && !statusMessage && (
                                 <span className="text-[10px] opacity-60 font-medium leading-none animate-in fade-in">

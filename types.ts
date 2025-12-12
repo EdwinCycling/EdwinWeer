@@ -50,6 +50,7 @@ export interface OpenMeteoCurrent {
     wind_gusts_10m: number;
     cloud_cover: number;
     is_day: number;
+    time: string;
 }
 
 export interface OpenMeteoResponse {
@@ -62,6 +63,8 @@ export interface OpenMeteoResponse {
     hourly: {
         time: string[];
         temperature_2m: number[];
+        apparent_temperature: number[];
+        precipitation_probability: number[];
         weather_code: number[];
         relative_humidity_2m: number[];
         surface_pressure: number[];
@@ -72,6 +75,7 @@ export interface OpenMeteoResponse {
         // New detailed fields
         visibility: number[];
         snow_depth: number[];
+        cloud_cover: number[];
         cloud_cover_low: number[];
         cloud_cover_mid: number[];
         cloud_cover_high: number[];
@@ -110,6 +114,8 @@ export interface OpenMeteoResponse {
         precipitation_sum: number[];
         precipitation_probability_max: number[];
         wind_gusts_10m_max: number[];
+        wind_speed_10m_max: number[];
+        wind_direction_10m_dominant: number[];
         daylight_duration: number[];
         sunshine_duration: number[];
         et0_fao_evapotranspiration: number[];
@@ -136,16 +142,25 @@ export enum PrecipUnit {
     INCH = 'inch'
 }
 
+export enum PressureUnit {
+    HPA = 'hPa',
+    INHG = 'inHg'
+}
+
 export type AppTheme = 'dark' | 'light';
 export type AppLanguage = 'en' | 'nl';
+export type TimeFormat = '12h' | '24h';
 
 export interface AppSettings {
     tempUnit: TempUnit;
     windUnit: WindUnit;
     precipUnit: PrecipUnit;
+    pressureUnit: PressureUnit;
     favorites: Location[];
     theme: AppTheme;
     language: AppLanguage;
+    timeFormat: TimeFormat;
+    enabledActivities: Record<ActivityType, boolean>;
 }
 
 export enum ViewState {
@@ -154,5 +169,32 @@ export enum ViewState {
   HISTORICAL = 'HISTORICAL',
   STRAVA = 'STRAVA',
   HOURLY_DETAIL = 'HOURLY_DETAIL',
-  SETTINGS = 'SETTINGS'
+  ENSEMBLE = 'ENSEMBLE',
+  HOLIDAY = 'HOLIDAY',
+  SETTINGS = 'SETTINGS',
+  TEAM = 'TEAM',
+  PRICING = 'PRICING',
+  INFO = 'INFO',
+  MODEL_INFO = 'MODEL_INFO',
+  FORECAST = 'FORECAST',
+  COUNTRY_MAP = 'COUNTRY_MAP'
 }
+
+export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';
+
+export type EnsembleModel = 
+    'icon_seamless' | 
+    'icon_global' | 
+    'icon_eu' | 
+    'icon_d2' | 
+    'gfs_seamless' | 
+    'gfs025' | 
+    'gfs05' | 
+    'ecmwf_ifs025' | 
+    'ecmwf_aifs025' |
+    'gem_global' | 
+    'bom_access_global' | 
+    'metoffice_global' | 
+    'metoffice_uk' | 
+    'icon_ch1_eps' | 
+    'icon_ch2_eps';

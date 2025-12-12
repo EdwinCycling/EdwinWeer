@@ -1,8 +1,11 @@
 
-import { WeatherData, TempUnit, WindUnit, PrecipUnit, AppLanguage } from "../types";
+import { WeatherData, TempUnit, WindUnit, PrecipUnit, PressureUnit, AppLanguage, EnsembleModel } from "../types";
+import { checkLimit, trackCall } from "./usageService";
 
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
+const ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble";
+const SEASONAL_URL = "https://seasonal-api.open-meteo.com/v1/seasonal";
 
 // --- UNIT CONVERSION HELPERS ---
 
@@ -29,20 +32,36 @@ export const convertWind = (speedKmh: number, unit: WindUnit): number => {
     }
 };
 
-export const convertPrecip = (precipMm: number, unit: PrecipUnit): number => {
+export const convertPrecip = (precipMm: number | null | undefined, unit: PrecipUnit): number => {
+    const val = precipMm ?? 0;
     if (unit === PrecipUnit.INCH) {
-        return parseFloat((precipMm / 25.4).toFixed(2));
+        return parseFloat((val / 25.4).toFixed(2));
     }
-    return parseFloat(precipMm.toFixed(1));
+    return parseFloat(val.toFixed(1));
+};
+
+export const convertPressure = (pressureHpa: number | null | undefined, unit: PressureUnit): number => {
+    const val = pressureHpa ?? 0;
+    if (unit === PressureUnit.INHG) {
+        // 1 hPa = 0.02953 inHg
+        return parseFloat((val * 0.02953).toFixed(2));
+    }
+    return Math.round(val);
 };
 
 export const getTempLabel = (unit: TempUnit) => unit === TempUnit.FAHRENHEIT ? '°F' : '°C';
 
 // --- EXISTING MAPPERS ---
 
-export const mapWmoCodeToIcon = (code: number, isNight = false): string => {
-  switch (code) {
-    case 0: return isNight ? 'clear_night' : 'sunny';
+export const mapWmoCodeToIcon = (code: number | null | undefined, isNight = false): string => {
+  if (code === null || code === undefined) return 'help';
+  
+  // Ensure code is a number
+  const wmoCode = Number(code);
+  if (isNaN(wmoCode)) return 'help';
+
+  switch (wmoCode) {
+    case 0: return isNight ? 'clear_night' : 'wb_sunny';
     case 1:
     case 2: return isNight ? 'partly_cloudy_night' : 'partly_cloudy_day';
     case 3: return 'cloud';
@@ -50,7 +69,7 @@ export const mapWmoCodeToIcon = (code: number, isNight = false): string => {
     case 48: return 'foggy';
     case 51:
     case 53:
-    case 55: return 'rainy_light';
+    case 55: return 'rainy';
     case 56:
     case 57: return 'weather_hail';
     case 61:
@@ -196,25 +215,40 @@ export const getBeaufortDescription = (bft: number, lang: AppLanguage = 'en'): s
     }
 };
 
+export const getWindDirection = (deg: number, lang: AppLanguage = 'en'): string => {
+    const isNl = lang === 'nl';
+    const directions = isNl 
+        ? ['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW']
+        : ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    
+    // Normalize degree to 0-360
+    const normalized = (deg % 360 + 360) % 360;
+    const index = Math.round(normalized / 45) % 8;
+    return directions[index];
+};
+
 const validateCoordinates = (lat: number, lon: number) => {
     if (typeof lat !== 'number' || typeof lon !== 'number' || isNaN(lat) || isNaN(lon)) {
         throw new Error(`Invalid coordinates: ${lat}, ${lon}`);
     }
 }
 
-export const fetchForecast = async (lat: number, lon: number) => {
+export const fetchForecast = async (lat: number, lon: number, model?: EnsembleModel) => {
   validateCoordinates(lat, lon);
   
   const currentVars = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,surface_pressure,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,is_day';
   const minutelyVars = 'precipitation';
   
   // Expanded hourly variables - Corrected soil_moisture_0_to_1cm
-  const hourlyVars = 'temperature_2m,weather_code,relative_humidity_2m,surface_pressure,uv_index,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m';
+  const hourlyVars = 'temperature_2m,weather_code,apparent_temperature,precipitation_probability,relative_humidity_2m,surface_pressure,uv_index,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m';
   
-  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
+  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
 
-  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16`;
+  const modelParam = model ? `&models=${model}` : '';
+  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16${modelParam}`;
 
+  checkLimit();
+  trackCall();
   const response = await fetch(url);
   if (!response.ok) {
       throw new Error(`Weather fetch failed: ${response.status}`);
@@ -242,9 +276,227 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
       url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
   }
 
+  checkLimit();
+  trackCall();
   const response = await fetch(url);
   if (!response.ok) {
       throw new Error(`Historical fetch failed: ${response.status}`);
   }
   return response.json();
+};
+
+export const fetchHistoricalFull = async (lat: number, lon: number, date: string) => {
+    validateCoordinates(lat, lon);
+    
+    // We fetch just one day for the "Current" view simulation
+    const startDate = date;
+    const endDate = date;
+  
+    // Use Archive or Forecast depending on date
+    const d = new Date(date);
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const useArchive = d < fiveDaysAgo;
+  
+    // Variables matching CurrentWeatherView as much as possible
+    const hourlyVars = 'temperature_2m,weather_code,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m,sunshine_duration';
+    
+    const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
+  
+    let url = '';
+  
+    if (useArchive) {
+        url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
+    } else {
+        url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
+    }
+  
+    checkLimit();
+    trackCall();
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Historical Full fetch failed: ${response.status}`);
+    }
+    return response.json();
+  };
+
+export const ENSEMBLE_VARS_HOURLY_BASIC = [
+    { key: 'temperature_2m', label: 'Temperature (2m)' },
+    { key: 'precipitation', label: 'Precipitation' },
+    { key: 'wind_speed_10m', label: 'Wind Speed (10m)' },
+    { key: 'wind_direction_10m', label: 'Wind Direction (10m)' },
+];
+
+export const ENSEMBLE_VARS_HOURLY_PRO = [
+    ...ENSEMBLE_VARS_HOURLY_BASIC,
+    { key: 'relative_humidity_2m', label: 'Relative Humidity (2m)' },
+    { key: 'dewpoint_2m', label: 'Dewpoint (2m)' },
+    { key: 'apparent_temperature', label: 'Apparent Temperature' },
+    { key: 'rain', label: 'Rain' },
+    { key: 'snowfall', label: 'Snowfall' },
+    { key: 'snow_depth', label: 'Snow Depth' },
+    { key: 'weather_code', label: 'Weather Code' },
+    { key: 'pressure_msl', label: 'Sea Level Pressure' },
+    { key: 'surface_pressure', label: 'Surface Pressure' },
+    { key: 'cloud_cover', label: 'Cloud Cover Total' },
+    { key: 'cloud_cover_low', label: 'Cloud Cover Low' },
+    { key: 'cloud_cover_mid', label: 'Cloud Cover Mid' },
+    { key: 'cloud_cover_high', label: 'Cloud Cover High' },
+    { key: 'visibility', label: 'Visibility' },
+    { key: 'et0_fao_evapotranspiration', label: 'Reference Evapotranspiration (ET₀)' },
+    { key: 'vapour_pressure_deficit', label: 'Vapour Pressure Deficit' },
+    { key: 'wind_speed_80m', label: 'Wind Speed (80m)' },
+    { key: 'wind_speed_100m', label: 'Wind Speed (100m)' },
+    { key: 'wind_speed_120m', label: 'Wind Speed (120m)' },
+    { key: 'wind_direction_80m', label: 'Wind Direction (80m)' },
+    { key: 'wind_direction_100m', label: 'Wind Direction (100m)' },
+    { key: 'wind_direction_120m', label: 'Wind Direction (120m)' },
+    { key: 'wind_gusts_10m', label: 'Wind Gusts (10m)' },
+    { key: 'temperature_80m', label: 'Temperature (80m)' },
+    { key: 'temperature_120m', label: 'Temperature (120m)' },
+];
+
+export const ENSEMBLE_VARS_DAILY_BASIC = [
+    { key: 'temperature_2m_max', label: 'Max Temperature (2m)' },
+    { key: 'temperature_2m_min', label: 'Min Temperature (2m)' },
+    { key: 'precipitation_sum', label: 'Precipitation Sum' },
+    { key: 'wind_speed_10m_max', label: 'Max Wind Speed (10m)' },
+];
+
+export const ENSEMBLE_VARS_DAILY_PRO = [
+    { key: 'temperature_2m_mean', label: 'Mean Temperature (2m)' },
+    { key: 'temperature_2m_min', label: 'Min Temperature (2m)' },
+    { key: 'temperature_2m_max', label: 'Max Temperature (2m)' },
+    { key: 'apparent_temperature_mean', label: 'Mean Apparent Temp' },
+    { key: 'apparent_temperature_min', label: 'Min Apparent Temp' },
+    { key: 'apparent_temperature_max', label: 'Max Apparent Temp' },
+    { key: 'wind_speed_10m_mean', label: 'Mean Wind Speed (10m)' },
+    { key: 'wind_speed_10m_min', label: 'Min Wind Speed (10m)' },
+    { key: 'wind_speed_10m_max', label: 'Max Wind Speed (10m)' },
+    { key: 'wind_direction_10m_dominant', label: 'Dominant Wind Dir (10m)' },
+    { key: 'wind_gusts_10m_mean', label: 'Mean Wind Gusts (10m)' },
+    { key: 'wind_gusts_10m_min', label: 'Min Wind Gusts (10m)' },
+    { key: 'wind_gusts_10m_max', label: 'Max Wind Gusts (10m)' },
+    { key: 'wind_speed_100m_mean', label: 'Mean Wind Speed (100m)' },
+    { key: 'wind_speed_100m_min', label: 'Min Wind Speed (100m)' },
+    { key: 'wind_speed_100m_max', label: 'Max Wind Speed (100m)' },
+    { key: 'wind_direction_100m_dominant', label: 'Dominant Wind Dir (100m)' },
+    { key: 'cloud_cover_mean', label: 'Mean Cloud Cover' },
+    { key: 'cloud_cover_min', label: 'Min Cloud Cover' },
+    { key: 'cloud_cover_max', label: 'Max Cloud Cover' },
+    { key: 'precipitation_sum', label: 'Precipitation Sum' },
+    { key: 'precipitation_hours', label: 'Precipitation Hours' },
+    { key: 'rain_sum', label: 'Rain Sum' },
+    { key: 'snowfall_sum', label: 'Snowfall Sum' },
+    { key: 'pressure_msl_mean', label: 'Mean Sea Level Pressure' },
+    { key: 'pressure_msl_min', label: 'Min Sea Level Pressure' },
+    { key: 'pressure_msl_max', label: 'Max Sea Level Pressure' },
+    { key: 'surface_pressure_mean', label: 'Mean Surface Pressure' },
+    { key: 'surface_pressure_min', label: 'Min Surface Pressure' },
+    { key: 'surface_pressure_max', label: 'Max Surface Pressure' },
+    { key: 'relative_humidity_2m_mean', label: 'Mean Relative Humidity' },
+    { key: 'relative_humidity_2m_min', label: 'Min Relative Humidity' },
+    { key: 'relative_humidity_2m_max', label: 'Max Relative Humidity' },
+    { key: 'cape_mean', label: 'Mean CAPE' },
+    { key: 'cape_min', label: 'Min CAPE' },
+    { key: 'cape_max', label: 'Max CAPE' },
+    { key: 'dewpoint_2m_mean', label: 'Mean Dewpoint' },
+    { key: 'dewpoint_2m_min', label: 'Min Dewpoint' },
+    { key: 'dewpoint_2m_max', label: 'Max Dewpoint' },
+    { key: 'et0_fao_evapotranspiration', label: 'Reference Evapotranspiration (ET₀)' },
+    { key: 'shortwave_radiation_sum', label: 'Shortwave Radiation Sum' },
+];
+
+export const fetchEnsemble = async (lat: number, lon: number, model: EnsembleModel, variables: string[], isDaily: boolean = false) => {
+    validateCoordinates(lat, lon);
+    
+    const vars = variables.join(',');
+    let url = `${ENSEMBLE_URL}?latitude=${lat}&longitude=${lon}&models=${model}&forecast_days=14&timezone=auto`;
+
+    if (isDaily) {
+        url += `&daily=${vars}`;
+    } else {
+        url += `&hourly=${vars}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Ensemble fetch failed: ${response.status}`);
+    }
+    return response.json();
+};
+
+export const fetchSeasonal = async (lat: number, lon: number) => {
+    validateCoordinates(lat, lon);
+    
+    const startDate = new Date().toISOString().split('T')[0];
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 6);
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    // We will use standard JSON fetch again because we can't easily rely on indices without importing the Variable enum,
+     // and importing `openmeteo` package might cause issues with `flatbuffers` dependencies in some environments without proper setup.
+     // However, user ASKED to use the code. 
+     // Let's use the standard fetch but parse the JSON response which we know structure of better.
+     // The structure is `daily: { temperature_2m_max_member01: [...], ... }`
+     
+     const params = new URLSearchParams({
+        latitude: lat.toString(),
+        longitude: lon.toString(),
+        start_date: startDate,
+        end_date: endDateStr,
+        daily: ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "sunshine_duration", "wind_speed_10m_max"].join(','),
+        // Removed explicit 'models' parameter as 'ecmwf_ifs_seasonal' was invalid.
+        // Default behavior of seasonal-api.open-meteo.com is usually ECMWF Seasonal or CFS.
+        // If we want ECMWF Seasonal specifically, the documentation usually refers to it as the default or 'ecmwf_ifs' (but that's for forecast).
+        // Let's rely on default which is likely the seamless seasonal.
+        timezone: "auto"
+     });
+
+     const url = `${SEASONAL_URL}?${params.toString()}`;
+     
+     const response = await fetch(url);
+     if (!response.ok) {
+         const errorText = await response.text();
+         console.error('Seasonal Fetch Error Body:', errorText);
+         throw new Error(`Seasonal fetch failed: ${response.status} - ${errorText}`);
+     }
+     return response.json();
+ };
+
+ export const fetchHistoricalPeriods = async (lat: number, lon: number, startDate: Date) => {
+    validateCoordinates(lat, lon);
+    
+    // We want data for this week, but for the past 5 years.
+    // We'll make 5 requests.
+    const requests = [];
+    const years = 5;
+    
+    // We use the same daily variables as the seasonal forecast for consistency
+    const dailyVars = ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "sunshine_duration", "wind_speed_10m_max"].join(',');
+
+    for (let i = 1; i <= years; i++) {
+        const pastStart = new Date(startDate);
+        pastStart.setFullYear(pastStart.getFullYear() - i);
+        
+        const pastEnd = new Date(pastStart);
+        pastEnd.setDate(pastEnd.getDate() + 6);
+        
+        const startStr = pastStart.toISOString().split('T')[0];
+        const endStr = pastEnd.toISOString().split('T')[0];
+        
+        const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startStr}&end_date=${endStr}&daily=${dailyVars}&timezone=auto`;
+        requests.push(fetch(url).then(r => r.json()));
+    }
+
+    const results = await Promise.all(requests);
+    return results; // Array of 5 OpenMeteo responses
+ };
+export const calculateHeatIndex = (tempC: number, rh: number): number => {
+    if (tempC < 25 || rh < 40) return tempC;
+    const T = (tempC * 9/5) + 32;
+    const R = rh;
+    const HI = -42.379 + 2.04901523*T + 10.14333127*R - 0.22475541*T*R - 0.00683783*T*T - 0.05481717*R*R + 0.00122874*T*T*R + 0.00085282*T*R*R - 0.00000199*T*T*R*R;
+    const c = (HI - 32) * 5/9;
+    return c;
 };

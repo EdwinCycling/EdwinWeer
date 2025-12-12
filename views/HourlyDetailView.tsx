@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, Location, OpenMeteoResponse } from '../types';
-import { fetchForecast, convertTemp, convertWind } from '../services/weatherService';
+import { fetchForecast, convertTemp, convertWind, convertPressure } from '../services/weatherService';
 import { loadCurrentLocation } from '../services/storageService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { getTranslation } from '../services/translations';
@@ -16,6 +16,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
   const [location] = useState<Location>(loadCurrentLocation());
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFeelsLike, setShowFeelsLike] = useState(false);
   
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -23,7 +24,14 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
     const load = async () => {
         try {
             const forecast: OpenMeteoResponse = await fetchForecast(location.lat, location.lon);
-            const nowIso = new Date().toISOString().slice(0, 13);
+            
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const destTime = new Date(utc + (forecast.utc_offset_seconds * 1000));
+            
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            const nowIso = `${destTime.getFullYear()}-${pad(destTime.getMonth()+1)}-${pad(destTime.getDate())}T${pad(destTime.getHours())}`;
+            
             let startIndex = forecast.hourly.time.findIndex(timeStr => timeStr.startsWith(nowIso));
             if (startIndex === -1) startIndex = 0;
 
@@ -33,15 +41,24 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                 const idx = startIndex + i;
                 const date = new Date(timeStr);
                 return {
-                    time: date.getHours().toString().padStart(2, '0') + ':00',
+                    time: date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }),
                     temp: convertTemp(forecast.hourly.temperature_2m[idx], settings.tempUnit),
+                    feelsLike: convertTemp(forecast.hourly.apparent_temperature[idx], settings.tempUnit),
                     humidity: forecast.hourly.relative_humidity_2m[idx],
-                    pressure: Math.round(forecast.hourly.surface_pressure[idx]),
+                    pressure: convertPressure(forecast.hourly.surface_pressure[idx], settings.pressureUnit),
                     uv: forecast.hourly.uv_index[idx],
                     wind: convertWind(forecast.hourly.wind_speed_10m[idx], settings.windUnit),
                 };
             });
             setData(processed);
+            
+            // Check condition: Current feels like < 10
+            if (processed.length > 0 && processed[0].feelsLike < 10) {
+                setShowFeelsLike(true);
+            } else {
+                setShowFeelsLike(false);
+            }
+
         } catch (e) {
             console.error(e);
         } finally {
@@ -66,7 +83,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background-dark pb-24 overflow-y-auto text-slate-800 dark:text-white transition-colors">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 overflow-y-auto text-slate-800 dark:text-white transition-colors">
       <div className="flex items-center p-4 pt-8 sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5">
         <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
             <Icon name="arrow_back_ios_new" />
@@ -90,7 +107,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <div className="min-w-[600px] md:min-w-full flex flex-col gap-8 pr-4">
                     
                     {/* Temperature Graph */}
-                    <div className="h-64 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-96 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="thermostat" className="text-primary" />
                             <span className="text-sm font-bold">{t('temp')}</span>
@@ -105,12 +122,37 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
-                                <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} domain={['dataMin - 2', 'dataMax + 2']} />
+                                <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} domain={['dataMin - 1', 'dataMax + 1']} interval={0} allowDecimals={false} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Area type="monotone" dataKey="temp" stroke="#13b6ec" fillOpacity={1} fill="url(#colorTempDetail)" unit={`°${settings.tempUnit}`} strokeWidth={3} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
+
+                    {/* Feels Like Graph (Conditional) */}
+                    {showFeelsLike && (
+                        <div className="h-64 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                            <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
+                                <Icon name="thermostat" className="text-orange-400" />
+                                <span className="text-sm font-bold">{t('feels_like')}</span>
+                            </div>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorFeelsLike" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#fb923c" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#fb923c" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
+                                    <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
+                                    <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} domain={['dataMin - 2', 'dataMax + 2']} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Area type="monotone" dataKey="feelsLike" stroke="#fb923c" fillOpacity={1} fill="url(#colorFeelsLike)" unit={`°${settings.tempUnit}`} strokeWidth={3} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
 
                     {/* Wind Speed */}
                     <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
@@ -156,7 +198,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                     <div className="h-32 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="compress" className="text-purple-400" />
-                            <span className="text-sm font-bold">{t('pressure')} (hPa)</span>
+                            <span className="text-sm font-bold">{t('pressure')} ({settings.pressureUnit})</span>
                         </div>
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }}>
@@ -164,7 +206,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                                 <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
                                 <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={40} domain={['dataMin - 5', 'dataMax + 5']} />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Area type="monotone" dataKey="pressure" stroke="#c084fc" fill="transparent" unit=" hPa" strokeWidth={2} />
+                                <Area type="monotone" dataKey="pressure" stroke="#c084fc" fill="transparent" unit={` ${settings.pressureUnit}`} strokeWidth={2} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
