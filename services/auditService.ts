@@ -24,9 +24,13 @@ const getIpAddress = async (): Promise<string | undefined> => {
 };
 
 export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 'session_start') => {
-    if (!db) return;
+    if (!db) {
+        console.error("Audit Log Failed: Database not initialized");
+        return;
+    }
 
     try {
+        console.log(`Attempting to log auth event: ${action} for user ${userId}`);
         const ip = await getIpAddress();
         
         const logEntry: AuditLog = {
@@ -42,6 +46,7 @@ export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 
         // Save to a subcollection 'audit_logs' under the user
         // This keeps data organized per user and protected by user rules
         await addDoc(collection(db, 'users', userId, 'audit_logs'), logEntry);
+        console.log("Audit log entry created successfully");
         
     } catch (error) {
         console.error("Error logging auth event:", error);
