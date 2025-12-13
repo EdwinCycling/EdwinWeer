@@ -111,7 +111,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
           const activityScores = activities.map(act => ({
               type: act,
-              ...calculateActivityScore(activityData, act)
+              ...calculateActivityScore(activityData, act, settings.language)
           }));
 
           let color = 'from-yellow-400 to-amber-400';

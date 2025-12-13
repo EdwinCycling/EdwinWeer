@@ -17,6 +17,7 @@ import { CountryMapView } from './views/CountryMapView';
 import { LoginView } from './views/LoginView';
 import { UserAccountView } from './views/UserAccountView';
 import { ViewState, AppSettings } from './types';
+import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
@@ -226,9 +227,10 @@ const App: React.FC = () => {
                          </div>
                     )}
                     
-                    <div className="flex justify-center gap-8 text-xs font-medium text-slate-500 dark:text-white/40">
+                    <div className="relative flex justify-center gap-8 text-xs font-medium text-slate-500 dark:text-white/40">
                          <button onClick={() => setModal('disclaimer')} className="hover:text-primary transition-colors hover:underline">Disclaimer</button>
                          <button onClick={() => setModal('cookies')} className="hover:text-primary transition-colors hover:underline">Cookies</button>
+                         <span className="absolute right-0 top-0">v{pkg.version}</span>
                     </div>
                 </div>
             </div>

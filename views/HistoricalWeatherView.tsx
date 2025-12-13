@@ -63,6 +63,9 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
     codeText2: '',
   });
 
+  const [context1, setContext1] = useState<any>(null);
+  const [context2, setContext2] = useState<any>(null);
+
   const t = (key: string) => getTranslation(key, settings.language);
 
   useEffect(() => {
@@ -215,8 +218,24 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
     try {
         const d1 = getDateString(date1);
         const d2 = getDateString(date2);
-        const data1 = await fetchHistorical(location1.lat, location1.lon, d1, d1);
-        const data2 = await fetchHistorical(location2.lat, location2.lon, d2, d2);
+        
+        // Fetch main comparison data
+        const p1 = fetchHistorical(location1.lat, location1.lon, d1, d1);
+        const p2 = fetchHistorical(location2.lat, location2.lon, d2, d2);
+        
+        // Fetch context data (7 days before + 1 day after for trends)
+        const c1Start = new Date(date1); c1Start.setDate(c1Start.getDate() - 6);
+        const c1End = new Date(date1); c1End.setDate(c1End.getDate() + 1);
+        const c2Start = new Date(date2); c2Start.setDate(c2Start.getDate() - 6);
+        const c2End = new Date(date2); c2End.setDate(c2End.getDate() + 1);
+        
+        const cp1 = fetchHistorical(location1.lat, location1.lon, getDateString(c1Start), getDateString(c1End));
+        const cp2 = fetchHistorical(location2.lat, location2.lon, getDateString(c2Start), getDateString(c2End));
+
+        const [data1, data2, ctx1, ctx2] = await Promise.all([p1, p2, cp1, cp2]);
+        
+        setContext1(ctx1);
+        setContext2(ctx2);
 
         const currentHour = new Date().getHours();
         const today = new Date();
@@ -398,20 +417,639 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
     return found;
   };
 
-  return (
+  const getDaysAgoText = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - d.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return settings.language === 'nl' ? 'Vandaag' : 'Today';
+    if (diffDays === 1) return settings.language === 'nl' ? 'Gisteren' : 'Yesterday';
+    if (diffDays < 0) {
+         const absDays = Math.abs(diffDays);
+         if (absDays === 1) return settings.language === 'nl' ? 'Morgen' : 'Tomorrow';
+         return settings.language === 'nl' ? `Over ${absDays} dagen` : `In ${absDays} days`;
+    }
+    return settings.language === 'nl' ? `${diffDays} dagen geleden` : `${diffDays} days ago`;
+   };
+
+   const allTemps = data.flatMap(d => [d.temp1, d.temp2].filter(v => v !== undefined && v !== null));
+   let yTicks: number[] | undefined = undefined;
+   let yDomain: [number, number] | ['auto', 'auto'] = ['auto', 'auto'];
+    
+   if (allTemps.length > 0) {
+        const minT = Math.floor(Math.min(...allTemps));
+        const maxT = Math.ceil(Math.max(...allTemps));
+        if (maxT - minT <= 15) { 
+             const start = minT - 1;
+             const end = maxT + 1;
+             yTicks = Array.from({length: end - start + 1}, (_, i) => start + i);
+             yDomain = [start, end];
+        }
+   }
+ 
+   const getInsights = () => {
+        const insights: { icon: string; title: string; desc: string; color: string }[] = [];
+        const isNL = settings.language === 'nl';
+        
+        // Use system locale for date formatting
+        const formatSystemDate = (d: Date) => {
+            return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+        };
+        
+        const d1Name = formatSystemDate(date1);
+        const d2Name = formatSystemDate(date2);
+
+        // 1. Temperature Feeling
+        const diffTemp = detail.tempMax1 - detail.tempMax2;
+        if (Math.abs(diffTemp) >= 2) {
+            insights.push({
+                icon: 'device_thermostat',
+                title: isNL ? 'Temperatuurverschil' : 'Temp Difference',
+                desc: isNL 
+                    ? `${Math.abs(diffTemp).toFixed(1)}°C ${diffTemp > 0 ? 'warmer' : 'kouder'} op ${d1Name} vergeleken met ${d2Name}.`
+                    : `${Math.abs(diffTemp).toFixed(1)}°C ${diffTemp > 0 ? 'warmer' : 'colder'} on ${d1Name} compared to ${d2Name}.`,
+                color: diffTemp > 0 ? 'text-orange-500' : 'text-blue-500'
+            });
+        } else {
+             insights.push({
+                icon: 'device_thermostat',
+                title: isNL ? 'Temperatuur' : 'Temperature',
+                desc: isNL ? 'De temperatuur is nagenoeg gelijk op beide dagen.' : 'Temperatures are very similar on both days.',
+                color: 'text-slate-500'
+            });
+        }
+
+        // 2. Rain / Umbrella
+        const rainDiff = detail.rainSum1 - detail.rainSum2;
+        if (detail.rainSum1 > 1 || detail.rainSum2 > 1) {
+             if (detail.rainSum1 > detail.rainSum2 + 2) {
+                 insights.push({
+                     icon: 'umbrella',
+                     title: isNL ? 'Neerslag' : 'Precipitation',
+                     desc: isNL ? `Veel natter op ${d1Name} (${detail.rainSum1}mm) dan op ${d2Name}.` : `Much wetter on ${d1Name}.`,
+                     color: 'text-blue-600'
+                 });
+             } else if (detail.rainSum2 > detail.rainSum1 + 2) {
+                 insights.push({
+                     icon: 'umbrella',
+                     title: isNL ? 'Neerslag' : 'Precipitation',
+                     desc: isNL ? `Droger op ${d1Name}! ${d2Name} had ${detail.rainSum2}mm regen.` : `Drier on ${d1Name}.`,
+                     color: 'text-green-600'
+                 });
+             } else {
+                 insights.push({
+                     icon: 'rainy',
+                     title: isNL ? 'Neerslag' : 'Precipitation',
+                     desc: isNL ? 'Beide dagen regenachtig.' : 'Both days rainy.',
+                     color: 'text-blue-400'
+                 });
+             }
+        } else {
+            insights.push({
+                icon: 'check_circle',
+                title: isNL ? 'Droog' : 'Dry',
+                desc: isNL ? 'Op beide dagen geen noemenswaardige neerslag.' : 'No significant rain on either day.',
+                color: 'text-green-500'
+            });
+        }
+
+        // 3. Sunshine / Solar
+        const sunDiffHours = (detail.sunTotal1 - detail.sunTotal2) / 3600;
+        if (Math.abs(sunDiffHours) > 1) {
+            insights.push({
+                icon: 'wb_sunny',
+                title: isNL ? 'Zonneschijn' : 'Sunshine',
+                desc: isNL 
+                    ? `${Math.abs(sunDiffHours).toFixed(1)} uur ${sunDiffHours > 0 ? 'meer' : 'minder'} zon op ${d1Name}.`
+                    : `${Math.abs(sunDiffHours).toFixed(1)} hours ${sunDiffHours > 0 ? 'more' : 'less'} sun.`,
+                color: 'text-amber-500'
+            });
+        } else {
+             insights.push({
+                icon: 'wb_sunny',
+                title: isNL ? 'Zonneschijn' : 'Sunshine',
+                desc: isNL ? 'De hoeveelheid zon is vergelijkbaar.' : 'Sunshine duration is similar.',
+                color: 'text-amber-400'
+            });
+        }
+
+        // 4. Wind
+        const windDiff = detail.windMax1 - detail.windMax2;
+        if (Math.abs(windDiff) > 10) {
+             insights.push({
+                icon: 'air',
+                title: isNL ? 'Wind' : 'Wind',
+                desc: isNL 
+                    ? `Het waaide aanzienlijk ${windDiff > 0 ? 'harder' : 'minder hard'} op ${d1Name}.`
+                    : `Wind was significantly ${windDiff > 0 ? 'stronger' : 'weaker'} on ${d1Name}.`,
+                color: 'text-slate-600'
+            });
+        } else {
+            insights.push({
+                icon: 'air',
+                title: isNL ? 'Wind' : 'Wind',
+                desc: isNL ? 'Vergelijkbare windkracht op beide dagen.' : 'Similar wind speeds.',
+                color: 'text-slate-400'
+            });
+        }
+
+        // 5. Clothing Advice
+        let clothing1 = '';
+        if (detail.tempMax1 < 10) clothing1 = isNL ? 'Winterjas' : 'Winter Coat';
+        else if (detail.tempMax1 < 16) clothing1 = isNL ? 'Jas/Trui' : 'Jacket/Sweater';
+        else if (detail.tempMax1 < 22) clothing1 = isNL ? 'T-shirt & Vest' : 'Light layers';
+        else clothing1 = isNL ? 'Korte broek' : 'Shorts';
+
+        let clothing2 = '';
+        if (detail.tempMax2 < 10) clothing2 = isNL ? 'Winterjas' : 'Winter Coat';
+        else if (detail.tempMax2 < 16) clothing2 = isNL ? 'Jas/Trui' : 'Jacket/Sweater';
+        else if (detail.tempMax2 < 22) clothing2 = isNL ? 'T-shirt & Vest' : 'Light layers';
+        else clothing2 = isNL ? 'Korte broek' : 'Shorts';
+
+        insights.push({
+            icon: 'checkroom',
+            title: isNL ? 'Kledingadvies' : 'Clothing',
+            desc: isNL ? `${d1Name}: ${clothing1}. ${d2Name}: ${clothing2}.` : `${d1Name}: ${clothing1}. ${d2Name}: ${clothing2}.`,
+            color: 'text-purple-500'
+        });
+
+        // 6. Cycling Score
+        const calcCycleScore = (w: number, r: number, t: number) => {
+            let s = 10;
+            s -= (w / 10);
+            s -= (r * 2);
+            if (t < 5) s -= 2;
+            if (t > 30) s -= 1;
+            return Math.max(1, Math.min(10, s));
+        };
+        const score1 = calcCycleScore(detail.windMax1, detail.rainSum1, detail.tempMax1);
+        const score2 = calcCycleScore(detail.windMax2, detail.rainSum2, detail.tempMax2);
+        
+        insights.push({
+            icon: 'directions_bike',
+            title: isNL ? 'Fietsweer' : 'Cycling',
+            desc: isNL 
+                ? `Fietsrapport: ${score1.toFixed(0)}/10 voor ${d1Name} vs ${score2.toFixed(0)}/10 voor ${d2Name}.`
+                : `Cycling Score: ${score1.toFixed(0)}/10 vs ${score2.toFixed(0)}/10.`,
+            color: score1 >= 7 ? 'text-green-600' : 'text-orange-600'
+        });
+
+        // 7. Solar Panels
+        const sunDiffPct = detail.sunTotal2 > 0 ? ((detail.sunTotal1 - detail.sunTotal2) / detail.sunTotal2) * 100 : 0;
+        if (Math.abs(sunDiffPct) > 20 && detail.sunTotal1 > 3600) {
+             insights.push({
+                icon: 'solar_power',
+                title: isNL ? 'Zonne-energie' : 'Solar Energy',
+                desc: isNL 
+                    ? `Zonnepanelen leverden ca. ${Math.abs(sunDiffPct).toFixed(0)}% ${sunDiffPct > 0 ? 'meer' : 'minder'} op tijdens ${d1Name}.`
+                    : `Solar yield was approx ${Math.abs(sunDiffPct).toFixed(0)}% ${sunDiffPct > 0 ? 'higher' : 'lower'} on ${d1Name}.`,
+                color: 'text-yellow-600'
+            });
+        } else {
+             insights.push({
+                icon: 'solar_power',
+                title: isNL ? 'Zonne-energie' : 'Solar Energy',
+                desc: isNL ? 'Vergelijkbare opbrengst voor zonnepanelen.' : 'Similar solar yield.',
+                color: 'text-yellow-600'
+            });
+        }
+
+        // 8. Temp Variation
+        const range1 = detail.tempMax1 - detail.tempMin1;
+        const range2 = detail.tempMax2 - detail.tempMin2;
+        if (Math.abs(range1 - range2) > 5) {
+            insights.push({
+                icon: 'timeline',
+                title: isNL ? 'Temp. Verloop' : 'Temp Variation',
+                desc: isNL 
+                    ? `${range1 > range2 ? d1Name : d2Name} had grotere temperatuurschommelingen (${Math.max(range1, range2).toFixed(1)}° verschil).`
+                    : `Larger temp swings on ${range1 > range2 ? d1Name : d2Name}.`,
+                color: 'text-indigo-500'
+            });
+        } else {
+             insights.push({
+                icon: 'timeline',
+                title: isNL ? 'Temp. Verloop' : 'Temp Variation',
+                desc: isNL ? 'Beide dagen hadden een stabiel temperatuurverloop.' : 'Both days had stable temperature ranges.',
+                color: 'text-indigo-400'
+            });
+        }
+
+        // 9. Frost or Tropical
+        let extremeMsg = '';
+        if (detail.tempMin1 < 0) extremeMsg = isNL ? `Vorst op ${d1Name}!` : `Frost on ${d1Name}!`;
+        if (detail.tempMax1 > 30) extremeMsg = isNL ? `Tropisch warm op ${d1Name}!` : `Tropical heat on ${d1Name}!`;
+        
+        if (extremeMsg) {
+             insights.push({
+                icon: 'ac_unit',
+                title: isNL ? 'Extremen' : 'Extremes',
+                desc: extremeMsg,
+                color: 'text-red-500'
+            });
+        } else {
+             insights.push({
+                icon: 'thermostat',
+                title: isNL ? 'Geen Extremen' : 'No Extremes',
+                desc: isNL ? 'Geen vorst of tropische hitte op deze dagen.' : 'No frost or tropical heat.',
+                color: 'text-slate-500'
+            });
+        }
+
+        // 10. The Verdict (Winner)
+        const scoreDay = (sun: number, t: number, r: number, w: number) => {
+            return (sun/3600) + (t/3) - (r*1.5) - (w/10);
+        };
+        const s1 = scoreDay(detail.sunTotal1, detail.tempMax1, detail.rainSum1, detail.windMax1);
+        const s2 = scoreDay(detail.sunTotal2, detail.tempMax2, detail.rainSum2, detail.windMax2);
+        
+        insights.push({
+            icon: 'emoji_events',
+            title: isNL ? 'De Winnaar' : 'The Winner',
+            desc: isNL 
+                ? `Alles meegerekend was ${s1 > s2 ? d1Name : d2Name} de aangenamere dag.`
+                : `Overall, ${s1 > s2 ? d1Name : d2Name} was the more pleasant day.`,
+            color: 'text-amber-500'
+        });
+
+        // --- NEW SEQUENTIAL INSIGHTS (11-20) ---
+        if (context1?.daily && context2?.daily) {
+             // 11. Rain Streak (Regenreeks)
+             // Check last 3 days before date1
+             // context1.daily.time has list of dates. Find index of date1.
+             // Usually date1 is index 6 (since we fetch date-6 to date+1, 8 days, date1 is 2nd to last)
+             // Let's rely on array indices assuming api returns sorted.
+             
+             const getPrecip = (ctx: any, idx: number) => ctx?.daily?.precipitation_sum?.[idx] || 0;
+             const getTMax = (ctx: any, idx: number) => convertTemp(ctx?.daily?.temperature_2m_max?.[idx] || 0, settings.tempUnit);
+             const getSun = (ctx: any, idx: number) => (ctx?.daily?.sunshine_duration?.[idx] || 0) / 3600;
+
+             // Index 6 is the target date (date1/date2). 0-5 are previous days. 7 is next day.
+             // Verify dates? Assuming API is consistent.
+             const targetIdx = 6; 
+             
+             // Insight 11: Rain Streak
+             const rainStreak1 = getPrecip(context1, targetIdx-1) > 0.5 && getPrecip(context1, targetIdx-2) > 0.5 && getPrecip(context1, targetIdx-3) > 0.5;
+             const rainStreak2 = getPrecip(context2, targetIdx-1) > 0.5 && getPrecip(context2, targetIdx-2) > 0.5 && getPrecip(context2, targetIdx-3) > 0.5;
+             
+             if (rainStreak1) {
+                  insights.push({
+                      icon: 'water_drop',
+                      title: isNL ? 'Regenreeks' : 'Rain Streak',
+                      desc: isNL ? `${d1Name} viel midden in een regenachtige periode.` : `${d1Name} was part of a rainy streak.`,
+                      color: 'text-blue-500'
+                  });
+             } else if (rainStreak2) {
+                  insights.push({
+                      icon: 'water_drop',
+                      title: isNL ? 'Regenreeks' : 'Rain Streak',
+                      desc: isNL ? `${d2Name} viel midden in een regenachtige periode.` : `${d2Name} was part of a rainy streak.`,
+                      color: 'text-blue-500'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'water_drop',
+                      title: isNL ? 'Regen' : 'Rain',
+                      desc: isNL ? `Geen langdurige regenreeksen rond ${d1Name} of ${d2Name}.` : `No long rain streaks around ${d1Name} or ${d2Name}.`,
+                      color: 'text-blue-300'
+                  });
+             }
+
+             // 12. Heat Trend (Warmte Trend)
+             // Check if temp rising last 3 days
+             const rising1 = getTMax(context1, targetIdx) > getTMax(context1, targetIdx-1) && getTMax(context1, targetIdx-1) > getTMax(context1, targetIdx-2);
+             const rising2 = getTMax(context2, targetIdx) > getTMax(context2, targetIdx-1) && getTMax(context2, targetIdx-1) > getTMax(context2, targetIdx-2);
+             
+             if (rising1) {
+                 insights.push({
+                      icon: 'trending_up',
+                      title: isNL ? 'Opwarming' : 'Warming Up',
+                      desc: isNL ? `De temperatuur zat in een stijgende lijn richting ${d1Name}.` : `Temperatures were rising leading up to ${d1Name}.`,
+                      color: 'text-red-500'
+                  });
+             } else if (rising2) {
+                 insights.push({
+                      icon: 'trending_up',
+                      title: isNL ? 'Opwarming' : 'Warming Up',
+                      desc: isNL ? `De temperatuur zat in een stijgende lijn richting ${d2Name}.` : `Temperatures were rising leading up to ${d2Name}.`,
+                      color: 'text-red-500'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'trending_flat',
+                      title: isNL ? 'Temp Trend' : 'Temp Trend',
+                      desc: isNL ? `Wisselvallig of stabiel verloop voorafgaand aan ${d1Name} en ${d2Name}.` : `Variable or stable trends leading up to ${d1Name} and ${d2Name}.`,
+                      color: 'text-slate-400'
+                  });
+             }
+
+             // 13. Weekly Peak (Week Piek)
+             // Check if target date is max of the window (0-6)
+             const max1 = Math.max(...[0,1,2,3,4,5,6].map(i => getTMax(context1, i)));
+             const isPeak1 = getTMax(context1, targetIdx) >= max1;
+             
+             if (isPeak1) {
+                 insights.push({
+                      icon: 'flag',
+                      title: isNL ? 'Week Piek' : 'Weekly Peak',
+                      desc: isNL ? `${d1Name} was de warmste dag van de week!` : `${d1Name} was the warmest day of the week!`,
+                      color: 'text-orange-600'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'calendar_today',
+                      title: isNL ? 'Week Context' : 'Week Context',
+                      desc: isNL ? `${d1Name} was niet de warmste dag van die week.` : `${d1Name} was not the warmest day of that week.`,
+                      color: 'text-slate-500'
+                  });
+             }
+
+             // 14. Weekend
+             const isWeekend1 = date1.getDay() === 0 || date1.getDay() === 6;
+             const isWeekend2 = date2.getDay() === 0 || date2.getDay() === 6;
+             
+             insights.push({
+                  icon: 'event',
+                  title: isNL ? 'Weekend' : 'Weekend',
+                  desc: isNL 
+                    ? `${d1Name} was een ${isWeekend1 ? 'weekenddag' : 'doordeweekse dag'}.` 
+                    : `${d1Name} was a ${isWeekend1 ? 'weekend day' : 'weekday'}.`,
+                  color: isWeekend1 ? 'text-purple-500' : 'text-slate-500'
+             });
+
+             // 15. Cold Snap (Koudegolf)
+             // 3 days < 0 min temp
+             const getTMin = (ctx: any, idx: number) => convertTemp(ctx?.daily?.temperature_2m_min?.[idx] || 0, settings.tempUnit);
+             const cold1 = getTMin(context1, targetIdx) < 0 && getTMin(context1, targetIdx-1) < 0 && getTMin(context1, targetIdx-2) < 0;
+             
+             if (cold1) {
+                  insights.push({
+                      icon: 'snowflake',
+                      title: isNL ? 'Koudegolf' : 'Cold Snap',
+                      desc: isNL ? `${d1Name} was onderdeel van een koude periode.` : `${d1Name} was part of a cold snap.`,
+                      color: 'text-cyan-500'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'wb_sunny', // reusing sunny as opposite of cold snap generic
+                      title: isNL ? 'Geen Koudegolf' : 'No Cold Snap',
+                      desc: isNL ? 'Geen aanhoudende vorst rondom deze data.' : 'No persistent frost around these dates.',
+                      color: 'text-slate-400'
+                  });
+             }
+
+             // 16. Sun Streak
+             const sunny1 = getSun(context1, targetIdx) > 5 && getSun(context1, targetIdx-1) > 5 && getSun(context1, targetIdx-2) > 5;
+             if (sunny1) {
+                 insights.push({
+                      icon: 'light_mode',
+                      title: isNL ? 'Zonnige Reeks' : 'Sun Streak',
+                      desc: isNL ? `Een reeks zonnige dagen rond ${d1Name}.` : `A streak of sunny days around ${d1Name}.`,
+                      color: 'text-yellow-500'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'cloud',
+                      title: isNL ? 'Zon Afwisseling' : 'Mixed Sun',
+                      desc: isNL ? `Afwisselend zon en bewolking rond ${d1Name}.` : `Mixed sun and clouds around ${d1Name}.`,
+                      color: 'text-slate-400'
+                  });
+             }
+
+             // 17. Stability
+             // check variance of max temp
+             const temps1 = [0,1,2,3,4,5,6].map(i => getTMax(context1, i));
+             const variance1 = Math.max(...temps1) - Math.min(...temps1);
+             if (variance1 < 3) {
+                  insights.push({
+                      icon: 'horizontal_rule',
+                      title: isNL ? 'Stabiel Weer' : 'Stable Weather',
+                      desc: isNL ? `Zeer stabiele temperaturen in de week van ${d1Name}.` : `Very stable temperatures in the week of ${d1Name}.`,
+                      color: 'text-green-500'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'waves',
+                      title: isNL ? 'Wisselvallig' : 'Changeable',
+                      desc: isNL ? `Temperaturen schommelden flink rond ${d1Name}.` : `Temperatures fluctuated significantly around ${d1Name}.`,
+                      color: 'text-slate-500'
+                  });
+             }
+
+             // 18. Relative Comfort
+             // Compare target to average of previous 5 days
+             const avgPrev1 = [1,2,3,4,5].reduce((a, i) => a + getTMax(context1, targetIdx-i), 0) / 5;
+             const diffAvg1 = getTMax(context1, targetIdx) - avgPrev1;
+             
+             if (diffAvg1 > 3) {
+                  insights.push({
+                      icon: 'sentiment_satisfied',
+                      title: isNL ? 'Uitschieter' : 'Outlier',
+                      desc: isNL ? `${d1Name} was opvallend warmer dan de dagen ervoor.` : `${d1Name} was notably warmer than preceding days.`,
+                      color: 'text-orange-500'
+                  });
+             } else if (diffAvg1 < -3) {
+                 insights.push({
+                      icon: 'sentiment_dissatisfied',
+                      title: isNL ? 'Dipje' : 'Dip',
+                      desc: isNL ? `${d1Name} was een stuk koeler dan de dagen ervoor.` : `${d1Name} was much cooler than preceding days.`,
+                      color: 'text-blue-500'
+                  });
+             } else {
+                 insights.push({
+                      icon: 'sentiment_neutral',
+                      title: isNL ? 'Normaal' : 'Normal',
+                      desc: isNL ? `${d1Name} week qua temperatuur niet veel af.` : `${d1Name} was typical for the week.`,
+                      color: 'text-slate-400'
+                  });
+             }
+
+             // 19. Outdoor Activity
+             // Good if rain < 1, wind < 20, temp > 15 && temp < 25
+             const isGood1 = getPrecip(context1, targetIdx) < 1 && getTMax(context1, targetIdx) > 15 && getTMax(context1, targetIdx) < 25;
+             insights.push({
+                 icon: isGood1 ? 'park' : 'home',
+                 title: isNL ? 'Buitenactiviteit' : 'Outdoor Activity',
+                 desc: isNL 
+                    ? (isGood1 ? `Perfect weer om naar buiten te gaan op ${d1Name}.` : `Misschien beter binnen blijven op ${d1Name}.`)
+                    : (isGood1 ? `Great weather for outdoors on ${d1Name}.` : `Maybe stay inside on ${d1Name}.`),
+                 color: isGood1 ? 'text-green-600' : 'text-slate-500'
+             });
+
+             // 20. Pressure / Stability Guess
+             // Since we don't have pressure, use "Change"
+             // If temp drops > 5 degrees in 1 day (tomorrow vs today) -> Cold Front
+             const drop1 = getTMax(context1, targetIdx) - getTMax(context1, targetIdx+1); // Today - Tomorrow
+             if (drop1 > 5) {
+                 insights.push({
+                     icon: 'arrow_downward',
+                     title: isNL ? 'Koufront' : 'Cold Front',
+                     desc: isNL ? `Na ${d1Name} kelderde de temperatuur flink!` : `Temps plummeted after ${d1Name}!`,
+                     color: 'text-blue-600'
+                 });
+             } else {
+                 insights.push({
+                     icon: 'arrow_forward',
+                     title: isNL ? 'Vooruitzicht' : 'Outlook',
+                     desc: isNL ? `Geen grote temperatuurval direct na ${d1Name}.` : `No major temp drop immediately after ${d1Name}.`,
+                     color: 'text-slate-400'
+                 });
+             }
+
+             // 21. Weekly Average Temp
+             // Compare avg max temp of the whole 7-day context
+             const avgMax1 = [0,1,2,3,4,5,6].reduce((a, i) => a + getTMax(context1, i), 0) / 7;
+             const avgMax2 = [0,1,2,3,4,5,6].reduce((a, i) => a + getTMax(context2, i), 0) / 7;
+             const diffAvgWeek = avgMax1 - avgMax2;
+             
+             if (Math.abs(diffAvgWeek) > 2) {
+                 insights.push({
+                      icon: 'date_range',
+                      title: isNL ? 'Weekgemiddelde' : 'Weekly Average',
+                      desc: isNL 
+                        ? `De week rond ${d1Name} was gemiddeld ${Math.abs(diffAvgWeek).toFixed(1)}°C ${diffAvgWeek > 0 ? 'warmer' : 'kouder'} dan de week rond ${d2Name}.`
+                        : `The week around ${d1Name} was on average ${Math.abs(diffAvgWeek).toFixed(1)}°C ${diffAvgWeek > 0 ? 'warmer' : 'colder'} than the week around ${d2Name}.`,
+                      color: diffAvgWeek > 0 ? 'text-orange-500' : 'text-blue-500'
+                  });
+             }
+
+             // 22. Weekly Rain Total
+             const sumRain1 = [0,1,2,3,4,5,6].reduce((a, i) => a + getPrecip(context1, i), 0);
+             const sumRain2 = [0,1,2,3,4,5,6].reduce((a, i) => a + getPrecip(context2, i), 0);
+             
+             if (sumRain1 > 10 && sumRain1 > sumRain2 + 5) {
+                 insights.push({
+                      icon: 'umbrella',
+                      title: isNL ? 'Natte Week' : 'Wet Week',
+                      desc: isNL ? `Een regenachtige week rond ${d1Name} (${sumRain1.toFixed(1)}mm totaal).` : `A rainy week around ${d1Name} (${sumRain1.toFixed(1)}mm total).`,
+                      color: 'text-blue-600'
+                  });
+             } else if (sumRain1 < 2 && sumRain2 > 10) {
+                 insights.push({
+                      icon: 'check_circle',
+                      title: isNL ? 'Droge Week' : 'Dry Week',
+                      desc: isNL ? `Opvallend droge week rond ${d1Name} vergeleken met ${d2Name}.` : `Notably dry week around ${d1Name} compared to ${d2Name}.`,
+                      color: 'text-green-600'
+                  });
+             }
+
+             // 23. Dry Spell (Droogte) - 5+ days < 0.1
+             const isDrySpell1 = [2,3,4,5,6].every(i => getPrecip(context1, i) < 0.1);
+             if (isDrySpell1) {
+                 insights.push({
+                      icon: 'grass',
+                      title: isNL ? 'Droge Periode' : 'Dry Spell',
+                      desc: isNL ? `Al minstens 5 dagen droog rond ${d1Name}.` : `At least 5 dry days leading up to ${d1Name}.`,
+                      color: 'text-amber-600'
+                  });
+             }
+
+             // 24. Windy Spell - 3+ days wind > 25
+             const getWindMax = (ctx: any, idx: number) => convertWind(ctx?.daily?.wind_speed_10m_max?.[idx] || 0, settings.windUnit);
+             const windy1 = getWindMax(context1, targetIdx) > 25 && getWindMax(context1, targetIdx-1) > 25 && getWindMax(context1, targetIdx-2) > 25;
+             if (windy1) {
+                 insights.push({
+                      icon: 'air',
+                      title: isNL ? 'Onstuimig' : 'Windy Spell',
+                      desc: isNL ? `Een winderige periode rond ${d1Name}.` : `A windy period around ${d1Name}.`,
+                      color: 'text-slate-600'
+                  });
+             }
+
+             // 25. Heating Advice
+             if (avgMax1 < 12) {
+                 insights.push({
+                      icon: 'hvac',
+                      title: isNL ? 'Verwarming' : 'Heating',
+                      desc: isNL ? `De verwarming moest waarschijnlijk aan in de week van ${d1Name}.` : `Heating was likely needed in the week of ${d1Name}.`,
+                      color: 'text-orange-700'
+                  });
+             }
+
+             // 26. Garden / Watering
+             if (isDrySpell1 && avgMax1 > 20) {
+                  insights.push({
+                      icon: 'water_drop',
+                      title: isNL ? 'Tuin Sproeien' : 'Water Garden',
+                      desc: isNL ? `Planten hadden water nodig rond ${d1Name}.` : `Plants likely needed water around ${d1Name}.`,
+                      color: 'text-blue-500'
+                  });
+             }
+
+             // 27. Night Cold Trend (Min Temp Decreasing)
+             const minFalling1 = getTMin(context1, targetIdx) < getTMin(context1, targetIdx-1) && getTMin(context1, targetIdx-1) < getTMin(context1, targetIdx-2);
+             if (minFalling1) {
+                 insights.push({
+                      icon: 'bedtime',
+                      title: isNL ? 'Koudere Nachten' : 'Colder Nights',
+                      desc: isNL ? `De nachten werden steeds kouder richting ${d1Name}.` : `Nights were getting colder leading to ${d1Name}.`,
+                      color: 'text-indigo-500'
+                  });
+             }
+
+             // 28. Sun Consistency
+             const sunnyDays1 = [0,1,2,3,4,5,6].filter(i => getSun(context1, i) > 5).length;
+             if (sunnyDays1 >= 4) {
+                 insights.push({
+                      icon: 'wb_sunny',
+                      title: isNL ? 'Zonnige Week' : 'Sunny Week',
+                      desc: isNL ? `Veel zonneschijn in de week van ${d1Name}.` : `Lots of sunshine in the week of ${d1Name}.`,
+                      color: 'text-yellow-500'
+                  });
+             }
+
+             // 29. Weather Monotony (Same Weather Code)
+             const codes1 = [3,4,5,6].map(i => context1?.daily?.weather_code?.[i]);
+             const uniqueCodes = new Set(codes1);
+             if (uniqueCodes.size === 1 && codes1[0] !== undefined) {
+                  insights.push({
+                      icon: 'repeat',
+                      title: isNL ? 'Stabiel Weerbeeld' : 'Consistent Weather',
+                      desc: isNL ? `Dagenlang hetzelfde weertype rond ${d1Name}.` : `Days of identical weather type around ${d1Name}.`,
+                      color: 'text-slate-500'
+                  });
+             }
+
+             // 30. Volatile Temp (High Day-to-Day Fluctuation)
+             // Sum of absolute differences between consecutive days
+             let volatility1 = 0;
+             for(let i=1; i<=6; i++) {
+                 volatility1 += Math.abs(getTMax(context1, i) - getTMax(context1, i-1));
+             }
+             if (volatility1 > 15) { // Avg > 2.5 deg change per day
+                  insights.push({
+                      icon: 'show_chart',
+                      title: isNL ? 'Grillig Verloop' : 'Volatile Temps',
+                      desc: isNL ? `Sterk wisselende temperaturen in de week van ${d1Name}.` : `Highly fluctuating temperatures in the week of ${d1Name}.`,
+                      color: 'text-red-400'
+                  });
+             }
+        }
+
+        return insights;
+   };
+
+   const insightsList = getInsights();
+
+   return (
     <div className="flex flex-col min-h-screen pb-24 bg-slate-50 dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
       <div className="flex items-center justify-between p-4 pt-8">
         <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
             <Icon name="arrow_back_ios_new" />
         </button>
-        <h1 className="text-lg font-bold">{t('compare')}</h1>
+        <h1 className="text-lg font-bold line-clamp-1 text-center px-2">
+            {settings.language === 'nl' ? 'Vergelijken weerdata tussen twee datums' : t('compare')}
+        </h1>
         <div className="size-10" />
       </div>
 
       <div className="flex flex-col md:grid md:grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-2">
         {/* Date 1 Card */}
         <div 
-            className="w-full relative rounded-xl p-3 flex flex-col gap-1 border transition-colors cursor-pointer" 
+            className="w-full relative rounded-xl p-3 flex flex-col gap-1 border transition-colors cursor-pointer group" 
             style={{ 
                 backgroundColor: 'rgba(128,128,128,0.05)', 
                 borderColor: 'rgba(128,128,128,0.3)' 
@@ -420,15 +1058,28 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
             role="button"
         >
             <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase" style={{ color: date1Color }}>{t('date_1')}</span>
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setDashboardOpen({date: date1, location: location1}); }}
-                    className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
-                    style={{ color: date1Color }}
-                    title="Dashboard"
-                >
-                    <Icon name="analytics" className="text-sm" />
-                </button>
+                <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase" style={{ color: date1Color }}>{t('date_1')}</span>
+                    <span className="text-[10px] opacity-70" style={{ color: date1Color }}>{getDaysAgoText(date1)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setPickerOpen('date1'); }}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: date1Color }}
+                        title="Wijzigen"
+                    >
+                        <Icon name="edit" className="text-sm" />
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setDashboardOpen({date: date1, location: location1}); }}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: date1Color }}
+                        title="Dashboard"
+                    >
+                        <Icon name="analytics" className="text-sm" />
+                    </button>
+                </div>
             </div>
             <div className="flex items-center justify-between">
                 <button 
@@ -465,7 +1116,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
 
         {/* Date 2 Card */}
         <div 
-            className="w-full relative rounded-xl p-3 flex flex-col gap-1 border transition-colors cursor-pointer" 
+            className="w-full relative rounded-xl p-3 flex flex-col gap-1 border transition-colors cursor-pointer group" 
             style={{ 
                 backgroundColor: date2Color + '10', 
                 borderColor: date2Color + '50' 
@@ -474,15 +1125,28 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
             role="button"
         >
             <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase" style={{ color: date2Color }}>{t('date_2')}</span>
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setDashboardOpen({date: date2, location: location2}); }}
-                    className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
-                    style={{ color: date2Color }}
-                    title="Dashboard"
-                >
-                    <Icon name="analytics" className="text-sm" />
-                </button>
+                <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase" style={{ color: date2Color }}>{t('date_2')}</span>
+                    <span className="text-[10px] opacity-70" style={{ color: date2Color }}>{getDaysAgoText(date2)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setPickerOpen('date2'); }}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: date2Color }}
+                        title="Wijzigen"
+                    >
+                        <Icon name="edit" className="text-sm" />
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setDashboardOpen({date: date2, location: location2}); }}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: date2Color }}
+                        title="Dashboard"
+                    >
+                        <Icon name="analytics" className="text-sm" />
+                    </button>
+                </div>
             </div>
             <div className="flex items-center justify-between">
                 <button 
@@ -687,7 +1351,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
                             <ComposedChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                                 <CartesianGrid vertical={false} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis dataKey="hour" tick={{fill: '#888', fontSize: 10}} tickLine={false} axisLine={false} interval={3} />
-                                <YAxis tick={{fill: '#888', fontSize: 10}} tickLine={false} axisLine={false} />
+                                <YAxis tick={{fill: '#888', fontSize: 10}} tickLine={false} axisLine={false} ticks={yTicks} domain={yDomain} interval={0} />
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: settings.theme === 'dark' ? '#1d2b32' : '#ffffff', border: '1px solid rgba(128,128,128,0.1)', borderRadius: '8px', color: settings.theme === 'dark' ? '#fff' : '#000' }}
                                     itemStyle={{ fontSize: '12px' }}
@@ -726,18 +1390,24 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
                   <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
                     <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('weather')}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="material-symbols-outlined" style={{ color: date1Color }}>{mapWmoCodeToIcon(detail.code1)}</span>
-                          <span>{detail.codeText1}</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
+                            <div className="flex items-center gap-2 text-sm">
+                            <span className="material-symbols-outlined" style={{ color: date1Color }}>{mapWmoCodeToIcon(detail.code1)}</span>
+                            <span>{detail.codeText1}</span>
+                            </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="material-symbols-outlined" style={{ color: date2Color }}>{mapWmoCodeToIcon(detail.code2)}</span>
-                          <span>{detail.codeText2}</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
+                            <div className="flex items-center gap-2 text-sm">
+                            <span className="material-symbols-outlined" style={{ color: date2Color }}>{mapWmoCodeToIcon(detail.code2)}</span>
+                            <span>{detail.codeText2}</span>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -746,20 +1416,26 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
                     <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('temp')}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.avg')} <b>{detail.tempAvg1}°</b></div>
-                          <div>{t('historical.min')} <b>{detail.tempMin1}°</b></div>
-                          <div>{t('historical.max')} <b>{detail.tempMax1}°</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.avg')} <b>{detail.tempAvg1}°</b></div>
+                            <div>{t('historical.min')} <b>{detail.tempMin1}°</b></div>
+                            <div>{t('historical.max')} <b>{detail.tempMax1}°</b></div>
+                            </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.avg')} <b>{detail.tempAvg2}°</b></div>
-                          <div>{t('historical.min')} <b>{detail.tempMin2}°</b></div>
-                          <div>{t('historical.max')} <b>{detail.tempMax2}°</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.avg')} <b>{detail.tempAvg2}°</b></div>
+                            <div>{t('historical.min')} <b>{detail.tempMin2}°</b></div>
+                            <div>{t('historical.max')} <b>{detail.tempMax2}°</b></div>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -769,18 +1445,24 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
                     <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('wind')}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.max')} <b>{detail.windMax1} {settings.windUnit}</b></div>
-                          <div>{t('historical.dir')} <b>{getWindCardinal(detail.windDirAvg1)}</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.max')} <b>{detail.windMax1} {settings.windUnit}</b></div>
+                            <div>{t('historical.dir')} <b>{getWindCardinal(detail.windDirAvg1)}</b></div>
+                            </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.max')} <b>{detail.windMax2} {settings.windUnit}</b></div>
-                          <div>{t('historical.dir')} <b>{getWindCardinal(detail.windDirAvg2)}</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.max')} <b>{detail.windMax2} {settings.windUnit}</b></div>
+                            <div>{t('historical.dir')} <b>{getWindCardinal(detail.windDirAvg2)}</b></div>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -790,16 +1472,22 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
                     <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('rain')}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.total')} <b>{detail.rainSum1} {settings.precipUnit}</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.total')} <b>{detail.rainSum1} {settings.precipUnit}</b></div>
+                            </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.total')} <b>{detail.rainSum2} {settings.precipUnit}</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.total')} <b>{detail.rainSum2} {settings.precipUnit}</b></div>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -809,16 +1497,22 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
                     <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('sunshine')}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal1)}</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal1)}</b></div>
+                            </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                        <div className="text-sm">
-                          <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal2)}</b></div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
+                            <div className="text-sm">
+                            <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal2)}</b></div>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -828,18 +1522,20 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 px-4 mt-4">
-            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                <div className="size-12 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500 dark:text-blue-400">
-                    <Icon name="history" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 mt-4">
+            {insightsList.map((insight, idx) => (
+                <div key={idx} className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+                    <div className={`size-12 rounded-full flex items-center justify-center bg-slate-50 dark:bg-white/5 ${insight.color}`}>
+                        <Icon name={insight.icon} />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-xs uppercase font-bold text-slate-500 dark:text-white/60 mb-1">{insight.title}</p>
+                        <p className="text-sm leading-snug">
+                            {insight.desc}
+                        </p>
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <p className="text-sm text-slate-500 dark:text-white/60 mb-1">{t('insight')}</p>
-                    <p>
-                        {t('insight_desc')} <span className="font-bold">{Math.abs(stats.diff)}° {stats.diff >= 0 ? t('warmer') : t('colder')}</span> {t('than')} {getDateString(date2)}.
-                    </p>
-                </div>
-            </div>
+            ))}
       </div>
       
       {dashboardOpen && (

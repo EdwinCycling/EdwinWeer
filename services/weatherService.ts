@@ -266,7 +266,7 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   const useArchive = end < fiveDaysAgo;
   
   const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration';
-  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max';
+  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration';
 
   let url = '';
 
@@ -419,6 +419,8 @@ export const fetchEnsemble = async (lat: number, lon: number, model: EnsembleMod
         url += `&hourly=${vars}`;
     }
 
+    checkLimit();
+    trackCall();
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Ensemble fetch failed: ${response.status}`);
@@ -455,6 +457,8 @@ export const fetchSeasonal = async (lat: number, lon: number) => {
 
      const url = `${SEASONAL_URL}?${params.toString()}`;
      
+     checkLimit();
+     trackCall();
      const response = await fetch(url);
      if (!response.ok) {
          const errorText = await response.text();
@@ -486,6 +490,8 @@ export const fetchSeasonal = async (lat: number, lon: number) => {
         const endStr = pastEnd.toISOString().split('T')[0];
         
         const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startStr}&end_date=${endStr}&daily=${dailyVars}&timezone=auto`;
+        checkLimit();
+        trackCall();
         requests.push(fetch(url).then(r => r.json()));
     }
 

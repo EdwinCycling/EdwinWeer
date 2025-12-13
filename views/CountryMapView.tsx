@@ -47,175 +47,228 @@ interface WeatherStation {
     isGrid?: boolean;
 }
 
-// Generate grid points for better coverage
-const generateGridPoints = (centerLat: number, centerLon: number, zoom: number, bounds?: [number, number, number, number]): {lat: number, lon: number, name: string, isGrid: boolean}[] => {
-    const points: {lat: number, lon: number, name: string, isGrid: boolean}[] = [];
-    const step = Math.max(0.5, 8 / Math.pow(2, zoom - 4)); 
-    const rangeLat = 15 / Math.pow(1.5, zoom - 4);
-    const rangeLon = 25 / Math.pow(1.5, zoom - 4);
+// Color interpolation helper
+function interpolateColor(val: number, stops: {val: number, color: [number, number, number]}[]) {
+    // Sort stops just in case
+    // stops.sort((a, b) => a.val - b.val); // Assume sorted for performance
 
-    for (let lat = centerLat - rangeLat; lat <= centerLat + rangeLat; lat += step) {
-        for (let lon = centerLon - rangeLon; lon <= centerLon + rangeLon; lon += step) {
-            if (lat > -85 && lat < 85) {
+    if (val <= stops[0].val) return `rgb(${stops[0].color.join(',')})`;
+    if (val >= stops[stops.length - 1].val) return `rgb(${stops[stops.length - 1].color.join(',')})`;
+
+    for (let i = 0; i < stops.length - 1; i++) {
+        if (val >= stops[i].val && val <= stops[i+1].val) {
+            const t = (val - stops[i].val) / (stops[i+1].val - stops[i].val);
+            const r = Math.round(stops[i].color[0] + t * (stops[i+1].color[0] - stops[i].color[0]));
+            const g = Math.round(stops[i].color[1] + t * (stops[i+1].color[1] - stops[i].color[1]));
+            const b = Math.round(stops[i].color[2] + t * (stops[i+1].color[2] - stops[i].color[2]));
+            return `rgb(${r},${g},${b})`;
+        }
+    }
+    return 'rgb(128,128,128)';
+}
+
+// Temperature color scale (more detailed)
+const TEMP_STOPS: {val: number, color: [number, number, number]}[] = [
+    { val: -20, color: [48, 20, 100] },   // Deep Purple
+    { val: -10, color: [0, 0, 255] },     // Blue
+    { val: 0, color: [0, 191, 255] },     // Light Blue
+    { val: 5, color: [0, 255, 127] },     // Spring Green
+    { val: 10, color: [50, 205, 50] },    // Lime Green
+    { val: 15, color: [255, 255, 0] },    // Yellow
+    { val: 20, color: [255, 165, 0] },    // Orange
+    { val: 25, color: [255, 69, 0] },     // Red-Orange
+    { val: 30, color: [255, 0, 0] },      // Red
+    { val: 40, color: [139, 0, 0] }       // Dark Red
+];
+
+// Humidity color scale (Dry -> Wet)
+const HUMIDITY_STOPS: {val: number, color: [number, number, number]}[] = [
+    { val: 0, color: [255, 0, 0] },       // Red (Very Dry)
+    { val: 30, color: [255, 165, 0] },    // Orange
+    { val: 50, color: [50, 205, 50] },    // Green (Comfortable)
+    { val: 70, color: [0, 191, 255] },    // Blue (Humid)
+    { val: 90, color: [0, 0, 255] },      // Dark Blue
+    { val: 100, color: [0, 0, 139] }      // Very Dark Blue
+];
+
+// Dew Point color scale
+const DEW_STOPS: {val: number, color: [number, number, number]}[] = [
+    { val: 0, color: [0, 191, 255] },     // Comfortable
+    { val: 10, color: [50, 205, 50] },    // Pleasant
+    { val: 15, color: [255, 255, 0] },    // Humid
+    { val: 20, color: [255, 165, 0] },    // Muggy
+    { val: 25, color: [255, 0, 0] }       // Oppressive
+];
+
+// Beaufort Scale Colors
+const BFT_COLORS = [
+    { bft: 0, min: 0, color: '#FFFFFF' },      // Calm
+    { bft: 1, min: 1, color: '#AEF1F9' },      // Light Air
+    { bft: 2, min: 6, color: '#96F7DC' },      // Light Breeze
+    { bft: 3, min: 12, color: '#96F7B4' },     // Gentle Breeze
+    { bft: 4, min: 20, color: '#6FF46F' },     // Moderate Breeze
+    { bft: 5, min: 29, color: '#73ED12' },     // Fresh Breeze
+    { bft: 6, min: 39, color: '#A4ED12' },     // Strong Breeze
+    { bft: 7, min: 50, color: '#DAED12' },     // High Wind
+    { bft: 8, min: 62, color: '#EDC212' },     // Gale
+    { bft: 9, min: 75, color: '#ED8F12' },     // Strong Gale
+    { bft: 10, min: 89, color: '#ED6312' },    // Storm
+    { bft: 11, min: 103, color: '#ED2912' },   // Violent Storm
+    { bft: 12, min: 118, color: '#D5102D' }    // Hurricane
+];
+
+function getBftColor(speedKmH: number): string {
+    for (let i = BFT_COLORS.length - 1; i >= 0; i--) {
+        if (speedKmH >= BFT_COLORS[i].min) return BFT_COLORS[i].color;
+    }
+    return '#FFFFFF';
+}
+
+function getTempColor(temp: number) {
+    return interpolateColor(temp, TEMP_STOPS);
+}
+
+function getHumidityColor(hum: number) {
+    return interpolateColor(hum, HUMIDITY_STOPS);
+}
+
+function getDewPointColor(dew: number) {
+    return interpolateColor(dew, DEW_STOPS);
+}
+
+// Legend Component
+const MapLegend = ({ layer, isDark }: { layer: MapLayer, isDark: boolean }) => {
+    if (layer === 'wind' || layer === 'gusts') {
+        return (
+            <div className={`absolute bottom-24 right-2 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+                <div className="font-bold mb-1">Beaufort (km/u)</div>
+                <div className="grid grid-cols-2 gap-1 w-32">
+                    {BFT_COLORS.map(b => (
+                        <div key={b.bft} className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-sm border border-slate-300" style={{ backgroundColor: b.color }}></div>
+                            <span>{b.bft} ({b.min}+)</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    let stops: {val: number, color: [number, number, number]}[] = [];
+    let title = '';
+    let unit = '';
+
+    switch(layer) {
+        case 'temp':
+        case 'max_temp':
+        case 'min_temp':
+        case 'feels_like':
+            stops = TEMP_STOPS;
+            title = 'Temperatuur';
+            unit = '°C';
+            break;
+        case 'humidity':
+            stops = HUMIDITY_STOPS;
+            title = 'Vochtigheid';
+            unit = '%';
+            break;
+        case 'dew_point':
+            stops = DEW_STOPS;
+            title = 'Dauwpunt';
+            unit = '°C';
+            break;
+        default:
+            return null;
+    }
+
+    return (
+        <div className={`absolute bottom-24 right-2 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+            <div className="font-bold mb-1">{title} ({unit})</div>
+            <div className="flex flex-col-reverse gap-0.5">
+                {stops.map((s, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-sm border border-slate-300" style={{ backgroundColor: `rgb(${s.color.join(',')})` }}></div>
+                        <span>{s.val}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const COUNTRY_POLYGONS: Record<string, number[][]> = {
+    'NL': [[51.8, 3.3], [53.5, 4.6], [53.6, 7.2], [52.2, 7.0], [50.7, 6.0], [51.3, 3.3]],
+    'BE': [[51.5, 4.4], [51.3, 2.5], [50.7, 2.8], [49.5, 5.5], [50.1, 6.4], [51.2, 5.9]],
+    'DE': [[54.9, 8.3], [54.5, 14.3], [51.4, 15.0], [47.3, 13.0], [47.5, 7.5], [49.2, 6.1], [51.0, 5.9], [53.5, 7.0]],
+    'FR': [[51.1, 2.5], [49.0, 8.2], [43.7, 7.5], [42.4, 3.1], [43.3, -1.8], [48.4, -5.1]],
+    'US': [[49.0, -125.0], [49.0, -66.9], [24.5, -80.0], [25.8, -97.0], [31.3, -110.0], [32.5, -117.0]]
+};
+
+function isPointInPolygon(lat: number, lon: number, polygon: number[][]): boolean {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i][0], yi = polygon[i][1];
+        const xj = polygon[j][0], yj = polygon[j][1];
+        
+        const intersect = ((yi > lon) !== (yj > lon))
+            && (lat < (xj - xi) * (lon - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+
+// Generate grid points for better coverage
+const generateGridPoints = (countryCode: string): {lat: number, lon: number, name: string, isGrid: boolean}[] => {
+    const polygon = COUNTRY_POLYGONS[countryCode];
+    if (!polygon) return [];
+
+    // Calculate bounds
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+    polygon.forEach(p => {
+        minLat = Math.min(minLat, p[0]);
+        maxLat = Math.max(maxLat, p[0]);
+        minLon = Math.min(minLon, p[1]);
+        maxLon = Math.max(maxLon, p[1]);
+    });
+
+    const latRange = maxLat - minLat;
+    const lonRange = maxLon - minLon;
+    
+    // Target ~64 points. sqrt(64) = 8.
+    // We want proportional steps.
+    // ratio = lonRange / latRange.
+    // cols / rows = ratio.
+    // cols * rows = 64.
+    // rows^2 * ratio = 64 => rows = sqrt(64/ratio).
+    
+    const ratio = lonRange / latRange;
+    const rows = Math.round(Math.sqrt(64 / ratio));
+    const cols = Math.round(64 / rows);
+    
+    const latStep = latRange / rows;
+    const lonStep = lonRange / cols;
+
+    const points: {lat: number, lon: number, name: string, isGrid: boolean}[] = [];
+
+    for (let lat = minLat; lat <= maxLat; lat += latStep) {
+        for (let lon = minLon; lon <= maxLon; lon += lonStep) {
+            if (isPointInPolygon(lat, lon, polygon)) {
                 points.push({
                     lat: Number(lat.toFixed(2)),
                     lon: Number(lon.toFixed(2)),
-                    name: `Locatie (${lat.toFixed(1)}, ${lon.toFixed(1)})`,
+                    name: `Raster (${lat.toFixed(1)}, ${lon.toFixed(1)})`,
                     isGrid: true
                 });
             }
         }
     }
-    return points.slice(0, 60);
+    
+    // Hard limit to 64
+    return points.slice(0, 64);
 };
-
-const TEMP_STOPS = [
-    { val: -15, r: 79, g: 70, b: 229 },  // Deep Purple/Indigo
-    { val: -5,  r: 59, g: 130, b: 246 }, // Blue
-    { val: 5,   r: 6, g: 182, b: 212 },  // Cyan/Light Blue
-    { val: 15,  r: 34, g: 197, b: 94 },  // Green
-    { val: 22,  r: 250, g: 204, b: 21 }, // Yellow
-    { val: 28,  r: 249, g: 115, b: 22 }, // Orange
-    { val: 35,  r: 239, g: 68, b: 68 },  // Red
-    { val: 40,  r: 153, g: 27, b: 27 }   // Dark Red
-];
-
-// Beaufort scale based colors for wind (km/h)
-const WIND_STOPS = [
-    { val: 0, r: 255, g: 255, b: 255 },    // 0 Bft - White
-    { val: 5, r: 224, g: 242, b: 254 },    // 1 Bft - Very Light Blue
-    { val: 11, r: 186, g: 230, b: 253 },   // 2 Bft - Light Blue
-    { val: 19, r: 125, g: 211, b: 252 },   // 3 Bft - Sky Blue
-    { val: 28, r: 52, g: 211, b: 153 },    // 4 Bft - Green
-    { val: 38, r: 163, g: 230, b: 53 },    // 5 Bft - Lime Green
-    { val: 49, r: 250, g: 204, b: 21 },    // 6 Bft - Yellow
-    { val: 61, r: 251, g: 146, b: 60 },    // 7 Bft - Orange
-    { val: 74, r: 239, g: 68, b: 68 },     // 8 Bft - Red
-    { val: 88, r: 185, g: 28, b: 28 },     // 9 Bft - Dark Red
-    { val: 102, r: 126, g: 34, b: 206 },   // 10 Bft - Purple
-    { val: 117, r: 88, g: 28, b: 135 }     // 11+ Bft - Deep Purple
-];
 
 type MapLayer = 'temp' | 'min_temp' | 'max_temp' | 'feels_like' | 'wind' | 'humidity' | 'pressure' | 'clouds' | 'precip' | 'gusts' | 'dew_point';
-
-const interpolateColor = (val: number, stops: {val: number, r: number, g: number, b: number}[]) => {
-    for (let i = 0; i < stops.length - 1; i++) {
-        const start = stops[i];
-        const end = stops[i + 1];
-        if (val >= start.val && val <= end.val) {
-            const t = (val - start.val) / (end.val - start.val);
-            return {
-                r: Math.round(start.r + t * (end.r - start.r)),
-                g: Math.round(start.g + t * (end.g - start.g)),
-                b: Math.round(start.b + t * (end.b - start.b))
-            };
-        }
-    }
-    if (val < stops[0].val) return { r: stops[0].r, g: stops[0].g, b: stops[0].b };
-    if (val > stops[stops.length - 1].val) return { r: stops[stops.length - 1].r, g: stops[stops.length - 1].g, b: stops[stops.length - 1].b };
-    return { r: 128, g: 128, b: 128 };
-};
-
-// Heatmap Layer Component
-const HeatmapLayer = ({ data, layer, settings }: { data: WeatherStation[], layer: MapLayer, settings: AppSettings }) => {
-    const map = useMap();
-    const canvasRef = React.useRef<HTMLCanvasElement>(null);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const draw = () => {
-            const size = map.getSize();
-            canvas.width = size.x;
-            canvas.height = size.y;
-            ctx.clearRect(0, 0, size.x, size.y);
-
-            if (data.length === 0) return;
-
-            ctx.globalCompositeOperation = 'source-over';
-
-            data.forEach(station => {
-                const point = map.latLngToContainerPoint([station.lat, station.lon]);
-                // Extend bounds check slightly to avoid clipping edges
-                if (point.x < -150 || point.x > size.x + 150 || point.y < -150 || point.y > size.y + 150) return;
-
-                let val = 0;
-                let r=128, g=128, b=128;
-
-                switch (layer) {
-                    case 'wind':
-                    case 'gusts':
-                        val = layer === 'wind' ? station.windSpeed : station.gusts;
-                        const windColor = interpolateColor(val, WIND_STOPS);
-                        r = windColor.r;
-                        g = windColor.g;
-                        b = windColor.b;
-                        break;
-                    case 'humidity':
-                        val = station.humidity;
-                        r = 200 - (val * 2);
-                        g = 200 - (val * 2);
-                        b = 255;
-                        break;
-                    case 'clouds':
-                        val = station.clouds;
-                        const gray = 255 - (val * 1.5); 
-                        r = gray; g = gray; b = gray;
-                        break;
-                    case 'precip':
-                        val = station.precip;
-                        if (val === 0) { r=255; g=255; b=255; } 
-                        else {
-                            const rainInt = Math.min(1, val / 10);
-                            r = 200 - rainInt * 200;
-                            g = 200 - rainInt * 200;
-                            b = 255;
-                        }
-                        break;
-                    case 'pressure':
-                        val = station.pressure;
-                        const pNorm = Math.max(0, Math.min(1, (val - 980) / 60));
-                        r = pNorm * 255;
-                        g = 50;
-                        b = (1 - pNorm) * 255;
-                        break;
-                    default: 
-                        val = layer === 'feels_like' ? station.feelsLike : (layer === 'dew_point' ? station.dewPoint : station.temp);
-                        if (val < 0) { r=79; g=70; b=229; } 
-                        else if (val < 10) { r=59; g=130; b=246; } 
-                        else if (val < 20) { r=34; g=197; b=94; } 
-                        else if (val < 30) { r=234; g=179; b=8; } 
-                        else { r=239; g=68; b=68; } 
-                }
-
-                const radius = 100; 
-                const grd = ctx.createRadialGradient(point.x, point.y, 10, point.x, point.y, radius);
-                grd.addColorStop(0, `rgba(${r},${g},${b},0.8)`);
-                grd.addColorStop(0.5, `rgba(${r},${g},${b},0.4)`);
-                grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
-
-                ctx.fillStyle = grd;
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-        };
-
-        draw();
-        map.on('moveend zoomend move', draw); // Add 'move' for smoother updates
-        return () => {
-            map.off('moveend zoomend move', draw);
-        };
-    }, [map, data, layer]);
-
-    return <div className="leaflet-layer" style={{ pointerEvents: 'none', zIndex: 450, opacity: 0.7 }}>
-        <canvas ref={canvasRef} className="leaflet-zoom-animated" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }} />
-    </div>;
-};
 
 // Control to reset map view
 const ResetViewControl = ({ center, zoom }: { center: [number, number], zoom: number }) => {
@@ -427,6 +480,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
     const [layer, setLayer] = useState<MapLayer>('temp');
     const [viewMode, setViewMode] = useState<'points' | 'surface'>('points');
     const [loading, setLoading] = useState(false);
+    const [progress, setProgress] = useState<number>(0);
     const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     
@@ -510,6 +564,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
         setLoading(true);
         setError(null);
         setWeatherData([]); // Clear previous data
+        setProgress(0);
         
         const config = COUNTRY_CONFIG[country.code];
         
@@ -538,85 +593,100 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
              }
         }
 
-        // DYNAMIC POINTS: If few cities, generate grid
-        const centerLat = config?.lat ?? (specificLocation?.lat || cities[0]?.lat || 50);
-        const centerLon = config?.lon ?? (specificLocation?.lon || cities[0]?.lon || 10);
-        const zoom = config?.zoom ?? 6;
+        // ALWAYS generate grid points for Raster view, combined with cities
+        const grid = generateGridPoints(country.code);
+        
+        // Combine all points to fetch
+        let allPoints = [...cities, ...grid];
 
-        if (cities.length < 30) {
-            const grid = generateGridPoints(centerLat, centerLon, zoom);
-            cities = [...cities, ...grid];
-        }
-
-        if (cities.length === 0) {
+        if (allPoints.length === 0) {
              setError(`Geen weerstations gevonden voor ${country.name}. Voeg eerst een favoriete plaats toe in dit land of zoek specifiek naar een plaats.`);
              setLoading(false);
              return;
         }
 
-        // Limit to 80 points to be safe
-        cities = cities.slice(0, 80);
+        // Limit to reasonable amount if somehow exceeds (OpenMeteo handles many, but URL length matters)
+        // 150 points is usually fine
+        if (allPoints.length > 150) {
+            allPoints = allPoints.slice(0, 150);
+        }
 
-        const lats = cities.map(c => c.lat).join(',');
-        const lons = cities.map(c => c.lon).join(',');
-        
+        // Chunking logic
+        const CHUNK_SIZE = 10; // Fetch 10 stations at a time
+        const totalPoints = allPoints.length;
+        let processedPoints = 0;
+
         const isToday = date.toDateString() === new Date().toDateString();
         const dateStr = date.toISOString().split('T')[0];
         
         // Decide API endpoint
-        // Archive is for > 5 days ago usually, but Forecast API handles recent past/future
-        // We'll use Forecast API for now as it's simpler, unless date is far back
         const baseUrl = 'https://api.open-meteo.com/v1/forecast';
-        
-        // Use OpenMeteo API with Expanded Data
-        // Always fetch hourly for the date range to pick noon value if not current
-        let url = `${baseUrl}?latitude=${lats}&longitude=${lons}&start_date=${dateStr}&end_date=${dateStr}&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation,wind_gusts_10m,dew_point_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
-        
-        if (isToday) {
-            url += `&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation,wind_gusts_10m,dew_point_2m`;
-        }
-        
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Network response was not ok');
-            const data = await res.json();
-            
-            const results = Array.isArray(data) ? data : [data];
-            const stations: WeatherStation[] = [];
-            
-            results.forEach((d: any, i: number) => {
-                // Helper to get value: Current (if today) or Hourly Noon (index 12)
-                const getVal = (field: string) => {
-                    if (isToday && d.current && d.current[field] != null) return d.current[field];
-                    if (d.hourly && d.hourly[field]) return d.hourly[field][12] ?? d.hourly[field][0];
-                    return 0;
-                };
 
-                stations.push({
-                    lat: cities[i].lat,
-                    lon: cities[i].lon,
-                    name: cities[i].name,
-                    // @ts-ignore
-                    isGrid: cities[i].isGrid,
-                    temp: getVal('temperature_2m'),
-                    feelsLike: getVal('apparent_temperature'),
-                    windSpeed: getVal('wind_speed_10m'),
-                    windDirection: getVal('wind_direction_10m'),
-                    humidity: getVal('relative_humidity_2m'),
-                    pressure: getVal('surface_pressure'),
-                    clouds: getVal('cloud_cover'),
-                    precip: getVal('precipitation'),
-                    gusts: getVal('wind_gusts_10m'),
-                    dewPoint: getVal('dew_point_2m'),
-                    minTemp: d.daily?.temperature_2m_min?.[0],
-                    maxTemp: d.daily?.temperature_2m_max?.[0]
+        try {
+            for (let i = 0; i < totalPoints; i += CHUNK_SIZE) {
+                const chunk = allPoints.slice(i, i + CHUNK_SIZE);
+                
+                const lats = chunk.map(c => c.lat).join(',');
+                const lons = chunk.map(c => c.lon).join(',');
+                
+                // Use OpenMeteo API with Expanded Data
+                let url = `${baseUrl}?latitude=${lats}&longitude=${lons}&start_date=${dateStr}&end_date=${dateStr}&hourly=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation,wind_gusts_10m,dew_point_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+                
+                if (isToday) {
+                    url += `&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation,wind_gusts_10m,dew_point_2m`;
+                }
+
+                // Small delay to be "calmer"
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                }
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+                
+                const results = Array.isArray(data) ? data : [data];
+                const newStations: WeatherStation[] = [];
+                
+                results.forEach((d: any, idx: number) => {
+                    // Helper to get value: Current (if today) or Hourly Noon (index 12)
+                    const getVal = (field: string) => {
+                        if (isToday && d.current && d.current[field] != null) return d.current[field];
+                        if (d.hourly && d.hourly[field]) return d.hourly[field][12] ?? d.hourly[field][0];
+                        return 0;
+                    };
+
+                    newStations.push({
+                        lat: chunk[idx].lat,
+                        lon: chunk[idx].lon,
+                        name: chunk[idx].name,
+                        // @ts-ignore
+                        isGrid: chunk[idx].isGrid,
+                        temp: getVal('temperature_2m'),
+                        feelsLike: getVal('apparent_temperature'),
+                        windSpeed: getVal('wind_speed_10m'),
+                        windDirection: getVal('wind_direction_10m'),
+                        humidity: getVal('relative_humidity_2m'),
+                        pressure: getVal('surface_pressure'),
+                        clouds: getVal('cloud_cover'),
+                        precip: getVal('precipitation'),
+                        gusts: getVal('wind_gusts_10m'),
+                        dewPoint: getVal('dew_point_2m'),
+                        minTemp: d.daily?.temperature_2m_min?.[0],
+                        maxTemp: d.daily?.temperature_2m_max?.[0]
+                    });
                 });
-            });
-            setWeatherData(stations);
+
+                setWeatherData(prev => [...prev, ...newStations]);
+                processedPoints += chunk.length;
+                setProgress(Math.round((processedPoints / totalPoints) * 100));
+            }
         } catch (e) {
-            setError("Kan weerdata niet ophalen. Controleer je internetverbinding.");
+            console.error(e);
+            setError("Kan weerdata niet volledig ophalen. Controleer je internetverbinding.");
         } finally {
             setLoading(false);
+            setProgress(0);
         }
     };
 
@@ -748,6 +818,11 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                             <div>
                                 <h2 className="font-bold text-lg leading-tight flex items-center gap-2">
                                     {selectedCountry.name}
+                                    {loading && (
+                                        <span className="text-sm font-normal text-blue-500 ml-2">
+                                            {progress}%
+                                        </span>
+                                    )}
                                     {selectedLocationName && <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({selectedLocationName})</span>}
                                 </h2>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -787,9 +862,15 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     
                     {/* Layer Toggles (Scrollable) */}
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-2 px-2">
-                        {[
-                            { id: 'temp', label: 'Temperatuur' },
+                        {(isToday ? [
+                            { id: 'temp', label: 'Actuele temp' },
+                            { id: 'max_temp', label: 'Max temp' },
+                            { id: 'min_temp', label: 'Min temp' },
                             { id: 'feels_like', label: 'Gevoel' },
+                        ] : [
+                            { id: 'max_temp', label: 'Max temp' },
+                            { id: 'min_temp', label: 'Min temp' },
+                        ]).concat([
                             { id: 'wind', label: 'Wind' },
                             { id: 'gusts', label: 'Windstoten' },
                             { id: 'precip', label: 'Neerslag' },
@@ -797,7 +878,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                             { id: 'clouds', label: 'Bewolking' },
                             { id: 'pressure', label: 'Luchtdruk' },
                             { id: 'dew_point', label: 'Dauwpunt' },
-                        ].map((item) => (
+                        ]).map((item) => (
                             <button 
                                 key={item.id}
                                 onClick={() => setLayer(item.id as MapLayer)}
@@ -841,6 +922,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
 
             {/* Map */}
             <div className="flex-grow w-full h-full relative z-0">
+                <MapLegend layer={layer} isDark={settings.theme === 'dark'} />
                 <MapContainer 
                     key={selectedCountry.code}
                     center={[mapConfig.lat, mapConfig.lon]} 
@@ -859,11 +941,9 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     />
                     <MapUpdater center={[mapConfig.lat, mapConfig.lon]} zoom={mapConfig.zoom} />
                     
-                    {viewMode === 'surface' && <HeatmapLayer data={weatherData} layer={layer} settings={settings} />}
-
                     {/* Markers */}
-                    {viewMode === 'points' && weatherData
-                        .filter(station => !station.isGrid)
+                    {weatherData
+                        .filter(station => viewMode === 'surface' ? station.isGrid : !station.isGrid)
                         .map((station, idx) => {
                         let displayVal = '';
                         let unit = '';
@@ -877,14 +957,14 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                 const valWind = layer === 'wind' ? station.windSpeed : station.gusts;
                                 displayVal = convertWind(valWind, settings.windUnit).toString();
                                 unit = settings.windUnit === 'km/h' ? '' : settings.windUnit;
-                                color = 'rgba(30, 41, 59, 0.9)';
+                                color = getBftColor(valWind);
                                 rotate = station.windDirection;
                                 showRotate = true;
                                 break;
                             case 'humidity':
                                 displayVal = station.humidity.toString();
                                 unit = '%';
-                                color = `rgb(${200 - station.humidity * 2}, ${200 - station.humidity * 2}, 255)`;
+                                color = getHumidityColor(station.humidity);
                                 break;
                             case 'pressure':
                                 displayVal = Math.round(station.pressure).toString();
@@ -898,76 +978,113 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                 color = `rgb(${c},${c},${c})`;
                                 break;
                             case 'precip':
-                                displayVal = convertPrecip(station.precip, settings.precipUnit).toString();
-                                unit = settings.precipUnit;
-                                color = station.precip > 0 ? '#3b82f6' : '#94a3b8';
+                                displayVal = station.precip.toString();
+                                unit = 'mm';
+                                color = station.precip > 0 ? '#3b82f6' : '#cbd5e1';
                                 break;
-                            default: // Temp, Feels Like, Dew Point
-                                const valTemp = layer === 'feels_like' ? station.feelsLike : (layer === 'dew_point' ? station.dewPoint : station.temp);
-                                displayVal = convertTemp(valTemp, settings.tempUnit).toString();
+                            case 'dew_point':
+                                displayVal = Math.round(station.dewPoint).toString();
                                 unit = '°';
-                                color = getTempColor(valTemp);
+                                color = getDewPointColor(station.dewPoint);
+                                break;
+                            default: // Temp
+                                const val = layer === 'feels_like' ? station.feelsLike : (layer === 'min_temp' ? station.minTemp : (layer === 'max_temp' ? station.maxTemp : station.temp));
+                                displayVal = Math.round(val ?? 0).toString();
+                                unit = '°';
+                                color = getTempColor(val ?? 0);
                         }
-                        
+
+                        // Grid points are smaller/simpler
+                        if (station.isGrid) {
+                            return (
+                                <Marker 
+                                    key={`grid-${idx}`} 
+                                    position={[station.lat, station.lon]}
+                                    icon={L.divIcon({
+                                        className: 'custom-grid-point',
+                                        html: `<div style="
+                                            background-color: ${color}; 
+                                            width: 24px; 
+                                            height: 24px; 
+                                            border-radius: 50%; 
+                                            border: 2px solid white;
+                                            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            font-size: 10px;
+                                            font-weight: bold;
+                                            color: ${layer === 'clouds' && station.clouds < 50 ? 'black' : 'white'};
+                                            transform: ${showRotate ? `rotate(${rotate}deg)` : 'none'};
+                                        ">${showRotate ? '↑' : displayVal}</div>`,
+                                        iconSize: [24, 24],
+                                        iconAnchor: [12, 12]
+                                    })}
+                                >
+                                    <Popup className="custom-popup">
+                                        <div className="p-2 min-w-[150px]">
+                                            <h3 className="font-bold text-sm mb-1">{station.name}</h3>
+                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                                                <div className="text-slate-500">Temp:</div>
+                                                <div className="font-medium">{Math.round(station.temp)}°</div>
+                                                <div className="text-slate-500">Wind:</div>
+                                                <div className="font-medium">{station.windSpeed} km/u</div>
+                                                <div className="text-slate-500">Neerslag:</div>
+                                                <div className="font-medium">{station.precip} mm</div>
+                                            </div>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            );
+                        }
+
                         return (
                             <Marker 
                                 key={idx} 
                                 position={[station.lat, station.lon]}
                                 icon={L.divIcon({
-                                    className: '',
-                                    html: `
-                                        <div style="
-                                            background-color: ${color};
-                                            color: white;
-                                            padding: 4px 8px;
-                                            border-radius: 12px;
-                                            font-weight: bold;
-                                            font-size: 12px;
-                                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: center;
-                                            gap: 4px;
-                                            white-space: nowrap;
-                                            border: 2px solid white;
-                                            min-width: 50px;
-                                        ">
-                                            ${showRotate 
-                                                ? `<div style="transform: rotate(${rotate}deg); display: inline-block;">⬇</div> ${displayVal}`
-                                                : `${displayVal}${unit}`
-                                            }
-                                        </div>
-                                    `,
-                                    iconSize: [40, 24],
-                                    iconAnchor: [20, 12]
+                                    className: 'custom-marker',
+                                    html: `<div style="
+                                        background-color: ${color}; 
+                                        padding: 4px 8px; 
+                                        border-radius: 12px; 
+                                        color: ${layer === 'clouds' && station.clouds < 50 ? 'black' : 'white'}; 
+                                        font-weight: bold; 
+                                        font-size: 12px;
+                                        white-space: nowrap;
+                                        border: 2px solid white;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        gap: 4px;
+                                        min-width: 40px;
+                                        transform: translate(-50%, -50%);
+                                        position: absolute;
+                                        left: 0;
+                                        top: 0;
+                                    ">
+                                        ${showRotate ? `<span style="transform: rotate(${rotate}deg); display: inline-block">↑</span>` : ''}
+                                        ${displayVal}${unit}
+                                    </div>`,
+                                    iconSize: [0, 0],
+                                    iconAnchor: [0, 0]
                                 })}
                             >
                                 <Popup className="custom-popup">
-                                    <div className="text-center min-w-[150px]">
-                                        <div className="font-bold text-lg mb-1">{station.name}</div>
-                                        <div className="text-3xl font-bold mb-2">
-                                            {displayVal} <span className="text-base font-normal">{unit}</span>
-                                        </div>
-                                        
-                                        {/* Min/Max Daily (only show for temp related) */}
-                                        {(['temp', 'feels_like', 'dew_point'].includes(layer) && station.minTemp !== undefined && station.maxTemp !== undefined) && (
-                                            <div className="flex justify-center gap-4 text-sm bg-slate-100 dark:bg-slate-700 p-2 rounded-lg mb-2">
-                                                <div>
-                                                    <div className="text-slate-500 text-xs">Min</div>
-                                                    <div className="font-bold">{convertTemp(station.minTemp, settings.tempUnit)}°</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-slate-500 text-xs">Max</div>
-                                                    <div className="font-bold">{convertTemp(station.maxTemp, settings.tempUnit)}°</div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="grid grid-cols-2 gap-2 text-xs text-left bg-slate-50 dark:bg-slate-800 p-2 rounded">
-                                            <div>Vocht: {station.humidity}%</div>
-                                            <div>Druk: {Math.round(station.pressure)} hPa</div>
-                                            <div>Wind: {convertWind(station.windSpeed, settings.windUnit)} {settings.windUnit}</div>
-                                            <div>Neerslag: {convertPrecip(station.precip, settings.precipUnit)} {settings.precipUnit}</div>
+                                    <div className="p-2 min-w-[150px]">
+                                        <h3 className="font-bold text-base mb-1">{station.name}</h3>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                                            <div className="text-slate-500">Temperatuur:</div>
+                                            <div className="font-medium">{Math.round(station.temp)}°C</div>
+                                            <div className="text-slate-500">Gevoel:</div>
+                                            <div className="font-medium">{Math.round(station.feelsLike)}°C</div>
+                                            <div className="text-slate-500">Wind:</div>
+                                            <div className="font-medium">{station.windSpeed} km/u</div>
+                                            <div className="text-slate-500">Vochtigheid:</div>
+                                            <div className="font-medium">{station.humidity}%</div>
+                                            <div className="text-slate-500">Neerslag:</div>
+                                            <div className="font-medium">{station.precip} mm</div>
                                         </div>
                                     </div>
                                 </Popup>
@@ -976,45 +1093,6 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     })}
                 </MapContainer>
             </div>
-            
-            {/* Legend */}
-            <div className="absolute bottom-24 right-4 z-[500] bg-white/90 dark:bg-slate-900/90 backdrop-blur p-2 rounded-lg text-xs shadow-lg border border-slate-200 dark:border-white/10">
-                <div className="font-bold mb-1">Legenda ({layer === 'temp' ? 'Temperatuur' : layer})</div>
-                {(layer === 'wind' || layer === 'gusts') ? (
-                    <div className="space-y-1">
-                         <div className="flex items-center gap-2 mb-2"><span className="text-blue-500">⬇</span> Windrichting</div>
-                         <div className="grid grid-cols-1 gap-1">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 border border-slate-300 bg-[rgb(255,255,255)] rounded-full"></div> 0-10 km/u (1-2 Bft)</div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[rgb(125,211,252)] rounded-full"></div> 10-20 km/u (3 Bft)</div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[rgb(52,211,153)] rounded-full"></div> 20-30 km/u (4 Bft)</div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[rgb(163,230,53)] rounded-full"></div> 30-50 km/u (5-6 Bft)</div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[rgb(251,146,60)] rounded-full"></div> 50-75 km/u (7-8 Bft)</div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[rgb(239,68,68)] rounded-full"></div> &gt; 75 km/u (9+ Bft)</div>
-                         </div>
-                    </div>
-                ) : (['temp', 'feels_like', 'dew_point'].includes(layer)) ? (
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#4f46e5] rounded-full"></div> Zeer koud (&lt;0{settings.tempUnit})</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-full"></div> Koud (0-10{settings.tempUnit})</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-green-500 rounded-full"></div> Matig (10-20{settings.tempUnit})</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-500 rounded-full"></div> Warm (20-30{settings.tempUnit})</div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div> Heet (&gt;30{settings.tempUnit})</div>
-                    </div>
-                ) : (
-                    <div className="space-y-1">
-                        <div>Waarde: {layer}</div>
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
-
-// Helper for temp colors
-function getTempColor(t: number): string {
-    if (t < 0) return '#4f46e5'; // Indigo-600
-    if (t < 10) return '#3b82f6'; // Blue-500
-    if (t < 20) return '#22c55e'; // Green-500
-    if (t < 30) return '#eab308'; // Yellow-500
-    return '#ef4444'; // Red-500
-}

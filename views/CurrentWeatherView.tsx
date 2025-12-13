@@ -428,16 +428,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing'];
       return activities.map(type => ({
           type,
-          ...calculateActivityScore(activityData, type)
+          ...calculateActivityScore(activityData, type, settings.language)
       }));
-  }, [weatherData]);
-
-  const activityLabels: Record<string, string> = {
-        bbq: "BBQ / Terras",
-        cycling: "Fietsen",
-        walking: "Wandelen",
-        sailing: "Watersport"
-    };
+  }, [weatherData, settings.language]);
 
     const getActivityIcon = (type: ActivityType) => {
         switch (type) {
@@ -504,7 +497,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
-        <div className="flex flex-col pt-24 pb-4">
+        <div className="flex flex-col pt-32 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
                 <button onClick={() => cycleFavorite('prev')} className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
@@ -797,7 +790,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                 <Icon name={getActivityIcon(score.type)} className="text-xl" />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-sm capitalize">{activityLabels[score.type]}</p>
+                                                <p className="font-bold text-sm capitalize">{t('activity.' + score.type)}</p>
                                                 <p className="text-[10px] text-slate-500 dark:text-white/60 italic">"{score.text}"</p>
                                             </div>
                                         </div>
