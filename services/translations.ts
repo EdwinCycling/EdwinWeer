@@ -643,13 +643,17 @@ const nl: Dictionary = {
     'ensemble.rain': 'Regen',
     'ensemble.wind_speed_10m': 'Windsnelheid (10m)',
     'ensemble.wind_dir_10m': 'Windrichting (10m)',
+    'forecast_type': 'Type verwachting',
+    'hourly': 'Uurlijks',
+    'daily': 'Dagelijks',
+    'view_mode': 'Weergave',
     'all': 'Alles',
     'average': 'Gemiddelde',
     'spread': 'Bereik',
     'density': 'Dichtheid',
 
     // Pricing
-    'pricing.title': 'Pricing',
+    'pricing.title': 'Prijzen',
     'pricing.subtitle': 'Kies je pakket',
     'pricing.subtitle_desc': 'Alle functies zijn nu onderdeel van het gratis pakket. Pro zal vooral de datalimieten uitbreiden.',
     'pricing.free_name': 'Gratis',

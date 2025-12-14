@@ -780,13 +780,13 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     onClick={() => setTimeStep('hourly')}
                                     className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeStep === 'hourly' ? 'bg-white dark:bg-white/20 shadow-sm text-primary' : 'text-slate-500'}`}
                                 >
-                                    Hourly
+                                    {t('hourly')}
                                 </button>
                                 <button
                                     onClick={() => setTimeStep('daily')}
                                     className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeStep === 'daily' ? 'bg-white dark:bg-white/20 shadow-sm text-primary' : 'text-slate-500'}`}
                                 >
-                                    Daily
+                                    {t('daily')}
                                 </button>
                              </div>
                         </div>

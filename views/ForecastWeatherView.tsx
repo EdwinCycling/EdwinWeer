@@ -52,7 +52,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
 
-  const [showActivities, setShowActivities] = useState(true);
+  const [activitiesMode, setActivitiesMode] = useState<'none' | 'positive' | 'all'>('all');
   const [expandedMode, setExpandedMode] = useState(true);
 
   const getDailyForecast = () => {
@@ -301,15 +301,46 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         {t('next_days')}
                     </h3>
                     <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input 
-                                type="checkbox" 
-                                checked={showActivities} 
-                                onChange={(e) => setShowActivities(e.target.checked)}
-                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Activiteiten</span>
-                        </label>
+                        {expandedMode && (
+                            <div className="flex items-center gap-2 select-none">
+                                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Activiteiten</span>
+                                <div className="flex bg-slate-100 dark:bg-black/40 rounded-full p-0.5 text-[10px]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActivitiesMode('none')}
+                                        className={`px-2 py-1 rounded-full font-medium transition-colors ${
+                                            activitiesMode === 'none'
+                                                ? 'bg-white dark:bg-white text-slate-800 dark:text-slate-900 shadow-sm'
+                                                : 'text-slate-500 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        Uit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActivitiesMode('positive')}
+                                        className={`px-2 py-1 rounded-full font-medium transition-colors ${
+                                            activitiesMode === 'positive'
+                                                ? 'bg-white dark:bg-white text-slate-800 dark:text-slate-900 shadow-sm'
+                                                : 'text-slate-500 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        7+
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActivitiesMode('all')}
+                                        className={`px-2 py-1 rounded-full font-medium transition-colors ${
+                                            activitiesMode === 'all'
+                                                ? 'bg-white dark:bg-white text-slate-800 dark:text-slate-900 shadow-sm'
+                                                : 'text-slate-500 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        Alle
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input 
                                 type="checkbox" 
@@ -333,7 +364,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                         </div>
                                         <p className="font-medium flex items-center gap-1">
                                             {d.day}
-                                            {d.feelsLike < 10 && (
+                                            {d.feelsLike < 0 && (
                                                 <Icon name="ac_unit" className="text-[14px] text-sky-500" />
                                             )}
                                             {d.feelsLike > 25 && (
@@ -368,17 +399,27 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     </div>
                                 </div>
 
-                                {showActivities && d.activityScores.length > 0 && (
+                                {activitiesMode !== 'none' && d.activityScores.length > 0 && (
                                     <div className="flex flex-row justify-between items-center gap-1 mt-2 pt-2 border-t border-slate-200 dark:border-white/5 overflow-x-auto scrollbar-hide">
-                                        {d.activityScores.filter(s => settings.enabledActivities?.[s.type] !== false).map(score => (
-                                            <div key={score.type} className="flex flex-col items-center justify-center gap-0.5 group relative cursor-help min-w-[24px]">
-                                                 <Icon name={getActivityIcon(score.type)} className={`text-lg ${getScoreColor(score.score10)}`} />
-                                                 <span className={`text-[10px] font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
-                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg">
-                                                     {t(`activity.${score.type}`)}: {score.text}
-                                                 </div>
-                                            </div>
-                                        ))}
+                                        {d.activityScores
+                                            .filter(s => settings.enabledActivities?.[s.type] !== false)
+                                            .map(score => {
+                                                const hidden = activitiesMode === 'positive' && score.score10 < 7;
+                                                return (
+                                                    <div
+                                                        key={score.type}
+                                                        className={`flex flex-col items-center justify-center gap-0.5 group relative cursor-help min-w-[24px] ${
+                                                            hidden ? 'opacity-0 pointer-events-none' : ''
+                                                        }`}
+                                                    >
+                                                        <Icon name={getActivityIcon(score.type)} className={`text-lg ${getScoreColor(score.score10)}`} />
+                                                        <span className={`text-[10px] font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg">
+                                                            {t(`activity.${score.type}`)}: {score.text}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                     </div>
                                 )}
                             </div>
@@ -390,7 +431,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                          <span className="text-[10px] text-slate-500 dark:text-white/60 whitespace-nowrap">{d.day.split(' ').slice(1).join(' ')}</span>
                                      </div>
                                      <div className="flex items-center gap-1 ml-2">
-                                         {d.feelsLike < 10 && (
+                                         {d.feelsLike < 0 && (
                                              <Icon name="ac_unit" className="text-xs text-sky-500" />
                                          )}
                                          {d.feelsLike > 25 && (
