@@ -266,7 +266,12 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
             {/* 2. Yearly Comparison Graph (-5 to +5 years) */}
             {yearData.length > 0 && (
                 <div className="mb-8">
-                    <h3 className="text-lg font-bold mb-4">{t('historical.year_comparison')} {t('historical.year_range')}</h3>
+                    <h3 className="text-lg font-bold mb-1">
+                        {t('historical.year_comparison')} {t('historical.year_range')}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-white/50 mb-3">
+                        {date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                    </p>
                     <div className="h-[250px] w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-2 border border-slate-200 dark:border-white/5">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={yearData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

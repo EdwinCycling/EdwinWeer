@@ -141,6 +141,20 @@ const saveUsage = (stats: UsageStats) => {
     syncUsageToRemote(stats);
 };
 
+type UsageScope = 'minute' | 'hour' | 'day' | 'month';
+
+let warnedMinute = false;
+let warnedHour = false;
+let warnedDay = false;
+let warnedMonth = false;
+
+const emitUsageWarning = (scope: UsageScope, stats: UsageStats) => {
+    if (typeof window === 'undefined') return;
+    const detail = { scope, stats, limits: API_LIMITS };
+    const event = new CustomEvent('usage:warning', { detail });
+    window.dispatchEvent(event);
+};
+
 export const checkLimit = (): void => {
     const stats = getUsage();
     const now = Date.now();
@@ -179,8 +193,6 @@ export const checkLimit = (): void => {
 export const trackCall = () => {
     const stats = getUsage();
     const now = Date.now();
-    const today = new Date().toISOString().split('T')[0];
-    const thisMonth = new Date().toISOString().slice(0, 7);
 
     // Update counters
     stats.totalCalls++;
@@ -202,6 +214,7 @@ export const trackCall = () => {
     }
 
     // Day
+    const today = new Date().toISOString().split('T')[0];
     if (stats.dayStart === today) {
         stats.dayCount++;
     } else {
@@ -210,11 +223,44 @@ export const trackCall = () => {
     }
 
     // Month
+    const thisMonth = new Date().toISOString().slice(0, 7);
     if (stats.monthStart === thisMonth) {
         stats.monthCount++;
     } else {
         stats.monthCount = 1;
         stats.monthStart = thisMonth;
+    }
+
+    if (now - stats.minuteStart < 60000) {
+        const minuteRatio = stats.minuteCount / API_LIMITS.MINUTE;
+        if (!warnedMinute && minuteRatio >= 0.8) {
+            warnedMinute = true;
+            emitUsageWarning('minute', stats);
+        }
+    }
+
+    if (now - stats.hourStart < 3600000) {
+        const hourRatio = stats.hourCount / API_LIMITS.HOUR;
+        if (!warnedHour && hourRatio >= 0.8) {
+            warnedHour = true;
+            emitUsageWarning('hour', stats);
+        }
+    }
+
+    if (stats.dayStart === today) {
+        const dayRatio = stats.dayCount / API_LIMITS.DAY;
+        if (!warnedDay && dayRatio >= 0.8) {
+            warnedDay = true;
+            emitUsageWarning('day', stats);
+        }
+    }
+
+    if (stats.monthStart === thisMonth) {
+        const monthRatio = stats.monthCount / API_LIMITS.MONTH;
+        if (!warnedMonth && monthRatio >= 0.8) {
+            warnedMonth = true;
+            emitUsageWarning('month', stats);
+        }
     }
 
     saveUsage(stats);

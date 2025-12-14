@@ -6,10 +6,15 @@ import { getTranslation } from '../services/translations';
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  previousView?: ViewState;
 }
 
-export const ModelInfoView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const ModelInfoView: React.FC<Props> = ({ onNavigate, settings, previousView }) => {
   const t = (key: string) => getTranslation(key, settings.language);
+
+  const handleBack = () => {
+    onNavigate(previousView || ViewState.CURRENT);
+  };
 
   const renderSection = (title: string, content: React.ReactNode) => (
     <div className="mb-8">
@@ -39,7 +44,7 @@ export const ModelInfoView: React.FC<Props> = ({ onNavigate, settings }) => {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <button 
-            onClick={() => onNavigate(ViewState.CURRENT)} 
+            onClick={handleBack} 
             className="size-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
           >
             <Icon name="arrow_back_ios_new" />
@@ -122,6 +127,16 @@ export const ModelInfoView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <span>{t('model_info.sum_tech')}</span>
               </li>
             </ul>
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            <button 
+              onClick={handleBack} 
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors font-bold"
+            >
+              <Icon name="arrow_back" />
+              {t('back')}
+            </button>
           </div>
 
         </div>

@@ -30,7 +30,6 @@ import {
 import { WeatherBackground } from '../components/WeatherBackground';
 import { getTranslation } from '../services/translations';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, ReferenceArea } from 'recharts';
-import { ModelInfoModal } from '../components/ModelInfoModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -43,10 +42,10 @@ const ENSEMBLE_MODELS: {id: EnsembleModel, name: string}[] = [
     { id: 'icon_eu', name: 'DWD ICON EPS EU' },
     { id: 'icon_d2', name: 'DWD ICON EPS D2' },
     { id: 'gfs_seamless', name: 'GFS Ensemble Seamless' },
-    { id: 'gfs025', name: 'GFS Ensemble 0.25°' },
-    { id: 'gfs05', name: 'GFS Ensemble 0.5°' },
-    { id: 'ecmwf_ifs025', name: 'ECMWF IFS 0.25°' },
-    { id: 'ecmwf_aifs025', name: 'ECMWF AIFS 0.25°' },
+    { id: 'gfs025', name: 'GFS Ensemble 0.25' },
+    { id: 'gfs05', name: 'GFS Ensemble 0.5' },
+    { id: 'ecmwf_ifs025', name: 'ECMWF IFS 0.25° Ensemble' },
+    { id: 'ecmwf_aifs025', name: 'ECMWF AIFS 0.25° Ensemble' },
     { id: 'gem_global', name: 'GEM Global Ensemble' },
     { id: 'bom_access_global', name: 'BOM ACCESS Global' },
     { id: 'metoffice_global', name: 'UK MetOffice Global 20km' },
@@ -54,6 +53,8 @@ const ENSEMBLE_MODELS: {id: EnsembleModel, name: string}[] = [
     { id: 'icon_ch1_eps', name: 'MeteoSwiss ICON CH1' },
     { id: 'icon_ch2_eps', name: 'MeteoSwiss ICON CH2' },
 ];
+
+const MODEL_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
@@ -64,13 +65,18 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [timeStep, setTimeStep] = useState<'hourly' | 'daily'>(loadEnsembleTimeStep());
   const [proMode, setProMode] = useState<boolean>(loadEnsembleProMode());
   
+  // Comparison Mode State
+  const [isComparisonMode, setIsComparisonMode] = useState(false);
+  const [uiSelectedModels, setUiSelectedModels] = useState<EnsembleModel[]>([]);
+  const [comparisonModels, setComparisonModels] = useState<EnsembleModel[]>([]);
+  const [comparisonData, setComparisonData] = useState<Record<string, any> | null>(null);
+
   // Default variables based on mode
   const initialVar = timeStep === 'hourly' ? 'temperature_2m' : 'temperature_2m_max';
   const [selectedVariable, setSelectedVariable] = useState<string>(initialVar);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isModelInfoOpen, setIsModelInfoOpen] = useState(false);
   
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -84,6 +90,11 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
   useEffect(() => {
       saveEnsembleProMode(proMode);
+      if (!proMode) {
+          setIsComparisonMode(false);
+          setUiSelectedModels([]);
+          setComparisonModels([]);
+      }
   }, [proMode]);
 
   // Update selected variable when switching timeStep if current variable is invalid
@@ -96,7 +107,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       if (!exists) {
           setSelectedVariable(vars[0].key);
       }
-  }, [timeStep, proMode]);
+  }, [timeStep, proMode]); // Keep this simple
 
   // Load standard forecast for header
   useEffect(() => {
@@ -113,6 +124,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
     // Load ensemble data
     useEffect(() => {
+        if (isComparisonMode) return;
+
         const loadEnsemble = async () => {
             // Validate variable against current mode to prevent 400 errors
             const currentVars = timeStep === 'hourly' 
@@ -122,6 +135,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             const isValidVar = currentVars.find(v => v.key === selectedVariable);
             if (!isValidVar) {
                 // If invalid, we wait for the other effect to update selectedVariable
+                // But we should also stop here to prevent fetching with invalid var
                 return;
             }
 
@@ -140,7 +154,46 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         };
         loadEnsemble();
         saveEnsembleModel(selectedModel);
-    }, [location, selectedModel, selectedVariable, timeStep, proMode]); // Added proMode to dependency to be safe
+    }, [location, selectedModel, selectedVariable, timeStep, proMode, isComparisonMode]);
+
+    // Load comparison data
+    useEffect(() => {
+        if (!isComparisonMode || comparisonModels.length < 2) return;
+
+        const loadComparison = async () => {
+            const currentVars = timeStep === 'hourly' 
+                ? (proMode ? ENSEMBLE_VARS_HOURLY_PRO : ENSEMBLE_VARS_HOURLY_BASIC)
+                : (proMode ? ENSEMBLE_VARS_DAILY_PRO : ENSEMBLE_VARS_DAILY_BASIC);
+            
+            const isValidVar = currentVars.find(v => v.key === selectedVariable);
+            
+            // Critical fix: If variable is invalid for current mode, DO NOT fetch yet.
+            // The first useEffect will update the variable, and THEN this effect will run again with the valid variable.
+            if (!isValidVar) return;
+
+            setLoading(true);
+            setError('');
+            try {
+                const promises = comparisonModels.map(model => 
+                    fetchEnsemble(location.lat, location.lon, model, [selectedVariable], timeStep === 'daily')
+                );
+                const results = await Promise.all(promises);
+                
+                const newData: Record<string, any> = {};
+                comparisonModels.forEach((model, index) => {
+                    newData[model] = results[index];
+                });
+                
+                setComparisonData(newData);
+            } catch (e) {
+                console.error(e);
+                setError(t('error'));
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadComparison();
+    }, [location, selectedVariable, timeStep, isComparisonMode, comparisonModels, proMode]); // Added proMode dependency
 
   // Helper to determine value conversion
   const getValue = (val: number, variable: string) => {
@@ -169,6 +222,123 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
   const processChartData = useMemo(() => {
       const isDaily = timeStep === 'daily';
+
+      if (isComparisonMode) {
+          if (!comparisonData || comparisonModels.length === 0) return { data: [], memberKeys: [] };
+          
+          // Use the first model's time as reference
+          const firstModel = comparisonModels[0];
+          const firstSource = isDaily ? comparisonData[firstModel]?.daily : comparisonData[firstModel]?.hourly;
+          
+          if (!firstSource) return { data: [], memberKeys: [] };
+          
+          const time = firstSource.time;
+          const data: any[] = [];
+          const memberKeys = comparisonModels; // Use model IDs as keys
+
+          for (let i = 0; i < time.length; i++) {
+              const point: any = { time: time[i] };
+              const modelMeans: number[] = [];
+              
+              comparisonModels.forEach(modelId => {
+                  const source = isDaily ? comparisonData[modelId]?.daily : comparisonData[modelId]?.hourly;
+                  if (!source) return;
+                  
+                  // Calculate mean for this model at index i
+                  // Find all keys for variable
+                   const keys = Object.keys(source).filter(k => 
+                      k === selectedVariable || 
+                      k.startsWith(selectedVariable + '_member')
+                  );
+
+          // Find the "Main" key (deterministic run)
+                  // Priority: 
+                  // 1. Exact match (e.g. "temperature_2m")
+                  // 2. Member 0 (e.g. "temperature_2m_member0" or "temperature_2m_member00")
+                  // 3. First available member (sorted)
+                  let mainKey = keys.find(k => k === selectedVariable);
+                  if (!mainKey) mainKey = keys.find(k => k.endsWith('_member0') || k.endsWith('_member00') || k.endsWith('_member000'));
+                  
+                  if (!mainKey && keys.length > 0) {
+                      // Fallback: Sort keys naturally to find the "first" member
+                      // e.g. member01, member02... -> member01
+                      const sortedKeys = [...keys].sort((a, b) => {
+                          const numA = parseInt(a.replace(/[^0-9]/g, ''), 10) || 999;
+                          const numB = parseInt(b.replace(/[^0-9]/g, ''), 10) || 999;
+                          return numA - numB;
+                      });
+                      mainKey = sortedKeys[0];
+                  }
+
+                  if (mainKey) {
+                      let mainVal = source[mainKey][i];
+                      mainVal = getValue(mainVal, selectedVariable);
+                      if (typeof mainVal === 'number' && !isNaN(mainVal)) {
+                          point[modelId + '_main'] = mainVal; 
+                      }
+                  }
+                  
+                  const values: number[] = [];
+                  keys.forEach(k => {
+                      let val = source[k][i];
+                      val = getValue(val, selectedVariable); 
+                      if (typeof val === 'number' && !isNaN(val)) values.push(val);
+                  });
+                  
+                  if (values.length > 0) {
+                      // Calculate mean
+                      let mean = 0;
+                      if (selectedVariable.includes('direction')) {
+                         // Vector average
+                         let sumSin = 0;
+                         let sumCos = 0;
+                         values.forEach(v => {
+                             const rad = v * Math.PI / 180;
+                             sumSin += Math.sin(rad);
+                             sumCos += Math.cos(rad);
+                         });
+                         const avgRad = Math.atan2(sumSin / values.length, sumCos / values.length);
+                         mean = avgRad * 180 / Math.PI;
+                         if (mean < 0) mean += 360;
+                      } else {
+                         mean = values.reduce((a, b) => a + b, 0) / values.length;
+                      }
+                      
+                      point[modelId] = mean; // Store mean as default for modelId
+                      modelMeans.push(mean);
+                  }
+              });
+              
+              // Calculate Super Stats
+              if (modelMeans.length > 0) {
+                  if (selectedVariable.includes('direction')) {
+                      // Vector average of means
+                      let sumSin = 0;
+                      let sumCos = 0;
+                      modelMeans.forEach(v => {
+                         const rad = v * Math.PI / 180;
+                         sumSin += Math.sin(rad);
+                         sumCos += Math.cos(rad);
+                      });
+                      const avgRad = Math.atan2(sumSin / modelMeans.length, sumCos / modelMeans.length);
+                      let avgDeg = avgRad * 180 / Math.PI;
+                      if (avgDeg < 0) avgDeg += 360;
+                      point.avg = avgDeg;
+                      point.min = Math.min(...modelMeans);
+                      point.max = Math.max(...modelMeans);
+                  } else {
+                      point.avg = modelMeans.reduce((a, b) => a + b, 0) / modelMeans.length;
+                      point.min = Math.min(...modelMeans);
+                      point.max = Math.max(...modelMeans);
+                  }
+                  point.range = [point.min, point.max];
+              }
+              
+              data.push(point);
+          }
+          return { data, memberKeys };
+      }
+
       const source = isDaily ? ensembleData?.daily : ensembleData?.hourly;
       
       if (!source) return { data: [], memberKeys: [] };
@@ -244,7 +414,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           data.push(point);
       }
       return { data, memberKeys: cleanKeys };
-  }, [ensembleData, selectedVariable, timeStep, settings]);
+  }, [ensembleData, selectedVariable, timeStep, settings, isComparisonMode, comparisonData, comparisonModels]);
 
   const weekendAreas = useMemo(() => {
       if (!processChartData.data.length) return [];
@@ -281,12 +451,14 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const CustomEnsembleTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
 
-    // Sort: Main member first, then others
+    // Sort: Avg first, then models
     const sortedPayload = [...payload].sort((a, b) => {
         if (a.dataKey === 'avg') return -1;
         if (b.dataKey === 'avg') return 1;
         if (a.dataKey === 'range') return 1;
         if (b.dataKey === 'range') return -1;
+
+        if (isComparisonMode) return 0;
 
         const aIsMain = a.dataKey === 'member0' || a.dataKey === 'member';
         const bIsMain = b.dataKey === 'member0' || b.dataKey === 'member';
@@ -321,9 +493,14 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         : (typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value);
                     
                     let name = entry.dataKey;
-                    if (isMain) name = 'Main';
+                    if (isComparisonMode) {
+                        const model = ENSEMBLE_MODELS.find(m => m.id === entry.dataKey.replace('_main', ''));
+                        if (model) name = model.name;
+                    } else {
+                        if (isMain) name = 'Main';
+                        if (entry.dataKey.startsWith('member')) name = entry.dataKey.replace('member', '#');
+                    }
                     if (isAvg) name = 'Avg';
-                    if (entry.dataKey.startsWith('member')) name = entry.dataKey.replace('member', '#');
 
                     return (
                         <div key={entry.dataKey} className="flex items-center gap-2">
@@ -345,6 +522,39 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
     );
   };
 
+  // Custom Legend for Comparison Mode
+  const CustomLegend = (props: any) => {
+    const { payload } = props;
+    if (!isComparisonMode || !payload) return null;
+
+    return (
+        <div className="flex flex-wrap gap-4 justify-center mt-4 px-4 text-xs">
+            {payload.map((entry: any, index: number) => {
+                let name = entry.value;
+                const color = entry.color;
+                
+                // Map ID to Name
+                const model = ENSEMBLE_MODELS.find(m => m.id === entry.dataKey.replace('_main', ''));
+                if (model) {
+                    name = model.name;
+                    // Shorten names for legend
+                    name = name.replace('Ensemble', '').replace('Global', '').replace('Seamless', '').trim();
+                }
+                
+                if (entry.dataKey === 'avg') name = t('average');
+                if (entry.dataKey === 'range') name = t('spread');
+
+                return (
+                    <div key={index} className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-slate-600 dark:text-slate-300 font-medium">{name}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+  };
+
   const currentTemp = currentWeather ? convertTemp(currentWeather.current.temperature_2m, settings.tempUnit) : 0;
   const highTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_min[0], settings.tempUnit) : 0;
@@ -355,6 +565,9 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
   const chartColor = '#3b82f6'; // Default blueish
   const isDirection = selectedVariable.includes('direction');
+  const isTemp = selectedVariable.includes('temperature') || selectedVariable.includes('dewpoint');
+  const zeroLine = convertTemp(0, settings.tempUnit);
+  const thirtyLine = convertTemp(30, settings.tempUnit);
 
   // Generate ticks for 00, 06, 12, 18 hours if hourly
   const xTicks = useMemo(() => {
@@ -460,23 +673,101 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         <div className="flex items-center gap-2 mb-2">
                             <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60">{t('ensemble.model')}</label>
                             <button 
-                                onClick={() => setIsModelInfoOpen(true)}
+                                onClick={() => onNavigate(ViewState.MODEL_INFO)}
                                 className="text-primary hover:text-primary/80 transition-colors"
                             >
                                 <Icon name="info" className="text-lg" />
                             </button>
+                            {proMode && (
+                                <div className="flex items-center gap-2 ml-4">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={isComparisonMode} 
+                                            onChange={(e) => {
+                                                setIsComparisonMode(e.target.checked);
+                                                if (!e.target.checked) {
+                                                    setComparisonData(null);
+                                                    setComparisonModels([]);
+                                                    setUiSelectedModels([]);
+                                                }
+                                            }} 
+                                            className="sr-only peer" 
+                                        />
+                                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/40 rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                                        <span className="ml-2 text-xs font-bold text-slate-500 dark:text-white/60">{t('compare')}</span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
-                        <select 
-                            value={selectedModel} 
-                            onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
-                            className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors"
-                        >
-                            {ENSEMBLE_MODELS.map(m => (
-                                <option key={m.id} value={m.id} className="text-slate-800 bg-white">
-                                    {m.name}
-                                </option>
-                            ))}
-                        </select>
+                        
+                        {!isComparisonMode ? (
+                            <select 
+                                value={selectedModel} 
+                                onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
+                                className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors"
+                            >
+                                {ENSEMBLE_MODELS.map(m => (
+                                    <option key={m.id} value={m.id} className="text-slate-800 bg-white">
+                                        {m.name}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3">
+                                <div className="max-h-[200px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                                    {ENSEMBLE_MODELS.map(m => (
+                                        <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer transition-colors">
+                                            <input 
+                                                type="checkbox"
+                                                checked={uiSelectedModels.includes(m.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        if (uiSelectedModels.length < 5) {
+                                                            setUiSelectedModels([...uiSelectedModels, m.id]);
+                                                        }
+                                                    } else {
+                                                        setUiSelectedModels(uiSelectedModels.filter(id => id !== m.id));
+                                                    }
+                                                }}
+                                                className="rounded border-slate-300 text-primary focus:ring-primary"
+                                            />
+                                            <span className="text-xs font-medium truncate">{m.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs text-slate-500 dark:text-white/40">
+                                        {uiSelectedModels.length} {t('ensemble.selected_range')}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        {isComparisonMode && (
+                                            <button
+                                                onClick={() => {
+                                                    setIsComparisonMode(false);
+                                                    setComparisonModels([]);
+                                                    setUiSelectedModels([]);
+                                                }}
+                                                className="px-3 py-2 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
+                                            >
+                                                {t('cancel')}
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => {
+                                                setComparisonModels(uiSelectedModels);
+                                                setIsComparisonMode(true);
+                                                setViewMode('main');
+                                            }}
+                                            disabled={uiSelectedModels.length < 2}
+                                            className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+                                        >
+                                            {isComparisonMode ? t('update') : t('compare')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Toggles */}
@@ -539,7 +830,12 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             { id: 'avg', label: t('average') },
                             { id: 'spread', label: t('spread') },
                             { id: 'density', label: t('density') }
-                        ].map(mode => (
+                        ].filter(mode => {
+                            if (isComparisonMode) {
+                                return ['main', 'avg', 'spread'].includes(mode.id);
+                            }
+                            return true;
+                        }).map(mode => (
                             <button
                                 key={mode.id}
                                 onClick={() => setViewMode(mode.id as any)}
@@ -575,6 +871,13 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke="rgba(128,128,128,0.2)" />
+                            
+                            {isTemp && (
+                                <>
+                                    <ReferenceLine y={zeroLine} stroke="#3b82f6" strokeWidth={1} strokeDasharray="3 3" label={{ value: settings.tempUnit === TempUnit.CELSIUS ? '0°C' : '32°F', position: 'insideRight', fill: '#3b82f6', fontSize: 12, fontWeight: 'bold' }} />
+                                    <ReferenceLine y={thirtyLine} stroke="#ef4444" strokeWidth={1} strokeDasharray="3 3" label={{ value: settings.tempUnit === TempUnit.CELSIUS ? '30°C' : '86°F', position: 'insideRight', fill: '#ef4444', fontSize: 12, fontWeight: 'bold' }} />
+                                </>
+                            )}
                             
                             {/* Vertical lines for each day in hourly mode */}
                             {timeStep === 'hourly' && dayTicks?.map((tick: any) => (
@@ -658,7 +961,27 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             )}
 
                             {/* Individual Members - Show all for Density/Spread if Direction */}
-                            {(viewMode === 'all' || viewMode === 'main' || (isDirection && (viewMode === 'density' || viewMode === 'spread'))) && processChartData.memberKeys.map((key: string) => {
+                            {(viewMode === 'all' || viewMode === 'main' || (isComparisonMode && viewMode === 'avg') || (isDirection && (viewMode === 'density' || viewMode === 'spread'))) && processChartData.memberKeys.map((key: string, index: number) => {
+                                if (isComparisonMode) {
+                                    // Only show individual lines if in 'main' or 'avg' view
+                                    if (viewMode !== 'main' && viewMode !== 'avg') return null;
+
+                                    const dataKey = viewMode === 'main' ? `${key}_main` : key;
+                                    
+                                    return (
+                                        <Line 
+                                            key={key}
+                                            type="monotone"
+                                            dataKey={dataKey}
+                                            stroke={MODEL_COLORS[index % MODEL_COLORS.length]}
+                                            strokeWidth={2}
+                                            dot={false}
+                                            isAnimationActive={false}
+                                            style={{ zIndex: 10 }}
+                                        />
+                                    );
+                                }
+
                                 const num = parseInt(key.replace(/[^0-9]/g, ''), 10);
                                 const isMainMember = key === 'member0' || key === 'member' || (!isNaN(num) && num === 0); 
                                 
@@ -691,6 +1014,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                   style={{ zIndex: 100 }}
                                 />
                             )}
+                            
+                            <Legend content={<CustomLegend />} />
                         </ComposedChart>
                     </ResponsiveContainer>
                 </div>
@@ -701,7 +1026,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 </div>
             )}
             
-            <ModelInfoModal isOpen={isModelInfoOpen} onClose={() => setIsModelInfoOpen(false)} settings={settings} />
+
         </div>
       </div>
     </div>

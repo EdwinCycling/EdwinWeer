@@ -10,7 +10,6 @@ import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsemb
 import { WeatherBackground } from '../components/WeatherBackground';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTranslation } from '../services/translations';
-import { ModelInfoModal } from '../components/ModelInfoModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -36,7 +35,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [isModelInfoOpen, setIsModelInfoOpen] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -651,39 +649,42 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors">
 
                     <div className="mb-6">
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60">{t('ensemble.model')}</label>
+                        <div className="flex items-center gap-2 mb-1">
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 dark:text-white/40">{t('ensemble.model')}</label>
                             <button 
-                                onClick={() => setIsModelInfoOpen(true)}
-                                className="text-primary hover:text-primary/80 transition-colors"
+                                onClick={() => onNavigate(ViewState.MODEL_INFO)}
+                                className="text-slate-400 hover:text-primary transition-colors"
                             >
-                                <Icon name="info" className="text-lg" />
+                                <Icon name="info" className="text-sm" />
                             </button>
                         </div>
-                        <select 
-                            value={selectedModel} 
-                            onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
-                            className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors"
-                        >
-                            <option value="icon_seamless" className="text-slate-800 bg-white">DWD ICON EPS Seamless</option>
-                            <option value="icon_global" className="text-slate-800 bg-white">DWD ICON EPS Global</option>
-                            <option value="icon_eu" className="text-slate-800 bg-white">DWD ICON EPS EU</option>
-                            <option value="icon_d2" className="text-slate-800 bg-white">DWD ICON EPS D2</option>
-                            <option value="gfs_seamless" className="text-slate-800 bg-white">GFS Ensemble Seamless</option>
-                            <option value="gfs025" className="text-slate-800 bg-white">GFS Ensemble 0.25°</option>
-                            <option value="gfs05" className="text-slate-800 bg-white">GFS Ensemble 0.5°</option>
-                            <option value="ecmwf_ifs025" className="text-slate-800 bg-white">ECMWF IFS 0.25°</option>
-                            <option value="ecmwf_aifs025" className="text-slate-800 bg-white">ECMWF AIFS 0.25°</option>
-                            <option value="gem_global" className="text-slate-800 bg-white">GEM Global Ensemble</option>
-                            <option value="bom_access_global" className="text-slate-800 bg-white">BOM ACCESS Global</option>
-                            <option value="metoffice_global" className="text-slate-800 bg-white">UK MetOffice Global 20km</option>
-                            <option value="metoffice_uk" className="text-slate-800 bg-white">UK MetOffice UK 2km</option>
-                            <option value="icon_ch1_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH1</option>
-                            <option value="icon_ch2_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH2</option>
-                        </select>
+                        <div className="relative">
+                            <select 
+                                value={selectedModel} 
+                                onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
+                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg px-3 py-2 appearance-none text-xs font-medium text-slate-600 dark:text-slate-300 outline-none focus:border-primary/50 transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                            >
+                                <option value="icon_seamless" className="text-slate-800 bg-white">DWD ICON EPS Seamless</option>
+                                <option value="icon_global" className="text-slate-800 bg-white">DWD ICON EPS Global</option>
+                                <option value="icon_eu" className="text-slate-800 bg-white">DWD ICON EPS EU</option>
+                                <option value="icon_d2" className="text-slate-800 bg-white">DWD ICON EPS D2</option>
+                                <option value="gfs_seamless" className="text-slate-800 bg-white">GFS Ensemble Seamless</option>
+                                <option value="gfs025" className="text-slate-800 bg-white">GFS Ensemble 0.25°</option>
+                                <option value="gfs05" className="text-slate-800 bg-white">GFS Ensemble 0.5°</option>
+                                <option value="ecmwf_ifs025" className="text-slate-800 bg-white">ECMWF IFS 0.25°</option>
+                                <option value="ecmwf_aifs025" className="text-slate-800 bg-white">ECMWF AIFS 0.25°</option>
+                                <option value="gem_global" className="text-slate-800 bg-white">GEM Global Ensemble</option>
+                                <option value="bom_access_global" className="text-slate-800 bg-white">BOM ACCESS Global</option>
+                                <option value="metoffice_global" className="text-slate-800 bg-white">UK MetOffice Global 20km</option>
+                                <option value="metoffice_uk" className="text-slate-800 bg-white">UK MetOffice UK 2km</option>
+                                <option value="icon_ch1_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH1</option>
+                                <option value="icon_ch2_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH2</option>
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <Icon name="expand_more" className="text-sm" />
+                            </div>
+                        </div>
                     </div>
-                    
-                    <ModelInfoModal isOpen={isModelInfoOpen} onClose={() => setIsModelInfoOpen(false)} settings={settings} />
                     
                     {/* Hourly */}
                     <div className="mb-8">

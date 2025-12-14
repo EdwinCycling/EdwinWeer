@@ -26,9 +26,16 @@ import { useAuth } from './contexts/AuthContext';
 const App: React.FC = () => {
   const { user, loading, logout, sessionExpiry } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.CURRENT);
+  const [previousView, setPreviousView] = useState<ViewState>(ViewState.CURRENT);
   const [settings, setSettings] = useState<AppSettings>(loadSettings());
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState<'disclaimer' | 'cookies' | null>(null);
+  const [usageWarning, setUsageWarning] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; current: number; limit: number }>(null);
+
+  const navigate = (view: ViewState) => {
+      setPreviousView(currentView);
+      setCurrentView(view);
+  };
 
   useEffect(() => {
       saveSettings(settings);
@@ -44,6 +51,33 @@ const App: React.FC = () => {
 
   // Helper for translations in this component
   const t = (key: string) => getTranslation(key, settings.language);
+
+  useEffect(() => {
+      const handler = (event: Event) => {
+          const custom = event as CustomEvent<any>;
+          if (!custom.detail) return;
+          const { scope, stats, limits } = custom.detail as { scope: 'minute' | 'hour' | 'day' | 'month'; stats: any; limits: any };
+          let current = 0;
+          let limit = 0;
+          if (scope === 'minute') {
+              current = stats.minuteCount;
+              limit = limits.MINUTE;
+          } else if (scope === 'hour') {
+              current = stats.hourCount;
+              limit = limits.HOUR;
+          } else if (scope === 'day') {
+              current = stats.dayCount;
+              limit = limits.DAY;
+          } else if (scope === 'month') {
+              current = stats.monthCount;
+              limit = limits.MONTH;
+          }
+          if (!limit || current < 0.8 * limit) return;
+          setUsageWarning({ scope, current, limit });
+      };
+      window.addEventListener('usage:warning', handler);
+      return () => window.removeEventListener('usage:warning', handler);
+  }, [settings.language]);
 
   // Dynamic Title Update
   useEffect(() => {
@@ -69,37 +103,37 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case ViewState.CURRENT:
-        return <CurrentWeatherView onNavigate={setCurrentView} settings={settings} onUpdateSettings={setSettings} />;
+        return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.FORECAST:
-        return <ForecastWeatherView onNavigate={setCurrentView} settings={settings} />;
+        return <ForecastWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.MAP:
-        return <MapView onNavigate={setCurrentView} settings={settings} />;
+        return <MapView onNavigate={navigate} settings={settings} />;
       case ViewState.HOURLY_DETAIL:
-        return <HourlyDetailView onNavigate={setCurrentView} settings={settings} />;
+        return <HourlyDetailView onNavigate={navigate} settings={settings} />;
       case ViewState.ENSEMBLE:
-        return <EnsembleWeatherView onNavigate={setCurrentView} settings={settings} />;
+        return <EnsembleWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.HOLIDAY:
-        return <HolidayWeatherView onNavigate={setCurrentView} settings={settings} />;
+        return <HolidayWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.HISTORICAL:
-        return <HistoricalWeatherView onNavigate={setCurrentView} settings={settings} />;
+        return <HistoricalWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.STRAVA:
-        return <StravaWeatherView onNavigate={setCurrentView} settings={settings} />;
+        return <StravaWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.SETTINGS:
-        return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={setCurrentView} />;
+        return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.TEAM:
-        return <TeamView onNavigate={setCurrentView} />;
+        return <TeamView onNavigate={navigate} />;
       case ViewState.PRICING:
-        return <PricingView onNavigate={setCurrentView} />;
+        return <PricingView onNavigate={navigate} settings={settings} />;
       case ViewState.MODEL_INFO:
-        return <ModelInfoView onNavigate={setCurrentView} settings={settings} />;
+        return <ModelInfoView onNavigate={navigate} settings={settings} previousView={previousView} />;
       case ViewState.COUNTRY_MAP:
-        return <CountryMapView onNavigate={setCurrentView} settings={settings} />;
+        return <CountryMapView onNavigate={navigate} settings={settings} />;
       case ViewState.USER_ACCOUNT:
-        return <UserAccountView onNavigate={setCurrentView} settings={settings} />;
+        return <UserAccountView onNavigate={navigate} settings={settings} />;
       case ViewState.INFO:
-        return <InfoView onNavigate={setCurrentView} />;
+        return <InfoView onNavigate={navigate} />;
       default:
-        return <CurrentWeatherView onNavigate={setCurrentView} settings={settings} onUpdateSettings={setSettings} />;
+        return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }
   };
 
@@ -111,52 +145,90 @@ const App: React.FC = () => {
             {renderView()}
         </div>
 
+        {usageWarning && (
+            <div className="fixed top-4 inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">
+                <div className="max-w-xl w-full bg-yellow-50 dark:bg-yellow-900/40 border border-yellow-200 dark:border-yellow-700 text-yellow-900 dark:text-yellow-100 rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 pointer-events-auto">
+                    <div className="mt-0.5">
+                        <Icon name="warning" className="text-lg text-yellow-500 dark:text-yellow-300" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-sm font-bold">
+                            {settings.language === 'nl' ? 'API verbruik bijna op' : 'API usage nearly reached'}
+                        </p>
+                        <p className="text-xs mt-0.5">
+                            {(() => {
+                                const scopeLabelNl =
+                                    usageWarning.scope === 'minute' ? 'per minuut' :
+                                    usageWarning.scope === 'hour' ? 'per uur' :
+                                    usageWarning.scope === 'day' ? 'per dag' : 'per maand';
+                                const scopeLabelEn =
+                                    usageWarning.scope === 'minute' ? 'per minute' :
+                                    usageWarning.scope === 'hour' ? 'per hour' :
+                                    usageWarning.scope === 'day' ? 'per day' : 'per month';
+                                const percent = Math.round((usageWarning.current / usageWarning.limit) * 100);
+                                if (settings.language === 'nl') {
+                                    return `Je zit op ${percent}% van je limiet ${scopeLabelNl} (${usageWarning.current} / ${usageWarning.limit} calls).`;
+                                }
+                                return `You are at ${percent}% of your ${scopeLabelEn} limit (${usageWarning.current} / ${usageWarning.limit} calls).`;
+                            })()}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setUsageWarning(null)}
+                        className="text-xs text-yellow-700 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-white px-1"
+                    >
+                        <Icon name="close" className="text-sm" />
+                    </button>
+                </div>
+            </div>
+        )}
+
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 p-2 flex justify-around z-50 shadow-2xl pb-4 transition-colors duration-300">
             <button 
-                onClick={() => setCurrentView(ViewState.CURRENT)}
+                onClick={() => navigate(ViewState.CURRENT)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="sunny" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.current')}</span>
             </button>
             <button 
-                onClick={() => setCurrentView(ViewState.FORECAST)}
+                onClick={() => navigate(ViewState.FORECAST)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.FORECAST ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="date_range" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">Vooruitzicht</span>
             </button>
             <button 
-                onClick={() => setCurrentView(ViewState.ENSEMBLE)}
+                onClick={() => navigate(ViewState.ENSEMBLE)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.ENSEMBLE ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="ssid_chart" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.ensemble')}</span>
             </button>
             <button 
-                onClick={() => setCurrentView(ViewState.MAP)}
+                onClick={() => navigate(ViewState.MAP)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.MAP ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="map" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.map')}</span>
             </button>
             <button 
-                onClick={() => setCurrentView(ViewState.HISTORICAL)}
+                onClick={() => navigate(ViewState.HISTORICAL)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HISTORICAL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="calendar_month" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.historical')}</span>
             </button>
             <button 
-                onClick={() => setCurrentView(ViewState.HOLIDAY)}
+                onClick={() => navigate(ViewState.HOLIDAY)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HOLIDAY ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="flight" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.holiday')}</span>
             </button>
             <button 
-                onClick={() => setCurrentView(ViewState.STRAVA)}
+                onClick={() => navigate(ViewState.STRAVA)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.STRAVA ? 'text-strava scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="directions_bike" />
@@ -183,37 +255,37 @@ const App: React.FC = () => {
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
                     
                     <div className="grid grid-cols-2 gap-4 mb-8">
-                         <button onClick={() => { setCurrentView(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-700 dark:text-white">
                                 <Icon name="settings" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.settings')}</span>
                          </button>
-                         <button onClick={() => { setCurrentView(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <Icon name="groups" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">Het Team</span>
                          </button>
-                         <button onClick={() => { setCurrentView(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
                                 <Icon name="payments" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">Pricing</span>
+                            <span className="font-bold text-sm">{t('nav.pricing')}</span>
                          </button>
-                         <button onClick={() => { setCurrentView(ViewState.MODEL_INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.MODEL_INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                                 <Icon name="model_training" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">Weermodellen</span>
                          </button>
-                         <button onClick={() => { setCurrentView(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                                 <Icon name="info" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">Info</span>
                          </button>
-                         <button onClick={() => { setCurrentView(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-white/60">
                                 <Icon name="account_circle" className="text-xl" />
                             </div>

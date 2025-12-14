@@ -3,6 +3,7 @@ import { ViewState, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { getUsage, UsageStats, getLimit } from '../services/usageService';
+import { API_LIMITS } from '../services/apiConfig';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -64,7 +65,7 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings }) => {
         {/* Usage Stats Section */}
         <section>
             <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">Verbruik & Limieten</h2>
-            <p className="text-xs text-slate-500 dark:text-white/40 mb-3">Overzicht van je API gebruik voor vandaag.</p>
+            <p className="text-xs text-slate-500 dark:text-white/40 mb-3">Overzicht van je API gebruik voor vandaag en deze maand.</p>
             <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
                 {usageStats && (
                     <>
@@ -84,6 +85,15 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings }) => {
                             </div>
                             <div className="font-bold text-slate-800 dark:text-white">
                                 {usageStats.dayCount} / {getLimit()}
+                            </div>
+                        </div>
+                        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Icon name="date_range" className="text-slate-600 dark:text-white/60" />
+                                <span className="font-medium">Deze maand</span>
+                            </div>
+                            <div className="font-bold text-slate-800 dark:text-white">
+                                {usageStats.monthCount} / {API_LIMITS.MONTH}
                             </div>
                         </div>
                         <div className="p-4 flex items-center justify-between">

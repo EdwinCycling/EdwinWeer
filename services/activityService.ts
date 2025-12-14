@@ -40,22 +40,18 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
         case 'bbq':
             // BBQ / Terrasje (Focus: Temperatuur & Droog)
             // 1. Neerslag
-            if (w.precipProb > 30) penalize(5, 'reason.rain_prob_high');
-            if (w.precipMm > 0.1) penalize(8, 'reason.rain');
+            if (w.precipMm > 0.1 || w.precipProb > 30) penalize(8, 'reason.rain');
 
             // 2. Temperatuur (Gevoel)
-            if (w.tempFeelsLike < 0) penalize(10, 'reason.freezing');
-            else if (w.tempFeelsLike < 5) penalize(9, 'reason.way_too_cold');
-            else if (w.tempFeelsLike < 10) penalize(8, 'reason.too_cold');
+            if (w.tempFeelsLike < 10) penalize(8, 'reason.too_cold');
             else if (w.tempFeelsLike < 15) penalize(5, 'reason.coat_needed');
-            else if (w.tempFeelsLike < 19) penalize(2, 'reason.chilly');
-            else if (w.tempFeelsLike > 35) penalize(4, 'reason.way_too_hot');
-            else if (w.tempFeelsLike > 30) penalize(2, 'reason.too_hot');
+            else if (w.tempFeelsLike < 20) penalize(2, 'reason.chilly');
+            
+            if (w.tempFeelsLike > 30) penalize(2, 'reason.too_hot');
             
             // 3. Wind
-            if (w.windKmh > 49) penalize(6, 'reason.stormy');
-            else if (w.windKmh > 38) penalize(4, 'reason.strong_wind');
-            else if (w.windKmh > 28) penalize(2, 'reason.annoying_wind');
+            if (w.windKmh > 38) penalize(6, 'reason.strong_wind');
+            else if (w.windKmh > 28) penalize(3, 'reason.annoying_wind');
             else if (w.windKmh > 19) penalize(1, 'reason.moderate_wind');
             break;
 
@@ -142,26 +138,21 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             // Hardlopen 🏃
             // Focus: Thermoregulatie.
             // 1. Temperatuur
-            if (w.tempFeelsLike > 30) penalize(8, 'reason.dangerous_heat');
-            else if (w.tempFeelsLike > 25) penalize(6, 'reason.heat_stress');
+            if (w.tempFeelsLike > 25) penalize(6, 'reason.heat_stress');
             else if (w.tempFeelsLike > 20) penalize(3, 'reason.actually_too_warm');
-            else if (w.tempFeelsLike > 15) penalize(1, 'reason.bit_too_warm');
             
             if (w.tempFeelsLike < 0) penalize(4, 'reason.cold_lungs');
             else if (w.tempFeelsLike < 5) penalize(2, 'reason.very_cold');
-            else if (w.tempFeelsLike < 10) penalize(1, 'reason.cold');
 
             // 2. Luchtvochtigheid
             if (w.humidity && w.humidity > 85 && w.tempFeelsLike > 20) {
-                 penalize(2, 'reason.muggy');
+                 penalize(4, 'reason.muggy');
             }
 
             // 3. Wind
-            if (w.windKmh > 61) penalize(7, 'reason.debris_road'); // > 7 Bft
-            else if (w.windKmh > 49) penalize(5, 'reason.heavy_headwind'); // > 6 Bft
-            else if (w.windKmh > 29) penalize(3, 'reason.heavy_ploughing'); // > 5 Bft
+            if (w.windKmh > 29) penalize(4, 'reason.heavy_ploughing');
 
-            // 4. Neerslag
+            // 4. Neerslag (Existing logic kept as not explicitly changed but good to have)
             if (w.precipMm > 3.0) penalize(5, 'reason.soaked');
             else if (w.precipMm > 1.0) penalize(2, 'reason.wet_shoes');
             break;
@@ -170,20 +161,16 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             // Strand & Zonnen 🏖️
             // Focus: Comfort in rust.
             // 1. Temperatuur
-            if (w.tempFeelsLike < 10) penalize(10, 'reason.too_cold_beach');
-            else if (w.tempFeelsLike < 15) penalize(9, 'reason.too_cold');
-            else if (w.tempFeelsLike < 18) penalize(7, 'reason.still_too_chilly');
-            else if (w.tempFeelsLike < 22) penalize(4, 'reason.chilly');
-            else if (w.tempFeelsLike < 25) penalize(1, 'reason.fine');
+            if (w.tempFeelsLike < 15) penalize(9, 'reason.too_cold');
+            else if (w.tempFeelsLike < 20) penalize(7, 'reason.too_cold_beach');
+            else if (w.tempFeelsLike < 22) penalize(3, 'reason.chilly');
 
             // 2. Bewolking (Cloud Cover)
             if (w.cloudCover > 80) penalize(8, 'reason.no_sun');
             else if (w.cloudCover > 40) penalize(4, 'reason.too_many_clouds');
 
             // 3. Wind
-            if (w.windKmh > 38) penalize(7, 'reason.sandstorm');
-            else if (w.windKmh > 28) penalize(5, 'reason.eating_sand'); // > 4 Bft
-            else if (w.windKmh > 19) penalize(2, 'reason.chilly_sea'); // > 3 Bft
+            if (w.windKmh > 28) penalize(5, 'reason.eating_sand');
 
             // 4. Neerslag
             if (w.precipProb > 30) penalize(6, 'reason.risk_wet_gear');
@@ -244,28 +231,22 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             // Golf ⛳
             // Focus: Balvlucht en Baanconditie.
             // 1. Wind
-            if (w.windKmh > 49) penalize(8, 'reason.unplayable'); // > 6 Bft
-            else if (w.windKmh > 29) penalize(5, 'reason.difficult_play'); // > 5 Bft
-            else if (w.windKmh > 19) penalize(2, 'reason.ball_influence'); // > 3 Bft
+            if (w.windKmh > 49) penalize(9, 'reason.unplayable');
+            else if (w.windKmh > 19) penalize(4, 'reason.ball_influence');
 
             // 2. Neerslag
             if (w.precipMm > 0.2) penalize(4, 'reason.wet_grips');
             
             // 3. Onweer
-            if ([95, 96, 99].includes(w.weatherCode) || w.precipProb > 15) { // "Onweerskans" often correlates with high precipProb + code, using simplified check
-                // If strictly lightning code:
-                 if ([95, 96, 99].includes(w.weatherCode)) {
-                    score = 1;
-                    reasons.push(getTranslation('reason.life_danger_thunder', lang));
-                 }
+            if ([95, 96, 99].includes(w.weatherCode)) {
+                score = 1;
+                reasons.push(getTranslation('reason.life_danger_thunder', lang));
             }
 
             // 4. Temperatuur
-            if (w.tempFeelsLike < 0) penalize(6, 'reason.course_frozen');
-            else if (w.tempFeelsLike < 5) penalize(3, 'reason.ball_hard');
-            else if (w.tempFeelsLike < 10) penalize(1, 'reason.chilly');
-            
-            if (w.tempFeelsLike > 30) penalize(2, 'reason.warm_18_holes');
+            if (w.tempFeelsLike < 0) penalize(10, 'reason.course_frozen');
+            else if (w.tempFeelsLike < 5) penalize(6, 'reason.ball_hard');
+            else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
             break;
 
         case 'drone':

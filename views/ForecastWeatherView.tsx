@@ -52,14 +52,25 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
 
+  const [showActivities, setShowActivities] = useState(true);
+  const [expandedMode, setExpandedMode] = useState(true);
+
   const getDailyForecast = () => {
       if (!weatherData) return [];
       return weatherData.daily.time.map((ts, i) => {
           const date = new Date(ts);
-          const dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long' });
+          let dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long' });
+          
+          if (i > 0) {
+             const dayMonth = date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' });
+             dayName += ` ${dayMonth}`;
+          }
+
           const code = weatherData.daily.weather_code[i];
           const min = convertTemp(weatherData.daily.temperature_2m_min[i], settings.tempUnit);
           const max = convertTemp(weatherData.daily.temperature_2m_max[i], settings.tempUnit);
+          const feelsLikeRaw = weatherData.daily.apparent_temperature_max?.[i] ?? weatherData.daily.temperature_2m_max[i];
+          const feelsLike = convertTemp(feelsLikeRaw, settings.tempUnit);
           const precip = weatherData.daily.precipitation_sum?.[i] || 0;
           const precipAmount = convertPrecip(precip, settings.precipUnit);
           const sunshineSec = weatherData.daily.sunshine_duration?.[i] || 0;
@@ -92,36 +103,40 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           const moonPhaseText = getMoonPhaseText(moonPhase, settings.language);
           const precip24h = i > 0 ? (weatherData.daily.precipitation_sum?.[i-1] || 0) : 0;
 
-          // Activity Scores
-          const activityData = {
-              tempFeelsLike: weatherData.daily.apparent_temperature_max?.[i] || weatherData.daily.temperature_2m_max[i],
-              windKmh: weatherData.daily.wind_speed_10m_max?.[i] || 0,
-              precipMm: weatherData.daily.precipitation_sum?.[i] || 0,
-              precipProb: weatherData.daily.precipitation_probability_max?.[i] || 0,
-              gustsKmh: weatherData.daily.wind_gusts_10m_max?.[i] || 0,
-              weatherCode: weatherData.daily.weather_code[i],
-              sunChance: ((weatherData.daily.sunshine_duration?.[i] || 0) / (weatherData.daily.daylight_duration?.[i] || 1)) * 100,
-              cloudCover,
-              visibility,
-              humidity,
-              moonPhaseText,
-              precip24h
-          };
+          // Activity Scores (Only for first 7 days)
+          let activityScores: any[] = [];
+          if (i <= 6) {
+              const activityData = {
+                  tempFeelsLike: feelsLikeRaw,
+                  windKmh: weatherData.daily.wind_speed_10m_max?.[i] || 0,
+                  precipMm: weatherData.daily.precipitation_sum?.[i] || 0,
+                  precipProb: weatherData.daily.precipitation_probability_max?.[i] || 0,
+                  gustsKmh: weatherData.daily.wind_gusts_10m_max?.[i] || 0,
+                  weatherCode: weatherData.daily.weather_code[i],
+                  sunChance: ((weatherData.daily.sunshine_duration?.[i] || 0) / (weatherData.daily.daylight_duration?.[i] || 1)) * 100,
+                  cloudCover,
+                  visibility,
+                  humidity,
+                  moonPhaseText,
+                  precip24h
+              };
 
-          const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
-          const activityScores = activities.map(act => ({
-              type: act,
-              ...calculateActivityScore(activityData, act, settings.language)
-          }));
+              const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
+              activityScores = activities.map(act => ({
+                  type: act,
+                  ...calculateActivityScore(activityData, act, settings.language)
+              }));
+          }
 
-          let color = 'from-yellow-400 to-amber-400';
+              let color = 'from-yellow-400 to-amber-400';
 
-          return {
-              day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
-              icon: mapWmoCodeToIcon(code),
-              min,
-              max,
-              color,
+              return {
+                  day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+                  icon: mapWmoCodeToIcon(code),
+                  min,
+                  max,
+                  feelsLike,
+                  color,
               precip,
               precipAmount,
               sunshineHours,
@@ -281,61 +296,131 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             
             {/* Daily Forecast List */}
             <div className="flex flex-col gap-1 mb-8">
-                <div className="flex justify-between items-center px-1 mb-2">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-1 mb-4 gap-2">
                     <h3 className="text-slate-500 dark:text-white/60 text-xs font-bold uppercase tracking-wider">
                         {t('next_days')}
                     </h3>
+                    <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input 
+                                type="checkbox" 
+                                checked={showActivities} 
+                                onChange={(e) => setShowActivities(e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Activiteiten</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input 
+                                type="checkbox" 
+                                checked={expandedMode} 
+                                onChange={(e) => setExpandedMode(e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Uitgebreid</span>
+                        </label>
+                    </div>
                 </div>
                 
-                <div className="flex flex-col gap-2">
+                <div className={`${!expandedMode ? 'grid grid-cols-2 md:grid-cols-3 gap-2' : 'flex flex-col gap-2'}`}>
                     {dailyForecast.map((d, i) => (
-                        <div key={i} onClick={() => setSelectedDayIndex(i)} className="flex flex-col p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer">
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-3 w-1/4">
-                                    <div className="size-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center">
-                                        <Icon name={d.icon} className={`text-xl ${i===0 ? 'text-primary' : 'text-slate-600 dark:text-white'}`} />
+                        expandedMode ? (
+                            <div key={i} onClick={() => setSelectedDayIndex(i)} className="flex flex-col p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer">
+                                <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-3 w-1/4">
+                                        <div className="size-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center">
+                                            <Icon name={d.icon} className={`text-xl ${i===0 ? 'text-primary' : 'text-slate-600 dark:text-white'}`} />
+                                        </div>
+                                        <p className="font-medium flex items-center gap-1">
+                                            {d.day}
+                                            {d.feelsLike < 10 && (
+                                                <Icon name="ac_unit" className="text-[14px] text-sky-500" />
+                                            )}
+                                            {d.feelsLike > 25 && (
+                                                <Icon name="whatshot" className="text-[14px] text-orange-500" />
+                                            )}
+                                        </p>
                                     </div>
-                                    <p className="font-medium">{d.day}</p>
-                                </div>
-                                
-                                <div className="flex-1 flex items-center gap-1 px-2">
-                                    <span className="text-slate-500 dark:text-white/60 text-xs font-medium text-right min-w-[24px]">{d.min}°</span>
-                                    <div className="h-2 flex-1 mx-2 bg-slate-300 dark:bg-black/40 rounded-full overflow-hidden relative">
-                                        <div className={`absolute h-full rounded-full bg-gradient-to-r ${d.color}`} style={{ left: `${((d.min - tempScaleMin) / tempScaleRange) * 100}%`, width: `${Math.max(2, ((d.max - d.min) / tempScaleRange) * 100)}%` }}></div>
+                                    
+                                    <div className="flex-1 flex items-center gap-1 px-2">
+                                        <span className="text-slate-500 dark:text-white/60 text-xs font-medium text-right min-w-[24px]">{d.min}°</span>
+                                        <div className="h-2 flex-1 mx-2 bg-slate-300 dark:bg-black/40 rounded-full overflow-hidden relative">
+                                            <div className={`absolute h-full rounded-full bg-gradient-to-r ${d.color}`} style={{ left: `${((d.min - tempScaleMin) / tempScaleRange) * 100}%`, width: `${Math.max(2, ((d.max - d.min) / tempScaleRange) * 100)}%` }}></div>
+                                        </div>
+                                        <span className="font-bold text-sm min-w-[24px]">{d.max}°</span>
                                     </div>
-                                    <span className="font-bold text-sm min-w-[24px]">{d.max}°</span>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-white/5 text-xs">
-                                {d.precipAmount > 0 ? (
-                                    <div className="flex items-center justify-center gap-1.5 text-blue-500 dark:text-blue-400">
-                                        <Icon name="water_drop" className="text-sm" />
-                                        <span className="font-medium">{d.precipAmount} {settings.precipUnit}</span>
+                                <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-white/5 text-xs">
+                                    {d.precipAmount > 0 ? (
+                                        <div className="flex items-center justify-center gap-1.5 text-blue-500 dark:text-blue-400">
+                                            <Icon name="water_drop" className="text-sm" />
+                                            <span className="font-medium">{d.precipAmount} {settings.precipUnit}</span>
+                                        </div>
+                                    ) : <div className="invisible" />}
+                                    <div className="flex items-center justify-center gap-1.5 text-orange-500 dark:text-orange-400">
+                                        <Icon name="wb_sunny" className="text-sm" />
+                                        <span className="font-medium">{d.sunshineHours}h</span>
                                     </div>
-                                ) : <div className="invisible" />}
-                                <div className="flex items-center justify-center gap-1.5 text-orange-500 dark:text-orange-400">
-                                    <Icon name="wb_sunny" className="text-sm" />
-                                    <span className="font-medium">{d.sunshineHours}h</span>
+                                    <div className="flex items-center justify-center gap-1.5 text-slate-600 dark:text-white/70">
+                                        <Icon name="air" className="text-sm" />
+                                        <span className="font-medium">{d.windDir} {d.windMax}</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-center gap-1.5 text-slate-600 dark:text-white/70">
-                                    <Icon name="air" className="text-sm" />
-                                    <span className="font-medium">{d.windDir} {d.windMax}</span>
-                                </div>
-                            </div>
 
-                            <div className="flex flex-row justify-between items-center gap-1 mt-2 pt-2 border-t border-slate-200 dark:border-white/5 overflow-x-auto scrollbar-hide">
-                                {d.activityScores.filter(s => settings.enabledActivities?.[s.type] !== false).map(score => (
-                                    <div key={score.type} className="flex flex-col items-center justify-center gap-0.5 group relative cursor-help min-w-[24px]">
-                                         <Icon name={getActivityIcon(score.type)} className={`text-lg ${getScoreColor(score.score10)}`} />
-                                         <span className={`text-[10px] font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
-                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg">
-                                             {t(`activity.${score.type}`)}: {score.text}
-                                         </div>
+                                {showActivities && d.activityScores.length > 0 && (
+                                    <div className="flex flex-row justify-between items-center gap-1 mt-2 pt-2 border-t border-slate-200 dark:border-white/5 overflow-x-auto scrollbar-hide">
+                                        {d.activityScores.filter(s => settings.enabledActivities?.[s.type] !== false).map(score => (
+                                            <div key={score.type} className="flex flex-col items-center justify-center gap-0.5 group relative cursor-help min-w-[24px]">
+                                                 <Icon name={getActivityIcon(score.type)} className={`text-lg ${getScoreColor(score.score10)}`} />
+                                                 <span className={`text-[10px] font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
+                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-lg">
+                                                     {t(`activity.${score.type}`)}: {score.text}
+                                                 </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        </div>
+                        ) : (
+                            <div key={i} onClick={() => setSelectedDayIndex(i)} className="flex flex-col p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in zoom-in duration-300 cursor-pointer border border-slate-200 dark:border-white/5 h-full justify-between">
+                                 <div className="flex items-center justify-between mb-2">
+                                     <div className="flex flex-col">
+                                         <span className="font-bold text-sm truncate">{d.day.split(' ')[0]}</span>
+                                         <span className="text-[10px] text-slate-500 dark:text-white/60 whitespace-nowrap">{d.day.split(' ').slice(1).join(' ')}</span>
+                                     </div>
+                                     <div className="flex items-center gap-1 ml-2">
+                                         {d.feelsLike < 10 && (
+                                             <Icon name="ac_unit" className="text-xs text-sky-500" />
+                                         )}
+                                         {d.feelsLike > 25 && (
+                                             <Icon name="whatshot" className="text-xs text-orange-500" />
+                                         )}
+                                     </div>
+                                 </div>
+                                 <div className="flex items-center justify-between mb-3">
+                                     <Icon name={d.icon} className="text-3xl text-slate-700 dark:text-white" />
+                                     <div className="flex flex-col items-end">
+                                         <span className="font-bold text-xl">{d.max}°</span>
+                                         <span className="text-xs text-slate-500 dark:text-white/60">{d.min}°</span>
+                                     </div>
+                                 </div>
+                                 <div className="grid grid-cols-3 gap-1 text-[10px] text-slate-500 dark:text-white/60 mt-auto">
+                                     <div className="flex flex-col items-center">
+                                         <Icon name="water_drop" className="text-xs mb-0.5 text-blue-500" />
+                                         <span>{d.precipAmount > 0 ? d.precipAmount : '-'}</span>
+                                     </div>
+                                     <div className="flex flex-col items-center">
+                                         <Icon name="wb_sunny" className="text-xs mb-0.5 text-orange-500" />
+                                         <span>{d.sunshineHours}h</span>
+                                     </div>
+                                     <div className="flex flex-col items-center">
+                                         <Icon name="air" className="text-xs mb-0.5" />
+                                         <span>{d.windMax}</span>
+                                     </div>
+                                 </div>
+                            </div>
+                        )
                     ))}
                 </div>
 
