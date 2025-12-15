@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         strictPort: true,
         host: '0.0.0.0',
+        headers: {
+          'Cross-Origin-Opener-Policy': 'unsafe-none',
+          'Cross-Origin-Embedder-Policy': 'unsafe-none',
+        }
       },
   plugins: [react()],
       define: {},
