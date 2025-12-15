@@ -5,8 +5,8 @@ import { calculateActivityScore, ActivityScore } from '../services/activityServi
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
 import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip, convertPressure, calculateHeatIndex, getWindDirection } from '../services/weatherService';
-import { searchCityByName } from '../services/geoService';
-import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel } from '../services/storageService';
+import { searchCityByName, reverseGeocode } from '../services/geoService';
+import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTranslation } from '../services/translations';
@@ -478,6 +478,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       </button>
 
       <button
+          onClick={() => onNavigate(ViewState.MAP)}
+          className="fixed top-6 right-[15.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+          aria-label={t('nav.map')}
+      >
+          <Icon name="map" className="text-2xl" />
+      </button>
+
+      <button
           onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
           className="fixed top-6 right-[12rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
           aria-label="Country Map"
@@ -536,13 +544,33 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                              const geo = navigator.geolocation;
                              if (geo) {
                                  setLoadingCity(true);
-                                 geo.getCurrentPosition((pos) => {
-                                     setLocation({name: t('my_location'), country: "", lat: pos.coords.latitude, lon: pos.coords.longitude});
+                                 geo.getCurrentPosition(async (pos) => {
+                                     const lat = pos.coords.latitude;
+                                     const lon = pos.coords.longitude;
+                                     let name = t('my_location');
+                                     
+                                     // Try to get actual city name
+                                     const cityName = await reverseGeocode(lat, lon);
+                                     if (cityName) {
+                                         name = cityName;
+                                     }
+
+                                     setLocation({
+                                         name: name, 
+                                         country: "", 
+                                         lat: lat, 
+                                         lon: lon,
+                                         isCurrentLocation: true
+                                     });
                                      setLoadingCity(false);
-                                 }, () => setLoadingCity(false));
+                                 }, (err) => {
+                                     console.error("Geolocation error", err);
+                                     setLoadingCity(false);
+                                     // Optional: show error toast
+                                 });
                              }
                          }}
-                         className="flex items-center gap-1 px-4 py-2 rounded-full bg-white/60 dark:bg-white/10 hover:bg-white dark:hover:bg-primary/20 text-slate-800 dark:text-white hover:text-primary dark:hover:text-primary transition-colors border border-slate-200 dark:border-white/5 whitespace-nowrap backdrop-blur-md shadow-sm"
+                         className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${location.isCurrentLocation ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold border-primary dark:border-white' : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary border-slate-200 dark:border-white/5'}`}
                     >
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
@@ -678,7 +706,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 <option value="metoffice_global" className="text-slate-800 bg-white">UK MetOffice Global 20km</option>
                                 <option value="metoffice_uk" className="text-slate-800 bg-white">UK MetOffice UK 2km</option>
                                 <option value="icon_ch1_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH1</option>
-                                <option value="icon_ch2_eps" className="text-slate-800 bg-white">MeteoSwiss ICON CH2</option>
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                 <Icon name="expand_more" className="text-sm" />

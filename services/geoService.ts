@@ -19,3 +19,35 @@ export const searchCityByName = async (name: string, language: string = 'en'): P
     lon: r.longitude,
   }));
 };
+
+export const reverseGeocode = async (lat: number, lon: number): Promise<string | null> => {
+  try {
+    // limit precision to 4 decimal places to improve cache hit rate (if any) and privacy
+    const latFixed = lat.toFixed(4);
+    const lonFixed = lon.toFixed(4);
+    
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latFixed}&lon=${lonFixed}&zoom=10`;
+    
+    // Add User-Agent as required by Nominatim usage policy
+    const headers = {
+      'User-Agent': 'EdwinWeerApp/1.0' 
+    };
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) return null;
+    
+    const data = await res.json();
+    if (!data || !data.address) return null;
+    
+    // Try to find the most relevant name
+    return data.address.city || 
+           data.address.town || 
+           data.address.village || 
+           data.address.municipality || 
+           data.address.suburb || 
+           null;
+  } catch (e) {
+    console.error("Reverse geocoding failed", e);
+    return null;
+  }
+};

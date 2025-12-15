@@ -79,6 +79,23 @@ export const InfoView: React.FC<Props> = ({ onNavigate }) => {
                     Whether you are a photographer looking for the golden hour, a sailor checking wind gusts, or just someone who wants to know if they need an umbrella, we have built this for you.
                 </p>
             </section>
+
+            <div className="bg-amber-50 dark:bg-amber-500/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-500/20">
+                <div className="flex items-start gap-4">
+                    <div className="text-amber-500 mt-1">
+                        <Icon name="info" className="text-2xl" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold mb-2 text-amber-800 dark:text-amber-200">Data Accuracy & Sources</h3>
+                        <p className="text-amber-700 dark:text-amber-200/80 mb-3">
+                            Our weather data is sourced from OpenMeteo, utilizing high-resolution weather models (like ERA5) and satellite imagery.
+                        </p>
+                        <p className="text-amber-700 dark:text-amber-200/80 text-sm">
+                            Please note: Model data may differ from measurements at specific local ground stations (e.g., KNMI). For example, satellite observations might classify thin cloud cover differently than a ground-based pyranometer, leading to variations in reported sunshine hours. These discrepancies are inherent when comparing grid-based model data with single-point ground observations.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
     </div>

@@ -16,6 +16,13 @@ export const convertTemp = (tempC: number, unit: TempUnit): number => {
     return Math.round(tempC);
 };
 
+export const convertTempPrecise = (tempC: number, unit: TempUnit): number => {
+    if (unit === TempUnit.FAHRENHEIT) {
+        return parseFloat(((tempC * 9/5) + 32).toFixed(1));
+    }
+    return parseFloat(tempC.toFixed(1));
+};
+
 export const convertWind = (speedKmh: number, unit: WindUnit): number => {
     switch (unit) {
         case WindUnit.BFT:
@@ -242,7 +249,7 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   // Expanded hourly variables - Corrected soil_moisture_0_to_1cm
   const hourlyVars = 'temperature_2m,weather_code,apparent_temperature,precipitation_probability,relative_humidity_2m,surface_pressure,uv_index,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m';
   
-  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
+  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_hours,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
 
   const modelParam = model ? `&models=${model}` : '';
   const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16${modelParam}`;
@@ -260,13 +267,18 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   validateCoordinates(lat, lon);
   
   const end = new Date(endDate);
-  const fiveDaysAgo = new Date();
-  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+  const start = new Date(startDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const useArchive = end < fiveDaysAgo;
+  const spanMs = end.getTime() - start.getTime();
+  const spanDays = spanMs > 0 ? spanMs / (1000 * 60 * 60 * 24) : 0;
+
+  // Use Archive if end date is before today (yesterday or older), or if range is long
+  const useArchive = end < today || spanDays > 40;
   
   const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration';
-  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration';
+  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,daylight_duration,sunshine_duration';
 
   let url = '';
 
@@ -498,6 +510,23 @@ export const fetchSeasonal = async (lat: number, lon: number) => {
     const results = await Promise.all(requests);
     return results; // Array of 5 OpenMeteo responses
  };
+
+ export const fetchHistoricalRange = async (lat: number, lon: number, startDate: string, endDate: string) => {
+    validateCoordinates(lat, lon);
+    
+    const dailyVars = ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "sunshine_duration", "wind_speed_10m_max", "weather_code"].join(',');
+    
+    const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
+    checkLimit();
+    trackCall();
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Historical range fetch failed: ${response.status}`);
+    }
+    return response.json();
+ };
+
 export const calculateHeatIndex = (tempC: number, rh: number): number => {
     if (tempC < 25 || rh < 40) return tempC;
     const T = (tempC * 9/5) + 32;
@@ -505,4 +534,23 @@ export const calculateHeatIndex = (tempC: number, rh: number): number => {
     const HI = -42.379 + 2.04901523*T + 10.14333127*R - 0.22475541*T*R - 0.00683783*T*T - 0.05481717*R*R + 0.00122874*T*T*R + 0.00085282*T*R*R - 0.00000199*T*T*R*R;
     const c = (HI - 32) * 5/9;
     return c;
+};
+
+export const getActivityIcon = (activity: string): string => {
+    switch (activity) {
+        case 'running': return 'directions_run';
+        case 'cycling': return 'directions_bike';
+        case 'walking': return 'directions_walk';
+        case 'bbq': return 'outdoor_grill';
+        case 'beach': return 'beach_access';
+        default: return 'help';
+    }
+};
+
+export const getScoreColor = (score: number): string => {
+    if (score >= 8) return 'text-green-500';
+    if (score >= 6) return 'text-lime-500';
+    if (score >= 4) return 'text-yellow-500';
+    if (score >= 2) return 'text-orange-500';
+    return 'text-red-500';
 };

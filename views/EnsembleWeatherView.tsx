@@ -17,7 +17,8 @@ import {
     ENSEMBLE_VARS_DAILY_PRO
 } from '../services/weatherService';
 import { 
-    loadCurrentLocation, 
+    loadCurrentLocation,
+    saveCurrentLocation, 
     saveEnsembleModel, 
     loadEnsembleModel, 
     saveEnsembleViewMode, 
@@ -29,6 +30,7 @@ import {
 } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { getTranslation } from '../services/translations';
+import { reverseGeocode } from '../services/geoService';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, ReferenceArea } from 'recharts';
 
 interface Props {
@@ -51,7 +53,6 @@ const ENSEMBLE_MODELS: {id: EnsembleModel, name: string}[] = [
     { id: 'metoffice_global', name: 'UK MetOffice Global 20km' },
     { id: 'metoffice_uk', name: 'UK MetOffice UK 2km' },
     { id: 'icon_ch1_eps', name: 'MeteoSwiss ICON CH1' },
-    { id: 'icon_ch2_eps', name: 'MeteoSwiss ICON CH2' },
 ];
 
 const MODEL_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
@@ -83,6 +84,10 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   useEffect(() => {
       saveEnsembleViewMode(viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+      saveCurrentLocation(location);
+  }, [location]);
 
   useEffect(() => {
       saveEnsembleTimeStep(timeStep);
@@ -239,6 +244,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           for (let i = 0; i < time.length; i++) {
               const point: any = { time: time[i] };
               const modelMeans: number[] = [];
+              const modelMains: number[] = [];
               
               comparisonModels.forEach(modelId => {
                   const source = isDaily ? comparisonData[modelId]?.daily : comparisonData[modelId]?.hourly;
@@ -275,6 +281,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                       mainVal = getValue(mainVal, selectedVariable);
                       if (typeof mainVal === 'number' && !isNaN(mainVal)) {
                           point[modelId + '_main'] = mainVal; 
+                          modelMains.push(mainVal);
                       }
                   }
                   
@@ -310,26 +317,43 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
               });
               
               // Calculate Super Stats
-              if (modelMeans.length > 0) {
+              if (modelMeans.length > 0 || modelMains.length > 0) {
+                  const valuesForStats = modelMains.length > 0 ? modelMains : modelMeans;
+
                   if (selectedVariable.includes('direction')) {
                       // Vector average of means
                       let sumSin = 0;
                       let sumCos = 0;
-                      modelMeans.forEach(v => {
+                      valuesForStats.forEach(v => {
                          const rad = v * Math.PI / 180;
                          sumSin += Math.sin(rad);
                          sumCos += Math.cos(rad);
                       });
-                      const avgRad = Math.atan2(sumSin / modelMeans.length, sumCos / modelMeans.length);
+                      const avgRad = Math.atan2(sumSin / valuesForStats.length, sumCos / valuesForStats.length);
                       let avgDeg = avgRad * 180 / Math.PI;
                       if (avgDeg < 0) avgDeg += 360;
                       point.avg = avgDeg;
-                      point.min = Math.min(...modelMeans);
-                      point.max = Math.max(...modelMeans);
+                      point.min = Math.min(...valuesForStats);
+                      point.max = Math.max(...valuesForStats);
                   } else {
-                      point.avg = modelMeans.reduce((a, b) => a + b, 0) / modelMeans.length;
-                      point.min = Math.min(...modelMeans);
-                      point.max = Math.max(...modelMeans);
+                      point.avg = valuesForStats.reduce((a, b) => a + b, 0) / valuesForStats.length;
+                      point.min = Math.min(...valuesForStats);
+                      point.max = Math.max(...valuesForStats);
+                      
+                      // Calculate quantiles for density view in comparison mode
+                      const sorted = [...valuesForStats].sort((a, b) => a - b);
+                      const getQ = (p: number) => sorted[Math.floor(p * (sorted.length - 1))];
+                      
+                      point.q20 = getQ(0.2);
+                      point.q40 = getQ(0.4);
+                      point.q60 = getQ(0.6);
+                      point.q80 = getQ(0.8);
+                      
+                      point.density1 = [point.min, point.q20];
+                      point.density2 = [point.q20, point.q40];
+                      point.density3 = [point.q40, point.q60];
+                      point.density4 = [point.q60, point.q80];
+                      point.density5 = [point.q80, point.max];
                   }
                   point.range = [point.min, point.max];
               }
@@ -620,13 +644,39 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                              const geo = navigator.geolocation;
                              if (geo) {
                                  setLoading(true);
-                                 geo.getCurrentPosition((pos) => {
-                                     setLocation({name: t('my_location'), country: "", lat: pos.coords.latitude, lon: pos.coords.longitude});
+                                 geo.getCurrentPosition(async (pos) => {
+                                     const lat = pos.coords.latitude;
+                                     const lon = pos.coords.longitude;
+                                     let name = t('my_location');
+                                     
+                                     try {
+                                         const cityName = await reverseGeocode(lat, lon);
+                                         if (cityName) {
+                                             name = cityName;
+                                         }
+                                     } catch (e) {
+                                         console.error(e);
+                                     }
+
+                                     setLocation({
+                                         name: name, 
+                                         country: "", 
+                                         lat: lat, 
+                                         lon: lon,
+                                         isCurrentLocation: true
+                                     });
                                      setLoading(false);
-                                 }, () => setLoading(false));
+                                 }, (err) => {
+                                     console.error(err);
+                                     setLoading(false);
+                                 });
                              }
                          }}
-                         className="flex items-center gap-1 px-4 py-2 rounded-full bg-white/60 dark:bg-white/10 hover:bg-white dark:hover:bg-primary/20 text-slate-800 dark:text-white hover:text-primary dark:hover:text-primary transition-colors border border-slate-200 dark:border-white/5 whitespace-nowrap backdrop-blur-md shadow-sm"
+                         className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
+                             location.isCurrentLocation 
+                                 ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold border-primary dark:border-white' 
+                                 : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary border-slate-200 dark:border-white/5'
+                         }`}
                     >
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
@@ -686,7 +736,11 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                             checked={isComparisonMode} 
                                             onChange={(e) => {
                                                 setIsComparisonMode(e.target.checked);
-                                                if (!e.target.checked) {
+                                                if (e.target.checked) {
+                                                    setUiSelectedModels([selectedModel]);
+                                                    // Start with empty comparison to force user to select and click update
+                                                    setComparisonModels([]);
+                                                } else {
                                                     setComparisonData(null);
                                                     setComparisonModels([]);
                                                     setUiSelectedModels([]);

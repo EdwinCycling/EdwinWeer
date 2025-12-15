@@ -4,25 +4,27 @@ import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, Location } from '../types';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { fetchHistorical, convertTemp, convertWind, convertPrecip, mapWmoCodeToIcon, mapWmoCodeToText } from '../services/weatherService';
-import { loadCurrentLocation, saveHistoricalLocation } from '../services/storageService';
-import { searchCityByName } from '../services/geoService';
+import { loadCurrentLocation, saveCurrentLocation, saveHistoricalLocation, loadHistoricalLocation } from '../services/storageService';
+import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { getTranslation } from '../services/translations';
 import { HistoricalDashboard } from './HistoricalDashboard';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  initialParams?: { date1?: Date; date2?: Date };
 }
 
-export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, initialParams }) => {
   const [location1, setLocation1] = useState<Location>(loadCurrentLocation());
-  const [location2, setLocation2] = useState<Location>(loadCurrentLocation());
+  const [location2, setLocation2] = useState<Location>(loadHistoricalLocation());
   
-  // Date 1: Today (Default)
-  const [date1, setDate1] = useState<Date>(() => new Date());
+  // Date 1: Today (Default) or from params
+  const [date1, setDate1] = useState<Date>(() => initialParams?.date1 || new Date());
   
-  // Date 2: 1 Year Ago (Default)
+  // Date 2: 1 Year Ago (Default) or from params
   const [date2, setDate2] = useState<Date>(() => {
+      if (initialParams?.date2) return initialParams.date2;
       const d = new Date();
       d.setFullYear(d.getFullYear() - 1);
       return d;
@@ -69,7 +71,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings })
   const t = (key: string) => getTranslation(key, settings.language);
 
   useEffect(() => {
-    saveHistoricalLocation(location1);
+    saveCurrentLocation(location1);
     saveHistoricalLocation(location2);
     fetchData();
   }, [location1, location2, date1, date2, settings.tempUnit]);

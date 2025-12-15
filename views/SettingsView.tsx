@@ -32,12 +32,66 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     const [searchResults, setSearchResults] = useState<Location[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+    
+    // Tab State
+    const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records'>('cities');
 
     React.useEffect(() => {
         setUsageStats(getUsage());
     }, []);
 
     const t = (key: string) => getTranslation(key, settings.language);
+
+    const parseNumberInRange = (value: string, min: number, max: number): number | null => {
+        if (!value.trim()) return null;
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return null;
+        if (parsed < min) return min;
+        if (parsed > max) return max;
+        return parsed;
+    };
+
+    const formatHeatwaveTempValue = (valueC: number): string => {
+        if (settings.tempUnit === TempUnit.FAHRENHEIT) {
+            const f = (valueC * 9) / 5 + 32;
+            return String(Math.round(f));
+        }
+        return String(Math.round(valueC));
+    };
+
+    const updateHeatwaveLength = (raw: string) => {
+        const parsed = parseNumberInRange(raw, 1, 60);
+        if (parsed === null) return;
+        const next = {
+            ...settings.heatwave,
+            minLength: Math.round(parsed),
+        };
+        updateSetting('heatwave', next);
+    };
+
+    const updateHeatwaveThreshold = (field: 'lowerThreshold' | 'heatThreshold', raw: string) => {
+        const parsed = parseNumberInRange(raw, -50, 60);
+        if (parsed === null) return;
+        let valueC = parsed;
+        if (settings.tempUnit === TempUnit.FAHRENHEIT) {
+            valueC = ((parsed - 32) * 5) / 9;
+        }
+        const next = {
+            ...settings.heatwave,
+            [field]: valueC,
+        };
+        updateSetting('heatwave', next);
+    };
+
+    const updateHeatwaveMinHeatDays = (raw: string) => {
+        const parsed = parseNumberInRange(raw, 1, 60);
+        if (parsed === null) return;
+        const next = {
+            ...settings.heatwave,
+            minHeatDays: Math.round(parsed),
+        };
+        updateSetting('heatwave', next);
+    };
 
     const updateSetting = (key: keyof AppSettings, value: any) => {
         onUpdateSettings({ ...settings, [key]: value });
@@ -118,280 +172,569 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
         setDraggedItemIndex(null);
     };
 
+    const tabs = [
+        { id: 'cities', label: t('settings.favorites'), icon: 'location_city' },
+        { id: 'activities', label: t('settings.activities_title'), icon: 'directions_bike' },
+        { id: 'general', label: t('settings.general'), icon: 'tune' },
+        { id: 'records', label: t('nav.records'), icon: 'equalizer' },
+    ] as const;
+
     return (
         <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 overflow-y-auto animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
             {/* Header */}
-            <div className="flex items-center p-4 pt-8 sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
-                <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
-                    <Icon name="arrow_back_ios_new" />
-                </button>
-                <h1 className="text-lg font-bold">{t('nav.settings')}</h1>
+            <div className="flex flex-col sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
+                 <div className="flex items-center p-4">
+                    <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
+                        <Icon name="arrow_back_ios_new" />
+                    </button>
+                    <h1 className="text-lg font-bold">{t('nav.settings')}</h1>
+                </div>
+                
+                {/* Tabs */}
+                <div className="flex px-4 overflow-x-auto scrollbar-hide">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                activeTab === tab.id 
+                                    ? 'border-primary text-primary dark:text-white' 
+                                    : 'border-transparent text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white/70'
+                            }`}
+                        >
+                            <Icon name={tab.icon} className="text-lg" />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="p-4 space-y-8 max-w-lg mx-auto w-full">
+            <div className="p-4 space-y-8 max-w-lg mx-auto w-full mt-4">
                 
-                {/* Appearance Section */}
-                <section>
-                     <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.theme')} & {t('settings.language')}</h2>
-                     <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                        
-                        {/* Theme Toggle */}
-                        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Icon name="contrast" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">{t('settings.theme')}</span>
-                            </div>
-                            <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                <button onClick={() => updateSetting('theme', 'light')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'light' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
-                                    <Icon name="light_mode" className="text-sm mr-1 inline" /> {t('theme.light')}
-                                </button>
-                                <button onClick={() => updateSetting('theme', 'dark')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'dark' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
-                                    <Icon name="dark_mode" className="text-sm mr-1 inline" /> {t('theme.dark')}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Language Toggle */}
-                        <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Icon name="language" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">{t('settings.language')}</span>
-                            </div>
-                            <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                <button onClick={() => updateSetting('language', 'en')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
-                                    EN
-                                </button>
-                                <button onClick={() => updateSetting('language', 'nl')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'nl' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
-                                    NL
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Time Format Toggle */}
-                        <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
-                            <div className="flex items-center gap-3">
-                                <Icon name="schedule" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">{t('settings.time_format')}</span>
-                            </div>
-                            <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                <button onClick={() => updateSetting('timeFormat', '24h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '24h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
-                                    24h
-                                </button>
-                                <button onClick={() => updateSetting('timeFormat', '12h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '12h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
-                                    12h
-                                </button>
-                            </div>
-                        </div>
-
-                     </div>
-                </section>
-
-                {/* Units Section */}
-                <section>
-                    <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.units')}</h2>
-                    <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                        
-                        {/* Temp */}
-                        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Icon name="thermostat" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">{t('temp')}</span>
-                            </div>
-                            <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                {Object.values(TempUnit).map(u => (
-                                    <button
-                                        key={u}
-                                        onClick={() => updateSetting('tempUnit', u)}
-                                        className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.tempUnit === u ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}
-                                    >
-                                        °{u}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Wind */}
-                        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Icon name="air" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">{t('wind')}</span>
-                            </div>
-                            <select 
-                                value={settings.windUnit} 
-                                onChange={(e) => updateSetting('windUnit', e.target.value)}
-                                className="bg-slate-100 dark:bg-black/40 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
-                            >
-                                {Object.values(WindUnit).map(u => (
-                                    <option key={u} value={u}>{u}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Precip */}
-                        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Icon name="water_drop" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">{t('precip')}</span>
-                            </div>
-                            <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                {Object.values(PrecipUnit).map(u => (
-                                    <button
-                                        key={u}
-                                        onClick={() => updateSetting('precipUnit', u)}
-                                        className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.precipUnit === u ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}
-                                    >
-                                        {u}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Pressure */}
-                        <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Icon name="compress" className="text-slate-600 dark:text-white/60" />
-                                <span className="font-medium">Druk</span>
-                            </div>
-                            <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                {Object.values(PressureUnit).map(u => (
-                                    <button
-                                        key={u}
-                                        onClick={() => updateSetting('pressureUnit', u)}
-                                        className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.pressureUnit === u ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}
-                                    >
-                                        {u}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Activities Section */}
-                <section>
-                    <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.activities_title')}</h2>
-                    <p className="text-xs text-slate-500 dark:text-white/40 mb-3">{t('settings.activities_desc')}</p>
-                    <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                        {settings.enabledActivities && Object.entries(settings.enabledActivities).map(([key, enabled], index) => {
-                             const activityKey = key as ActivityType;
-                             const isLocked = activityKey === 'cycling' || activityKey === 'walking';
-                             return (
-                                 <div key={key} className={`p-4 flex items-center justify-between ${index !== 0 ? 'border-t border-slate-100 dark:border-white/5' : ''}`}>
-                                     <div className="flex items-center gap-3">
-                                         <Icon name={activityIcons[activityKey] || 'sports_score'} className="text-slate-600 dark:text-white/60" />
-                                         <span className="font-medium">{t(`activity.${activityKey}`)}</span>
-                                     </div>
-                                     <div className="flex items-center">
-                                         <button
-                                             onClick={() => {
-                                                 if (isLocked) return;
-                                                 updateSetting('enabledActivities', {
-                                                     ...settings.enabledActivities,
-                                                     [activityKey]: !enabled
-                                                 });
-                                             }}
-                                             className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-primary' : 'bg-slate-300 dark:bg-white/10'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                         >
-                                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${enabled ? 'translate-x-6' : ''}`} />
-                                         </button>
-                                     </div>
-                                 </div>
-                             );
-                        })}
-                    </div>
-                </section>
-
-                {/* Favorites Section */}
-                <section>
-                    <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.favorites')}</h2>
-                    <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden p-4 shadow-sm transition-colors">
-                        
-                        <div className="relative mb-4">
-                            <div className="flex gap-2">
-                                <input 
-                                    type="text" 
-                                    value={newCity}
-                                    onChange={(e) => {
-                                        setNewCity(e.target.value);
-                                        searchCities();
-                                    }}
-                                    onKeyDown={(e) => e.key === 'Enter' && addFavorite()}
-                                    placeholder={t('settings.add_city')}
-                                    className="flex-1 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary transition-colors"
-                                />
-                                <button 
-                                    onClick={addFavorite}
-                                    disabled={loadingCity || !newCity.trim()}
-                                    className="bg-slate-200 dark:bg-white/10 hover:bg-primary hover:text-white text-slate-600 dark:text-white/70 rounded-xl px-4 flex items-center justify-center transition-colors disabled:opacity-50"
-                                >
-                                    {loadingCity ? <span className="animate-spin size-4 border-2 border-slate-600 dark:border-white border-t-transparent rounded-full"></span> : <Icon name="add" />}
-                                </button>
-                            </div>
+                {/* Cities Tab */}
+                {activeTab === 'cities' && (
+                    <section>
+                        <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.favorites')}</h2>
+                        <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden p-4 shadow-sm transition-colors">
                             
-                            {/* Search Results Dropdown */}
-                            {showDropdown && (
-                                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
-                                    {searchResults.map((city, index) => (
-                                        <button
-                                            key={`${city.name}-${city.lat}-${city.lon}`}
-                                            onClick={() => handleSelectCity(city)}
-                                            className="w-full flex items-center justify-between px-4 py-2 hover:bg-slate-100 dark:hover:bg-white/10 text-left transition-colors"
-                                        >
-                                            <span className="text-slate-800 dark:text-white">{city.name}</span>
-                                            <span className="text-xs text-slate-500 dark:text-white/60">{city.country}</span>
-                                        </button>
-                                    ))}
-                                    {searchResults.length === 0 && (
-                                        <div className="px-4 py-2 text-slate-500 dark:text-white/60 text-sm">
-                                            {t('no_data_available')}
-                                        </div>
-                                    )}
+                            <div className="relative mb-4">
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={newCity}
+                                        onChange={(e) => setNewCity(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && searchCities()}
+                                        placeholder={t('settings.add_city')}
+                                        className="flex-1 bg-slate-100 dark:bg-black/40 text-slate-800 dark:text-white text-sm rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-primary outline-none"
+                                    />
+                                    <button 
+                                        onClick={searchCities}
+                                        disabled={loadingCity}
+                                        className="bg-primary hover:bg-primary-dark text-white px-4 rounded-xl transition-colors disabled:opacity-50"
+                                    >
+                                        <Icon name={loadingCity ? "sync" : "search"} className={loadingCity ? "animate-spin" : ""} />
+                                    </button>
                                 </div>
-                            )}
-                        </div>
+                                
+                                {/* Search Results Dropdown */}
+                                {showDropdown && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
+                                        {searchResults.map((city, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => handleSelectCity(city)}
+                                                className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 text-sm border-b border-slate-100 dark:border-white/5 last:border-0"
+                                            >
+                                                <span className="font-bold block">{city.name}</span>
+                                                <span className="text-xs text-slate-500">{city.country}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
-                        <div className="space-y-2">
-                            {settings.favorites.map((fav, i) => (
-                                <div 
-                                    key={`${fav.name}-${i}`} 
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, i)}
-                                    onDragOver={(e) => handleDragOver(e, i)}
-                                    onDragEnd={handleDragEnd}
-                                    className={`flex items-center justify-between bg-slate-50 dark:bg-white/10 rounded-xl p-3 group border border-slate-100 dark:border-transparent cursor-grab active:cursor-grabbing transition-all ${draggedItemIndex === i ? 'opacity-40 scale-95' : 'opacity-100'}`}
-                                >
+                            {/* Favorites List */}
+                            <div className="space-y-2">
+                                {settings.favorites.length === 0 ? (
+                                    <p className="text-center text-slate-400 dark:text-white/30 text-sm py-4">{t('settings.no_favs')}</p>
+                                ) : (
+                                    settings.favorites.map((fav, index) => (
+                                        <div 
+                                            key={`${fav.name}-${index}`}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, index)}
+                                            onDragOver={(e) => handleDragOver(e, index)}
+                                            onDragEnd={handleDragEnd}
+                                            className={`flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 rounded-xl group ${draggedItemIndex === index ? 'opacity-50' : ''} cursor-move`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Icon name="drag_indicator" className="text-slate-300 dark:text-white/20 cursor-grab active:cursor-grabbing" />
+                                                <div>
+                                                    <div className="font-medium text-sm">{fav.name}</div>
+                                                    <div className="text-xs text-slate-500 dark:text-white/50">{fav.country}</div>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => removeFavorite(index)}
+                                                className="text-slate-400 hover:text-red-500 transition-colors p-2"
+                                            >
+                                                <Icon name="delete" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* Activities Tab */}
+                {activeTab === 'activities' && (
+                     <section>
+                        <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.activities_title')}</h2>
+                        <p className="text-xs text-slate-500 dark:text-white/40 mb-3">{t('settings.activities_desc')}</p>
+                        <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                            {settings.enabledActivities && Object.entries(settings.enabledActivities).map(([key, enabled], index) => {
+                                 const activityKey = key as ActivityType;
+                                 const isLocked = activityKey === 'cycling' || activityKey === 'walking';
+                                 return (
+                                     <div key={key} className={`p-4 flex items-center justify-between ${index !== 0 ? 'border-t border-slate-100 dark:border-white/5' : ''}`}>
+                                         <div className="flex items-center gap-3">
+                                             <Icon name={activityIcons[activityKey] || 'sports_score'} className="text-slate-600 dark:text-white/60" />
+                                             <span className="font-medium">{t(`activity.${activityKey}`)}</span>
+                                         </div>
+                                         <div className="flex items-center">
+                                             <button
+                                                 onClick={() => {
+                                                     if (isLocked) return;
+                                                     updateSetting('enabledActivities', {
+                                                         ...settings.enabledActivities,
+                                                         [activityKey]: !enabled
+                                                     });
+                                                 }}
+                                                 className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-primary' : 'bg-slate-300 dark:bg-white/10'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                             >
+                                                 <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${enabled ? 'translate-x-6' : ''}`} />
+                                             </button>
+                                         </div>
+                                     </div>
+                                 );
+                            })}
+                        </div>
+                    </section>
+                )}
+
+                {/* General Tab */}
+                {activeTab === 'general' && (
+                    <>
+                        {/* Appearance Section */}
+                        <section>
+                             <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.theme')} & {t('settings.language')}</h2>
+                             <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                                
+                                {/* Theme Toggle */}
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="text-slate-600 dark:text-white/30 cursor-grab">
-                                            <Icon name="drag_indicator" className="text-lg" />
+                                        <Icon name="contrast" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('settings.theme')}</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        <button onClick={() => updateSetting('theme', 'light')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'light' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                            <Icon name="light_mode" className="text-sm mr-1 inline" /> {t('theme.light')}
+                                        </button>
+                                        <button onClick={() => updateSetting('theme', 'dark')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'dark' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                            <Icon name="dark_mode" className="text-sm mr-1 inline" /> {t('theme.dark')}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Language Toggle */}
+                                <div className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="language" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('settings.language')}</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        <button onClick={() => updateSetting('language', 'en')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                            EN
+                                        </button>
+                                        <button onClick={() => updateSetting('language', 'nl')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'nl' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                            NL
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Time Format Toggle */}
+                                <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="schedule" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('settings.time_format')}</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        <button onClick={() => updateSetting('timeFormat', '24h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '24h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                            24h
+                                        </button>
+                                        <button onClick={() => updateSetting('timeFormat', '12h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '12h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                            12h
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Week Start Day */}
+                                <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="calendar_today" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('settings.week_start')}</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        {(['monday', 'sunday', 'saturday'] as const).map(day => (
+                                            <button
+                                                key={day}
+                                                onClick={() => updateSetting('weekStartDay', day)}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
+                                                    (settings.weekStartDay || 'monday') === day
+                                                    ? 'bg-white dark:bg-white/20 text-slate-800 dark:text-white shadow-sm'
+                                                    : 'text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white/70'
+                                                }`}
+                                            >
+                                                {t(`settings.${day}`)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                             </div>
+                        </section>
+
+                        {/* Units Section */}
+                        <section>
+                            <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.units')}</h2>
+                            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                                
+                                {/* Temp */}
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="thermostat" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('temp')}</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        {Object.values(TempUnit).map(u => (
+                                            <button
+                                                key={u}
+                                                onClick={() => updateSetting('tempUnit', u)}
+                                                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.tempUnit === u ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}
+                                            >
+                                                °{u}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Wind */}
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="air" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('wind')}</span>
+                                    </div>
+                                    <select 
+                                        value={settings.windUnit} 
+                                        onChange={(e) => updateSetting('windUnit', e.target.value)}
+                                        className="bg-slate-100 dark:bg-black/40 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                                    >
+                                        {Object.values(WindUnit).map(u => (
+                                            <option key={u} value={u}>{u}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Precip */}
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="water_drop" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('precip')}</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        {Object.values(PrecipUnit).map(u => (
+                                            <button
+                                                key={u}
+                                                onClick={() => updateSetting('precipUnit', u)}
+                                                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.precipUnit === u ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}
+                                            >
+                                                {u}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Pressure */}
+                                <div className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="compress" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">Druk</span>
+                                    </div>
+                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                        {Object.values(PressureUnit).map(u => (
+                                            <button
+                                                key={u}
+                                                onClick={() => updateSetting('pressureUnit', u)}
+                                                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.pressureUnit === u ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}
+                                            >
+                                                {u}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </>
+                )}
+
+                {/* Records Tab */}
+                {activeTab === 'records' && (
+                    <>
+                        {/* Record Thresholds Section */}
+                        <section>
+                            <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
+                                {t('settings.records_title')}
+                            </h2>
+                            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                                 {/* Summer Streak */}
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                            {t('settings.records.summer_streak')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min={15}
+                                            max={40}
+                                            value={settings.recordThresholds?.summerStreakTemp ?? 25}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (!isNaN(val)) {
+                                                    const newThresholds = { ...settings.recordThresholds, summerStreakTemp: val };
+                                                    // Ensure nice < summer
+                                                    if (val <= (newThresholds.niceStreakTemp ?? 20)) {
+                                                        newThresholds.niceStreakTemp = val - 1;
+                                                    }
+                                                    updateSetting('recordThresholds', newThresholds);
+                                                }
+                                            }}
+                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                        <span className="text-sm font-medium">°C</span>
+                                    </div>
+                                </div>
+
+                                 {/* Nice Streak */}
+                                 <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                            {t('settings.records.nice_streak')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min={10}
+                                            max={35}
+                                            value={settings.recordThresholds?.niceStreakTemp ?? 20}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (!isNaN(val)) {
+                                                    const newThresholds = { ...settings.recordThresholds, niceStreakTemp: val };
+                                                     // Ensure nice < summer
+                                                     if (val >= (newThresholds.summerStreakTemp ?? 25)) {
+                                                         return; // Prevent setting higher or equal
+                                                     }
+                                                    updateSetting('recordThresholds', newThresholds);
+                                                }
+                                            }}
+                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                        <span className="text-sm font-medium">°C</span>
+                                    </div>
+                                </div>
+
+                                {/* Cold Streak */}
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                            {t('settings.records.cold_streak')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min={-30}
+                                            max={15}
+                                            value={settings.recordThresholds?.coldStreakTemp ?? 5}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (!isNaN(val)) {
+                                                    const newThresholds = { ...settings.recordThresholds, coldStreakTemp: val };
+                                                    // Ensure ice < cold
+                                                    if (val <= (newThresholds.iceStreakTemp ?? 0)) {
+                                                        newThresholds.iceStreakTemp = val - 1;
+                                                    }
+                                                    updateSetting('recordThresholds', newThresholds);
+                                                }
+                                            }}
+                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                        <span className="text-sm font-medium">°C</span>
+                                    </div>
+                                </div>
+
+                                 {/* Ice Streak */}
+                                 <div className="p-4 flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                            {t('settings.records.ice_streak')}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min={-40}
+                                            max={10}
+                                            value={settings.recordThresholds?.iceStreakTemp ?? 0}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (!isNaN(val)) {
+                                                    const newThresholds = { ...settings.recordThresholds, iceStreakTemp: val };
+                                                     // Ensure ice < cold
+                                                     if (val >= (newThresholds.coldStreakTemp ?? 5)) {
+                                                        return;
+                                                    }
+                                                    updateSetting('recordThresholds', newThresholds);
+                                                }
+                                            }}
+                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                        <span className="text-sm font-medium">°C</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Heatwave Section */}
+                        <section>
+                            <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
+                                {t('settings.heatwave')}
+                            </h2>
+                            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="local_fire_department" className="text-slate-600 dark:text-white/60" />
+                                        <span className="font-medium">{t('settings.heatwave')}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Grid Layout for alignment */}
+                                <div className="divide-y divide-slate-100 dark:divide-white/5">
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                                {t('settings.heatwave.length')}
+                                            </span>
+                                            <span className="text-xs text-slate-500 dark:text-white/50">
+                                                {t('settings.heatwave.length_desc')}
+                                            </span>
                                         </div>
-                                        <div className="size-8 rounded-full bg-white dark:bg-white/5 flex items-center justify-center text-slate-600 dark:text-white/50 border border-slate-100 dark:border-transparent">
-                                            <Icon name="location_on" className="text-sm" />
-                                        </div>
-                                        <div>
-                                            <p className="text-slate-800 dark:text-white font-medium text-sm">{fav.name}</p>
-                                            <p className="text-slate-600 dark:text-white/40 text-xs">{fav.country}</p>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={60}
+                                                value={settings.heatwave.minLength}
+                                                onChange={(e) => updateHeatwaveLength(e.target.value)}
+                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                            <span className="text-sm font-medium w-8">
+                                                {t('days')}
+                                            </span>
                                         </div>
                                     </div>
-                                    <button 
-                                        onClick={() => removeFavorite(i)}
-                                        className="size-8 flex items-center justify-center text-slate-600 dark:text-white/20 hover:text-red-400 transition-colors"
-                                    >
-                                        <Icon name="delete" />
-                                    </button>
+
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                                {t('settings.heatwave.lower')}
+                                            </span>
+                                            <span className="text-xs text-slate-500 dark:text-white/50">
+                                                {t('settings.heatwave.lower_desc')}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min={-50}
+                                                max={60}
+                                                value={formatHeatwaveTempValue(settings.heatwave.lowerThreshold)}
+                                                onChange={(e) => updateHeatwaveThreshold('lowerThreshold', e.target.value)}
+                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                            <span className="text-sm font-medium w-8">
+                                                °{settings.tempUnit}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                                {t('settings.heatwave.heat')}
+                                            </span>
+                                            <span className="text-xs text-slate-500 dark:text-white/50">
+                                                {t('settings.heatwave.heat_desc')}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min={-50}
+                                                max={60}
+                                                value={formatHeatwaveTempValue(settings.heatwave.heatThreshold)}
+                                                onChange={(e) => updateHeatwaveThreshold('heatThreshold', e.target.value)}
+                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                            <span className="text-sm font-medium w-8">
+                                                °{settings.tempUnit}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 flex items-center justify-between gap-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-sm text-slate-700 dark:text-white/80">
+                                                {t('settings.heatwave.heat_days')}
+                                            </span>
+                                            <span className="text-xs text-slate-500 dark:text-white/50">
+                                                {t('settings.heatwave.heat_days_desc')}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={60}
+                                                value={settings.heatwave.minHeatDays ?? 3}
+                                                onChange={(e) => updateHeatwaveMinHeatDays(e.target.value)}
+                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            />
+                                            <span className="text-sm font-medium w-8">
+                                                {t('days')}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
-                            {settings.favorites.length === 0 && (
-                                <p className="text-center text-slate-600 dark:text-white/30 text-sm py-2">{t('settings.no_favs')}</p>
-                            )}
-                        </div>
-
-                    </div>
-                </section>
-
-                <div className="text-center text-xs text-slate-400 dark:text-white/20 pb-4">
-                    v0.9251212.1
-                </div>
-
+                            </div>
+                        </section>
+                    </>
+                )}
             </div>
         </div>
     );

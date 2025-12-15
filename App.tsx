@@ -9,6 +9,7 @@ import { MapView } from './views/MapView';
 import { SettingsView } from './views/SettingsView';
 import { EnsembleWeatherView } from './views/EnsembleWeatherView';
 import { HolidayWeatherView } from './views/HolidayWeatherView';
+import { HolidayReportView } from './views/HolidayReportView';
 import { TeamView } from './views/TeamView';
 import { PricingView } from './views/PricingView';
 import { InfoView } from './views/InfoView';
@@ -16,6 +17,8 @@ import { ModelInfoView } from './views/ModelInfoView';
 import { CountryMapView } from './views/CountryMapView';
 import { LoginView } from './views/LoginView';
 import { UserAccountView } from './views/UserAccountView';
+import { RecordsWeatherView } from './views/RecordsWeatherView';
+import { ShareWeatherView } from './views/ShareWeatherView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -26,15 +29,20 @@ import { useAuth } from './contexts/AuthContext';
 const App: React.FC = () => {
   const { user, loading, logout, sessionExpiry } = useAuth();
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.CURRENT);
-  const [previousView, setPreviousView] = useState<ViewState>(ViewState.CURRENT);
-  const [settings, setSettings] = useState<AppSettings>(loadSettings());
+  const [previousView, setPreviousView] = useState<ViewState | null>(null);
+  const [viewParams, setViewParams] = useState<any>(null);
+
+  // Load Settings
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [menuOpen, setMenuOpen] = useState(false);
+  const [extraMenuOpen, setExtraMenuOpen] = useState(false);
   const [modal, setModal] = useState<'disclaimer' | 'cookies' | null>(null);
   const [usageWarning, setUsageWarning] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; current: number; limit: number }>(null);
 
-  const navigate = (view: ViewState) => {
+  const navigate = (view: ViewState, params?: any) => {
       setPreviousView(currentView);
       setCurrentView(view);
+      setViewParams(params || null);
   };
 
   useEffect(() => {
@@ -108,16 +116,22 @@ const App: React.FC = () => {
         return <ForecastWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.MAP:
         return <MapView onNavigate={navigate} settings={settings} />;
+      case ViewState.RECORDS:
+        return <RecordsWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.HOURLY_DETAIL:
         return <HourlyDetailView onNavigate={navigate} settings={settings} />;
       case ViewState.ENSEMBLE:
         return <EnsembleWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.HOLIDAY:
         return <HolidayWeatherView onNavigate={navigate} settings={settings} />;
+      case ViewState.HOLIDAY_REPORT:
+        return <HolidayReportView onNavigate={navigate} settings={settings} />;
       case ViewState.HISTORICAL:
-        return <HistoricalWeatherView onNavigate={navigate} settings={settings} />;
+        return <HistoricalWeatherView onNavigate={navigate} settings={settings} initialParams={viewParams} />;
       case ViewState.STRAVA:
         return <StravaWeatherView onNavigate={navigate} settings={settings} />;
+      case ViewState.SHARE:
+        return <ShareWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.SETTINGS:
         return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.TEAM:
@@ -207,11 +221,11 @@ const App: React.FC = () => {
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.ensemble')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.MAP)}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.MAP ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+                onClick={() => navigate(ViewState.RECORDS)}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.RECORDS ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
-                <Icon name="map" />
-                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.map')}</span>
+                <Icon name="bar_chart" />
+                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.records')}</span>
             </button>
             <button 
                 onClick={() => navigate(ViewState.HISTORICAL)}
@@ -228,11 +242,11 @@ const App: React.FC = () => {
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.holiday')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.STRAVA)}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.STRAVA ? 'text-strava scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+                onClick={() => setExtraMenuOpen(true)}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.STRAVA || currentView === ViewState.SHARE ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
-                <Icon name="directions_bike" />
-                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.strava')}</span>
+                <Icon name="add_circle" />
+                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('share.extra_menu')}</span>
             </button>
             
             {/* Hamburger Menu Button */}
@@ -244,6 +258,50 @@ const App: React.FC = () => {
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('menu')}</span>
             </button>
         </div>
+
+        {/* Extra Menu Overlay */}
+        {extraMenuOpen && (
+            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
+                <div 
+                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-6 pb-28 animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl" 
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
+                    
+                    <div className="space-y-4">
+                         <button onClick={() => { navigate(ViewState.HOLIDAY_REPORT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-12 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                <Icon name="flight_takeoff" className="text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-lg">Vakantie Rapport</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">Jouw vakantie overzicht</span>
+                            </div>
+                         </button>
+
+                         <button onClick={() => { navigate(ViewState.STRAVA); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-12 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                <Icon name="directions_bike" className="text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-lg">{t('nav.strava')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('share.strava')}</span>
+                            </div>
+                         </button>
+
+                         <button onClick={() => { navigate(ViewState.SHARE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <Icon name="add_a_photo" className="text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-lg">{t('share.photo_weather')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('share.title')}</span>
+                            </div>
+                         </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Hamburger Menu Overlay */}
         {menuOpen && (

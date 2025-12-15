@@ -11,6 +11,7 @@ export interface Location {
   country: string;
   lat: number;
   lon: number;
+  isCurrentLocation?: boolean;
 }
 
 export enum ComparisonType {
@@ -151,6 +152,25 @@ export type AppTheme = 'dark' | 'light';
 export type AppLanguage = 'en' | 'nl';
 export type TimeFormat = '12h' | '24h';
 
+export interface HeatwaveSettings {
+    minLength: number;
+    lowerThreshold: number;
+    heatThreshold: number;
+    minHeatDays: number;
+}
+
+export interface RecordThresholds {
+    summerStreakTemp: number; // default 25
+    niceStreakTemp: number;   // default 20
+    coldStreakTemp: number;   // default 5
+    iceStreakTemp: number;    // default 0
+}
+
+export interface CalendarSettings {
+    showHeatmap: boolean;
+    showDetails: boolean;
+}
+
 export interface AppSettings {
     tempUnit: TempUnit;
     windUnit: WindUnit;
@@ -161,6 +181,10 @@ export interface AppSettings {
     language: AppLanguage;
     timeFormat: TimeFormat;
     enabledActivities: Record<ActivityType, boolean>;
+    heatwave: HeatwaveSettings;
+    recordThresholds: RecordThresholds;
+    weekStartDay?: 'monday' | 'sunday' | 'saturday';
+    calendar?: CalendarSettings;
 }
 
 export enum ViewState {
@@ -171,6 +195,8 @@ export enum ViewState {
   HOURLY_DETAIL = 'HOURLY_DETAIL',
   ENSEMBLE = 'ENSEMBLE',
   HOLIDAY = 'HOLIDAY',
+  HOLIDAY_REPORT = 'HOLIDAY_REPORT',
+  RECORDS = 'RECORDS',
   SETTINGS = 'SETTINGS',
   TEAM = 'TEAM',
   PRICING = 'PRICING',
@@ -178,7 +204,8 @@ export enum ViewState {
   MODEL_INFO = 'MODEL_INFO',
   FORECAST = 'FORECAST',
   COUNTRY_MAP = 'COUNTRY_MAP',
-  USER_ACCOUNT = 'USER_ACCOUNT'
+  USER_ACCOUNT = 'USER_ACCOUNT',
+  SHARE = 'SHARE'
 }
 
 export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';
@@ -197,5 +224,4 @@ export type EnsembleModel =
     'bom_access_global' | 
     'metoffice_global' | 
     'metoffice_uk' | 
-    'icon_ch1_eps' | 
-    'icon_ch2_eps';
+    'icon_ch1_eps';

@@ -37,6 +37,9 @@ interface ExtendedRideData extends RideData {
     endTimeStr?: string;
     avgWindDir?: number; 
     avgWindText?: string; 
+    sunPercentage?: number;
+    startTemp?: number;
+    endTemp?: number;
 }
 
 const CustomWindArrow = (props: any) => {
@@ -106,9 +109,10 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
         const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' });
         const cyclosm = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', { maxZoom: 20, attribution: 'CyclOSM' });
 
-        if (settings.theme === 'dark') cartoDark.addTo(map); else osm.addTo(map);
+        // Default to Standard (OSM) layout as requested
+        osm.addTo(map); 
 
-        const baseMaps = { "Dark": cartoDark, "Standard": osm, "Satellite": satellite, "Cycle": cyclosm };
+        const baseMaps = { "Standard": osm, "Dark": cartoDark, "Satellite": satellite, "Cycle": cyclosm };
         L.control.layers(baseMaps).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map);
@@ -153,11 +157,11 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
     chartData.forEach((point, i) => {
         if (i % step === 0 && point.lat && point.lon) {
              const iconHtml = `
-                <div style="background: ${settings.theme === 'dark' ? '#1e293b' : 'white'}; padding: 4px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.2); box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-family: sans-serif; text-align: center; min-width: 60px;">
-                    <div style="font-size: 10px; font-weight: bold; color: ${settings.theme === 'dark' ? '#fff' : '#333'}; line-height: 1;">${Math.round(point.temp)}°</div>
-                    <div style="font-size: 8px; color: ${settings.theme === 'dark' ? '#aaa' : '#666'}; margin-bottom: 2px;">${Math.round(point.wind)}${settings.windUnit}</div>
-                    <div style="transform: rotate(${point.windDir + 180}deg); display: inline-block; width: 10px; height: 10px;">
-                        <svg viewBox="0 0 24 24" fill="#13b6ec"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" /></svg>
+                <div style="background: ${settings.theme === 'dark' ? '#1e293b' : 'white'}; padding: 4px; border-radius: 8px; border: 2px solid ${settings.theme === 'dark' ? '#fff' : '#666'}; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; text-align: center; min-width: 60px;">
+                    <div style="font-size: 12px; font-weight: bold; color: ${settings.theme === 'dark' ? '#fff' : '#333'}; line-height: 1.2;">${Math.round(point.temp)}°</div>
+                    <div style="font-size: 10px; color: ${settings.theme === 'dark' ? '#ccc' : '#666'}; margin-bottom: 2px;">${Math.round(point.wind)}${settings.windUnit}</div>
+                    <div style="transform: rotate(${point.windDir + 180}deg); display: inline-block; width: 12px; height: 12px;">
+                        <svg viewBox="0 0 24 24" fill="${settings.theme === 'dark' ? '#38bdf8' : '#0ea5e9'}"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" /></svg>
                     </div>
                 </div>
             `;
@@ -165,11 +169,11 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             const icon = L.divIcon({
                 html: iconHtml,
                 className: '',
-                iconSize: [60, 40],
-                iconAnchor: [30, 40]
+                iconSize: [60, 45],
+                iconAnchor: [30, 45]
             });
 
-            const marker = L.marker([point.lat, point.lon], { icon }).addTo(mapInstanceRef.current);
+            const marker = L.marker([point.lat, point.lon], { icon, zIndexOffset: 1000 }).addTo(mapInstanceRef.current);
             newMarkers.push(marker);
         }
     });
@@ -359,6 +363,13 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             const avgTemp = weatherDataPoints.reduce((sum, p) => sum + p.temp, 0) / weatherDataPoints.length;
             const maxWind = Math.max(...weatherDataPoints.map(p => p.wind));
             const totalRain = weatherDataPoints.reduce((sum, p) => sum + p.rain, 0);
+            
+            // Calculate Sun Percentage (avg minutes per hour / 60)
+            const avgSun = weatherDataPoints.length > 0 ? weatherDataPoints.reduce((sum, p) => sum + p.sun, 0) / weatherDataPoints.length : 0;
+            const sunPercentage = Math.round((avgSun / 60) * 100);
+
+            const startTemp = weatherDataPoints.length > 0 ? weatherDataPoints[0].temp : 0;
+            const endTemp = weatherDataPoints.length > 0 ? weatherDataPoints[weatherDataPoints.length - 1].temp : 0;
 
             setRideData({
                 id: '1',
@@ -377,7 +388,10 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     precip: parseFloat(totalRain.toFixed(1))
                 },
                 avgWindDir: Math.round(avgDir),
-                avgWindText: getWindCardinal(avgDir)
+                avgWindText: getWindCardinal(avgDir),
+                sunPercentage,
+                startTemp: Math.round(startTemp),
+                endTemp: Math.round(endTemp)
             });
 
         } catch (e) {
@@ -507,6 +521,31 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                             <p className="text-xl font-bold text-blue-600 dark:text-blue-100">{rideData.weather.temp}°</p>
                         </div>
                     </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-500/10 p-3 rounded-2xl border border-slate-200 dark:border-slate-500/20 shadow-sm flex items-center gap-3">
+                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-slate-500"><Icon name="thermometer" /></div>
+                        <div>
+                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('start_temp')}</p>
+                            <p className="text-xl font-bold">{rideData.startTemp}°</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-500/10 p-3 rounded-2xl border border-slate-200 dark:border-slate-500/20 shadow-sm flex items-center gap-3">
+                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-slate-500"><Icon name="thermometer" /></div>
+                        <div>
+                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('end_temp')}</p>
+                            <p className="text-xl font-bold">{rideData.endTemp}°</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-orange-50 dark:bg-orange-500/10 p-3 rounded-2xl border border-orange-100 dark:border-orange-500/20 shadow-sm flex items-center gap-3">
+                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-orange-500"><Icon name="wb_sunny" /></div>
+                        <div>
+                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('sun_percent')}</p>
+                            <p className="text-xl font-bold text-orange-600 dark:text-orange-100">{rideData.sunPercentage}%</p>
+                        </div>
+                    </div>
+
                      <div className="bg-green-50 dark:bg-green-500/10 p-3 rounded-2xl border border-green-100 dark:border-green-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-green-500"><Icon name="air" /></div>
                         <div>
@@ -526,7 +565,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                              </div>
                         </div>
                     </div>
-                    {rideData.weather.precip > 0 && (
+                    {rideData.weather.precip >= 0 && (
                         <div className="bg-cyan-50 dark:bg-cyan-500/10 p-3 rounded-2xl border border-cyan-100 dark:border-cyan-500/20 shadow-sm flex items-center gap-3">
                             <div className="bg-white dark:bg-white/10 p-2 rounded-full text-cyan-500"><Icon name="rainy" /></div>
                             <div>
