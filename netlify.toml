@@ -10,8 +10,4 @@
   to = "/index.html"
   status = 200
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cross-Origin-Opener-Policy = "unsafe-none"
-    Cross-Origin-Embedder-Policy = "unsafe-none"
+
