@@ -8,7 +8,10 @@ import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, ca
 import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
+import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
+import { Tooltip } from '../components/Tooltip';
+import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
 
 interface Props {
@@ -34,6 +37,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
@@ -451,9 +455,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       
       {weatherData && (
         <div className="hidden dark:block absolute inset-0 z-0">
-             <WeatherBackground 
+             <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day} 
+                className="absolute inset-0 w-full h-full"
             />
         </div>
       )}
@@ -461,45 +466,65 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
       
       {/* Refresh Button */}
-      <button 
-          onClick={loadWeather} 
-          className="fixed top-6 right-6 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-          aria-label={t('refresh')}
-      >
-          <Icon name="refresh" className={`text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
-      </button>
+      <Tooltip content={t('refresh')} position="bottom">
+          <button 
+              onClick={loadWeather} 
+              className="fixed top-6 right-6 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+              aria-label={t('refresh')}
+          >
+              <Icon name="refresh" className={`text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
+          </button>
+      </Tooltip>
 
-      <button
-          onClick={toggleFavorite}
-          className={`fixed top-6 right-[8.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm`}
-          aria-label="Toggle Favorite"
-      >
-          <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
-      </button>
+      <Tooltip content={isFavorite(location) ? t('remove_favorite') : t('add_favorite')} position="bottom">
+          <button
+              onClick={toggleFavorite}
+              className={`fixed top-6 right-[8.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm`}
+              aria-label="Toggle Favorite"
+          >
+              <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
+          </button>
+      </Tooltip>
 
-      <button
-          onClick={() => onNavigate(ViewState.MAP)}
-          className="fixed top-6 right-[15.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-          aria-label={t('nav.map')}
-      >
-          <Icon name="map" className="text-2xl" />
-      </button>
+      <Tooltip content={t('nav.map')} position="bottom">
+          <button
+              onClick={() => onNavigate(ViewState.MAP)}
+              className="fixed top-6 right-[15.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+              aria-label={t('nav.map')}
+          >
+              <Icon name="map" className="text-2xl" />
+          </button>
+      </Tooltip>
 
-      <button
-          onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
-          className="fixed top-6 right-[12rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-          aria-label="Country Map"
-      >
-          <Icon name="public" className="text-2xl" />
-      </button>
+      <Tooltip content={t('nav.country_map')} position="bottom">
+          <button
+              onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
+              className="fixed top-6 right-[12rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+              aria-label="Country Map"
+          >
+              <Icon name="public" className="text-2xl" />
+          </button>
+      </Tooltip>
 
-      <button
-          onClick={() => setIsSearchOpen(v => !v)}
-          className="fixed top-6 right-20 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-          aria-label={t('search')}
-      >
-          <Icon name="search" className="text-2xl" />
-      </button>
+      <Tooltip content={t('favorites_list') || 'Favorietenlijst'} position="bottom">
+          <button
+              onClick={() => setShowFavorites(true)}
+              className="fixed top-6 right-[19rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+              aria-label="Favorites List"
+          >
+              <Icon name="list" className="text-2xl" />
+          </button>
+      </Tooltip>
+
+      <Tooltip content={t('search')} position="bottom">
+          <button
+              onClick={() => setIsSearchOpen(v => !v)}
+              className="fixed top-6 right-20 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+              aria-label={t('search')}
+          >
+              <Icon name="search" className="text-2xl" />
+          </button>
+      </Tooltip>
 
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
@@ -1138,6 +1163,17 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
         )}
       </div>
+      <FavoritesList 
+          isOpen={showFavorites}
+          onClose={() => setShowFavorites(false)}
+          favorites={settings.favorites}
+          currentLocation={location}
+          onSelectLocation={(loc) => {
+              setLocation(loc);
+              setShowFavorites(false);
+          }}
+          settings={settings}
+      />
     </div>
   );
 };

@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, Location, OpenMeteoResponse } from '../types';
-import { fetchForecast, convertTemp, convertWind, convertPressure } from '../services/weatherService';
+import { fetchForecast, convertTemp, convertWind, convertPressure, getBeaufort } from '../services/weatherService';
 import { loadCurrentLocation } from '../services/storageService';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
 import { getTranslation } from '../services/translations';
 
 interface Props {
@@ -40,6 +39,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
             const processed = slicedTime.map((timeStr, i) => {
                 const idx = startIndex + i;
                 const date = new Date(timeStr);
+                const windSpeed = forecast.hourly.wind_speed_10m[idx];
                 return {
                     time: date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }),
                     temp: convertTemp(forecast.hourly.temperature_2m[idx], settings.tempUnit),
@@ -47,7 +47,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                     humidity: forecast.hourly.relative_humidity_2m[idx],
                     pressure: convertPressure(forecast.hourly.surface_pressure[idx], settings.pressureUnit),
                     uv: forecast.hourly.uv_index[idx],
-                    wind: convertWind(forecast.hourly.wind_speed_10m[idx], settings.windUnit),
+                    wind: convertWind(windSpeed, settings.windUnit),
+                    beaufort: getBeaufort(windSpeed),
                 };
             });
             setData(processed);
@@ -82,6 +83,23 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
     return null;
   };
 
+  const getTempTicks = (dataKey: string) => {
+    if (!data.length) return [];
+    const vals = data.map(d => d[dataKey]);
+    const min = Math.floor(Math.min(...vals));
+    const max = Math.ceil(Math.max(...vals));
+    const start = min - 1;
+    const end = max + 1;
+    const ticks = [];
+    for (let i = start; i <= end; i++) {
+        ticks.push(i);
+    }
+    return ticks;
+  };
+
+  const tempTicks = getTempTicks('temp');
+  const feelsTicks = getTempTicks('feelsLike');
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 overflow-y-auto text-slate-800 dark:text-white transition-colors">
       <div className="flex items-center p-4 pt-8 sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5">
@@ -89,7 +107,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
             <Icon name="arrow_back_ios_new" />
         </button>
         <div>
-            <h1 className="text-lg font-bold">48-Hour Detail</h1>
+            <h1 className="text-lg font-bold">{t('hourly.title')}</h1>
             <div className="flex items-center gap-1 text-xs opacity-50">
                  <Icon name="location_on" className="text-xs" /> {location.name}
             </div>
@@ -120,9 +138,27 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                                         <stop offset="95%" stopColor="#13b6ec" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
+                                {/* Custom Grid Lines */}
+                                {tempTicks.map(tick => (
+                                    <ReferenceLine 
+                                        key={tick} 
+                                        y={tick} 
+                                        stroke={tick % 5 === 0 ? "rgba(128,128,128,0.4)" : "rgba(128,128,128,0.1)"} 
+                                        strokeWidth={tick % 5 === 0 ? 1.5 : 1}
+                                    />
+                                ))}
+                                <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
-                                <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} domain={['dataMin - 1', 'dataMax + 1']} interval={0} allowDecimals={false} />
+                                <YAxis 
+                                    tick={{fill: '#888', fontSize: 10}} 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    width={30} 
+                                    domain={[tempTicks[0], tempTicks[tempTicks.length - 1]]} 
+                                    ticks={tempTicks}
+                                    interval={0}
+                                    allowDecimals={false} 
+                                />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Area type="monotone" dataKey="temp" stroke="#13b6ec" fillOpacity={1} fill="url(#colorTempDetail)" unit={`°${settings.tempUnit}`} strokeWidth={3} />
                             </AreaChart>
@@ -144,9 +180,26 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                                             <stop offset="95%" stopColor="#fb923c" stopOpacity={0}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
+                                    {/* Custom Grid Lines */}
+                                    {feelsTicks.map(tick => (
+                                        <ReferenceLine 
+                                            key={tick} 
+                                            y={tick} 
+                                            stroke={tick % 5 === 0 ? "rgba(128,128,128,0.4)" : "rgba(128,128,128,0.1)"} 
+                                            strokeWidth={tick % 5 === 0 ? 1.5 : 1}
+                                        />
+                                    ))}
+                                    <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} stroke="rgba(128,128,128,0.1)" />
                                     <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
-                                    <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} domain={['dataMin - 2', 'dataMax + 2']} />
+                                    <YAxis 
+                                        tick={{fill: '#888', fontSize: 10}} 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        width={30} 
+                                        domain={[feelsTicks[0], feelsTicks[feelsTicks.length - 1]]} 
+                                        ticks={feelsTicks}
+                                        interval={0}
+                                    />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Area type="monotone" dataKey="feelsLike" stroke="#fb923c" fillOpacity={1} fill="url(#colorFeelsLike)" unit={`°${settings.tempUnit}`} strokeWidth={3} />
                                 </AreaChart>
@@ -154,19 +207,19 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                         </div>
                     )}
 
-                    {/* Wind Speed */}
+                    {/* Wind Speed (Beaufort) */}
                     <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="air" className="text-green-500" />
-                            <span className="text-sm font-bold">{t('wind')} ({settings.windUnit})</span>
+                            <span className="text-sm font-bold">{t('wind')} (Bft)</span>
                         </div>
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
-                                <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} />
+                                <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} allowDecimals={false} domain={[0, 'auto']} />
                                 <Tooltip cursor={{fill: 'rgba(128,128,128,0.1)'}} content={<CustomTooltip />} />
-                                <Bar dataKey="wind" fill="#4ade80" radius={[4, 4, 0, 0]} unit={` ${settings.windUnit}`} barSize={10} />
+                                <Bar dataKey="beaufort" fill="#4ade80" radius={[4, 4, 0, 0]} unit=" Bft" barSize={10} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

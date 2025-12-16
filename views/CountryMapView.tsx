@@ -490,12 +490,11 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
     const [searching, setSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // Auto-select current location on mount
+    // Pre-fill country search on mount
     useEffect(() => {
         const loc = loadCurrentLocation();
         if (loc && loc.country) {
-            const norm = normalizeCountry(loc.country);
-            handleCountrySelect(norm, loc);
+            handleSearch(loc.country);
         }
     }, []);
 
@@ -721,6 +720,12 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && searchResults.length > 0) {
+                                        const norm = normalizeCountry(searchResults[0].country);
+                                        handleCountrySelect(norm, searchResults[0]);
+                                    }
+                                }}
                                 placeholder="Zoek een ander land..."
                                 className="flex-1 bg-transparent outline-none placeholder:text-slate-400"
                             />

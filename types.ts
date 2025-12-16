@@ -69,6 +69,7 @@ export interface OpenMeteoResponse {
         weather_code: number[];
         relative_humidity_2m: number[];
         surface_pressure: number[];
+        pressure_msl: number[];
         uv_index: number[];
         wind_speed_10m: number[];
         wind_direction_10m: number[];
@@ -205,7 +206,8 @@ export enum ViewState {
   FORECAST = 'FORECAST',
   COUNTRY_MAP = 'COUNTRY_MAP',
   USER_ACCOUNT = 'USER_ACCOUNT',
-  SHARE = 'SHARE'
+  SHARE = 'SHARE',
+  BAROMETER = 'BAROMETER'
 }
 
 export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';

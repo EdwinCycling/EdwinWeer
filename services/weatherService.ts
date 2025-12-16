@@ -247,7 +247,7 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   const minutelyVars = 'precipitation';
   
   // Expanded hourly variables - Corrected soil_moisture_0_to_1cm
-  const hourlyVars = 'temperature_2m,weather_code,apparent_temperature,precipitation_probability,relative_humidity_2m,surface_pressure,uv_index,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m';
+  const hourlyVars = 'temperature_2m,weather_code,apparent_temperature,precipitation_probability,relative_humidity_2m,surface_pressure,pressure_msl,uv_index,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m';
   
   const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_hours,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
 
@@ -277,7 +277,7 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   // Use Archive if end date is before today (yesterday or older), or if range is long
   const useArchive = end < today || spanDays > 40;
   
-  const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration';
+  const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration,pressure_msl';
   const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,daylight_duration,sunshine_duration';
 
   let url = '';

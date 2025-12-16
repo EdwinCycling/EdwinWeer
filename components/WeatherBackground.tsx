@@ -1,12 +1,12 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 
 interface Props {
   weatherCode: number;
   isDay: number;
+  className?: string;
 }
 
-export const WeatherBackground: React.FC<Props> = ({ weatherCode, isDay }) => {
+export const WeatherBackground: React.FC<Props> = memo(({ weatherCode, isDay, className }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -28,12 +28,30 @@ export const WeatherBackground: React.FC<Props> = ({ weatherCode, isDay }) => {
     const isStormy = [95, 96, 99].includes(weatherCode);
     const isClear = weatherCode === 0;
 
-    const resize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-      initParticles();
+    const resize = (entries?: ResizeObserverEntry[]) => {
+      let newWidth = 0;
+      let newHeight = 0;
+
+      if (entries && entries[0]) {
+        newWidth = entries[0].contentRect.width;
+        newHeight = entries[0].contentRect.height;
+      } else if (canvas.parentElement) {
+        newWidth = canvas.parentElement.clientWidth;
+        newHeight = canvas.parentElement.clientHeight;
+      } else {
+        newWidth = window.innerWidth;
+        newHeight = window.innerHeight;
+      }
+      
+      // Only resize if dimensions actually changed to prevent flashing
+      // Use a small threshold to avoid subpixel jitter loops
+      if (Math.abs(newWidth - width) > 1 || Math.abs(newHeight - height) > 1) {
+        width = newWidth;
+        height = newHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
     };
 
     const initParticles = () => {
@@ -122,52 +140,47 @@ export const WeatherBackground: React.FC<Props> = ({ weatherCode, isDay }) => {
       // Lightning Flash
       if (isStormy) {
           if (Math.random() > 0.99 && flashOpacity <= 0) {
-              flashOpacity = 0.8; // Trigger flash
+              flashOpacity = 1;
           }
           if (flashOpacity > 0) {
               ctx.fillStyle = `rgba(255, 255, 255, ${flashOpacity})`;
               ctx.fillRect(0, 0, width, height);
-              flashOpacity -= 0.05;
+              flashOpacity -= 0.1;
           }
       }
 
-      // Draw Particles
+      // Particles
       particles.forEach(p => {
         if (isRainy || isStormy) {
-            ctx.strokeStyle = `rgba(174, 217, 255, ${p.opacity})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${p.opacity})`;
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - 2, p.y + p.length); // Slight angle
+            ctx.lineTo(p.x + p.speed * 0.2, p.y + p.length);
             ctx.stroke();
 
+            p.x += p.speed * 0.2;
             p.y += p.speed;
-            p.x -= 0.5; // Wind
+
             if (p.y > height) {
                 p.y = -p.length;
                 p.x = Math.random() * width;
             }
-            if (p.x < 0) p.x = width;
-
         } else if (isSnowy) {
-            ctx.fillStyle = `rgba(255, 255, 255, 0.8)`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fill();
+             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+             ctx.beginPath();
+             ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+             ctx.fill();
 
-            p.y += p.speed;
-            p.x += Math.sin(p.y * p.sway);
-            if (p.y > height) {
-                p.y = -5;
-                p.x = Math.random() * width;
-            }
+             p.y += p.speed;
+             p.x += Math.sin(p.y * 0.01) * p.sway;
 
+             if (p.y > height) {
+                 p.y = -5;
+                 p.x = Math.random() * width;
+             }
         } else if (isCloudy) {
-             const cloudGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
-             cloudGrad.addColorStop(0, `rgba(255, 255, 255, ${p.opacity})`);
-             cloudGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
-             
-             ctx.fillStyle = cloudGrad;
+             ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
              ctx.beginPath();
              ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
              ctx.fill();
@@ -190,12 +203,23 @@ export const WeatherBackground: React.FC<Props> = ({ weatherCode, isDay }) => {
       animationFrameId = requestAnimationFrame(draw);
     };
 
-    window.addEventListener('resize', resize);
-    resize();
+    // Use ResizeObserver for better performance and to avoid flashing on mobile scroll
+    const observer = new ResizeObserver((entries) => resize(entries));
+    if (canvas.parentElement) {
+        observer.observe(canvas.parentElement);
+        // Initial resize check
+        resize();
+    } else {
+        // Fallback
+        window.addEventListener('resize', () => resize());
+        resize();
+    }
+    
     draw();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      observer.disconnect();
+      window.removeEventListener('resize', () => resize());
       cancelAnimationFrame(animationFrameId);
     };
   }, [weatherCode, isDay]);
@@ -203,8 +227,10 @@ export const WeatherBackground: React.FC<Props> = ({ weatherCode, isDay }) => {
   return (
     <canvas 
         ref={canvasRef} 
-        className="fixed inset-0 z-0 pointer-events-none"
+        className={className || "fixed inset-0 z-0 pointer-events-none"}
         style={{ opacity: 0.7 }}
     />
   );
-};
+});
+
+WeatherBackground.displayName = 'WeatherBackground';

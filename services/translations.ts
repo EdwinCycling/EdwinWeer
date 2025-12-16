@@ -602,6 +602,10 @@ const nl: Dictionary = {
     'minutes': 'm',
     'days': 'dagen',
 
+    'time.earlier': '{hours}u eerder',
+    'time.later': '{hours}u later',
+    'in': 'in',
+
     'temp': 'Temperatuur',
     'feels_like': 'Gevoel',
     'measured': 'Gemeten',

@@ -19,6 +19,7 @@ import { LoginView } from './views/LoginView';
 import { UserAccountView } from './views/UserAccountView';
 import { RecordsWeatherView } from './views/RecordsWeatherView';
 import { ShareWeatherView } from './views/ShareWeatherView';
+import { BarometerView } from './views/BarometerView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -132,6 +133,8 @@ const App: React.FC = () => {
         return <StravaWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.SHARE:
         return <ShareWeatherView onNavigate={navigate} settings={settings} />;
+      case ViewState.BAROMETER:
+        return <BarometerView onNavigate={navigate} settings={settings} />;
       case ViewState.SETTINGS:
         return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.TEAM:
@@ -269,6 +272,16 @@ const App: React.FC = () => {
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
                     
                     <div className="space-y-4">
+                         <button onClick={() => { navigate(ViewState.BAROMETER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-12 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                <Icon name="speed" className="text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-lg">{settings.language === 'nl' ? 'De Barometer' : 'The Barometer'}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{settings.language === 'nl' ? 'Analoge luchtdruk' : 'Analog pressure'}</span>
+                            </div>
+                         </button>
+
                          <button onClick={() => { navigate(ViewState.HOLIDAY_REPORT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-12 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                                 <Icon name="flight_takeoff" className="text-2xl" />
