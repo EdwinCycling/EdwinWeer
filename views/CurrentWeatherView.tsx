@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
 import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip, convertPressure, calculateHeatIndex, getWindDirection } from '../services/weatherService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
-import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings } from '../services/storageService';
+import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
@@ -22,6 +22,7 @@ interface Props {
 
 export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
+  const [lastKnownMyLocation, setLastKnownMyLocation] = useState<Location | null>(() => loadLastKnownMyLocation());
   const [loadingCity, setLoadingCity] = useState(false);
   const [weatherData, setWeatherData] = useState<OpenMeteoResponse | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
@@ -575,18 +576,22 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                      let name = t('my_location');
                                      
                                      // Try to get actual city name
-                                     const cityName = await reverseGeocode(lat, lon);
-                                     if (cityName) {
-                                         name = cityName;
-                                     }
+                                 const cityName = await reverseGeocode(lat, lon);
+                                 if (cityName) {
+                                     name = cityName;
+                                 }
 
-                                     setLocation({
-                                         name: name, 
-                                         country: "", 
-                                         lat: lat, 
+                                     const loc: Location = {
+                                         name: name,
+                                         country: "",
+                                         lat: lat,
                                          lon: lon,
                                          isCurrentLocation: true
-                                     });
+                                     };
+
+                                     saveLastKnownMyLocation(loc);
+                                     setLastKnownMyLocation(loc);
+                                     setLocation(loc);
                                      setLoadingCity(false);
                                  }, (err) => {
                                      console.error("Geolocation error", err);
@@ -783,7 +788,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             </linearGradient>
                                         </defs>
                                         <XAxis dataKey="time" tick={{fill: '#93c5fd', fontSize: 10}} axisLine={false} tickLine={false} />
-                                        <Tooltip 
+                                        <RechartsTooltip 
                                             contentStyle={{ backgroundColor: '#1e3a8a', border: 'none', borderRadius: '8px', fontSize: '12px' }}
                                             itemStyle={{ color: '#fff' }}
                                             formatter={(value: any) => [`${value} ${settings.precipUnit}`, t('precip')]}
@@ -1167,7 +1172,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           isOpen={showFavorites}
           onClose={() => setShowFavorites(false)}
           favorites={settings.favorites}
-          currentLocation={location}
+          myLocation={lastKnownMyLocation}
           onSelectLocation={(loc) => {
               setLocation(loc);
               setShowFavorites(false);

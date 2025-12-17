@@ -4,6 +4,7 @@ import { Icon } from './Icon';
 import { getTranslation } from '../services/translations';
 import { convertTemp, mapWmoCodeToText, mapWmoCodeToIcon, convertWind } from '../services/weatherService';
 import { StaticWeatherBackground } from './StaticWeatherBackground';
+import { loadFavoritesCompactMode, saveFavoritesCompactMode } from '../services/storageService';
 
 interface FavoriteWeather {
     temp: number;
@@ -31,7 +32,7 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     favorites: Location[];
-    currentLocation: Location;
+    myLocation?: Location | null;
     onSelectLocation: (loc: Location) => void;
     settings: AppSettings;
 }
@@ -40,7 +41,7 @@ export const FavoritesList: React.FC<Props> = ({
     isOpen, 
     onClose, 
     favorites, 
-    currentLocation, 
+    myLocation,
     onSelectLocation, 
     settings 
 }) => {
@@ -48,6 +49,7 @@ export const FavoritesList: React.FC<Props> = ({
     const [displayedFavorites, setDisplayedFavorites] = useState<Location[]>([]);
     const [page, setPage] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [compactMode, setCompactMode] = useState<boolean>(() => loadFavoritesCompactMode());
     const observerTarget = useRef(null);
     const BATCH_SIZE = 10;
 
@@ -58,9 +60,11 @@ export const FavoritesList: React.FC<Props> = ({
         if (isOpen) {
             setPage(0);
             setDisplayedFavorites(favorites.slice(0, BATCH_SIZE));
-            fetchWeatherForList([currentLocation, ...favorites.slice(0, BATCH_SIZE)]);
+            const firstBatch = favorites.slice(0, BATCH_SIZE);
+            const initialList = myLocation ? [myLocation, ...firstBatch] : firstBatch;
+            fetchWeatherForList(initialList);
         }
-    }, [isOpen, favorites, currentLocation]);
+    }, [isOpen, favorites, myLocation]);
 
     // Load more favorites when page changes
     useEffect(() => {
@@ -230,9 +234,9 @@ export const FavoritesList: React.FC<Props> = ({
         return t(key).replace('{hours}', Math.abs(diffHours).toString());
     };
 
-    const renderCard = (loc: Location, isCurrent: boolean) => {
+    const renderCard = (loc: Location, isMyLocation: boolean) => {
         const weather = weatherData[`${loc.lat},${loc.lon}`];
-        const key = `${loc.lat},${loc.lon}-${isCurrent ? 'curr' : 'fav'}`;
+        const key = `${loc.lat},${loc.lon}-${isMyLocation ? 'my' : 'fav'}`;
 
         let sunEvent = null;
         let timeDiff = null;
@@ -245,7 +249,7 @@ export const FavoritesList: React.FC<Props> = ({
             <div 
                 key={key}
                 onClick={() => onSelectLocation(loc)}
-                className="relative overflow-hidden rounded-3xl p-5 mb-4 cursor-pointer transform transition-all active:scale-95 shadow-lg min-h-[140px] border border-white/10 bg-slate-900"
+                className={`relative overflow-hidden rounded-3xl mb-4 cursor-pointer transform transition-all active:scale-95 shadow-lg border border-white/10 bg-slate-900 ${compactMode ? 'p-4 min-h-[110px]' : 'p-5 min-h-[140px]'}`}
             >
                 {/* Background Weather Animation/Image */}
                 {weather && (
@@ -261,7 +265,7 @@ export const FavoritesList: React.FC<Props> = ({
                 {/* Subtle overlay for text readability */}
                 <div className="absolute inset-0 bg-black/20 z-0 pointer-events-none" />
 
-                <div className="relative z-10 flex flex-col justify-between h-full text-white drop-shadow-md gap-4">
+                <div className={`relative z-10 flex flex-col justify-between h-full text-white drop-shadow-md ${compactMode ? 'gap-2' : 'gap-4'}`}>
                     
                     {/* Top Row: Name, Time, Main Temp */}
                     <div className="flex justify-between items-start">
@@ -269,10 +273,10 @@ export const FavoritesList: React.FC<Props> = ({
                             <h3 className="text-xl font-bold leading-tight drop-shadow-md">
                                 {loc.name}
                             </h3>
-                            {isCurrent ? (
+                            {isMyLocation ? (
                                  <div className="flex items-center gap-1 text-xs text-white/90 font-medium drop-shadow-sm">
                                     <Icon name="my_location" className="text-[10px]" />
-                                    <span>{t('my_location')}</span>
+                                    <span>{t('favorites.my_location_last') || 'My Location (last known)'}</span>
                                  </div>
                             ) : (
                                 <div className="flex flex-col">
@@ -309,7 +313,7 @@ export const FavoritesList: React.FC<Props> = ({
                     </div>
 
                     {/* Bottom Row: Details (Grid) */}
-                    {weather && (
+                    {weather && !compactMode && (
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-white/90 border-t border-white/10 pt-3 mt-1">
                             
                             {/* Sun Event */}
@@ -322,14 +326,14 @@ export const FavoritesList: React.FC<Props> = ({
                             </div>
 
                             {/* Rain Info */}
-                            <div className="flex items-center gap-2">
-                                <Icon name="water_drop" className="text-base opacity-70" />
+                            <div className="flex items-center gap-2 flex-row-reverse justify-end sm:flex-row sm:justify-start">
                                 <span>
                                     {weather.precipitation > 0 
                                         ? `${weather.precipitation}mm` 
                                         : `${weather.precipProb}% ${t('chance') || 'kans'}`
                                     }
                                 </span>
+                                <Icon name="water_drop" className="text-base opacity-70" />
                             </div>
 
                             {/* Cloud Cover Bar - spanning full width if odd number of items, or just keeping it in grid */}
@@ -363,18 +367,32 @@ export const FavoritesList: React.FC<Props> = ({
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white pl-2">
                     {t('favorites') || 'Favorieten'}
                 </h2>
-                <button 
-                    onClick={onClose}
-                    className="p-2 rounded-full bg-slate-200/50 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-colors"
-                >
-                    <Icon name="close" className="text-xl" />
-                </button>
+                <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-white/80 select-none">
+                        <input
+                            type="checkbox"
+                            checked={compactMode}
+                            onChange={(e) => {
+                                const next = e.target.checked;
+                                setCompactMode(next);
+                                saveFavoritesCompactMode(next);
+                            }}
+                            className="size-4 accent-primary"
+                        />
+                        <span className="whitespace-nowrap">{t('favorites.compact') || 'Compact'}</span>
+                    </label>
+                    <button 
+                        onClick={onClose}
+                        className="p-2 rounded-full bg-slate-200/50 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-colors"
+                    >
+                        <Icon name="close" className="text-xl" />
+                    </button>
+                </div>
             </div>
 
             {/* List */}
             <div className="flex-1 overflow-y-auto p-4 pb-20 scrollbar-hide">
-                {/* Current Location Card */}
-                {renderCard(currentLocation, true)}
+                {myLocation && renderCard(myLocation, true)}
 
                 {/* Favorites */}
                 {displayedFavorites.map(fav => renderCard(fav, false))}

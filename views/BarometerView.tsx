@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { ViewState, AppSettings } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
-import { loadCurrentLocation } from '../services/storageService';
+import { loadCurrentLocation, saveCurrentLocation, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { fetchForecast, fetchHistorical } from '../services/weatherService';
 import { getTranslation } from '../services/translations';
+import { VintageWeatherStation } from '../components/VintageWeatherStation';
+import { reverseGeocode, searchCityByName } from '../services/geoService';
+import { FavoritesList } from '../components/FavoritesList';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -12,199 +15,300 @@ interface Props {
 
 export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
   const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState<Location>(loadCurrentLocation());
   const [currentPressure, setCurrentPressure] = useState<number | null>(null);
   const [yesterdayPressure, setYesterdayPressure] = useState<number | null>(null);
+  const [temp, setTemp] = useState<number | null>(null);
+  const [humidity, setHumidity] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Logic to fetch data
+  // Header State
+  const [localTime, setLocalTime] = useState<string>('');
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [loadingCity, setLoadingCity] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Location[]>([]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const t = (key: string) => getTranslation(key, settings.language);
+
+  // Update storage when location changes
   useEffect(() => {
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const loc = loadCurrentLocation();
-            if (!loc) throw new Error('No location');
+      saveCurrentLocation(location);
+      loadData();
+  }, [location]);
 
-            // 1. Fetch Current Forecast (for current pressure)
-            const forecast = await fetchForecast(loc.lat, loc.lon);
-            const currentP = forecast.current?.pressure_msl || forecast.hourly?.pressure_msl?.[0]; // Fallback
-            setCurrentPressure(currentP);
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+        searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
 
-            // Determine current hour from forecast time (local to location) to ensure matching index
-            let currentHour = new Date().getHours();
-            if (forecast.current?.time) {
-                // Parse "YYYY-MM-DDTHH:mm" -> get HH
-                try {
-                    const timeStr = forecast.current.time;
-                    const hourStr = timeStr.split('T')[1]?.split(':')[0];
-                    if (hourStr) {
-                        currentHour = parseInt(hourStr, 10);
-                    }
-                } catch (e) {
-                    console.warn('Could not parse forecast time', e);
-                }
-            }
+  const loadData = async () => {
+    try {
+        setLoading(true);
+        setError(null);
 
-            // 2. Fetch Yesterday's Data
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const dateStr = yesterday.toISOString().split('T')[0];
-            
-            const history = await fetchHistorical(loc.lat, loc.lon, dateStr, dateStr);
-            
-            // Get pressure at same hour as now
-            const yesterdayP = history.hourly?.pressure_msl?.[currentHour];
-            setYesterdayPressure(yesterdayP);
+        // 1. Fetch Current Forecast
+        const forecast = await fetchForecast(location.lat, location.lon);
+        
+        // Extract Data
+        const currentP = forecast.current?.pressure_msl || forecast.hourly?.pressure_msl?.[0];
+        const currentT = forecast.current?.temperature_2m;
+        const currentH = forecast.current?.relative_humidity_2m;
+        
+        setCurrentPressure(currentP);
+        setTemp(currentT);
+        setHumidity(currentH);
 
-        } catch (err) {
-            console.error(err);
-            setError('Failed to load barometer data');
-        } finally {
-            setLoading(false);
+        // Calculate Local Time
+        if (forecast.utc_offset_seconds !== undefined) {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const localDate = new Date(utc + (forecast.utc_offset_seconds * 1000));
+            setLocalTime(localDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {
+                hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h'
+            }));
         }
-    };
-    loadData();
-  }, []);
 
-  // Calculate angles
-  // 960 = -70, 1060 = +70
-  // deg = 1.4 * pressure - 1414
-  const getAngle = (p: number) => Math.min(Math.max(1.4 * p - 1414, -70), 70);
+        // Determine current hour for historical comparison
+        let currentHour = new Date().getHours();
+        if (forecast.current?.time) {
+            try {
+                const timeStr = forecast.current.time;
+                const hourStr = timeStr.split('T')[1]?.split(':')[0];
+                if (hourStr) currentHour = parseInt(hourStr, 10);
+            } catch (e) {
+                console.warn('Could not parse forecast time', e);
+            }
+        }
 
-  const currentAngle = currentPressure ? getAngle(currentPressure) : -70;
-  const yesterdayAngle = yesterdayPressure ? getAngle(yesterdayPressure) : -70;
+        // 2. Fetch Yesterday's Data
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const dateStr = yesterday.toISOString().split('T')[0];
+        
+        const history = await fetchHistorical(location.lat, location.lon, dateStr, dateStr);
+        const yesterdayP = history.hourly?.pressure_msl?.[currentHour];
+        setYesterdayPressure(yesterdayP);
 
-  // Forecast Text
-  const getForecastText = () => {
-      if (!currentPressure || !yesterdayPressure) return settings.language === 'nl' ? "Laden..." : "Loading...";
+    } catch (err) {
+        console.error(err);
+        setError('Failed to load barometer data');
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  // --- Header Handlers ---
+  const cycleFavorite = (direction: 'next' | 'prev') => {
+      if (settings.favorites.length === 0) return;
+      const currentIndex = settings.favorites.findIndex(f => f.name === location.name); // Simple match
+      let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+      
+      if (nextIndex >= settings.favorites.length) nextIndex = 0;
+      if (nextIndex < 0) nextIndex = settings.favorites.length - 1;
+      
+      setLocation(settings.favorites[nextIndex]);
+  };
+
+  const searchCities = async () => {
+      if (!searchQuery.trim()) return;
+      setLoadingSearch(true);
+      const results = await searchCityByName(searchQuery);
+      setSearchResults(results);
+      setLoadingSearch(false);
+  };
+
+  const handleSelectSearchResult = (loc: Location) => {
+      setLocation(loc);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+      setSearchResults([]);
+  };
+
+  // --- Forecast Logic ---
+  const getForecastDetails = () => {
+      if (!currentPressure || !yesterdayPressure) return { title: t('loading'), desc: '', diffType: 'none' };
+      
       const diff = currentPressure - yesterdayPressure;
-      const isNL = settings.language === 'nl';
+      let diffKey = 'barometer.diff.none';
+      let expKey = 'barometer.explanation.stable';
 
-      if (diff > 1) return isNL ? "Luchtdruk stijgt: Weer verbetert" : "Pressure rising: Weather improving";
-      if (diff < -1) return isNL ? "Luchtdruk daalt: Weer verslechtert" : "Pressure falling: Weather worsening";
-      return isNL ? "Luchtdruk stabiel: Weer blijft gelijk" : "Pressure stable: Weather remains similar";
+      if (diff > 2) {
+          diffKey = 'barometer.diff.very_large_rise';
+          expKey = 'barometer.explanation.rise';
+      } else if (diff > 0.5) {
+          diffKey = 'barometer.diff.large_rise'; // > 0.5 is decent rise
+          if (diff < 1.0) diffKey = 'barometer.diff.small_rise';
+          expKey = 'barometer.explanation.rise';
+      } else if (diff > -0.5) {
+          diffKey = 'barometer.diff.none';
+          expKey = 'barometer.explanation.stable';
+      } else if (diff > -2) {
+          diffKey = 'barometer.diff.large_fall';
+          if (diff > -1.0) diffKey = 'barometer.diff.small_fall';
+          expKey = 'barometer.explanation.fall';
+      } else {
+          diffKey = 'barometer.diff.very_large_fall';
+          expKey = 'barometer.explanation.fall';
+      }
+
+      return {
+          title: t(diffKey),
+          desc: t(expKey),
+          diffVal: diff.toFixed(1)
+      };
   };
   
-  const forecastText = getForecastText();
+  const details = getForecastDetails();
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f0f0f0] dark:bg-slate-900 transition-colors">
-       {/* Header */}
-       <div className="flex items-center p-4 pt-8 sticky top-0 z-20">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 mr-2 backdrop-blur-md transition-colors shadow-sm text-slate-700 dark:text-white">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 transition-colors overflow-x-hidden">
+       
+       {/* --- Top Navigation Buttons (Fixed) --- */}
+       <div className="fixed top-4 left-4 z-50">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 backdrop-blur-md transition-colors shadow-sm text-slate-700 dark:text-white">
                 <Icon name="arrow_back_ios_new" />
             </button>
-            <h1 className="text-xl font-bold text-slate-800 dark:text-white">De Barometer</h1>
        </div>
 
-       <div className="flex-1 flex flex-col items-center justify-center p-4">
+       {/* --- Main Content --- */}
+       <div className="flex-1 flex flex-col items-center pt-8 pb-10">
+          
+          {/* Location Header */}
+          <div className="relative z-10 w-full max-w-md mx-auto mb-6 px-4">
+                <div className="flex items-center justify-center relative">
+                    <button onClick={() => cycleFavorite('prev')} className="absolute left-0 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
+                        <Icon name="chevron_left" className="text-3xl" />
+                    </button>
+
+                    <div className="text-center">
+                        {loadingCity ? (
+                             <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+                        ) : (
+                            <div className="flex flex-col items-center">
+                                <h2 className="text-xl font-bold leading-tight flex items-center gap-1 drop-shadow-md text-slate-800 dark:text-white">
+                                    <Icon name="location_on" className="text-primary text-lg" />
+                                    {location.name}, {location.country}
+                                </h2>
+                                {localTime && (
+                                    <p className="text-slate-500 dark:text-white/80 text-xs font-medium mt-1 flex items-center gap-1">
+                                        <Icon name="schedule" className="text-[10px]" />
+                                        {localTime}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <button onClick={() => cycleFavorite('next')} className="absolute right-0 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
+                        <Icon name="chevron_right" className="text-3xl" />
+                    </button>
+                </div>
+          </div>
+
           {loading ? (
-             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+             <div className="flex-1 flex items-center justify-center">
+                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+             </div>
           ) : (
-            <div className="barometer-container scale-100 sm:scale-125 transition-transform my-8">
-                 <div className="barometer-case">
-                     <div className="barometer-face">
-                         <div className="scale-markings"></div>
-                         
-                         <div className="weather-text text-storm">Storm</div>
-                         <div className="weather-text text-rain">Rain</div>
-                         <div className="weather-text text-change">Change</div>
-                         <div className="weather-text text-fair">Fair</div>
-                         <div className="weather-text text-dry">Very Dry</div>
-             
-                         {/* Black Needle (Current) */}
-                         <div className="needle" style={{ transform: `translateX(-50%) rotate(${currentAngle}deg)` }}></div>
-                         
-                         {/* Gold Needle (Yesterday) */}
-                         <div className="needle reference-needle" style={{ transform: `translateX(-50%) rotate(${yesterdayAngle}deg)` }}></div>
-             
-                         <div className="digital-readout">{currentPressure} hPa</div>
-                         <div className="center-knob"></div>
-                     </div>
-                 </div>
+             <div className="flex flex-col items-center w-full">
+                
+                {/* Vintage Weather Station */}
+                <div className="mb-8">
+                    <VintageWeatherStation 
+                        pressure={currentPressure}
+                        prevPressure={yesterdayPressure}
+                        temp={temp}
+                        humidity={humidity}
+                        tempUnit={settings.tempUnit}
+                        language={settings.language}
+                    />
+                </div>
+
+                {/* Detailed Info Box */}
+                <div className="w-full max-w-md px-6">
+                    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200 dark:border-white/10 p-5">
+                        <h3 className="text-center text-lg font-bold text-slate-800 dark:text-white mb-1">
+                            {details.title}
+                        </h3>
+                        <p className="text-center text-slate-600 dark:text-slate-300 text-sm mb-4">
+                            {details.desc}
+                        </p>
+                        
+                        <div className="grid grid-cols-2 gap-4 border-t border-slate-200 dark:border-white/10 pt-4">
+                            <div className="flex flex-col items-center">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold">{t('today')}</span>
+                                <span className="text-xl font-bold text-slate-800 dark:text-white font-mono">{currentPressure} <span className="text-xs font-normal">hPa</span></span>
+                            </div>
+                            <div className="flex flex-col items-center border-l border-slate-200 dark:border-white/10">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold text-center">Reference</span>
+                                <span className="text-xl font-bold text-amber-600 dark:text-amber-500 font-mono">{yesterdayPressure} <span className="text-xs font-normal">hPa</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
              </div>
           )}
-          
-          {!loading && (
-              <div className="mt-8 text-center p-6 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl shadow-xl w-full max-w-sm mx-auto border border-slate-200 dark:border-white/10">
-                  <h2 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">{settings.language === 'nl' ? 'Verwachting' : 'Forecast'}</h2>
-                  <p className="text-slate-600 dark:text-slate-300 font-medium mb-4">{forecastText}</p>
-                  <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-white/10 pt-4">
-                      <div className="flex flex-col items-center">
-                          <span>{settings.language === 'nl' ? 'Gisteren' : 'Yesterday'}</span>
-                          <span className="font-bold text-slate-800 dark:text-white">{yesterdayPressure} hPa</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                          <span>{settings.language === 'nl' ? 'Vandaag' : 'Today'}</span>
-                          <span className="font-bold text-slate-800 dark:text-white">{currentPressure} hPa</span>
-                      </div>
-                  </div>
-              </div>
-          )}
        </div>
 
-       <style>{`
-         /* Barometer CSS */
-         .barometer-container { display: flex; justify-content: center; padding: 20px; }
-         .barometer-case {
-             width: 300px; height: 300px; border-radius: 50%;
-             background: radial-gradient(circle at 30% 30%, #8b5a2b, #5c3a1e);
-             box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 0 10px #b8860b, inset 0 0 0 12px #4a3c31;
-             display: flex; align-items: center; justify-content: center; position: relative;
-         }
-         .barometer-face {
-             width: 240px; height: 240px;
-             background: radial-gradient(circle at 30% 30%, #fdfbf7, #e6e2d8);
-             border-radius: 50%; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
-             position: relative; border: 2px solid #333;
-         }
-         .weather-text {
-             position: absolute; width: 100%; text-align: center;
-             font-family: 'Times New Roman', serif; font-weight: bold; font-size: 14px;
-             color: #333; top: 50%; left: 0; transform-origin: center;
-         }
-         .text-storm  { transform: rotate(-60deg) translateY(-85px); }
-         .text-rain   { transform: rotate(-30deg) translateY(-85px); }
-         .text-change { transform: rotate(0deg)   translateY(-85px); font-size: 16px; }
-         .text-fair   { transform: rotate(30deg)  translateY(-85px); }
-         .text-dry    { transform: rotate(60deg)  translateY(-85px); }
-         
-         .needle {
-             position: absolute; bottom: 50%; left: 50%; width: 4px; height: 100px;
-             background: #222; transform-origin: bottom center;
-             transition: transform 1.5s cubic-bezier(0.4, 2.5, 0.6, 0.8);
-             border-radius: 50% 50% 0 0; z-index: 10;
-         }
-         .needle::after {
-             content: ''; position: absolute; top: -5px; left: -3px;
-             border-left: 5px solid transparent; border-right: 5px solid transparent;
-             border-bottom: 10px solid #222;
-         }
-         .reference-needle {
-             height: 95px; width: 3px; z-index: 5;
-             background: repeating-linear-gradient(to bottom, rgba(218, 165, 32, 0.8), rgba(218, 165, 32, 0.8) 5px, transparent 5px, transparent 8px);
-         }
-         .center-knob {
-             position: absolute; top: 50%; left: 50%; width: 16px; height: 16px;
-             background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
-             border-radius: 50%; transform: translate(-50%, -50%);
-             box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 20;
-         }
-         .digital-readout {
-             position: absolute; bottom: 40px; width: 100%; text-align: center;
-             font-family: monospace; color: #666; font-size: 12px;
-         }
-         .scale-markings {
-             position: absolute; inset: 10px; border-radius: 50%;
-             background: repeating-conic-gradient(from 0deg, transparent 0deg 2deg, #333 2.1deg 2.4deg, transparent 2.5deg 5deg);
-             mask: radial-gradient(transparent 70%, black 70%);
-             -webkit-mask: radial-gradient(transparent 70%, black 70%);
-             opacity: 0.15;
-             transform: rotate(-70deg); 
-             /* range is -70 to +70 = 140 deg. mask needs to handle this. 
-                Simpler approach: just some ticks around the circle */
-         }
-       `}</style>
+        {/* Search Modal */}
+        {isSearchOpen && (
+            <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-3 backdrop-blur-md">
+                <div className="flex gap-2">
+                    <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            searchCities();
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && searchCities()}
+                        placeholder={t('search')}
+                        className="flex-1 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                    />
+                    <button
+                        onClick={searchCities}
+                        disabled={loadingSearch || !searchQuery.trim()}
+                        className="px-3 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                    >
+                        <Icon name={loadingSearch ? 'hourglass_empty' : 'arrow_forward'} />
+                    </button>
+                </div>
+                <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                    {searchResults.map((res, idx) => (
+                        <button
+                            key={`${res.name}-${idx}`}
+                            onClick={() => handleSelectSearchResult(res)}
+                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-left"
+                        >
+                            <span className="text-sm font-medium text-slate-800 dark:text-white">{res.name}, {res.country}</span>
+                            <Icon name="chevron_right" className="text-xs text-slate-400" />
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* Favorites Modal */}
+        <FavoritesList 
+            isOpen={showFavorites} 
+            onClose={() => setShowFavorites(false)}
+            favorites={settings.favorites}
+            myLocation={loadLastKnownMyLocation()} // Pass saved my location
+            onSelectLocation={(loc) => {
+                setLocation(loc);
+                setShowFavorites(false);
+            }}
+            settings={settings}
+        />
+
     </div>
   );
 };

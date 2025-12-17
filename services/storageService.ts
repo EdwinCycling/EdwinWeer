@@ -13,6 +13,8 @@ const KEY_ENSEMBLE_PRO_MODE = "weather_app_ensemble_pro_mode";
 const KEY_FORECAST_ACTIVITIES_MODE = "weather_app_forecast_activities_mode";
 const KEY_FORECAST_VIEW_MODE = "weather_app_forecast_view_mode"; // Replaces expanded_mode
 const KEY_FORECAST_TREND_ARROWS_MODE = "weather_app_forecast_trend_arrows_mode";
+const KEY_FAVORITES_COMPACT_MODE = "weather_app_favorites_compact_mode";
+const KEY_LAST_KNOWN_MY_LOCATION = "weather_app_last_known_my_location";
 
 let currentUserId: string | null = null;
 
@@ -129,6 +131,19 @@ const syncForecastToRemote = async () => {
     }
 };
 
+const syncFavoritesViewToRemote = async () => {
+    if (!currentUserId || !db) return;
+    try {
+        const preferences = {
+            compactMode: loadFavoritesCompactMode()
+        };
+        const userRef = doc(db, 'users', currentUserId);
+        await setDoc(userRef, { favoritesView: preferences }, { merge: true });
+    } catch (e) {
+        console.error("Error syncing favorites view:", e);
+    }
+};
+
 export const loadRemoteData = async (uid: string) => {
     if (!db) return;
     try {
@@ -154,9 +169,43 @@ export const loadRemoteData = async (uid: string) => {
                 if (data.forecastView.viewMode && typeof window !== "undefined") localStorage.setItem(KEY_FORECAST_VIEW_MODE, data.forecastView.viewMode);
                 if (data.forecastView.trendArrows !== undefined && typeof window !== "undefined") localStorage.setItem(KEY_FORECAST_TREND_ARROWS_MODE, String(data.forecastView.trendArrows));
             }
+            if (data.favoritesView) {
+                if (data.favoritesView.compactMode !== undefined && typeof window !== "undefined") {
+                    localStorage.setItem(KEY_FAVORITES_COMPACT_MODE, String(data.favoritesView.compactMode));
+                }
+            }
         }
     } catch (e) {
         console.error("Error loading remote data:", e);
+    }
+};
+
+export const saveFavoritesCompactMode = (enabled: boolean) => {
+    if (typeof window !== "undefined") {
+        localStorage.setItem(KEY_FAVORITES_COMPACT_MODE, String(enabled));
+    }
+    syncFavoritesViewToRemote();
+};
+
+export const loadFavoritesCompactMode = (): boolean => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(KEY_FAVORITES_COMPACT_MODE) === 'true';
+};
+
+export const saveLastKnownMyLocation = (location: Location) => {
+    if (typeof window !== "undefined") {
+        localStorage.setItem(KEY_LAST_KNOWN_MY_LOCATION, JSON.stringify(location));
+    }
+};
+
+export const loadLastKnownMyLocation = (): Location | null => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(KEY_LAST_KNOWN_MY_LOCATION);
+    if (!stored) return null;
+    try {
+        return JSON.parse(stored);
+    } catch {
+        return null;
     }
 };
 

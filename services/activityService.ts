@@ -275,12 +275,19 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
     }
 
-    score = Math.max(1, Math.min(10, score));
+    // BONUS: Sunshine during rain (Global Rule)
+    // If rain is expected (precip or prob > 30) AND there is significant sunshine
+    const isRainy = w.precipMm > 0.1 || w.precipProb > 30;
+    if (isRainy && w.sunChance > 20) {
+        // Bonus depends on sun chance (percentage of sun hours)
+        // Max bonus 5 points for 100% sun
+        const bonus = Math.floor(w.sunChance / 20); 
+        if (bonus > 0) {
+            score += bonus;
+            reasons.unshift(`${getTranslation('bonus.sunshine', lang)} (+${bonus})`);
+        }
+    }
 
-    return {
-        score10: score,
-        stars: score / 2,
-        text: reasons.length > 0 ? reasons[0] : getTranslation('reason.perfect', lang),
-        reasons
-    };
+    score = Math.max(1, Math.min(10, score));
+    return { score10: score, stars: score / 2, text: reasons[0] || getTranslation('reason.perfect', lang), reasons };
 };
