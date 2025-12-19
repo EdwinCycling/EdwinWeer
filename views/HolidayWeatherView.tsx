@@ -226,30 +226,43 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                  const validSunshine = chunkSunshine.filter((x: any) => x !== null);
                  const validWind = chunkWind.filter((x: any) => x !== null);
                  
-                 const avgMax = validMax.length ? validMax.reduce((a: number, b: number) => a + b, 0) / validMax.length : 0;
-                 const avgMin = validMin.length ? validMin.reduce((a: number, b: number) => a + b, 0) / validMin.length : 0;
+                 const avgMax = validMax.length ? Math.max(...validMax) : 0; // Absolute Max
+                 const avgMin = validMin.length ? Math.min(...validMin) : 0; // Absolute Min
                  const totalRain = chunkPrecip.reduce((a: number, b: number) => a + (b || 0), 0);
-                 const totalSunshineHours = validSunshine.reduce((a: number, b: number) => a + b, 0) / 3600; 
-                 const avgDailySunshine = totalSunshineHours / 7;
+                 
+                 const avgDailySunshine = chunkTime.reduce((acc: number, _, idx: number) => {
+                     const sun = chunkSunshine[idx] ?? 0;
+                     const daylight = daily.daylight_duration ? daily.daylight_duration[startIndex + idx] : 43200;
+                     const perc = daylight > 0 ? (sun / daylight) * 100 : 0;
+                     return acc + perc;
+                 }, 0) / 7;
+
                  const avgWind = validWind.length ? validWind.reduce((a: number, b: number) => a + b, 0) / validWind.length : 0;
 
                  summary = {
                      avgMax: convertTemp(avgMax, settings.tempUnit),
                      avgMin: convertTemp(avgMin, settings.tempUnit),
                      totalRain: convertPrecip(totalRain, settings.precipUnit),
-                     avgDailySunshine: parseFloat(avgDailySunshine.toFixed(1)),
+                     avgDailySunshine: avgDailySunshine, // Now Percentage
                      avgWind: convertWind(avgWind, settings.windUnit)
                  };
 
-                 forecastData = chunkTime.map((time: string, idx: number) => ({
-                    time,
-                    date: new Date(time).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric' }),
-                    max: convertTemp(chunkMax[idx] ?? 0, settings.tempUnit),
-                    min: convertTemp(chunkMin[idx] ?? 0, settings.tempUnit),
-                    precip: convertPrecip(chunkPrecip[idx], settings.precipUnit),
-                    sunshine: chunkSunshine[idx] !== null ? parseFloat((chunkSunshine[idx] / 3600).toFixed(1)) : null,
-                    wind: chunkWind[idx] !== null ? convertWind(chunkWind[idx], settings.windUnit) : null
-                 }));
+                 forecastData = chunkTime.map((time: string, idx: number) => {
+                    const sunSeconds = chunkSunshine[idx] ?? 0;
+                    const daylightSeconds = daily.daylight_duration ? daily.daylight_duration[startIndex + idx] : 43200; // fallback 12h
+                    const sunPercentage = daylightSeconds > 0 ? (sunSeconds / daylightSeconds) * 100 : 0;
+
+                    return {
+                        time,
+                        date: new Date(time).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric' }),
+                        max: convertTemp(chunkMax[idx] ?? 0, settings.tempUnit),
+                        min: convertTemp(chunkMin[idx] ?? 0, settings.tempUnit),
+                        precip: convertPrecip(chunkPrecip[idx], settings.precipUnit),
+                        sunshine: sunPercentage, // Store as percentage
+                        sunshineHours: parseFloat((sunSeconds / 3600).toFixed(1)), // Keep hours for display if needed
+                        wind: chunkWind[idx] !== null ? convertWind(chunkWind[idx], settings.windUnit) : null
+                    };
+                 });
              }
           }
 
@@ -318,8 +331,9 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
           const d = new Date(week.startDate);
           d.setDate(d.getDate() + i);
           
-          let sumMax = 0, sumMin = 0, sumPrecip = 0, sumSunshine = 0, sumWind = 0;
+          let sumMax = 0, sumMin = 0, sumPrecip = 0, sumSunshineSeconds = 0, sumDaylightSeconds = 0, sumWind = 0;
           let count = 0;
+          let sunCount = 0;
 
           const yearValues: any = {};
 
@@ -329,20 +343,30 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                   const min = hYear.daily.temperature_2m_min[i];
                   const precip = hYear.daily.precipitation_sum[i];
                   const sun = hYear.daily.sunshine_duration[i];
+                  const daylight = hYear.daily.daylight_duration ? hYear.daily.daylight_duration[i] : 43200; // fallback
                   const wind = hYear.daily.wind_speed_10m_max[i];
                   
                   if (max !== null && min !== null) {
                       sumMax += max;
                       sumMin += min;
                       sumPrecip += (precip || 0);
-                      sumSunshine += (sun || 0);
+                      
+                      if (sun !== null) {
+                          sumSunshineSeconds += sun;
+                          sumDaylightSeconds += daylight;
+                          sunCount++;
+                      }
+                      
                       sumWind += (wind || 0);
                       count++;
 
                       if (showIndividualYears) {
                           yearValues[`max_${yIdx}`] = convertTemp(max, settings.tempUnit);
                           yearValues[`min_${yIdx}`] = convertTemp(min, settings.tempUnit);
-                          yearValues[`sunshine_${yIdx}`] = sun !== null ? parseFloat((sun / 3600).toFixed(1)) : null;
+                          
+                          const ySunPerc = daylight > 0 ? (sun / daylight) * 100 : 0;
+                          yearValues[`sunshine_${yIdx}`] = sun !== null ? Math.round(ySunPerc) : null;
+                          
                           yearValues[`wind_${yIdx}`] = wind !== null ? convertWind(wind, settings.windUnit) : null;
                       }
                   }
@@ -350,12 +374,17 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
           });
 
           if (count > 0) {
+              const avgSunSeconds = sunCount > 0 ? sumSunshineSeconds / sunCount : 0;
+              const avgDaylightSeconds = sunCount > 0 ? sumDaylightSeconds / sunCount : 43200;
+              const avgSunPercentage = avgDaylightSeconds > 0 ? (avgSunSeconds / avgDaylightSeconds) * 100 : 0;
+
               days.push({
                   date: d.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric' }),
                   max: convertTemp(sumMax / count, settings.tempUnit),
                   min: convertTemp(sumMin / count, settings.tempUnit),
                   precip: convertPrecip(sumPrecip / count, settings.precipUnit),
-                  sunshine: parseFloat(((sumSunshine / count) / 3600).toFixed(1)),
+                  sunshine: parseFloat(avgSunPercentage.toFixed(1)), // Percentage
+                  sunshineHours: parseFloat((avgSunSeconds / 3600).toFixed(1)),
                   wind: convertWind(sumWind / count, settings.windUnit),
                   ...yearValues
               });
@@ -430,6 +459,26 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
           score: calculateActivityScore(avgDay as any, type, settings.language)
       }));
   }, [displayData, dailyRainStats, settings.language]);
+
+  // Calculate Temp Range for Graph
+  const tempRange = useMemo(() => {
+      if (!displayData || displayData.length === 0) return { min: 0, max: 10, ticks: [] };
+      const allTemps = displayData.flatMap(d => [d.max, d.min, ...(showIndividualYears ? Array.from({length: 5}).flatMap((_, i) => [d[`max_${i}`], d[`min_${i}`]]) : [])]).filter(x => x !== null && x !== undefined);
+      if (allTemps.length === 0) return { min: 0, max: 10, ticks: [] };
+      
+      const min = Math.floor(Math.min(...allTemps));
+      const max = Math.ceil(Math.max(...allTemps));
+      
+      // Pad slightly to ensure lines cover everything
+      const minPadded = min - 1;
+      const maxPadded = max + 1;
+      
+      const ticks = [];
+      for(let i = minPadded; i <= maxPadded; i++) {
+          ticks.push(i);
+      }
+      return { min: minPadded, max: maxPadded, ticks };
+  }, [displayData, showIndividualYears]);
 
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
@@ -732,13 +781,27 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                     // Calculate summary from displayData if historical
                                                     let s = currentWeek?.summary;
                                                     if (!useForecast && displayData.length > 0) {
-                                                        const avgMax = displayData.reduce((a, b) => a + b.max, 0) / displayData.length;
-                                                        const avgMin = displayData.reduce((a, b) => a + b.min, 0) / displayData.length;
+                                                        const avgMax = displayData.length ? Math.max(...displayData.map(d => d.max)) : 0; // Absolute Max
+                                                        const avgMin = displayData.length ? Math.min(...displayData.map(d => d.min)) : 0; // Absolute Min
                                                         const totalRain = displayData.reduce((a, b) => a + b.precip, 0); // Sum of averages
-                                                        const avgSunshine = displayData.reduce((a, b) => a + b.sunshine, 0) / displayData.length; // Average daily
+                                                        const avgSunshine = displayData.reduce((a, b) => a + (b.sunshineHours || 0), 0) / displayData.length; // Average daily hours for summary chip? Or Percentage? 
+                                                        // User asked for "percentage zon" in graph. Summary chip currently shows "h / day".
+                                                        // Let's keep h/day in summary as it's more intuitive for "How much sun?" unless user asked otherwise.
+                                                        // Actually, user said: "Zet zonne uren in op percentage zon". Maybe everywhere?
+                                                        // But "h / day" chip explicitly says "h / day".
+                                                        // I'll leave the chip as hours for now, as percentage is now in the graph.
+                                                        // But wait, "boven aan staat temperatuur icoontje met x/y ... niet duidelijk ... moet zijn de max van de periode en de min van de gekozen periode".
+                                                        // This refers to Temperature.
+                                                        // For Sun, "Zet zonne uren in op percentage zon (dus percentage van toaal beschikbaar voor die dag), uren zegt niet zoveel".
+                                                        // This strongly suggests replacing hours with percentage everywhere or at least in the graph.
+                                                        // I will change the summary chip to Percentage too if I can.
+                                                        // The chip icon is "sunny".
+                                                        // Let's use percentage in the chip too to be consistent.
+                                                        
+                                                        const avgSunPerc = displayData.reduce((a, b) => a + (b.sunshine || 0), 0) / displayData.length;
                                                         const avgWind = displayData.reduce((a, b) => a + b.wind, 0) / displayData.length;
                                                         s = {
-                                                            avgMax, avgMin, totalRain, avgDailySunshine: avgSunshine, avgWind
+                                                            avgMax, avgMin, totalRain, avgDailySunshine: avgSunPerc, avgWind
                                                         };
                                                     }
                                                     
@@ -760,7 +823,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                             </div>
                                                             <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-bold flex items-center gap-1">
                                                                 <Icon name="sunny" className="text-yellow-400" />
-                                                                {parseFloat(s.avgDailySunshine.toFixed(1))}h / day
+                                                                {Math.round(s.avgDailySunshine)}%
                                                             </div>
                                                             <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-bold flex items-center gap-1" title={settings.language === 'nl' ? 'Dagen met >20% regenkans' : 'Days with >20% rain chance'}>
                                                                 <Icon name="rainy" className="text-blue-300" />
@@ -778,15 +841,23 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                             <div className="h-[200px] w-full" style={{ minHeight: '200px', width: '100%', minWidth: 0, position: 'relative' }}>
                                                 <ResponsiveContainer width="99%" height="100%" debounce={50}>
                                                     <ComposedChart data={displayData}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
+                                                        {/* Light lines every 1 degree via CartesianGrid + ticks */}
+                                                        <CartesianGrid vertical={false} stroke="currentColor" opacity={0.1} />
+                                                        
+                                                        {/* Thicker lines every 5 degrees */}
+                                                        {tempRange.ticks.filter((t: number) => t % 5 === 0).map((t: number) => (
+                                                            <ReferenceLine key={t} y={t} stroke="currentColor" strokeOpacity={0.4} strokeWidth={1.5} />
+                                                        ))}
+
                                                         <XAxis dataKey="date" tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} axisLine={false} tickLine={false} />
                                                         <YAxis 
-                                                            domain={['auto', 'auto']} 
+                                                            domain={[tempRange.min, tempRange.max]} 
+                                                            ticks={tempRange.ticks}
+                                                            interval={0}
                                                             tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
                                                             axisLine={false} 
                                                             tickLine={false}
                                                             width={35}
-                                                            tickCount={6}
                                                         />
                                                         <Tooltip 
                                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
@@ -819,38 +890,42 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                 <div className="h-[150px] w-full" style={{ minHeight: '150px', width: '100%', minWidth: 0, position: 'relative' }}>
                                                     <ResponsiveContainer width="99%" height="100%" debounce={50}>
                                                         <ComposedChart data={displayData}>
-                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
-                                                            <XAxis dataKey="date" tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} axisLine={false} tickLine={false} />
-                                                            <YAxis 
-                                                                yAxisId="left" 
-                                                                tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
-                                                                axisLine={false} 
-                                                                tickLine={false}
-                                                                width={35}
-                                                                tickCount={6}
-                                                            />
-                                                            <YAxis 
-                                                                yAxisId="right" 
-                                                                orientation="right" 
-                                                                tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
-                                                                axisLine={false} 
-                                                                tickLine={false}
-                                                                width={35}
-                                                                tickCount={6}
-                                                            />
-                                                            <Tooltip 
-                                                                cursor={{fill: 'transparent'}}
-                                                                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                                            />
-                                                            
-                                                            {/* Individual Years for Sunshine */}
-                                                            {!useForecast && showIndividualYears && Array.from({length: 5}).map((_, i) => (
-                                                                <Line yAxisId="right" key={i} type="monotone" dataKey={`sunshine_${i}`} stroke="#fbbf24" strokeWidth={1} strokeOpacity={0.2} dot={false} />
-                                                            ))}
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
+                                                        <XAxis dataKey="date" tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} axisLine={false} tickLine={false} />
+                                                        <YAxis 
+                                                            yAxisId="left" 
+                                                            tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
+                                                            axisLine={false} 
+                                                            tickLine={false}
+                                                            width={35}
+                                                            allowDecimals={false}
+                                                            domain={[0, 'auto']}
+                                                            label={{ value: 'mm', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 10, fill: 'currentColor', opacity: 0.5 } }}
+                                                        />
+                                                        <YAxis 
+                                                            yAxisId="right" 
+                                                            orientation="right" 
+                                                            tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
+                                                            axisLine={false} 
+                                                            tickLine={false}
+                                                            width={35}
+                                                            domain={[0, 100]}
+                                                            unit="%"
+                                                            label={{ value: '%', angle: 90, position: 'insideRight', offset: 10, style: { fontSize: 10, fill: 'currentColor', opacity: 0.5 } }}
+                                                        />
+                                                        <Tooltip 
+                                                            cursor={{fill: 'transparent'}}
+                                                            contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                                        />
+                                                        
+                                                        {/* Individual Years for Sunshine */}
+                                                        {!useForecast && showIndividualYears && Array.from({length: 5}).map((_, i) => (
+                                                            <Line yAxisId="right" key={i} type="monotone" dataKey={`sunshine_${i}`} stroke="#fbbf24" strokeWidth={1} strokeOpacity={0.2} dot={false} />
+                                                        ))}
 
-                                                            <Bar yAxisId="left" dataKey="precip" fill="#3b82f6" radius={[4, 4, 0, 0]} name={t('precip')} barSize={20} />
-                                                            <Line yAxisId="right" type="monotone" dataKey="sunshine" stroke="#fbbf24" strokeWidth={2} dot={{r: 3, fill: '#fbbf24'}} name={t('holiday.sunshine_h')} />
-                                                        </ComposedChart>
+                                                        <Bar yAxisId="left" dataKey="precip" fill="#3b82f6" radius={[4, 4, 0, 0]} name={t('precip')} barSize={20} />
+                                                        <Line yAxisId="right" type="monotone" dataKey="sunshine" stroke="#fbbf24" strokeWidth={2} dot={{r: 3, fill: '#fbbf24'}} name="Zon (%)" />
+                                                    </ComposedChart>
                                                     </ResponsiveContainer>
                                                 </div>
                                             </div>
@@ -861,18 +936,19 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                 <div className="h-[150px] w-full" style={{ minHeight: '150px', width: '100%', minWidth: 0, position: 'relative' }}>
                                                     <ResponsiveContainer width="99%" height="100%" debounce={50}>
                                                         <ComposedChart data={displayData}>
-                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
-                                                            <XAxis dataKey="date" tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} axisLine={false} tickLine={false} />
-                                                            <YAxis 
-                                                                tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
-                                                                axisLine={false} 
-                                                                tickLine={false}
-                                                                width={35}
-                                                                tickCount={6}
-                                                            />
-                                                            <Tooltip 
-                                                                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                                            />
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
+                                                        <XAxis dataKey="date" tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} axisLine={false} tickLine={false} />
+                                                        <YAxis 
+                                                            tick={{fontSize: 10, fill: 'currentColor', opacity: 0.6}} 
+                                                            axisLine={false} 
+                                                            tickLine={false}
+                                                            width={35}
+                                                            allowDecimals={false}
+                                                            domain={[0, 'auto']}
+                                                        />
+                                                        <Tooltip 
+                                                            contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                                        />
                                                             
                                                             {/* Individual Years for Wind */}
                                                             {!useForecast && showIndividualYears && Array.from({length: 5}).map((_, i) => (
@@ -889,13 +965,13 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                         {/* Daily Overview Table */}
                                         {dailyRainStats && dailyRainStats.length > 0 && (
                                             <div className="mt-6 p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
-                                                <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">Dagelijks Overzicht</h5>
+                                                <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">Historische Regenkans (laatste 5 jaar)</h5>
                                                 <div className="overflow-x-auto">
                                                     <table className="w-full text-xs">
                                                         <thead>
                                                             <tr className="text-left text-slate-400 border-b border-slate-200 dark:border-white/10">
                                                                 <th className="pb-2">Datum</th>
-                                                                <th className="pb-2">Regenkans (&gt;{rainThreshold}mm)</th>
+                                                                <th className="pb-2">Kans (&gt;{rainThreshold}mm)</th>
                                                                 <th className="pb-2 w-1/2">Risico</th>
                                                             </tr>
                                                         </thead>

@@ -545,33 +545,25 @@ export const fetchSeasonal = async (lat: number, lon: number) => {
  export const fetchHistoricalPeriods = async (lat: number, lon: number, startDate: Date) => {
     validateCoordinates(lat, lon);
     
-    // We want data for this week, but for the past 5 years.
-    // We'll make 5 requests.
-    const requests = [];
-    const years = 5;
-    
-    // We use the same daily variables as the seasonal forecast for consistency
-    const dailyVars = ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "sunshine_duration", "wind_speed_10m_max"].join(',');
-
-    for (let i = 1; i <= years; i++) {
-        const pastStart = new Date(startDate);
-        pastStart.setFullYear(pastStart.getFullYear() - i);
+    // Fetch last 5 years
+    const promises = [];
+    for (let i = 1; i <= 5; i++) {
+        const d = new Date(startDate);
+        d.setFullYear(d.getFullYear() - i);
+        const startStr = d.toISOString().split('T')[0];
         
-        const pastEnd = new Date(pastStart);
-        pastEnd.setDate(pastEnd.getDate() + 6);
+        const dEnd = new Date(d);
+        dEnd.setDate(dEnd.getDate() + 10); // Fetch a bit more to be safe
+        const endStr = dEnd.toISOString().split('T')[0];
         
-        const startStr = pastStart.toISOString().split('T')[0];
-        const endStr = pastEnd.toISOString().split('T')[0];
-        
-        const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startStr}&end_date=${endStr}&daily=${dailyVars}&timezone=auto`;
-        checkLimit();
-        trackCall();
-        requests.push(fetch(url).then(r => r.json()));
+        // Ensure we fetch daylight_duration
+        const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startStr}&end_date=${endStr}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunshine_duration,wind_speed_10m_max,daylight_duration&timezone=auto`;
+        promises.push(fetch(url).then(res => res.json()));
     }
 
-    const results = await Promise.all(requests);
-    return results; // Array of 5 OpenMeteo responses
- };
+    const results = await Promise.all(promises);
+    return results;
+};
 
 export const fetchHistoricalRange = async (lat: number, lon: number, startDate: string, endDate: string) => {
     validateCoordinates(lat, lon);
