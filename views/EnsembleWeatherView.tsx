@@ -28,7 +28,7 @@ import {
     saveEnsembleProMode,
     loadEnsembleProMode
 } from '../services/storageService';
-import { WeatherBackground } from '../components/WeatherBackground';
+import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, ReferenceArea } from 'recharts';
@@ -611,9 +611,10 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       {/* Background from Current Weather */}
       {currentWeather && (
         <div className="hidden dark:block absolute inset-0 z-0">
-            <WeatherBackground 
+            <StaticWeatherBackground 
                 weatherCode={currentWeather.current.weather_code} 
                 isDay={currentWeather.current.is_day} 
+                cloudCover={currentWeather.current.cloud_cover}
             />
         </div>
       )}

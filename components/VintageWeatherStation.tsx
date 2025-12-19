@@ -173,9 +173,10 @@ export const VintageWeatherStation: React.FC<VintageWeatherStationProps> = ({
                            Q210 100 200 280 
                            L240 320
                            Q280 360 280 460
-                           L280 750
-                           Q280 780 160 780
-                           Q40 780 40 750
+                           L280 620  
+                           Q280 650 200 650
+                           L120 650
+                           Q40 650 40 620
                            L40 460
                            Q40 360 80 320
                            L120 280
@@ -194,9 +195,10 @@ export const VintageWeatherStation: React.FC<VintageWeatherStationProps> = ({
                            Q205 100 195 280 
                            L235 320
                            Q275 360 275 460
-                           L275 745
-                           Q275 775 160 775
-                           Q45 775 45 745
+                           L275 615
+                           Q275 645 200 645
+                           L120 645
+                           Q45 645 45 615
                            L45 460
                            Q45 360 85 320
                            L125 280
@@ -284,30 +286,45 @@ export const VintageWeatherStation: React.FC<VintageWeatherStationProps> = ({
                              return <line key={`min-${p}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="black" strokeWidth="1" />;
                         })}
 
-                        {/* Weather Text */}
-                        {/* Storm 970, Rain 990, Change 1010, Fair 1030, Dry 1050 */}
-                        <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666" transform={`rotate(${getPressureAngle(975)} 115 115) translate(0 -60)`}>{t('barometer.storm')}</text>
-                        <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666" transform={`rotate(${getPressureAngle(990)} 115 115) translate(0 -60)`}>{t('barometer.rain')}</text>
-                        <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666" transform={`rotate(${getPressureAngle(1013)} 115 115) translate(0 -60)`}>{t('barometer.change')}</text>
-                        <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666" transform={`rotate(${getPressureAngle(1030)} 115 115) translate(0 -60)`}>{t('barometer.fair')}</text>
-                        <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666" transform={`rotate(${getPressureAngle(1050)} 115 115) translate(0 -60)`}>{t('barometer.dry')}</text>
+                        {/* Weather Text & Icons */}
+                        <g transform={`rotate(${getPressureAngle(975)} 115 115) translate(0 -90)`}>
+                            <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666">{t('barometer.storm')}</text>
+                            <path d="M110 150 L115 140 L120 150 M112 148 L118 148" stroke="#666" strokeWidth="1" fill="none" transform="translate(0, -10)" />
+                        </g>
+                        <g transform={`rotate(${getPressureAngle(990)} 115 115) translate(0 -90)`}>
+                            <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666">{t('barometer.rain')}</text>
+                            <path d="M112 145 Q115 140 118 145 M114 148 L113 152 M116 148 L115 152" stroke="#666" strokeWidth="1" fill="none" transform="translate(0, -10)" />
+                        </g>
+                        <g transform={`rotate(${getPressureAngle(1013)} 115 115) translate(0 -90)`}>
+                            <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666">{t('barometer.change')}</text>
+                        </g>
+                        <g transform={`rotate(${getPressureAngle(1030)} 115 115) translate(0 -90)`}>
+                            <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666">{t('barometer.fair')}</text>
+                            <circle cx="115" cy="145" r="3" stroke="#666" strokeWidth="1" fill="none" transform="translate(0, -10)" />
+                        </g>
+                        <g transform={`rotate(${getPressureAngle(1050)} 115 115) translate(0 -90)`}>
+                            <text x="115" y="160" textAnchor="middle" fontSize="12" fontFamily="serif" fill="#666">{t('barometer.dry')}</text>
+                            <circle cx="115" cy="145" r="4" stroke="#666" strokeWidth="1" fill="none" transform="translate(0, -10)" />
+                            <path d="M115 138 L115 135 M115 152 L115 155 M108 145 L105 145 M122 145 L125 145" stroke="#666" strokeWidth="1" transform="translate(0, -10)" />
+                        </g>
                         
                         {/* Decorative Center */}
                         <circle cx="115" cy="115" r="10" fill="#fdd835" stroke="#fbc02d" />
 
                         {/* Hands */}
-                        {/* Reference Hand (Black, Old Reading) */}
+                        {/* Reference Hand (Black, Old Reading) - Dotted */}
                         <g transform={`rotate(${prevPressureAngle} 115 115)`}>
-                             <line x1="115" y1="115" x2="115" y2="30" stroke="black" strokeWidth="3" strokeLinecap="round" />
+                             <line x1="115" y1="115" x2="115" y2="30" stroke="black" strokeWidth="3" strokeLinecap="round" strokeDasharray="4 4" />
                              <circle cx="115" cy="115" r="6" fill="black" />
                              <path d="M115 30 L110 40 L120 40 Z" fill="black" />
                         </g>
 
-                        {/* Current Hand (Gold/Brass, New Reading) */}
-                        <g transform={`rotate(${currentPressureAngle} 115 115)`} style={{filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.3))'}}>
-                             <line x1="115" y1="130" x2="115" y2="25" stroke="#fdd835" strokeWidth="2" strokeLinecap="round" />
-                             <circle cx="115" cy="115" r="4" fill="#fdd835" />
-                             <path d="M115 20 L110 35 L120 35 Z" fill="#fdd835" />
+                        {/* Current Hand (Gold/Brass, New Reading) - Clearer */}
+                        <g transform={`rotate(${currentPressureAngle} 115 115)`} style={{filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.5))'}}>
+                             <line x1="115" y1="130" x2="115" y2="25" stroke="#fdd835" strokeWidth="3" strokeLinecap="round" strokeOpacity="1" />
+                             <line x1="115" y1="130" x2="115" y2="25" stroke="#bcaaa4" strokeWidth="0.5" strokeLinecap="round" />
+                             <circle cx="115" cy="115" r="5" fill="#fdd835" stroke="#fbc02d" strokeWidth="1" />
+                             <path d="M115 20 L108 38 L122 38 Z" fill="#fdd835" stroke="#fbc02d" strokeWidth="1" />
                              <circle cx="115" cy="20" r="3" fill="none" stroke="#fdd835" strokeWidth="2" />
                         </g>
                         
@@ -318,7 +335,7 @@ export const VintageWeatherStation: React.FC<VintageWeatherStationProps> = ({
             </div>
 
              {/* Hygrometer Section (Bottom) */}
-             <div className="absolute top-[620px] left-1/2 -translate-x-1/2 w-[120px] h-[120px]">
+             <div className="absolute top-[550px] left-1/2 -translate-x-1/2 w-[120px] h-[120px]">
                 {/* Brass Bezel */}
                 <div className="absolute inset-0 rounded-full bg-[url(#brassGradient)] shadow-xl border-2 border-[#4e342e]" style={{background: 'linear-gradient(135deg, #fdd835 0%, #f57f17 100%)'}}></div>
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner flex items-center justify-center border border-slate-300">

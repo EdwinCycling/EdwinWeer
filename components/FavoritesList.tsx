@@ -257,6 +257,7 @@ export const FavoritesList: React.FC<Props> = ({
                         <StaticWeatherBackground 
                             weatherCode={weather.weatherCode} 
                             isDay={weather.isDay} 
+                            cloudCover={weather.cloudCover}
                             className="absolute inset-0 w-full h-full"
                         />
                     </div>

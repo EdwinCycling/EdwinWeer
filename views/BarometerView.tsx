@@ -167,7 +167,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
   const details = getForecastDetails();
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 transition-colors overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black transition-colors overflow-x-hidden">
        
        {/* --- Top Navigation Buttons (Fixed) --- */}
        <div className="fixed top-4 left-4 z-50">
@@ -182,10 +182,6 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
           {/* Location Header */}
           <div className="relative z-10 w-full max-w-md mx-auto mb-6 px-4">
                 <div className="flex items-center justify-center relative">
-                    <button onClick={() => cycleFavorite('prev')} className="absolute left-0 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
-                        <Icon name="chevron_left" className="text-3xl" />
-                    </button>
-
                     <div className="text-center">
                         {loadingCity ? (
                              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
@@ -204,10 +200,6 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                             </div>
                         )}
                     </div>
-
-                    <button onClick={() => cycleFavorite('next')} className="absolute right-0 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
-                        <Icon name="chevron_right" className="text-3xl" />
-                    </button>
                 </div>
           </div>
 

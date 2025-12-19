@@ -310,8 +310,7 @@ const en: Dictionary = {
     'records.counts.very_wet_days': 'Very wet days (≥20 mm)',
     'records.counts.sunny_days': 'Sunny days (≥8 h sun)',
     'records.counts.gloomy_days': 'Sombere dagen (≤1 u zon)',
-    'records.frost.first': 'Eerste nachtvorst (najaar)',
-    'records.frost.last': 'Laatste nachtvorst (voorjaar)',
+    
     'records.sequences_title': 'Reeksen',
     'records.sequences.dry': 'Longest dry spell',
     'records.sequences.wet': 'Longest wet spell',
@@ -328,6 +327,12 @@ const en: Dictionary = {
     'records.max_drop': 'Largest Temp Drop (Max Temp)',
     'records.diff_day1': 'Day 1',
     'records.diff_day2': 'Day 2',
+    'records.extremes.first_summer': 'First Summer Day (≥25°C)',
+    'records.extremes.last_summer': 'Last Summer Day (≥25°C)',
+    'records.extremes.first_warm': 'First Warm Day (≥20°C)',
+    'records.extremes.last_warm': 'Last Warm Day (≥20°C)',
+    'records.extremes.first_nice': 'First Nice Day (≥18°C)',
+    'records.extremes.last_nice': 'Last Nice Day (≥18°C)',
 
     // Settings
     'settings.general': 'General',
@@ -637,21 +642,6 @@ const nl: Dictionary = {
     'barometer.diff.very_large_fall': 'Zeer grote daling',
     'barometer.explanation.rise': 'Verbetering van het weer op komst.',
     'barometer.explanation.fall': 'Verslechtering van het weer op komst.',
-    'barometer.title': 'De Barometer',
-    'barometer.storm': 'Storm',
-    'barometer.rain': 'Regen',
-    'barometer.change': 'Veranderlijk',
-    'barometer.fair': 'Mooi',
-    'barometer.dry': 'Droog',
-    'barometer.diff.none': 'Stabiel',
-    'barometer.diff.small_rise': 'Kleine Stijging',
-    'barometer.diff.large_rise': 'Grote Stijging',
-    'barometer.diff.very_large_rise': 'Zeer Grote Stijging',
-    'barometer.diff.small_fall': 'Kleine Daling',
-    'barometer.diff.large_fall': 'Grote Daling',
-    'barometer.diff.very_large_fall': 'Zeer Grote Daling',
-    'barometer.explanation.rise': 'De luchtdruk stijgt, wat meestal duidt op een weersverbetering en afnemende kans op neerslag.',
-    'barometer.explanation.fall': 'De luchtdruk daalt, wat vaak duidt op een weersverslechtering, toenemende bewolking en kans op neerslag.',
     'barometer.explanation.stable': 'De luchtdruk is stabiel. Het huidige weerbeeld blijft waarschijnlijk aanhouden.',
 
     'today': 'Vandaag',
@@ -1241,6 +1231,15 @@ const nl: Dictionary = {
     'share.sticker.remove': 'Verwijder',
     'share.sticker.position': 'Positie',
     'share.sticker.size': 'Grootte',
+    
+    // New Record Keys
+    'records.counts.storm_days': 'Stormdagen (≥9 Bft)',
+    'records.extremes.first_warm': 'Eerste Warme Dag',
+    'records.extremes.last_warm': 'Laatste Warme Dag',
+    'records.extremes.first_nice': 'Eerste Lekkere Dag',
+    'records.extremes.last_nice': 'Laatste Lekkere Dag',
+    'records.extremes.first_summer': 'Eerste Zomerse Dag',
+    'records.extremes.threshold': 'Drempel',
 };
 
 export const getTranslation = (key: string, lang: AppLanguage): string => {

@@ -42,6 +42,7 @@ interface YearlyCounts {
   veryWetDays: number;
   sunnyDays: number;
   gloomyDays: number;
+  stormDays: number;
 }
 
 interface FrostInfo {
@@ -80,9 +81,24 @@ interface DiverseRecord {
     temp2: number;
 }
 
+interface DateTemp {
+    date: string;
+    temp: number;
+}
+
+interface ExtremesInfo {
+    firstWarm: DateTemp | null;
+    lastWarm: DateTemp | null;
+    firstNice: DateTemp | null;
+    lastNice: DateTemp | null;
+    firstSummer: DateTemp | null;
+    lastSummer: DateTemp | null;
+}
+
 interface DiverseRecords {
     maxRise: DiverseRecord | null;
     maxDrop: DiverseRecord | null;
+    extremes: ExtremesInfo | null;
 }
 
 interface MonthlyStats {
@@ -193,7 +209,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setMonthlyStats(null);
     setDailyData([]);
 
-    try {
+    // try {
       let startDateStr = '';
       let endDateStr = '';
 
@@ -454,6 +470,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const warmThreshold = convertTemp(20, settings.tempUnit);
         const summerThreshold = convertTemp(25, settings.tempUnit);
         const tropicalThreshold = convertTemp(30, settings.tempUnit);
+        const niceThreshold = convertTemp(18, settings.tempUnit);
         const rainThreshold = convertPrecip(0.2, settings.precipUnit);
         const heavyRainThreshold = convertPrecip(10, settings.precipUnit);
         const veryWetThreshold = convertPrecip(20, settings.precipUnit);
@@ -496,20 +513,49 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         let lastFrost: string | null = null;
         let firstFrostAfterLongest: string | null = null;
         let lastFrostBeforeLongest: string | null = null;
+        
+        // Absolute year records
+        let absFirstFrost: string | null = null;
+        let absLastFrost: string | null = null;
+        let firstWarmDay: { date: string, temp: number } | null = null;
+        let lastWarmDay: { date: string, temp: number } | null = null;
+        let firstSummerDay: { date: string, temp: number } | null = null;
+        let lastSummerDay: { date: string, temp: number } | null = null;
+        // User request: "Last day of year warmer than (summer series) (use warm threshold)"
+        // This is confusing. "Warmer than summer series" implies warmer than 25. "Use warm threshold" implies 20.
+        // I will implement:
+        // 1. Last/First day >= 20 (Warm)
+        // 2. Last/First day >= 25 (Summer) - keeping it distinct for clarity, or following the "use warm threshold" strictly for the "summer series" label?
+        // Let's stick to the definitions: Warm=20, Summer=25.
+        // But I will add the specific requested "First/Last day warmer than X" cards.
+        
+        let firstNiceDay: { date: string, temp: number } | null = null;
+        let lastNiceDay: { date: string, temp: number } | null = null;
+
+        let stormDays = 0; // >= 9 Bft (approx 75 km/h)
 
         const maxTempsConverted: number[] = [];
+
         const minTempsConverted: number[] = [];
         const rainConverted: number[] = [];
         const sunshineHours: number[] = [];
 
         for (let i = 0; i < times.length; i++) {
-          const tMax = maxTemps[i];
-          const tMin = minTemps[i];
+          const loopTMax = maxTemps[i];
+          const loopTMin = minTemps[i];
           const rain = rainValues ? rainValues[i] : null;
           const sun = sunshineValues ? sunshineValues[i] : null;
+          const windGust = windGustValues ? windGustValues[i] : NaN;
           const date = times[i];
+          
+          // Storm Check: >= 9 Bft. 9 Bft starts at 75 km/h.
+          if (typeof windGust === 'number' && !Number.isNaN(windGust)) {
+              if (windGust >= 75) { // 9 Bft threshold
+                  stormDays += 1;
+              }
+          }
 
-          if (typeof tMax !== 'number' || Number.isNaN(tMax) || typeof tMin !== 'number' || Number.isNaN(tMin)) {
+          if (typeof loopTMax !== 'number' || Number.isNaN(loopTMax) || typeof loopTMin !== 'number' || Number.isNaN(loopTMin)) {
             maxTempsConverted.push(NaN);
             minTempsConverted.push(NaN);
             rainConverted.push(NaN);
@@ -517,8 +563,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             continue;
           }
 
-          const maxVal = convertTemp(tMax, settings.tempUnit);
-          const minVal = convertTemp(tMin, settings.tempUnit);
+          const maxVal = convertTemp(loopTMax, settings.tempUnit);
+          const minVal = convertTemp(loopTMin, settings.tempUnit);
           const rainVal =
             typeof rain === 'number' && !Number.isNaN(rain) ? convertPrecip(rain, settings.precipUnit) : NaN;
           const sunHours =
@@ -529,11 +575,29 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           rainConverted.push(rainVal);
           sunshineHours.push(sunHours);
 
-          if (maxVal >= warmThreshold) warmDays += 1;
-          if (maxVal >= summerThreshold) summerDays += 1;
+          if (maxVal >= warmThreshold) {
+              warmDays += 1;
+              if (!firstWarmDay) firstWarmDay = { date, temp: maxVal };
+              lastWarmDay = { date, temp: maxVal };
+          }
+          if (maxVal >= niceThreshold) {
+              if (!firstNiceDay) firstNiceDay = { date, temp: maxVal };
+              lastNiceDay = { date, temp: maxVal };
+          }
+          if (maxVal >= summerThreshold) {
+              summerDays += 1;
+              if (!firstSummerDay) firstSummerDay = { date, temp: maxVal };
+              lastSummerDay = { date, temp: maxVal };
+          }
           if (maxVal >= tropicalThreshold) tropicalDays += 1;
+          
           if (minVal < frostThreshold) {
             frostDays += 1;
+            
+            // Track absolute first/last frost for fallback
+            if (!absFirstFrost) absFirstFrost = date;
+            absLastFrost = date;
+
             if (longestDayIndex >= 0) {
               if (i > longestDayIndex) {
                 if (!firstFrostAfterLongest) {
@@ -576,8 +640,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           }
         }
 
-        firstFrost = firstFrostAfterLongest;
-        lastFrost = lastFrostBeforeLongest;
+        if (firstFrostAfterLongest || lastFrostBeforeLongest) {
+             firstFrost = firstFrostAfterLongest;
+             lastFrost = lastFrostBeforeLongest;
+        } else {
+             firstFrost = absFirstFrost;
+             lastFrost = absLastFrost;
+        }
 
         const findStreak = (
           values: number[],
@@ -761,7 +830,20 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           veryWetDays,
           sunnyDays,
           gloomyDays,
+          stormDays,
         });
+
+        setDiverseRecords(prev => ({
+            ...prev!,
+            extremes: {
+                firstWarm: firstWarmDay,
+                lastWarm: lastWarmDay,
+                firstNice: firstNiceDay,
+                lastNice: lastNiceDay,
+                firstSummer: firstSummerDay,
+                lastSummer: lastSummerDay
+            }
+        }));
 
         setFrostInfo({
           firstFrost,
@@ -779,15 +861,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           iceStreak,
         });
       }
-    } catch (e) {
-      let message = 'Error: Failed to fetch records';
-      if (e instanceof Error && e.message) {
-        message = `Error: ${e.message}`;
-      }
-      setError(message);
-    } finally {
       setLoading(false);
-    }
   };
 
   const formatDateLabel = (iso: string) => {
@@ -1162,58 +1236,63 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             )}
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                              {/* Temperature Group */}
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                   <span className="text-slate-500 dark:text-white/60">{t('records.max_temp_high')}</span>
                                   <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.maxTempHigh ? `${formatTempValue(monthlyStats.maxTempHigh.value)}° (${formatDateWithDay(monthlyStats.maxTempHigh.date)})` : '-'}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                   <span className="text-slate-500 dark:text-white/60">{t('records.max_temp_low')}</span>
                                   <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.maxTempLow ? `${formatTempValue(monthlyStats.maxTempLow.value)}° (${formatDateWithDay(monthlyStats.maxTempLow.date)})` : '-'}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                   <span className="text-slate-500 dark:text-white/60">{t('records.min_temp_low')}</span>
                                   <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.minTempLow ? `${formatTempValue(monthlyStats.minTempLow.value)}° (${formatDateWithDay(monthlyStats.minTempLow.date)})` : '-'}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+
+                              {/* Precipitation & Sun Group */}
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                   <span className="text-slate-500 dark:text-white/60">{t('records.total_rain')}</span>
                                   <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.totalRain.toFixed(1)} {settings.precipUnit}</span>
                               </div>
-                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                   <span className="text-slate-500 dark:text-white/60">{t('records.total_sun')}</span>
                                   <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.totalSun.toFixed(1)} u</span>
                               </div>
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
+                                  <span className="text-slate-500 dark:text-white/60">{t('records.rain_days')}</span>
+                                  <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.rainDays}</span>
+                              </div>
+
+                              {/* Days Count Group */}
+                              <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
+                                  <span className="text-slate-500 dark:text-white/60">{t('records.dry_days')}</span>
+                                  <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.dryDays}</span>
+                              </div>
                               {monthlyStats.frostDays > 0 && (
-                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                       <span className="text-slate-500 dark:text-white/60">{t('records.frost_days')}</span>
                                       <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.frostDays}</span>
                                   </div>
                               )}
                               {monthlyStats.iceDays > 0 && (
-                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                       <span className="text-slate-500 dark:text-white/60">{t('records.ice_days')}</span>
                                       <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.iceDays}</span>
                                   </div>
                               )}
                               {monthlyStats.summerDays > 0 && (
-                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                       <span className="text-slate-500 dark:text-white/60">{t('records.summer_days')}</span>
                                       <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.summerDays}</span>
                                   </div>
                               )}
                               {monthlyStats.tropicalDays > 0 && (
-                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                  <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full">
                                       <span className="text-slate-500 dark:text-white/60">{t('records.tropical_days')}</span>
                                       <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.tropicalDays}</span>
                                   </div>
                               )}
-                               <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
-                                  <span className="text-slate-500 dark:text-white/60">{t('records.dry_days')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.dryDays}</span>
-                              </div>
-                               <div className="flex justify-between items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
-                                  <span className="text-slate-500 dark:text-white/60">{t('records.rain_days')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white">{monthlyStats.rainDays}</span>
-                              </div>
                           </div>
                       </div>
                   )}
@@ -1973,6 +2052,59 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
                               )}
                           </div>
+
+                          {/* Extremes Section */}
+                          {diverseRecords.extremes && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Summer Days (>= 25) */}
+                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                          {t('records.extremes.first_summer')}
+                                      </span>
+                                      {diverseRecords.extremes.firstSummer ? (
+                                          <div className="flex items-center justify-between">
+                                              <span className="font-bold text-slate-800 dark:text-white">{formatDateLabel(diverseRecords.extremes.firstSummer.date)}</span>
+                                              <span className="text-amber-500 font-bold">{diverseRecords.extremes.firstSummer.temp}°</span>
+                                          </div>
+                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                  </div>
+                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                          {t('records.extremes.last_summer')}
+                                      </span>
+                                      {diverseRecords.extremes.lastSummer ? (
+                                          <div className="flex items-center justify-between">
+                                              <span className="font-bold text-slate-800 dark:text-white">{formatDateLabel(diverseRecords.extremes.lastSummer.date)}</span>
+                                              <span className="text-amber-500 font-bold">{diverseRecords.extremes.lastSummer.temp}°</span>
+                                          </div>
+                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                  </div>
+
+                                  {/* Warm Days (>= 20) -> "Lekker" */}
+                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                          {t('records.extremes.first_warm')}
+                                      </span>
+                                      {diverseRecords.extremes.firstWarm ? (
+                                          <div className="flex items-center justify-between">
+                                              <span className="font-bold text-slate-800 dark:text-white">{formatDateLabel(diverseRecords.extremes.firstWarm.date)}</span>
+                                              <span className="text-amber-500 font-bold">{diverseRecords.extremes.firstWarm.temp}°</span>
+                                          </div>
+                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                  </div>
+                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                          {t('records.extremes.last_warm')}
+                                      </span>
+                                      {diverseRecords.extremes.lastWarm ? (
+                                          <div className="flex items-center justify-between">
+                                              <span className="font-bold text-slate-800 dark:text-white">{formatDateLabel(diverseRecords.extremes.lastWarm.date)}</span>
+                                              <span className="text-amber-500 font-bold">{diverseRecords.extremes.lastWarm.temp}°</span>
+                                          </div>
+                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                  </div>
+                              </div>
+                          )}
 
                           {/* Frost Info - Moved here */}
                           {frostInfo && (

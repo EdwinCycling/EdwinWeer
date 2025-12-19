@@ -158,7 +158,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white relative flex flex-col transition-colors duration-300">
-        <div className="flex-grow pb-4">
+        <div className="flex-grow pb-4 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
             {renderView()}
         </div>
 
@@ -201,7 +201,8 @@ const App: React.FC = () => {
         )}
 
         {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 p-2 flex justify-around z-50 shadow-2xl pb-4 transition-colors duration-300">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-50 shadow-2xl transition-colors duration-300">
+            <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4">
             <button 
                 onClick={() => navigate(ViewState.CURRENT)}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
@@ -261,12 +262,13 @@ const App: React.FC = () => {
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('menu')}</span>
             </button>
         </div>
+        </div>
 
         {/* Extra Menu Overlay */}
         {extraMenuOpen && (
             <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-6 pb-28 animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl" 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-6 pb-28 animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl" 
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />

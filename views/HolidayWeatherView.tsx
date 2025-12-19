@@ -298,14 +298,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
 
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
-        {weatherData && (
-            <div className="hidden dark:block absolute inset-0 z-0">
-                <WeatherBackground 
-                    weatherCode={weatherData.current.weather_code} 
-                    isDay={weatherData.current.is_day} 
-                />
-            </div>
-        )}
+
         <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
 
         <div className="relative z-10 flex flex-col h-full w-full">

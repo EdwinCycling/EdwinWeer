@@ -3,7 +3,7 @@ import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } fro
 import { Icon } from '../components/Icon';
 import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode } from '../services/storageService';
-import { WeatherBackground } from '../components/WeatherBackground';
+import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
@@ -281,9 +281,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       
       {weatherData && (
         <div className="hidden dark:block absolute inset-0 z-0">
-            <WeatherBackground 
+            <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
-                isDay={weatherData.current.is_day} 
+                isDay={weatherData.current.is_day}
+                cloudCover={weatherData.current.cloud_cover}
             />
         </div>
       )}

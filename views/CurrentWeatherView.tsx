@@ -459,6 +459,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
              <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day} 
+                cloudCover={weatherData.current.cloud_cover}
                 className="absolute inset-0 w-full h-full"
             />
         </div>

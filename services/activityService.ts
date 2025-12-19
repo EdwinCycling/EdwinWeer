@@ -278,10 +278,16 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
     // BONUS: Sunshine during rain (Global Rule)
     // If rain is expected (precip or prob > 30) AND there is significant sunshine
     const isRainy = w.precipMm > 0.1 || w.precipProb > 30;
-    if (isRainy && w.sunChance > 20) {
+    if (isRainy && w.sunChance > 10) {
         // Bonus depends on sun chance (percentage of sun hours)
-        // Max bonus 5 points for 100% sun
-        const bonus = Math.floor(w.sunChance / 20); 
+        // User request: "hoe meer percetange zonneuren tov max ure zon, hoe meer bonuspunten."
+        // We give a significant bonus if there is sun during a rainy day.
+        
+        let bonus = 0;
+        if (w.sunChance > 75) bonus = 3;      // Mostly sunny despite rain
+        else if (w.sunChance > 50) bonus = 2; // Half sunny
+        else if (w.sunChance > 20) bonus = 1; // Some sun
+
         if (bonus > 0) {
             score += bonus;
             reasons.unshift(`${getTranslation('bonus.sunshine', lang)} (+${bonus})`);
