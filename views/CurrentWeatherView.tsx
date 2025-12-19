@@ -455,7 +455,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
       {weatherData && (
-        <div className="hidden dark:block absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0">
              <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day} 
@@ -465,7 +465,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         </div>
       )}
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
       
       {/* Refresh Button */}
       <Tooltip content={t('refresh')} position="bottom">
@@ -666,9 +666,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
         ) : weatherData ? (
             <>
-                <div className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-slate-800 dark:text-white">
+                <div className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl dark:drop-shadow-2xl font-display">
+                        <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                             {currentTemp}°
                         </h1>
                         {feelsLike < 10 ? (
@@ -691,10 +691,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                          <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                     </p>
-                    <p className="text-slate-500 dark:text-white/80 text-lg font-normal drop-shadow-md mt-1">
+                    <p className="text-white/90 text-lg font-normal drop-shadow-md mt-1">
                         H:{highTemp}° L:{lowTemp}°
                     </p>
-                    <p className="text-slate-400 dark:text-white/60 text-sm font-normal drop-shadow-md mt-2">
+                    <p className="text-white/70 text-sm font-normal drop-shadow-md mt-2">
                         {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                             hour: '2-digit', 
                             minute: '2-digit',
@@ -843,7 +843,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                     {currentActivityScores.map(score => (
-                                    <div key={score.type} className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5 flex items-center justify-between">
+                                    <div key={score.type} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5 flex items-center justify-between shadow-sm">
                                         <div className="flex items-center gap-3">
                                             <div className={`p-2 rounded-lg bg-white dark:bg-white/5 ${getScoreColor(score.score10)}`}>
                                                 <Icon name={getActivityIcon(score.type)} className="text-xl" />
@@ -894,21 +894,21 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Thermodynamics */}
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</p>
                                     <p className="text-sm font-bold">{Math.round(feelsLike)}°</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="humidity_percentage" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('humidity')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.relative_humidity_2m}%</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water_drop" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('dew_point')}</p>
@@ -917,21 +917,21 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
 
                             {/* Clouds & Vis */}
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="visibility" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('visibility')}</p>
                                     <p className="text-sm font-bold">{Math.round(getCurrentHourly('visibility') / 1000)} km</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cloud" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('cloud_cover')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.cloud_cover}%</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cloud_queue" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('current.cloud_levels')}</p>
@@ -940,14 +940,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
 
                             {/* Wind */}
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="air" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind')}</p>
                                     <p className="text-sm font-bold">{windSpeed} {settings.windUnit}</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cyclone" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_gusts')}</p>
@@ -956,21 +956,21 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                             
                             {/* Atmosphere */}
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="compress" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('pressure')}</p>
                                     <p className="text-sm font-bold">{convertPressure(weatherData.current.surface_pressure, settings.pressureUnit)} {settings.pressureUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="speed" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('pressure_msl')}</p>
                                     <p className="text-sm font-bold">{convertPressure(weatherData.current.pressure_msl, settings.pressureUnit)} {settings.pressureUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="filter_drama" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('vapor_pressure')}</p>
@@ -979,21 +979,21 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
 
                             {/* Sun & Water */}
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_sunny" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('uv_max')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.uv_index_max[0]}</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="timelapse" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('sunshine')}</p>
                                     <p className="text-sm font-bold">{Math.round(weatherData.daily.sunshine_duration[0] / 3600)}h {Math.round((weatherData.daily.sunshine_duration[0] % 3600) / 60)}m</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="opacity" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('evapotranspiration')}</p>
@@ -1006,42 +1006,42 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">{t('current.deep_soil_profile')}</h4>
                             </div>
                             
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_0cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_0cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_6cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_6cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_18cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_18cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_0_1')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_0_to_1cm')} m³/m³</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_3_9')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_3_to_9cm')} m³/m³</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_27_81')}</p>
@@ -1054,35 +1054,35 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">{t('current.atmosphere_profile')}</h4>
                             </div>
 
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_80m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_80m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_120m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_120m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_180m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_180m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp_80m')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('temperature_80m'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp_180m')}</p>
@@ -1091,21 +1091,21 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                             
                             {/* Precip Daily */}
-                            <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="umbrella" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('precip_prob')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.precipitation_probability_max[0]}%</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="rainy" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('today')} {t('precip')}</p>
                                     <p className="text-sm font-bold">{convertPrecip(weatherData.daily.precipitation_sum[0], settings.precipUnit)} {settings.precipUnit}</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_twilight" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('daylight')}</p>

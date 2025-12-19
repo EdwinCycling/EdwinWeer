@@ -280,7 +280,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
       {weatherData && (
-        <div className="hidden dark:block absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0">
             <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day}
@@ -289,17 +289,17 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         </div>
       )}
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
       
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header (Same as Ensemble) */}
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => onNavigate(ViewState.CURRENT)} className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2">
+                <button onClick={() => onNavigate(ViewState.CURRENT)} className="absolute left-6 text-white hover:text-white/80 transition-colors p-2 drop-shadow-md">
                     <Icon name="arrow_back_ios_new" />
                 </button>
                 <div className="flex flex-col items-center">
-                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
                         <Icon name="location_on" className="text-primary" />
                         {location.name}, {location.country}
                     </h2>
@@ -366,17 +366,17 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         {/* Current Weather Display (Same as Ensemble) */}
         {weatherData && (
-            <div className="flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-slate-800 dark:text-white">
+            <div className="flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
                     </h1>
                 </div>
-                <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
+                <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2 text-white">
                         <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-2xl" />
                     {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                 </p>
-                <p className="text-slate-500 dark:text-white/80 text-base font-normal drop-shadow-md mt-1">
+                <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
                     H:{highTemp}° L:{lowTemp}°
                 </p>
             </div>
@@ -533,7 +533,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         }
                         
                         return expandedMode ? (
-                            <div key={i} onClick={() => setSelectedDayIndex(i)} className="flex flex-col p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer">
+                            <div key={i} onClick={() => setSelectedDayIndex(i)} className="flex flex-col p-3 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="flex items-center justify-between w-full gap-2">
                                     <div className="flex items-center gap-3 w-auto min-w-[30%] sm:w-1/4">
                                         <div className="size-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -601,7 +601,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 )}
                             </div>
                         ) : (
-                            <div key={i} onClick={() => setSelectedDayIndex(i)} className={`flex flex-col p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-all animate-in fade-in zoom-in duration-300 cursor-pointer border h-full justify-between ${
+                            <div key={i} onClick={() => setSelectedDayIndex(i)} className={`flex flex-col p-3 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all animate-in fade-in zoom-in duration-300 cursor-pointer border h-full justify-between shadow-sm ${
                                 trendArrows && trend === 'up' 
                                     ? 'border-red-500/50 dark:border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.2)]' 
                                     : trendArrows && trend === 'down' 
@@ -707,21 +707,21 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp')}</p>
                             <p className="text-sm font-bold">{convertTemp(weatherData.daily.temperature_2m_min[selectedDayIndex], settings.tempUnit)}° / {convertTemp(weatherData.daily.temperature_2m_max[selectedDayIndex], settings.tempUnit)}°</p>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="umbrella" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('precip')}</p>
                             <p className="text-sm font-bold">{convertPrecip(weatherData.daily.precipitation_sum?.[selectedDayIndex], settings.precipUnit)} {settings.precipUnit}</p>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="umbrella" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('precip_prob')}</p>
@@ -729,21 +729,21 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         </div>
                     </div>
 
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_sunny" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('uv_max')}</p>
                             <p className="text-sm font-bold">{weatherData.daily.uv_index_max?.[selectedDayIndex] ?? t('no_data_available')}</p>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="timelapse" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('sunshine')}</p>
                             <p className="text-sm font-bold">{formatHMSFromSeconds(weatherData.daily.sunshine_duration?.[selectedDayIndex]) ?? t('no_data_available')}</p>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_twilight" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('daylight')}</p>
@@ -751,14 +751,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         </div>
                     </div>
 
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="air" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_gusts')}</p>
                             <p className="text-sm font-bold">{convertWind(weatherData.daily.wind_gusts_10m_max?.[selectedDayIndex] ?? 0, settings.windUnit)} {settings.windUnit}</p>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="air" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind')}</p>
@@ -769,7 +769,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         </div>
                     </div>
 
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="humidity_percentage" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('humidity')}</p>
@@ -779,7 +779,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             })()}</p>
                         </div>
                     </div>
-                    <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                         <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water_drop" /></div>
                         <div>
                             <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('dew_point')}</p>
@@ -802,7 +802,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">Activiteiten</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {dailyForecast[selectedDayIndex].activityScores.map(score => (
-                             <div key={score.type} className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5">
+                             <div key={score.type} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-3">
                                          <div className={`p-2 rounded-lg bg-white dark:bg-white/5 ${getScoreColor(score.score10)}`}>

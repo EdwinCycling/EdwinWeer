@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, Location } from '../types';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { fetchHistorical, convertTemp, convertWind, convertPrecip, mapWmoCodeToIcon, mapWmoCodeToText } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, saveHistoricalLocation, loadHistoricalLocation } from '../services/storageService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
@@ -38,6 +40,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, i
   const [pendingLocation, setPendingLocation] = useState<Location | null>(null);
   const [syncLocation, setSyncLocation] = useState<boolean>(true);
   const [syncDates, setSyncDates] = useState<boolean>(true); // Twin date shifting
+  const [isMapOpen, setIsMapOpen] = useState(false);
   
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1066,6 +1069,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, i
                 </div>
                 <div className="flex items-center gap-1">
                     <button 
+                        onClick={(e) => { e.stopPropagation(); setIsMapOpen(true); }}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: date1Color }}
+                        title="Kaart"
+                    >
+                        <Icon name="public" className="text-sm" />
+                    </button>
+                    <button 
                         onClick={(e) => { e.stopPropagation(); setPickerOpen('date1'); }}
                         className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
                         style={{ color: date1Color }}
@@ -1132,6 +1143,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, i
                     <span className="text-[10px] opacity-70" style={{ color: date2Color }}>{getDaysAgoText(date2)}</span>
                 </div>
                 <div className="flex items-center gap-1">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setIsMapOpen(true); }}
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                        style={{ color: date2Color }}
+                        title="Kaart"
+                    >
+                        <Icon name="public" className="text-sm" />
+                    </button>
                     <button 
                         onClick={(e) => { e.stopPropagation(); setPickerOpen('date2'); }}
                         className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
@@ -1547,6 +1566,71 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, i
             settings={settings} 
             onClose={() => setDashboardOpen(null)} 
         />
+      )}
+
+      {isMapOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="w-full max-w-4xl h-[80vh] bg-white dark:bg-slate-900 rounded-3xl overflow-hidden relative shadow-2xl flex flex-col">
+                  <div className="absolute top-4 right-4 z-[500]">
+                      <button 
+                          onClick={() => setIsMapOpen(false)}
+                          className="p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:scale-110 transition-transform text-slate-800 dark:text-white"
+                      >
+                          <Icon name="close" />
+                      </button>
+                  </div>
+                  
+                  <MapContainer 
+                      center={[location1.latitude, location1.longitude]} 
+                      zoom={4} 
+                      className="w-full h-full z-0"
+                  >
+                      <LayersControl position="topright">
+                          <LayersControl.BaseLayer checked name="OpenStreetMap">
+                              <TileLayer
+                                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                              />
+                          </LayersControl.BaseLayer>
+                          <LayersControl.BaseLayer name="Satellite">
+                              <TileLayer
+                                  attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                              />
+                          </LayersControl.BaseLayer>
+                      </LayersControl>
+
+                      <CircleMarker 
+                          center={[location1.latitude, location1.longitude]}
+                          radius={10}
+                          pathOptions={{ color: date1Color, fillColor: date1Color, fillOpacity: 0.7 }}
+                      >
+                          <Popup>
+                              <div className="text-center text-slate-800">
+                                  <strong>{location1.name}</strong><br/>
+                                  {formatCardDate(date1)}
+                              </div>
+                          </Popup>
+                      </CircleMarker>
+
+                      {/* Only show second marker if location is different */}
+                      {(location1.latitude !== location2.latitude || location1.longitude !== location2.longitude) && (
+                          <CircleMarker 
+                              center={[location2.latitude, location2.longitude]}
+                              radius={10}
+                              pathOptions={{ color: date2Color, fillColor: date2Color, fillOpacity: 0.7 }}
+                          >
+                              <Popup>
+                                  <div className="text-center text-slate-800">
+                                      <strong>{location2.name}</strong><br/>
+                                      {formatCardDate(date2)}
+                                  </div>
+                              </Popup>
+                          </CircleMarker>
+                      )}
+                  </MapContainer>
+              </div>
+          </div>
       )}
     </div>
   );

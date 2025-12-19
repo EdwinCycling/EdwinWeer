@@ -440,6 +440,68 @@ export const fetchEnsemble = async (lat: number, lon: number, model: EnsembleMod
     return response.json();
 };
 
+export const fetchHistoricalRangePastYears = async (
+    lat: number,
+    lon: number,
+    startDate: string,
+    endDate: string,
+    years: number = 5
+) => {
+    validateCoordinates(lat, lon);
+
+    const dailyVars = [
+        "temperature_2m_max",
+        "temperature_2m_min",
+        "precipitation_sum",
+        "sunshine_duration",
+        "wind_speed_10m_max",
+        "wind_gusts_10m_max",
+        "daylight_duration",
+        "weather_code"
+    ].join(',');
+
+    const shiftDateStringYear = (dateStr: string, yearsBack: number) => {
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) {
+            throw new Error('Error: Invalid date format. Expected YYYY-MM-DD.');
+        }
+        const y = Number(parts[0]);
+        const m = Number(parts[1]);
+        const d = Number(parts[2]);
+        if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+            throw new Error('Error: Invalid date format. Expected YYYY-MM-DD.');
+        }
+
+        const dt = new Date(Date.UTC(y - yearsBack, m - 1, d));
+        if (dt.getUTCMonth() !== m - 1) {
+            dt.setUTCDate(0);
+        }
+        return dt.toISOString().slice(0, 10);
+    };
+
+    const requests: Promise<any>[] = [];
+    const safeYears = Math.max(1, Math.min(10, Math.floor(years)));
+
+    for (let i = 1; i <= safeYears; i++) {
+        const pastStart = shiftDateStringYear(startDate, i);
+        const pastEnd = shiftDateStringYear(endDate, i);
+
+        const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${pastStart}&end_date=${pastEnd}&daily=${dailyVars}&timezone=auto`;
+        checkLimit();
+        trackCall();
+        requests.push(
+            fetch(url).then(async (r) => {
+                if (!r.ok) {
+                    throw new Error(`Historical range fetch failed: ${r.status}`);
+                }
+                return r.json();
+            })
+        );
+    }
+
+    return Promise.all(requests);
+};
+
 export const fetchSeasonal = async (lat: number, lon: number) => {
     validateCoordinates(lat, lon);
     
@@ -511,10 +573,19 @@ export const fetchSeasonal = async (lat: number, lon: number) => {
     return results; // Array of 5 OpenMeteo responses
  };
 
- export const fetchHistoricalRange = async (lat: number, lon: number, startDate: string, endDate: string) => {
+export const fetchHistoricalRange = async (lat: number, lon: number, startDate: string, endDate: string) => {
     validateCoordinates(lat, lon);
     
-    const dailyVars = ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "sunshine_duration", "wind_speed_10m_max", "weather_code"].join(',');
+    const dailyVars = [
+        "temperature_2m_max",
+        "temperature_2m_min",
+        "precipitation_sum",
+        "sunshine_duration",
+        "wind_speed_10m_max",
+        "wind_gusts_10m_max",
+        "daylight_duration",
+        "weather_code"
+    ].join(',');
     
     const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
     checkLimit();

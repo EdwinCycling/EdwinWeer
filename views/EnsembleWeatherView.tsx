@@ -610,16 +610,16 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       
       {/* Background from Current Weather */}
       {currentWeather && (
-        <div className="hidden dark:block absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0">
             <StaticWeatherBackground 
                 weatherCode={currentWeather.current.weather_code} 
-                isDay={currentWeather.current.is_day} 
+                isDay={currentWeather.current.is_day}
                 cloudCover={currentWeather.current.cloud_cover}
             />
         </div>
       )}
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
       
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
@@ -629,7 +629,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     <Icon name="arrow_back_ios_new" />
                 </button>
                 <div className="flex flex-col items-center">
-                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
                         <Icon name="location_on" className="text-primary" />
                         {location.name}, {location.country}
                     </h2>
@@ -697,7 +697,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         {/* Current Weather Display */}
         {currentWeather && (
-            <div className="flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-slate-800 dark:text-white">
+            <div className="flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
@@ -760,7 +760,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             <select 
                                 value={selectedModel} 
                                 onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
-                                className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors"
+                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors shadow-sm"
                             >
                                 {ENSEMBLE_MODELS.map(m => (
                                     <option key={m.id} value={m.id} className="text-slate-800 bg-white">
@@ -769,7 +769,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 ))}
                             </select>
                         ) : (
-                            <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3">
+                            <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 shadow-sm">
                                 <div className="max-h-[200px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                                     {ENSEMBLE_MODELS.map(m => (
                                         <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer transition-colors">
@@ -878,7 +878,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 {/* View Mode Selector */}
                 <div>
                     <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('view_mode')}</label>
-                    <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto">
+                    <div className="flex bg-slate-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto border border-slate-200 dark:border-white/10 shadow-sm">
                         {[
                             { id: 'all', label: t('all') },
                             { id: 'main', label: t('ensemble.main') },

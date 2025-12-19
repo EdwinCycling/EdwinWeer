@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ViewState, AppSettings, Location, OpenMeteoResponse, TempUnit, PrecipUnit, WindUnit } from '../types';
+import { ViewState, AppSettings, Location, OpenMeteoResponse, TempUnit, PrecipUnit, WindUnit, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
+import { searchCityByName } from '../services/geoService';
 import { fetchForecast, fetchSeasonal, fetchHistoricalPeriods, mapWmoCodeToIcon, mapWmoCodeToText, convertTemp, convertPrecip, convertWind } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation } from '../services/storageService';
-import { WeatherBackground } from '../components/WeatherBackground';
+import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Legend, ReferenceLine, ComposedChart, Line } from 'recharts';
 import { getTranslation } from '../services/translations';
+import { calculateActivityScore } from '../services/activityService';
+import { CircleMarker, LayersControl, MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -39,6 +43,13 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [error, setError] = useState('');
+
+  // Search State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Location[]>([]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Selection State
   const [userSelectedWeek, setUserSelectedWeek] = useState<number | null>(null);
@@ -47,8 +58,34 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   // View Settings
   const [useForecast, setUseForecast] = useState(true);
   const [showIndividualYears, setShowIndividualYears] = useState(false);
+  
+  // New Features State
+  const [rainThreshold, setRainThreshold] = useState(2);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [rainViewerTileUrl, setRainViewerTileUrl] = useState<string | null>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+        searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  // Load Rain Viewer Map when map opens
+  useEffect(() => {
+    if (isMapOpen && !rainViewerTileUrl) {
+        fetch('https://api.rainviewer.com/public/weather-maps.json')
+            .then(res => res.json())
+            .then(data => {
+                if (data.radar && data.radar.past && data.radar.past.length > 0) {
+                    const lastFrame = data.radar.past[data.radar.past.length - 1];
+                    setRainViewerTileUrl(`${data.host}${lastFrame.path}/256/{z}/{x}/{y}/2/1_1.png`);
+                }
+            })
+            .catch(err => console.error("Failed to load rain radar", err));
+    }
+  }, [isMapOpen]);
 
   useEffect(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -68,10 +105,35 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   }, [userSelectedWeek]);
 
   useEffect(() => {
-      if (userSelectedWeek !== null && !useForecast && !historicalCache[userSelectedWeek] && !loadingHistory) {
+      // Always load history if missing, we need it for rain chance analysis even in forecast mode
+      if (userSelectedWeek !== null && !historicalCache[userSelectedWeek] && !loadingHistory) {
           loadHistoricalForWeek(userSelectedWeek);
       }
-  }, [userSelectedWeek, useForecast, historicalCache]);
+  }, [userSelectedWeek, historicalCache]);
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+        setSearchResults([]);
+        return;
+    }
+
+    setLoadingSearch(true);
+    try {
+        const results = await searchCityByName(query);
+        setSearchResults(results);
+    } catch (error) {
+        console.error('Search error:', error);
+    } finally {
+        setLoadingSearch(false);
+    }
+  };
+
+  const handleLocationSelect = (loc: Location) => {
+      setLocation(loc);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+  };
 
   const loadAllData = async () => {
     setLoading(true);
@@ -107,6 +169,15 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
       } finally {
           setLoadingHistory(false);
       }
+  };
+
+  const formatDate = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDate();
+    const month = d.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { month: 'short' });
+    const year = d.getFullYear();
+    const cleanMonth = month.replace('.', '').slice(0, 3);
+    return `${day}-${cleanMonth}-${year}`;
   };
 
   const weeks = useMemo<WeekData[]>(() => {
@@ -189,7 +260,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
               startDate: wStart,
               endDate: wEnd,
               label: `${wStart.getDate()} ${wStart.toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { month: 'short' }).substring(0,3)} - ${wEnd.getDate()} ${wEnd.toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { month: 'short' }).substring(0,3)}`,
-              fullLabel: `${t('holiday.week')} ${weekNum}: ${wStart.toLocaleDateString()} - ${wEnd.toLocaleDateString()}`,
+              fullLabel: `${t('holiday.week')} ${weekNum}: ${formatDate(wStart)} - ${formatDate(wEnd)}`,
               isForecastAvailable,
               forecastData,
               summary
@@ -296,16 +367,99 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   const displayData = getDisplayData();
   const currentWeek = userSelectedWeek !== null ? weeks[userSelectedWeek] : null;
 
+  // Compute Daily Rain Stats (Chance > Threshold)
+  const dailyRainStats = useMemo(() => {
+      if (userSelectedWeek === null || !historicalCache[userSelectedWeek]) return null;
+      const week = weeks[userSelectedWeek];
+      const history = historicalCache[userSelectedWeek];
+      const stats = [];
+      for(let i=0; i<7; i++) {
+          const d = new Date(week.startDate);
+          d.setDate(d.getDate() + i);
+          let wetYears = 0;
+          let totalYears = 0;
+          
+          history.forEach((hYear: any) => {
+              if (hYear.daily && hYear.daily.precipitation_sum && hYear.daily.precipitation_sum.length > i) {
+                  const precip = hYear.daily.precipitation_sum[i];
+                  if (precip !== null) {
+                      if (precip > rainThreshold) wetYears++;
+                      totalYears++;
+                  }
+              }
+          });
+          
+          stats.push({
+              date: d,
+              chance: totalYears > 0 ? (wetYears / totalYears) * 100 : 0,
+              label: formatDate(d)
+          });
+      }
+      return stats;
+  }, [userSelectedWeek, historicalCache, rainThreshold, weeks, settings.language]);
+
+  // Compute Activity Scores (Average for period)
+  const activityScores = useMemo(() => {
+      if (!displayData || displayData.length === 0) return null;
+      
+      const avgMax = displayData.reduce((a, b) => a + b.max, 0) / displayData.length;
+      // Use fallback if min not present (though it should be)
+      const avgMin = displayData.reduce((a, b) => a + (b.min || 0), 0) / displayData.length;
+      const avgRain = displayData.reduce((a, b) => a + (b.precip || 0), 0) / displayData.length;
+      const avgWind = displayData.reduce((a, b) => a + (b.wind || 0), 0) / displayData.length;
+      const avgSun = displayData.reduce((a, b) => a + (b.sunshine || 0), 0) / displayData.length;
+      
+      // Construct dummy weather object for calculation
+      const avgDay = {
+          tempFeelsLike: avgMax, // Approximate
+          windKmh: avgWind,
+          precipMm: avgRain,
+          // User request: Treat <= 20% chance as 0% for activity scoring
+          precipProb: dailyRainStats ? dailyRainStats.reduce((a, b) => a + (b.chance <= 20 ? 0 : b.chance), 0) / dailyRainStats.length : 0,
+          gustsKmh: avgWind * 1.5,
+          weatherCode: 0,
+          sunChance: (avgSun / 12) * 100, // Rough estimate
+          cloudCover: 50,
+          visibility: 10000
+      };
+
+      const allActivities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
+      
+      return allActivities.map(type => ({
+          type,
+          score: calculateActivityScore(avgDay as any, type, settings.language)
+      }));
+  }, [displayData, dailyRainStats, settings.language]);
+
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
 
-        <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
+        {weatherData && (
+            <div className="absolute inset-0 z-0">
+                <StaticWeatherBackground 
+                    weatherCode={weatherData.current.weather_code} 
+                    isDay={weatherData.current.is_day}
+                    cloudCover={weatherData.current.cloud_cover}
+                />
+            </div>
+        )}
+
+        <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/5 to-transparent dark:to-background-dark/90 z-0 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col h-full w-full">
             {/* Header */}
             <div className="flex flex-col pt-8 pb-4">
                 <div className="flex items-center justify-center relative px-4 mb-2">
-                    <div className="text-center cursor-pointer group">
+                    
+                    {/* Search Button (Floating like CurrentWeather) */}
+                    <button
+                        onClick={() => setIsSearchOpen(v => !v)}
+                        className="absolute right-4 top-0 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+                    >
+                        <Icon name="search" className="text-2xl" />
+                    </button>
+
+                    <div className="text-center cursor-pointer group" onClick={() => setIsSearchOpen(!isSearchOpen)}>
                         {loadingCity ? (
                             <div className="flex items-center gap-2">
                                 <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
@@ -313,15 +467,62 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center">
-                                <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
+                                <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
                                     <Icon name="location_on" className="text-primary" />
                                     {location.name}, {location.country}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsMapOpen(true);
+                                        }}
+                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full transition-all text-white ml-1"
+                                        title={t('map')}
+                                    >
+                                        <Icon name="public" className="text-lg" />
+                                    </button>
+                                    <Icon name="edit" className="text-xl opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                                 </h2>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+
+            {isSearchOpen && (
+                <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-3 backdrop-blur-md">
+                    <div className="flex gap-2">
+                        <input
+                            ref={searchInputRef}
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            placeholder={t('search')}
+                            className="flex-1 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                        />
+                        <button
+                            disabled={loadingSearch || !searchQuery.trim()}
+                            className="px-3 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                        >
+                            <Icon name={loadingSearch ? 'hourglass_empty' : 'arrow_forward'} />
+                        </button>
+                    </div>
+                    <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                        {searchResults.map((res, idx) => (
+                            <button
+                                key={`${res.name}-${idx}`}
+                                onClick={() => handleLocationSelect(res)}
+                                className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-left"
+                            >
+                                <span className="font-medium text-slate-800 dark:text-white">{res.name}</span>
+                                <span className="text-xs opacity-60 text-slate-600 dark:text-white/60">{res.country}</span>
+                            </button>
+                        ))}
+                        {searchResults.length === 0 && !loadingSearch && searchQuery.trim().length >= 2 && (
+                            <p className="text-xs text-slate-500 dark:text-white/60 px-2">{t('no_data_available')}</p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <div className="flex-grow flex items-center justify-center min-h-[30vh]">
@@ -469,7 +670,22 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                     </h4>
                                     
                                     {/* Settings / Toggles */}
-                                    <div className="flex items-center gap-4 text-xs font-medium">
+                                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4 text-xs font-medium">
+                                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-lg">
+                                            <span className="text-slate-500 dark:text-white/50">{t('precip')} &gt;</span>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 5].map(val => (
+                                                    <button
+                                                        key={val}
+                                                        onClick={() => setRainThreshold(val)}
+                                                        className={`px-2 py-0.5 rounded-md transition-colors ${rainThreshold === val ? 'bg-blue-500 text-white shadow-sm' : 'bg-white dark:bg-black/20 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                                    >
+                                                        {val}mm
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         {currentWeek?.isForecastAvailable && (
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input 
@@ -528,6 +744,10 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                     
                                                     if (!s) return null;
 
+                                                    // Calculate wet days (>20% chance)
+                                                    const wetDaysCount = dailyRainStats ? dailyRainStats.filter(d => d.chance > 20).length : 0;
+                                                    const totalDays = dailyRainStats ? dailyRainStats.length : 7;
+
                                                     return (
                                                         <>
                                                             <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-bold flex items-center gap-1">
@@ -541,6 +761,10 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                             <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-bold flex items-center gap-1">
                                                                 <Icon name="sunny" className="text-yellow-400" />
                                                                 {parseFloat(s.avgDailySunshine.toFixed(1))}h / day
+                                                            </div>
+                                                            <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-bold flex items-center gap-1" title={settings.language === 'nl' ? 'Dagen met >20% regenkans' : 'Days with >20% rain chance'}>
+                                                                <Icon name="rainy" className="text-blue-300" />
+                                                                {wetDaysCount}/{totalDays} {settings.language === 'nl' ? 'dagen' : 'days'}
                                                             </div>
                                                         </>
                                                     );
@@ -589,7 +813,9 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Precipitation & Sunshine Graph */}
                                             <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-200 dark:border-blue-500/20">
-                                                <h5 className="text-xs font-bold uppercase text-blue-600 dark:text-blue-300 mb-4">{t('holiday.precip_sunshine')}</h5>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h5 className="text-xs font-bold uppercase text-blue-600 dark:text-blue-300">{t('holiday.precip_sunshine')}</h5>
+                                                </div>
                                                 <div className="h-[150px] w-full" style={{ minHeight: '150px', width: '100%', minWidth: 0, position: 'relative' }}>
                                                     <ResponsiveContainer width="99%" height="100%" debounce={50}>
                                                         <ComposedChart data={displayData}>
@@ -631,7 +857,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
 
                                             {/* Wind Speed Graph */}
                                             <div className="p-4 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
-                                                <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">{t('holiday.max_wind_speed')}</h5>
+                                                <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">{t('holiday.max_wind_speed')} ({settings.windUnit})</h5>
                                                 <div className="h-[150px] w-full" style={{ minHeight: '150px', width: '100%', minWidth: 0, position: 'relative' }}>
                                                     <ResponsiveContainer width="99%" height="100%" debounce={50}>
                                                         <ComposedChart data={displayData}>
@@ -653,12 +879,82 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                                 <Line key={i} type="monotone" dataKey={`wind_${i}`} stroke="#94a3b8" strokeWidth={1} strokeOpacity={0.2} dot={false} />
                                                             ))}
 
-                                                            <Area type="monotone" dataKey="wind" stroke="#94a3b8" fill="#cbd5e1" fillOpacity={0.5} strokeWidth={2} name={t('holiday.wind_speed')} />
+                                                            <Area type="monotone" dataKey="wind" stroke="#94a3b8" fill="#cbd5e1" fillOpacity={0.5} strokeWidth={2} name={`${t('holiday.wind_speed')} (${settings.windUnit})`} />
                                                         </ComposedChart>
                                                     </ResponsiveContainer>
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* Daily Overview Table */}
+                                        {dailyRainStats && dailyRainStats.length > 0 && (
+                                            <div className="mt-6 p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5">
+                                                <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">Dagelijks Overzicht</h5>
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-xs">
+                                                        <thead>
+                                                            <tr className="text-left text-slate-400 border-b border-slate-200 dark:border-white/10">
+                                                                <th className="pb-2">Datum</th>
+                                                                <th className="pb-2">Regenkans (&gt;{rainThreshold}mm)</th>
+                                                                <th className="pb-2 w-1/2">Risico</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                                                            {dailyRainStats.map((day, idx) => (
+                                                                <tr key={idx}>
+                                                                    <td className="py-2 font-medium">{day.label}</td>
+                                                                    <td className="py-2">{day.chance <= 20 ? '0-20%' : Math.round(day.chance) + '%'}</td>
+                                                                    <td className="py-2">
+                                                                        <div className="h-2 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                                                            <div 
+                                                                                className={`h-full rounded-full ${
+                                                                                    day.chance <= 20 ? 'bg-slate-300 dark:bg-slate-600' :
+                                                                                    day.chance < 50 ? 'bg-yellow-500' :
+                                                                                    'bg-red-500'
+                                                                                }`}
+                                                                                style={{ width: `${Math.max(day.chance, 10)}%` }}
+                                                                            />
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Activity Averages */}
+                                        {activityScores && (
+                                            <div className="mt-6">
+                                                <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">Activiteiten (Gemiddeld)</h5>
+                                                <p className="text-xs text-slate-500 dark:text-white/60 mb-4 italic">Gemiddelde scores van de gekozen periode</p>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                                    {activityScores.map((activity) => (
+                                                        <div key={activity.type} className="bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center gap-2">
+                                                            <div className="p-2 rounded-full bg-slate-100 dark:bg-white/10">
+                                                                <Icon name={
+                                                                    activity.type === 'running' ? 'directions_run' :
+                                                                    activity.type === 'cycling' ? 'directions_bike' :
+                                                                    activity.type === 'walking' ? 'directions_walk' :
+                                                                    activity.type === 'bbq' ? 'outdoor_grill' :
+                                                                    activity.type === 'beach' ? 'beach_access' : 'help'
+                                                                } className="text-xl" />
+                                                            </div>
+                                                            <div className={`text-lg font-bold ${
+                                                                activity.score.score10 >= 8 ? 'text-green-500' :
+                                                                activity.score.score10 >= 6 ? 'text-lime-500' :
+                                                                activity.score.score10 >= 4 ? 'text-yellow-500' :
+                                                                activity.score.score10 >= 2 ? 'text-orange-500' : 'text-red-500'
+                                                            }`}>
+                                                                {activity.score.score10.toFixed(1)}
+                                                            </div>
+                                                            <div className="text-[10px] uppercase font-bold opacity-60">{t(`activity.${activity.type}`)}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -666,6 +962,41 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                     )}
                 </>
             ) : null}
+
+            {isMapOpen && (
+                <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-[#1e293b] w-full max-w-4xl h-[80vh] rounded-3xl overflow-hidden relative flex flex-col">
+                        <div className="p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
+                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                <Icon name="public" className="text-primary" />
+                                {location.name}
+                            </h3>
+                            <button onClick={() => setIsMapOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full">
+                                <Icon name="close" />
+                            </button>
+                        </div>
+                        <div className="flex-grow relative z-0">
+                            <MapContainer center={[location.lat, location.lon]} zoom={10} style={{ height: '100%', width: '100%' }}>
+                                <LayersControl position="topright">
+                                    <LayersControl.BaseLayer checked name="OpenStreetMap">
+                                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+                                    </LayersControl.BaseLayer>
+                                    <LayersControl.BaseLayer name="Satelliet">
+                                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution="&copy; Esri" />
+                                    </LayersControl.BaseLayer>
+                                    {rainViewerTileUrl && (
+                                        <LayersControl.Overlay checked name="Regenradar (Afgelopen 2u)">
+                                            <TileLayer url={rainViewerTileUrl} opacity={0.6} />
+                                        </LayersControl.Overlay>
+                                    )}
+                                </LayersControl>
+                                <CircleMarker center={[location.lat, location.lon]} radius={8} pathOptions={{ color: 'white', fillColor: '#3b82f6', fillOpacity: 1, weight: 2 }} />
+                                <ZoomControl position="bottomright" />
+                            </MapContainer>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     </div>
   );

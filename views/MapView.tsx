@@ -1,26 +1,44 @@
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, useMap, ZoomControl, LayersControl, useMapEvents } from 'react-leaflet';
 import { ViewState, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { loadCurrentLocation } from '../services/storageService';
 import { MAJOR_CITIES, City } from '../services/cityData';
 import { convertTemp } from '../services/weatherService';
 import { getTranslation } from '../services/translations';
+import L from 'leaflet';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
 }
 
-export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
-    const mapContainerRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<any>(null);
-    const markersRef = useRef<any[]>([]);
+// Component to handle map events and access map instance
+const MapEvents = ({ onMove, setMap }: { onMove: (map: L.Map, forceRefresh?: boolean) => void, setMap: (map: L.Map) => void }) => {
+    const map = useMap();
     
+    useEffect(() => {
+        setMap(map);
+        // Initial fetch
+        setTimeout(() => {
+            map.invalidateSize();
+            onMove(map);
+        }, 500);
+    }, [map]);
+
+    useMapEvents({
+        moveend: () => onMove(map)
+    });
+
+    return null;
+};
+
+export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
     // Store temps: "lat,lon" -> temp
     const [cityTemps, setCityTemps] = useState<Record<string, number>>({});
     // Store virtual points that don't have names
     const [virtualPoints, setVirtualPoints] = useState<City[]>([]);
+    const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
     
     const [isLoading, setIsLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
@@ -28,57 +46,9 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
 
     const t = (key: string) => getTranslation(key, settings.language);
 
-    // 1. Initialize Map
-    useEffect(() => {
-        if (!mapContainerRef.current) return;
-        const L = (window as any).L;
-        if (!L) return;
-
-        if (mapInstanceRef.current) {
-            mapInstanceRef.current.remove();
-        }
-
-        const savedLoc = loadCurrentLocation();
-        const map = L.map(mapContainerRef.current, {
-            zoomControl: false,
-            attributionControl: false
-        }).setView([savedLoc.lat, savedLoc.lon], 5);
-
-        mapInstanceRef.current = map;
-
-        const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 20 });
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OSM' });
-        
-        if (settings.theme === 'dark') {
-            cartoDark.addTo(map);
-        } else {
-            osm.addTo(map);
-        }
-
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-        // Initial load logic
-        setTimeout(() => {
-            map.invalidateSize();
-            // Initial fetch of visible area
-            handleMapMove(false);
-        }, 500);
-
-        map.on('moveend', () => handleMapMove(false));
-
-        return () => {
-            if (mapInstanceRef.current) {
-                mapInstanceRef.current.off('moveend');
-                mapInstanceRef.current.remove();
-                mapInstanceRef.current = null;
-            }
-        };
-    }, [settings.theme]); 
-
     // 2. Handle Map Move & Fetch Weather
-    const handleMapMove = async (forceRefresh = false) => {
-        if (!mapInstanceRef.current) return;
-        const map = mapInstanceRef.current;
+    const handleMapMove = async (map: L.Map, forceRefresh = false) => {
+        if (!map) return;
         const bounds = map.getBounds();
         
         // Helper to check if a city is currently visible
@@ -221,122 +191,118 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
     };
 
     const refreshMap = () => {
-        if (isLoading) return;
-        handleMapMove(true);
+        if (isLoading || !mapInstance) return;
+        handleMapMove(mapInstance, true);
     };
 
-    // 3. Update Markers
-    useEffect(() => {
-        if (!mapInstanceRef.current) return;
-        const L = (window as any).L;
-        const map = mapInstanceRef.current;
+    // Calculate points to render
+    const pointsToRender = useMemo(() => {
+        const points: City[] = [];
+        const processedKeys = new Set<string>();
 
-        // Clear existing markers
-        markersRef.current.forEach(m => m.remove());
-        markersRef.current = [];
-
-        // Combine all possible points
-        const pointsToRender = new Map<string, City>();
-        
         // 1. Favorites
-        settings.favorites.forEach(f => pointsToRender.set(`${f.lat},${f.lon}`, f));
+        settings.favorites.forEach(f => {
+            const key = `${f.lat},${f.lon}`;
+            points.push(f);
+            processedKeys.add(key);
+        });
         
         // 2. Visible Major Cities (if we have data)
         MAJOR_CITIES.forEach(c => {
              const key = `${c.lat},${c.lon}`;
-             if (cityTemps[key] !== undefined) {
-                 pointsToRender.set(key, c);
+             if (cityTemps[key] !== undefined && !processedKeys.has(key)) {
+                 points.push(c);
+                 processedKeys.add(key);
              }
         });
 
         // 3. Virtual Grid Points
         virtualPoints.forEach(p => {
             const key = `${p.lat},${p.lon}`;
-             if (cityTemps[key] !== undefined) {
-                 pointsToRender.set(key, p);
+             if (cityTemps[key] !== undefined && !processedKeys.has(key)) {
+                 points.push(p);
+                 processedKeys.add(key);
              }
         });
 
-        const getMarkerColor = (t: number) => {
-            if (t < -20) return '#312e81'; 
-            if (t < -15) return '#4338ca'; 
-            if (t < -10) return '#1e40af'; 
-            if (t < -5)  return '#3b82f6'; 
-            if (t < 0)   return '#60a5fa'; 
-            if (t < 5)   return '#06b6d4'; 
-            if (t < 10)  return '#10b981'; 
-            if (t < 15)  return '#84cc16'; 
-            if (t < 20)  return '#facc15'; 
-            if (t < 25)  return '#fb923c'; 
-            if (t < 30)  return '#f97316'; 
-            if (t < 35)  return '#ef4444'; 
-            if (t < 40)  return '#b91c1c'; 
-            return '#7f1d1d'; 
-        };
+        return points;
+    }, [cityTemps, settings.favorites, virtualPoints]);
 
-        pointsToRender.forEach(point => {
-            const key = `${point.lat},${point.lon}`;
-            const temp = cityTemps[key];
-            
-            if (temp !== undefined) {
-                const colorClass = getMarkerColor(temp);
-                const displayTemp = convertTemp(temp, settings.tempUnit);
-                const isFav = settings.favorites.some(f => f.name === point.name);
-                const isVirtual = !point.name; // Check if it's a grid point
-                
-                let iconHtml = '';
+    const getMarkerColor = (t: number) => {
+        if (t < -20) return '#312e81'; 
+        if (t < -15) return '#4338ca'; 
+        if (t < -10) return '#1e40af'; 
+        if (t < -5)  return '#3b82f6'; 
+        if (t < 0)   return '#60a5fa'; 
+        if (t < 5)   return '#06b6d4'; 
+        if (t < 10)  return '#10b981'; 
+        if (t < 15)  return '#84cc16'; 
+        if (t < 20)  return '#facc15'; 
+        if (t < 25)  return '#fb923c'; 
+        if (t < 30)  return '#f97316'; 
+        if (t < 35)  return '#ef4444'; 
+        if (t < 40)  return '#b91c1c'; 
+        return '#7f1d1d'; 
+    };
 
-                if (isVirtual) {
-                    // Small circular bubble for grid points
-                    iconHtml = `
-                        <div style="
-                            background: ${settings.theme === 'dark' ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)'}; 
-                            width: 32px; height: 32px;
-                            border-radius: 50%;
-                            border: 2px solid ${colorClass};
-                            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                            display: flex; align-items: center; justify-content: center;
-                            transform: translate(-50%, -50%);
-                        ">
-                            <div style="font-size: 11px; font-weight: 800; color: ${colorClass};">${Math.round(displayTemp)}°</div>
-                        </div>
-                    `;
-                } else {
-                    // Standard named badge
-                    iconHtml = `
-                        <div style="
-                            background: ${settings.theme === 'dark' ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)'}; 
-                            padding: 6px 10px; 
-                            border-radius: 12px; 
-                            border: 2px solid ${isFav ? '#ffffff' : colorClass}; 
-                            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
-                            display: flex; flex-direction: column; align-items: center;
-                            min-width: 60px; transform: translateY(-50%);
-                            z-index: ${isFav ? 100 : 10};
-                            ${isFav ? `outline: 3px solid ${colorClass};` : ''}
-                        ">
-                            <div style="font-size: 16px; font-weight: 800; color: ${colorClass}; line-height: 1; margin-bottom: 2px;">${Math.round(displayTemp)}°</div>
-                            <div style="font-size: 10px; font-weight: 600; color: ${settings.theme === 'dark' ? '#ccc' : '#444'}; white-space: nowrap;">${point.name}</div>
-                        </div>
-                    `;
-                }
+    const createIcon = (point: City) => {
+        const key = `${point.lat},${point.lon}`;
+        const temp = cityTemps[key];
+        
+        if (temp === undefined) return L.divIcon({ className: '' }); // Should not happen given logic
 
-                const icon = L.divIcon({
-                    html: iconHtml,
-                    className: '', 
-                    iconSize: isVirtual ? [32, 32] : [60, 45],
-                    iconAnchor: isVirtual ? [16, 16] : [30, 45]
-                });
+        const colorClass = getMarkerColor(temp);
+        const displayTemp = convertTemp(temp, settings.tempUnit);
+        const isFav = settings.favorites.some(f => f.name === point.name);
+        const isVirtual = !point.name; 
+        
+        let iconHtml = '';
 
-                const marker = L.marker([point.lat, point.lon], { icon, zIndexOffset: isFav ? 1000 : (isVirtual ? 0 : 500) }).addTo(map);
-                markersRef.current.push(marker);
-            }
+        if (isVirtual) {
+            iconHtml = `
+                <div style="
+                    background: ${settings.theme === 'dark' ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)'}; 
+                    width: 32px; height: 32px;
+                    border-radius: 50%;
+                    border: 2px solid ${colorClass};
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    display: flex; align-items: center; justify-content: center;
+                    transform: translate(-50%, -50%);
+                ">
+                    <div style="font-size: 11px; font-weight: 800; color: ${colorClass};">${Math.round(displayTemp)}°</div>
+                </div>
+            `;
+        } else {
+            iconHtml = `
+                <div style="
+                    background: ${settings.theme === 'dark' ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)'}; 
+                    padding: 6px 10px; 
+                    border-radius: 12px; 
+                    border: 2px solid ${isFav ? '#ffffff' : colorClass}; 
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+                    display: flex; flex-direction: column; align-items: center;
+                    min-width: 60px; transform: translateY(-50%);
+                    z-index: ${isFav ? 100 : 10};
+                    ${isFav ? `outline: 3px solid ${colorClass};` : ''}
+                ">
+                    <div style="font-size: 16px; font-weight: 800; color: ${colorClass}; line-height: 1; margin-bottom: 2px;">${Math.round(displayTemp)}°</div>
+                    <div style="font-size: 10px; font-weight: 600; color: ${settings.theme === 'dark' ? '#ccc' : '#444'}; white-space: nowrap;">${point.name}</div>
+                </div>
+            `;
+        }
+
+        return L.divIcon({
+            html: iconHtml,
+            className: '', 
+            iconSize: isVirtual ? [32, 32] : [60, 45],
+            iconAnchor: isVirtual ? [16, 16] : [30, 45]
         });
+    };
 
-    }, [cityTemps, settings.tempUnit, settings.theme, settings.favorites, virtualPoints]);
+    const savedLoc = loadCurrentLocation();
 
     return (
-        <div className="flex flex-col h-screen w-full bg-background-dark text-slate-800 dark:text-white transition-colors duration-300 fixed inset-0 z-[10]">
+        <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white transition-colors duration-300 fixed inset-0 z-[10]">
             
             {/* Floating Header */}
             <div className="absolute top-0 left-0 right-0 p-4 pt-8 z-[1001] pointer-events-none flex justify-center">
@@ -371,8 +337,46 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
             </div>
 
             {/* Map Container */}
-            <div ref={mapContainerRef} className="w-full h-full bg-slate-200 dark:bg-[#0f172a]" />
+            <MapContainer 
+                center={[savedLoc.lat, savedLoc.lon]} 
+                zoom={5} 
+                zoomControl={false}
+                style={{ height: '100%', width: '100%' }}
+                className="w-full h-full bg-slate-200 dark:bg-[#0f172a]"
+            >
+                <LayersControl position="bottomright">
+                    <LayersControl.BaseLayer checked={settings.theme !== 'dark'} name="Kaart (Licht)">
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer checked={settings.theme === 'dark'} name="Kaart (Donker)">
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                        />
+                    </LayersControl.BaseLayer>
+                    <LayersControl.BaseLayer name="Satelliet">
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        />
+                    </LayersControl.BaseLayer>
+                </LayersControl>
 
+                <ZoomControl position="bottomright" />
+                <MapEvents onMove={handleMapMove} setMap={setMapInstance} />
+
+                {pointsToRender.map(point => (
+                    <Marker 
+                        key={`${point.lat},${point.lon}`}
+                        position={[point.lat, point.lon]} 
+                        icon={createIcon(point)}
+                        zIndexOffset={settings.favorites.some(f => f.name === point.name) ? 1000 : (!point.name ? 0 : 500)}
+                    />
+                ))}
+            </MapContainer>
         </div>
     );
 };

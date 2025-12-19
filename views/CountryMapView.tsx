@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { AppSettings, ViewState, Location } from '../types';
 import { Icon } from '../components/Icon';
@@ -140,7 +140,7 @@ function getDewPointColor(dew: number) {
 const MapLegend = ({ layer, isDark }: { layer: MapLayer, isDark: boolean }) => {
     if (layer === 'wind' || layer === 'gusts') {
         return (
-            <div className={`absolute bottom-24 right-2 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+            <div className={`absolute bottom-8 left-4 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
                 <div className="font-bold mb-1">Beaufort (km/u)</div>
                 <div className="grid grid-cols-2 gap-1 w-32">
                     {BFT_COLORS.map(b => (
@@ -182,7 +182,7 @@ const MapLegend = ({ layer, isDark }: { layer: MapLayer, isDark: boolean }) => {
     }
 
     return (
-        <div className={`absolute bottom-24 right-2 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+        <div className={`absolute bottom-8 left-4 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
             <div className="font-bold mb-1">{title} ({unit})</div>
             <div className="flex flex-col-reverse gap-0.5">
                 {stops.map((s, i) => (
@@ -274,7 +274,7 @@ type MapLayer = 'temp' | 'min_temp' | 'max_temp' | 'feels_like' | 'wind' | 'humi
 const ResetViewControl = ({ center, zoom }: { center: [number, number], zoom: number }) => {
     const map = useMap();
     return (
-        <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '80px', marginRight: '10px', pointerEvents: 'auto', zIndex: 1000 }}>
+        <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '100px', marginRight: '10px', pointerEvents: 'auto', zIndex: 1000 }}>
              <div className="leaflet-control leaflet-bar">
                 <a 
                     role="button" 
@@ -480,6 +480,8 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
     const [layer, setLayer] = useState<MapLayer>('temp');
     const [viewMode, setViewMode] = useState<'points' | 'surface'>('points');
     const [loading, setLoading] = useState(false);
+
+    // Map Layers Control
     const [progress, setProgress] = useState<number>(0);
     const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -936,14 +938,28 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     zoomControl={false}
                 >
                     <ZoomControl position="bottomright" />
+                    <LayersControl position="bottomright">
+                        <LayersControl.BaseLayer checked={settings.theme !== 'dark'} name="Kaart (Licht)">
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer checked={settings.theme === 'dark'} name="Kaart (Donker)">
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            />
+                        </LayersControl.BaseLayer>
+                        <LayersControl.BaseLayer name="Satelliet">
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+                                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                            />
+                        </LayersControl.BaseLayer>
+                    </LayersControl>
+                    
                     <ResetViewControl center={[mapConfig.lat, mapConfig.lon]} zoom={mapConfig.zoom} />
-                    <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url={settings.theme === 'dark' 
-                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
-                            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                        }
-                    />
                     <MapUpdater center={[mapConfig.lat, mapConfig.lon]} zoom={mapConfig.zoom} />
                     
                     {/* Markers */}
