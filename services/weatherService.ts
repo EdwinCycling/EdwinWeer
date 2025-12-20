@@ -7,6 +7,11 @@ const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 const ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble";
 const SEASONAL_URL = "https://seasonal-api.open-meteo.com/v1/seasonal";
 
+// --- SECURITY: REQUEST THROTTLING ---
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 1000; // 1 seconde delay between requests
+
+
 // --- UNIT CONVERSION HELPERS ---
 
 export const convertTemp = (tempC: number, unit: TempUnit): number => {
@@ -256,6 +261,14 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
 
   checkLimit();
   trackCall();
+
+  // Throttling mechanism
+  const now = Date.now();
+  if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - (now - lastRequestTime)));
+  }
+  lastRequestTime = Date.now();
+
   const response = await fetch(url);
   if (!response.ok) {
       throw new Error(`Weather fetch failed: ${response.status}`);
@@ -290,6 +303,14 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
 
   checkLimit();
   trackCall();
+
+  // Throttling mechanism
+  const now = Date.now();
+  if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - (now - lastRequestTime)));
+  }
+  lastRequestTime = Date.now();
+
   const response = await fetch(url);
   if (!response.ok) {
       throw new Error(`Historical fetch failed: ${response.status}`);

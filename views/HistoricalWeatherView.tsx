@@ -1550,7 +1550,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, i
                         <Icon name={insight.icon} />
                     </div>
                     <div className="flex-1">
-                        <p className="text-xs uppercase font-bold text-slate-500 dark:text-white/60 mb-1">{insight.title}</p>
+                        <p className="text-xs uppercase font-bold text-slate-700 dark:text-white/60 mb-1">{insight.title}</p>
                         <p className="text-sm leading-snug">
                             {insight.desc}
                         </p>

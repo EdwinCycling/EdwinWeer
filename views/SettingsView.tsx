@@ -291,8 +291,8 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                 {/* Activities Tab */}
                 {activeTab === 'activities' && (
                      <section>
-                        <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.activities_title')}</h2>
-                        <p className="text-xs text-slate-500 dark:text-white/40 mb-3">{t('settings.activities_desc')}</p>
+                        <h2 className="text-slate-700 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.activities_title')}</h2>
+                        <p className="text-xs text-slate-600 dark:text-white/40 mb-3">{t('settings.activities_desc')}</p>
                         <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
                             {settings.enabledActivities && Object.entries(settings.enabledActivities).map(([key, enabled], index) => {
                                  const activityKey = key as ActivityType;
@@ -300,8 +300,8 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                  return (
                                      <div key={key} className={`p-4 flex items-center justify-between ${index !== 0 ? 'border-t border-slate-100 dark:border-white/5' : ''}`}>
                                          <div className="flex items-center gap-3">
-                                             <Icon name={activityIcons[activityKey] || 'sports_score'} className="text-slate-600 dark:text-white/60" />
-                                             <span className="font-medium">{t(`activity.${activityKey}`)}</span>
+                                             <Icon name={activityIcons[activityKey] || 'sports_score'} className="text-slate-700 dark:text-white/60" />
+                                             <span className="font-medium text-slate-800 dark:text-white">{t(`activity.${activityKey}`)}</span>
                                          </div>
                                          <div className="flex items-center">
                                              <button
@@ -312,7 +312,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                          [activityKey]: !enabled
                                                      });
                                                  }}
-                                                 className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-primary' : 'bg-slate-300 dark:bg-white/10'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                 className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-primary' : 'bg-slate-400 dark:bg-white/10'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                                              >
                                                  <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${enabled ? 'translate-x-6' : ''}`} />
                                              </button>
@@ -335,14 +335,14 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 {/* Theme Toggle */}
                                 <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <Icon name="contrast" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('settings.theme')}</span>
+                                        <Icon name="contrast" className="text-slate-700 dark:text-white/60" />
+                                        <span className="font-medium text-slate-800 dark:text-white">{t('settings.theme')}</span>
                                     </div>
                                     <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                        <button onClick={() => updateSetting('theme', 'light')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'light' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                        <button onClick={() => updateSetting('theme', 'light')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'light' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             <Icon name="light_mode" className="text-sm mr-1 inline" /> {t('theme.light')}
                                         </button>
-                                        <button onClick={() => updateSetting('theme', 'dark')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'dark' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                        <button onClick={() => updateSetting('theme', 'dark')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'dark' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             <Icon name="dark_mode" className="text-sm mr-1 inline" /> {t('theme.dark')}
                                         </button>
                                     </div>
@@ -351,14 +351,14 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 {/* Language Toggle */}
                                 <div className="p-4 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <Icon name="language" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('settings.language')}</span>
+                                        <Icon name="language" className="text-slate-700 dark:text-white/60" />
+                                        <span className="font-medium text-slate-800 dark:text-white">{t('settings.language')}</span>
                                     </div>
                                     <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                        <button onClick={() => updateSetting('language', 'en')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                        <button onClick={() => updateSetting('language', 'en')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             EN
                                         </button>
-                                        <button onClick={() => updateSetting('language', 'nl')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'nl' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                        <button onClick={() => updateSetting('language', 'nl')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'nl' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             NL
                                         </button>
                                     </div>
@@ -367,14 +367,14 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 {/* Time Format Toggle */}
                                 <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
                                     <div className="flex items-center gap-3">
-                                        <Icon name="schedule" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('settings.time_format')}</span>
+                                        <Icon name="schedule" className="text-slate-700 dark:text-white/60" />
+                                        <span className="font-medium text-slate-800 dark:text-white">{t('settings.time_format')}</span>
                                     </div>
                                     <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                        <button onClick={() => updateSetting('timeFormat', '24h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '24h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                        <button onClick={() => updateSetting('timeFormat', '24h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '24h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             24h
                                         </button>
-                                        <button onClick={() => updateSetting('timeFormat', '12h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '12h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 dark:text-white/40'}`}>
+                                        <button onClick={() => updateSetting('timeFormat', '12h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '12h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             12h
                                         </button>
                                     </div>
@@ -383,8 +383,8 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 {/* Week Start Day */}
                                 <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
                                     <div className="flex items-center gap-3">
-                                        <Icon name="calendar_today" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">{t('settings.week_start')}</span>
+                                        <Icon name="calendar_today" className="text-slate-700 dark:text-white/60" />
+                                        <span className="font-medium text-slate-800 dark:text-white">{t('settings.week_start')}</span>
                                     </div>
                                     <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
                                         {(['monday', 'sunday', 'saturday'] as const).map(day => (
@@ -394,7 +394,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
                                                     (settings.weekStartDay || 'monday') === day
                                                     ? 'bg-white dark:bg-white/20 text-slate-800 dark:text-white shadow-sm'
-                                                    : 'text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white/70'
+                                                    : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white/70'
                                                 }`}
                                             >
                                                 {t(`settings.${day}`)}

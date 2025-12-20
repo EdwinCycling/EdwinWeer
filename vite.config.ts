@@ -16,6 +16,19 @@ export default defineConfig(({ mode }) => {
       },
   plugins: [react()],
       define: {},
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom'],
+              charts: ['recharts'],
+              maps: ['leaflet', 'react-leaflet'],
+              firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore']
+            }
+          }
+        },
+        chunkSizeWarningLimit: 1000
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
