@@ -31,6 +31,10 @@ interface ClimateData {
     pctRain?: number;
     pctWind?: number;
     pctSun?: number;
+    pctMaxFirst?: number;
+    pctMinFirst?: number;
+    pctMaxPrev?: number;
+    pctMinPrev?: number;
     isForecast?: boolean;
 }
 
@@ -56,6 +60,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   const [day, setDay] = useState(new Date().getDate());
   const [month, setMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState<string>('');
   const [climateData, setClimateData] = useState<ClimateData[]>([]);
   const [currentNormal, setCurrentNormal] = useState<ClimateData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +68,8 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   // Cache raw data to avoid refetching on every setting change
   const [rawDailyData, setRawDailyData] = useState<any>(null);
   const [lastFetchedLocation, setLastFetchedLocation] = useState<string>('');
+  
+  const fetchIdRef = useRef<number>(0);
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -101,36 +108,103 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   const [showFavorites, setShowFavorites] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const calculateClimate = async () => {
+      // Increment fetch ID to invalidate previous running fetches
+      const currentFetchId = fetchIdRef.current + 1;
+      fetchIdRef.current = currentFetchId;
+
       setLoading(true);
+      setLoadingProgress('Initialiseren...');
       setError(null);
       try {
-          // Fetch historical data from 1950 to 2023
-          // Using Archive API
-          const startDate = '1950-01-01';
-          const endDate = '2023-12-31';
+          // Fetch historical data from 1950 to 2023 in chunks to avoid timeouts and rate limits
+          const startYear = 1950;
+          const endYear = 2023;
+          const chunkSize = 10;
           
-          const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
-          
-          const response = await fetch(url);
-          
-          if (response.status === 429) {
-              setShowLimitModal(true);
-              setLoading(false);
-              return;
+          let mergedDaily: any = {
+              time: [],
+              temperature_2m_max: [],
+              temperature_2m_min: [],
+              precipitation_sum: [],
+              wind_speed_10m_max: [],
+              sunshine_duration: [],
+              daylight_duration: []
+          };
+          let units = null;
+
+          // Generate chunks
+          const chunks = [];
+          for (let year = startYear; year <= endYear; year += chunkSize) {
+              const chunkEnd = Math.min(year + chunkSize - 1, endYear);
+              chunks.push({ start: year, end: chunkEnd });
           }
 
-          if (!response.ok) throw new Error('Failed to fetch climate data');
+          for (let i = 0; i < chunks.length; i++) {
+              // Check if a new fetch has started
+              if (fetchIdRef.current !== currentFetchId) return;
+
+              const { start, end } = chunks[i];
+              setLoadingProgress(`${start}-${end} ophalen...`);
+              
+              const startDate = `${start}-01-01`;
+              const endDate = `${end}-12-31`;
+              
+              const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
+              
+              const response = await fetch(url);
+              
+              if (fetchIdRef.current !== currentFetchId) return;
+
+              if (response.status === 429) {
+                  setShowLimitModal(true);
+                  setLoading(false);
+                  return;
+              }
+
+              if (!response.ok) throw new Error(`Failed to fetch climate data for ${start}-${end}`);
+              
+              const data = await response.json();
+              
+              if (!units) units = data.daily_units;
+              
+              if (data.daily) {
+                  mergedDaily.time.push(...(data.daily.time || []));
+                  mergedDaily.temperature_2m_max.push(...(data.daily.temperature_2m_max || []));
+                  mergedDaily.temperature_2m_min.push(...(data.daily.temperature_2m_min || []));
+                  mergedDaily.precipitation_sum.push(...(data.daily.precipitation_sum || []));
+                  mergedDaily.wind_speed_10m_max.push(...(data.daily.wind_speed_10m_max || []));
+                  mergedDaily.sunshine_duration.push(...(data.daily.sunshine_duration || []));
+                  mergedDaily.daylight_duration.push(...(data.daily.daylight_duration || []));
+              }
+
+              // Sleep between requests to be gentle on the API
+              if (i < chunks.length - 1) {
+                  await sleep(1000);
+              }
+          }
           
-          const data = await response.json();
-          setRawDailyData(data);
+          if (fetchIdRef.current !== currentFetchId) return;
+
+          const fullData = {
+              daily_units: units,
+              daily: mergedDaily
+          };
+
+          setRawDailyData(fullData);
           setLastFetchedLocation(`${selectedLocation.lat}-${selectedLocation.lon}`);
-          processData(data);
+          processData(fullData);
       } catch (err) {
+          if (fetchIdRef.current !== currentFetchId) return;
           console.error(err);
-          setError('Failed to load climate data. Please try again.');
+          setError('Kon klimaatdata niet ophalen. Probeer het later opnieuw.');
       } finally {
-          setLoading(false);
+          if (fetchIdRef.current === currentFetchId) {
+              setLoading(false);
+              setLoadingProgress('');
+          }
       }
   };
 
@@ -226,7 +300,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       // Calculate Diffs
       if (calculatedPeriods.length > 0) {
           const oldest = calculatedPeriods[calculatedPeriods.length - 1];
-          calculatedPeriods.forEach(p => {
+          calculatedPeriods.forEach((p, index) => {
               // Temp: Absolute Diff (vs oldest)
               p.diffMax = parseFloat((p.max - oldest.max).toFixed(1));
               p.diffMin = parseFloat((p.min - oldest.min).toFixed(1));
@@ -253,6 +327,21 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                   p.pctSun = Math.round(((p.sun - oldest.sun) / oldest.sun) * 100);
               } else {
                   p.pctSun = 0;
+              }
+
+              // New: % vs First (Oldest)
+              p.pctMaxFirst = oldest.max !== 0 ? Math.round(((p.max - oldest.max) / Math.abs(oldest.max)) * 100) : 0;
+              p.pctMinFirst = oldest.min !== 0 ? Math.round(((p.min - oldest.min) / Math.abs(oldest.min)) * 100) : 0;
+
+              // New: % vs Previous (Chronologically earlier -> index + 1)
+              const prev = calculatedPeriods[index + 1];
+              if (prev) {
+                   p.pctMaxPrev = prev.max !== 0 ? Math.round(((p.max - prev.max) / Math.abs(prev.max)) * 100) : 0;
+                   p.pctMinPrev = prev.min !== 0 ? Math.round(((p.min - prev.min) / Math.abs(prev.min)) * 100) : 0;
+              } else {
+                   // Oldest element
+                   p.pctMaxPrev = 0;
+                   p.pctMinPrev = 0;
               }
           });
       }
@@ -315,6 +404,10 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
               pctRain: 0,
               pctWind: 0,
               pctSun: 0,
+              pctMaxFirst: chronological[0].max !== 0 ? Math.round(((nextMax - chronological[0].max) / Math.abs(chronological[0].max)) * 100) : 0,
+              pctMinFirst: chronological[0].min !== 0 ? Math.round(((nextMin - chronological[0].min) / Math.abs(chronological[0].min)) * 100) : 0,
+              pctMaxPrev: chronological[n-1].max !== 0 ? Math.round(((nextMax - chronological[n-1].max) / Math.abs(chronological[n-1].max)) * 100) : 0,
+              pctMinPrev: chronological[n-1].min !== 0 ? Math.round(((nextMin - chronological[n-1].min) / Math.abs(chronological[n-1].min)) * 100) : 0,
               isForecast: true
           };
           
@@ -559,64 +652,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       }
   };
 
-  const deltaChartData = {
-      labels: climateData.map(d => d.period).reverse(),
-      datasets: [
-          {
-              label: `${t('climate.rain')} (%)`,
-              data: climateData.map(d => d.pctRain || 0).reverse(),
-              borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59, 130, 246, 0.5)',
-              tension: 0.4,
-          },
-          {
-              label: `${t('climate.wind')} (%)`,
-              data: climateData.map(d => d.pctWind || 0).reverse(),
-              borderColor: '#94a3b8',
-              backgroundColor: 'rgba(148, 163, 184, 0.5)',
-              tension: 0.4,
-          },
-          {
-              label: `${t('climate.sun')} (%)`,
-              data: climateData.map(d => d.pctSun || 0).reverse(),
-              borderColor: '#fbbf24',
-              backgroundColor: 'rgba(251, 191, 36, 0.5)',
-              tension: 0.4,
-          }
-      ]
-  };
 
-  const deltaChartOptions = {
-      ...chartOptions,
-      plugins: {
-          ...chartOptions.plugins,
-          title: { ...chartOptions.plugins.title, text: t('climate.delta_chart_title') },
-          tooltip: {
-              callbacks: {
-                  label: (context: any) => {
-                      let label = context.dataset.label || '';
-                      if (label) {
-                          label += ': ';
-                      }
-                      if (context.parsed.y !== null) {
-                          label += (context.parsed.y > 0 ? '+' : '') + context.parsed.y + '%';
-                      }
-                      return label;
-                  }
-              }
-          }
-      },
-      scales: {
-          x: chartOptions.scales.x,
-          y: {
-              ...chartOptions.scales.y,
-              ticks: {
-                  ...chartOptions.scales.y.ticks,
-                  callback: (value: any) => (value > 0 ? '+' : '') + value + '%'
-              }
-          }
-      }
-  };
 
   return (
     <div className="w-full min-h-screen pb-20">
@@ -775,8 +811,17 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                             disabled={loading}
                             className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           >
-                              {loading ? <div className="animate-spin size-4 border-2 border-white/30 border-t-white rounded-full" /> : <Icon name="calculate" />}
-                              {t('climate.calc')}
+                              {loading ? (
+                                  <div className="flex items-center gap-2">
+                                      <Icon name="hourglass_empty" className="animate-spin" />
+                                      <span className="text-sm hidden sm:inline">{loadingProgress}</span>
+                                  </div>
+                              ) : (
+                                  <>
+                                      <Icon name="calculate" />
+                                      {t('climate.calc')}
+                                  </>
+                              )}
                           </button>
                       </div>
                   </div>
@@ -839,10 +884,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                     <Line data={otherChartData} options={otherChartOptions} />
                 </div>
 
-                {/* Delta Chart (New) */}
-                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
-                    <Line data={deltaChartData} options={deltaChartOptions} />
-                </div>
+
 
                 {/* Table */}
                 <div className="bg-white dark:bg-card-dark rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5">
@@ -880,6 +922,16 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                                   +{row.diffMax}°
                                                </span>
                                             )}
+                                            <div className="mt-1 flex flex-col gap-0.5">
+                                                <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                    {row.pctMaxFirst && row.pctMaxFirst > 0 ? '+' : ''}{row.pctMaxFirst || 0}% vs {oldestYear}
+                                                </span>
+                                                {i < climateData.length - 1 && (
+                                                    <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                        {row.pctMaxPrev && row.pctMaxPrev > 0 ? '+' : ''}{row.pctMaxPrev || 0}% vs vorig
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="p-4 text-blue-500 font-bold">
                                         {row.min}°
@@ -888,6 +940,16 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                               {row.diffMin > 0 ? '+' : ''}{row.diffMin}°
                                            </span>
                                         )}
+                                        <div className="mt-1 flex flex-col gap-0.5">
+                                            <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                {row.pctMinFirst && row.pctMinFirst > 0 ? '+' : ''}{row.pctMinFirst || 0}% vs {oldestYear}
+                                            </span>
+                                            {i < climateData.length - 1 && (
+                                                <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                    {row.pctMinPrev && row.pctMinPrev > 0 ? '+' : ''}{row.pctMinPrev || 0}% vs vorig
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="p-4 text-blue-400 font-bold">
                                         {row.rain}<span className="text-xs font-normal text-slate-400 ml-0.5">{getRainUnitLabel(settings.precipUnit)}</span>
