@@ -80,8 +80,10 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           // Data already available for this location, just recalc
           processData(rawDailyData);
       } else {
-          // Fetch new data
-          calculateClimate();
+          // Do not auto-fetch. Reset data to indicate need for calculation.
+          setClimateData([]);
+          setRawDailyData(null);
+          setCurrentNormal(null);
       }
   }, [selectedLocation]);
 
@@ -182,7 +184,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
 
               // Sleep between requests to be gentle on the API
               if (i < chunks.length - 1) {
-                  await sleep(1000);
+                  await sleep(4000);
               }
           }
           
@@ -747,6 +749,34 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           </div>
       </Modal>
 
+      {/* Loading Progress Modal */}
+      <Modal
+          isOpen={loading}
+          onClose={() => {}} // Prevent closing by user easily, or allow it but keep state? Better to keep it open.
+          title="Gegevens ophalen"
+      >
+          <div className="flex flex-col items-center gap-6 text-center py-4">
+              <div className="relative">
+                  <div className="size-16 border-4 border-blue-100 dark:border-blue-900 rounded-full animate-spin border-t-blue-500"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                      <Icon name="hourglass_empty" className="text-2xl text-blue-500 animate-pulse" />
+                  </div>
+              </div>
+              
+              <div>
+                  <h3 className="text-lg font-bold mb-2">Even geduld...</h3>
+                  <p className="text-slate-500 dark:text-slate-400 mb-4">
+                      We halen de historische weergegevens op in kleine blokken om de server niet te belasten.
+                  </p>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg inline-block">
+                      <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">
+                          {loadingProgress}
+                      </span>
+                  </div>
+              </div>
+          </div>
+      </Modal>
+
       <div className="max-w-3xl mx-auto space-y-6">
           {/* Location & Controls */}
           <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5">
@@ -811,17 +841,8 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                             disabled={loading}
                             className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           >
-                              {loading ? (
-                                  <div className="flex items-center gap-2">
-                                      <Icon name="hourglass_empty" className="animate-spin" />
-                                      <span className="text-sm hidden sm:inline">{loadingProgress}</span>
-                                  </div>
-                              ) : (
-                                  <>
-                                      <Icon name="calculate" />
-                                      {t('climate.calc')}
-                                  </>
-                              )}
+                              <Icon name="calculate" />
+                              {t('climate.calc')}
                           </button>
                       </div>
                   </div>
