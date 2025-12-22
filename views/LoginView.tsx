@@ -7,13 +7,19 @@ import { loadSettings, saveSettings } from '../services/storageService';
 import { AppLanguage } from '../types';
 import { twitterProvider, facebookProvider, microsoftProvider } from '../services/firebase';
 
-/* 
+  /* 
   PLACEHOLDER IMAGES GUIDE
   ------------------------
   To replace the placeholders with real images, place files in your public folder 
   (e.g., /public/images/landing/) and update the paths below.
-*/
-const IMAGES = {
+  
+  REQUIRED ASSETS:
+  1. hero-weather.jpg - High quality atmospheric weather photo (dark/stormy or sunny/blue sky)
+  2. ensemble-chart.png - Screenshot of the ensemble graph view
+  3. history-graph.png - Screenshot of the historical comparison view
+  4. activities.jpg - Collage or single photo of outdoor activities (cycling, running)
+  */
+  const IMAGES = {
   hero: '/images/landing/hero-weather.jpg',        // Large hero background or visual
   ensemble: '/images/landing/ensemble-chart.png',  // Screenshot of ensemble chart
   history: '/images/landing/history-graph.png',    // Screenshot of history view
@@ -67,18 +73,38 @@ export const LoginView: React.FC = () => {
       alert("Coming soon!");
   };
 
-  const FeatureCard = ({ icon, title, desc, colorClass, delay }: any) => (
-    <div className={`group p-8 rounded-3xl bg-white dark:bg-slate-800 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border border-slate-100 dark:border-white/5 relative overflow-hidden animate-fade-in-up`} style={{ animationDelay: delay }}>
-      <div className={`absolute top-0 right-0 w-32 h-32 bg-${colorClass}-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-700`}></div>
-      <div className={`size-14 rounded-2xl bg-${colorClass}-100 dark:bg-${colorClass}-900/30 text-${colorClass}-600 dark:text-${colorClass}-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-${colorClass}-500/20`}>
-        <Icon name={icon} className="text-3xl" />
+  const FeatureCard = ({ icon, title, desc, colorClass, delay, image }: { icon: string, title: string, desc: string, colorClass: string, delay: string, image?: string }) => {
+    const colors: Record<string, string> = {
+      blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+      green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+      orange: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+    };
+
+    return (
+      <div 
+          className="group relative bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-slate-100 dark:border-white/5 overflow-hidden"
+          style={{ animationDelay: delay }}
+      >
+          {/* Optional Background Image Overlay on Hover */}
+          {image && (
+              <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-700 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${image})` }}
+              />
+          )}
+
+        <div className={`w-14 h-14 rounded-2xl ${colors[colorClass]} flex items-center justify-center mb-6 text-2xl group-hover:scale-110 transition-transform duration-500 relative z-10`}>
+          <Icon name={icon} />
+        </div>
+        <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white relative z-10">{title}</h3>
+        <p className="text-slate-500 dark:text-slate-400 leading-relaxed relative z-10">{desc}</p>
+        
+        {/* Decorative gradient blob */}
+        <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full opacity-10 blur-2xl transition-all duration-700 group-hover:scale-150 ${colorClass === 'blue' ? 'bg-blue-500' : colorClass === 'purple' ? 'bg-purple-500' : colorClass === 'green' ? 'bg-green-500' : 'bg-orange-500'}`}></div>
       </div>
-      <h3 className="text-xl font-bold mb-3 relative z-10">{title}</h3>
-      <p className="text-slate-500 dark:text-slate-400 leading-relaxed relative z-10">
-        {desc}
-      </p>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white overflow-x-hidden selection:bg-blue-500 selection:text-white font-sans">

@@ -2,7 +2,7 @@
 export const API_LIMITS = {
     MINUTE: 50,
     HOUR: 500,
-    DAY: 1500,
+    DAY: 100, // Reduced from 1500 for free tier
     MONTH: 5000
 };
 

@@ -603,6 +603,8 @@ const en: Dictionary = {
     'landing.hero_title': 'Weather Intelligence Reimagined',
     'landing.hero_desc': 'Experience weather forecasts with unprecedented precision. Compare models, analyze history, and plan your perfect day.',
     'landing.login_google': 'Sign in with Google',
+    'landing.feature_dashboard': 'Interactive Dashboard',
+    'landing.feature_dashboard_desc': 'Your personal weather command center. Customize layouts, view live radar, and track storm cells in real-time.',
     'landing.feature_ensemble': 'Multi-Model Ensembles',
     'landing.feature_ensemble_desc': 'Don\'t rely on one guess. See the spread of 50+ simulations to know the certainty of the forecast.',
     'landing.feature_history': 'Historical Context',
