@@ -600,8 +600,9 @@ const en: Dictionary = {
     'account.logged_in_until': 'Logged in until:',
 
     // Landing
-    'landing.hero_title': 'Weather Intelligence Reimagined',
+    'landing.hero_title': 'Weather intelligence reimagined',
     'landing.hero_desc': 'Experience weather forecasts with unprecedented precision. Compare models, analyze history, and plan your perfect day.',
+    'landing.features_intro': 'Everything you need to plan your day, week, or month with confidence.',
     'landing.login_google': 'Sign in with Google',
     'landing.feature_dashboard': 'Interactive Dashboard',
     'landing.feature_dashboard_desc': 'Your personal weather command center. Customize layouts, view live radar, and track storm cells in real-time.',
@@ -1082,6 +1083,7 @@ const nl: Dictionary = {
     'favorites_list': 'Favorietenlijst',
     'add_favorite': 'Favoriet toevoegen',
     'remove_favorite': 'Favoriet verwijderen',
+    'copied_to_clipboard': 'Gekopieerd naar klembord',
     'lang.en': 'Engels',
     'lang.nl': 'Nederlands',
     'city_not_found': 'Stad niet gevonden.',
@@ -1263,8 +1265,9 @@ const nl: Dictionary = {
     'account.logged_in_until': 'Ingelogd tot:',
 
     // Landing
-    'landing.hero_title': 'Weerintelligentie Opnieuw Uitgevonden',
+    'landing.hero_title': 'Weerintelligentie opnieuw uitgevonden',
     'landing.hero_desc': 'Ervaar weersvoorspellingen met ongekende precisie. Vergelijk modellen, analyseer historie en plan je perfecte dag.',
+    'landing.features_intro': 'Alles wat je nodig hebt om je dag, week of maand met vertrouwen te plannen.',
     'landing.login_google': 'Inloggen met Google',
     'landing.feature_ensemble': 'Multi-Model Ensembles',
     'landing.feature_ensemble_desc': 'Vertrouw niet op één gok. Zie de spreiding van 50+ simulaties om de zekerheid van de verwachting te kennen.',

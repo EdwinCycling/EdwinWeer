@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import { toPng, toBlob } from 'html-to-image';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, RideData, WindUnit } from '../types';
 import { ResponsiveContainer, ComposedChart, Area, Line, Bar, XAxis, Tooltip, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -65,8 +65,8 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const [error, setError] = useState('');
   const [isRouteOnly, setIsRouteOnly] = useState(false);
   const [isMapMenuOpen, setIsMapMenuOpen] = useState(true);
-  const [showMapTemp, setShowMapTemp] = useState(false);
-  const [showMapWind, setShowMapWind] = useState(false);
+  const [showMapTemp, setShowMapTemp] = useState(true);
+  const [showMapWind, setShowMapWind] = useState(true);
   
   // Map State
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -81,15 +81,14 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const handleDownload = async () => {
     if (!exportRef.current) return;
     try {
-        const canvas = await html2canvas(exportRef.current, { 
+        const dataUrl = await toPng(exportRef.current, { 
             backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
-            scale: 2,
-            useCORS: true,
-            allowTaint: true 
+            cacheBust: true,
+            pixelRatio: 2,
         });
         const link = document.createElement('a');
         link.download = `Strava-Weather-${rideData?.name || 'Ride'}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
     } catch (e) {
         console.error("Download failed", e);
@@ -99,28 +98,26 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const handleShare = async () => {
     if (!exportRef.current) return;
     try {
-        const canvas = await html2canvas(exportRef.current, { 
+        const blob = await toBlob(exportRef.current, { 
             backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
-            scale: 2,
-            useCORS: true,
-            allowTaint: true
+            cacheBust: true,
+            pixelRatio: 2,
         });
-        canvas.toBlob(async (blob) => {
-            if (!blob) return;
-            const file = new File([blob], `Strava-Weather-${rideData?.name || 'Ride'}.png`, { type: 'image/png' });
-            if (navigator.share && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Strava Weather Ride',
-                    text: 'Check out my ride with real weather data!'
-                });
-            } else {
-                const link = document.createElement('a');
-                link.download = `Strava-Weather-${rideData?.name || 'Ride'}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            }
-        });
+
+        if (!blob) return;
+        const file = new File([blob], `Strava-Weather-${rideData?.name || 'Ride'}.png`, { type: 'image/png' });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'Strava Weather Ride',
+                text: 'Check out my ride with real weather data!'
+            });
+        } else {
+            const link = document.createElement('a');
+            link.download = `Strava-Weather-${rideData?.name || 'Ride'}.png`;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
     } catch (e) {
         console.error("Share failed", e);
     }
@@ -129,13 +126,11 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const handlePrint = async () => {
     if (!exportRef.current) return;
     try {
-        const canvas = await html2canvas(exportRef.current, { 
+        const dataUrl = await toPng(exportRef.current, { 
             backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
-            scale: 2,
-            useCORS: true,
-            allowTaint: true
+            cacheBust: true,
+            pixelRatio: 2,
         });
-        const dataUrl = canvas.toDataURL('image/png');
         const windowContent = `
             <!DOCTYPE html>
             <html>

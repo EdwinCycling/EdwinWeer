@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
 import { loadCurrentLocation, saveCurrentLocation, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
@@ -32,6 +32,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -173,11 +174,62 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
   
   const details = getForecastDetails();
 
+  const handleDownload = async () => {
+    if (contentRef.current) {
+        try {
+            const dataUrl = await toPng(contentRef.current, {
+                backgroundColor: settings.theme === 'dark' ? '#000000' : '#ffffff',
+                cacheBust: true,
+                pixelRatio: 2,
+            });
+            const link = document.createElement('a');
+            link.download = `barometer-${new Date().toISOString().split('T')[0]}.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (e) {
+            console.error('Download failed', e);
+        }
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'EdwinWeer Barometer',
+                text: `Barometer: ${currentPressure} hPa (${details.title})`,
+                url: window.location.href
+            });
+        } catch (e) {
+            console.error('Share failed', e);
+        }
+    } else {
+        // Fallback: copy to clipboard
+        try {
+            await navigator.clipboard.writeText(`EdwinWeer Barometer: ${currentPressure} hPa - ${details.title}`);
+            alert(t('copied_to_clipboard') || 'Copied to clipboard');
+        } catch (e) {
+            console.error('Clipboard failed', e);
+        }
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-black transition-colors overflow-x-hidden">
+       <style>{`
+          @media print {
+            .no-print { display: none !important; }
+            @page { margin: 10mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; zoom: 0.8; }
+          }
+        `}</style>
        
        {/* --- Top Navigation Buttons (Fixed) --- */}
-       <div className="fixed top-4 left-4 z-50">
+       <div className="fixed top-4 left-4 z-50 no-print">
             <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 backdrop-blur-md transition-colors shadow-sm text-slate-700 dark:text-white">
                 <Icon name="arrow_back_ios_new" />
             </button>
@@ -215,7 +267,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
              </div>
           ) : (
-             <div className="flex flex-col items-center w-full">
+             <div className="flex flex-col items-center w-full" ref={contentRef}>
                 
                 {/* Vintage Weather Station */}
                 <div className="mb-8">
@@ -253,7 +305,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </div>
 
                 {/* Export Buttons */}
-                <div className="w-full max-w-md px-6 mt-6 mb-10">
+                <div className="w-full max-w-md px-6 mt-6 mb-10 no-print">
                     <div className="grid grid-cols-3 gap-3">
                         <button 
                             onClick={handleDownload}

@@ -40,6 +40,7 @@ const App: React.FC = () => {
   const [extraMenuOpen, setExtraMenuOpen] = useState(false);
   const [modal, setModal] = useState<'disclaimer' | 'cookies' | null>(null);
   const [usageWarning, setUsageWarning] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; current: number; limit: number }>(null);
+  const [limitReached, setLimitReached] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; limit: number }>(null);
 
   const navigate = (view: ViewState, params?: any) => {
       setPreviousView(currentView);
@@ -223,7 +224,7 @@ const App: React.FC = () => {
         )}
 
         {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-50 shadow-2xl transition-colors duration-300">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-50 shadow-2xl transition-colors duration-300 print:hidden">
             <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4">
             <button 
                 onClick={() => navigate(ViewState.CURRENT)}
@@ -433,6 +434,17 @@ const App: React.FC = () => {
                     )}
                 </div>
             </div>
+        )}
+
+        {/* Limit Reached Modal */}
+        {limitReached && (
+            <LimitReachedModal
+                isOpen={!!limitReached}
+                onClose={() => setLimitReached(null)}
+                onNavigate={navigate}
+                limit={limitReached.limit}
+                scope={limitReached.scope}
+            />
         )}
 
     </div>

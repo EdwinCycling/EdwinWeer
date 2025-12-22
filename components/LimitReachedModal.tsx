@@ -2,6 +2,8 @@ import React from 'react';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
 import { ViewState } from '../types';
+import { STORAGE_KEY } from '../services/apiConfig';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LimitReachedModalProps {
     isOpen: boolean;
@@ -12,6 +14,8 @@ interface LimitReachedModalProps {
 }
 
 export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, onClose, onNavigate, limit, scope }) => {
+    const { user } = useAuth();
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Limit Reached">
             <div className="flex flex-col items-center text-center">
@@ -46,6 +50,18 @@ export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, on
                     >
                         Close
                     </button>
+
+                    {user?.email === 'edwin@editsolutions.nl' && (
+                        <button 
+                            onClick={() => {
+                                localStorage.removeItem(STORAGE_KEY);
+                                window.location.reload();
+                            }}
+                            className="w-full py-2 text-xs text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                            Reset Local Usage Data (Fix Sync Issues)
+                        </button>
+                    )}
                 </div>
             </div>
         </Modal>

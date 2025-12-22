@@ -214,23 +214,65 @@ export const LoginView: React.FC = () => {
                     </div>
                 </div>
                 
-                {/* Floating Elements - Now outside overflow-hidden */}
-                <div className="absolute -right-4 md:-right-10 top-10 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-0 group-hover:-translate-y-2 transition-transform duration-500 z-10 hidden sm:block">
+                {/* Floating Elements - Scattered Data Points */}
+                
+                {/* 1. UV Index (Top Right) */}
+                <div className="absolute -right-4 md:-right-10 top-10 bg-white dark:bg-slate-800 p-3 md:p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-0 hover:-translate-y-2 transition-transform duration-500 z-10 hidden sm:block animate-fade-in-up delay-300">
                     <div className="flex items-center gap-3">
                         <div className="bg-orange-100 dark:bg-orange-900/50 p-2 rounded-lg text-orange-500"><Icon name="sunny" /></div>
                         <div>
-                            <p className="text-xs text-slate-500">UV Index</p>
+                            <p className="text-xs text-slate-500">{t('share.fields.uv_index') || 'UV Index'}</p>
                             <p className="font-bold">8.2 (High)</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="absolute -left-4 md:-left-10 bottom-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-0 group-hover:-translate-y-2 transition-transform duration-500 z-10 hidden sm:block">
+                {/* 2. Precipitation (Bottom Left) */}
+                <div className="absolute -left-4 md:-left-10 bottom-20 bg-white dark:bg-slate-800 p-3 md:p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-0 hover:-translate-y-2 transition-transform duration-500 z-10 hidden sm:block animate-fade-in-up delay-500">
                     <div className="flex items-center gap-3">
                         <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg text-blue-500"><Icon name="water_drop" /></div>
                         <div>
-                            <p className="text-xs text-slate-500">Precipitation</p>
+                            <p className="text-xs text-slate-500">{t('precipitation') || 'Precipitation'}</p>
                             <p className="font-bold">0.0 mm</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Temperature (Top Left) */}
+                <div className="absolute left-4 md:-left-6 top-32 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-slate-100 dark:border-white/10 transform hover:scale-105 transition-all duration-300 z-10 hidden md:block animate-fade-in-up delay-200">
+                     <div className="flex items-center gap-3">
+                        <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg text-red-500"><Icon name="thermostat" /></div>
+                        <div>
+                            <p className="text-xs text-slate-500">{t('share.fields.temp') || 'Temperature'}</p>
+                            <p className="font-bold text-lg">22.5°C</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Wind (Bottom Right) */}
+                <div className="absolute right-10 md:-right-8 bottom-32 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-slate-100 dark:border-white/10 transform hover:scale-105 transition-all duration-300 z-10 hidden md:block animate-fade-in-up delay-400">
+                     <div className="flex items-center gap-3">
+                        <div className="bg-teal-100 dark:bg-teal-900/30 p-2 rounded-lg text-teal-500"><Icon name="air" /></div>
+                        <div>
+                            <p className="text-xs text-slate-500">{t('wind') || 'Wind'}</p>
+                            <p className="font-bold">18 km/h SW</p>
+                        </div>
+                    </div>
+                </div>
+
+                 {/* 5. Pressure (Center Top) */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-6 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-2 px-4 rounded-full shadow-lg border border-slate-100 dark:border-white/10 transform hover:scale-105 transition-all duration-300 z-10 hidden lg:flex items-center gap-2 animate-fade-in-up delay-600">
+                    <Icon name="compress" className="text-purple-500 text-sm" />
+                    <span className="text-sm font-bold">1012 hPa</span>
+                </div>
+                
+                {/* 6. Visibility (Center Bottom) */}
+                 <div className="absolute left-1/4 bottom-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-2 px-4 rounded-xl shadow-lg border border-slate-100 dark:border-white/10 transform hover:scale-105 transition-all duration-300 z-10 hidden lg:block animate-fade-in-up delay-700">
+                     <div className="flex items-center gap-2">
+                        <Icon name="visibility" className="text-slate-500 text-lg" />
+                         <div>
+                            <p className="text-[10px] text-slate-500 uppercase font-bold">{t('visibility') || 'Visibility'}</p>
+                            <p className="text-sm font-bold">10+ km</p>
                         </div>
                     </div>
                 </div>
@@ -245,7 +287,7 @@ export const LoginView: React.FC = () => {
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-3xl md:text-5xl font-bold mb-6">{t('detail_title')}</h2>
             <p className="text-xl text-slate-500 dark:text-slate-400">
-                Everything you need to plan your day, week, or month with confidence.
+                {t('landing.features_intro')}
             </p>
           </div>
 
