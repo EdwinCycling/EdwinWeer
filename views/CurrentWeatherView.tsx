@@ -13,6 +13,7 @@ import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer
 import { Tooltip } from '../components/Tooltip';
 import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
+import { WelcomeModal } from '../components/WelcomeModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -39,6 +40,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [searchResults, setSearchResults] = useState<Location[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
@@ -53,8 +55,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         // Welcome popup for new users
         const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
         if (!hasSeenWelcome) {
-            alert(t('welcome_message') || "Welkom! Bij instellingen kun je alles naar wens aanpassen. Veel plezier met de app!");
-            localStorage.setItem('hasSeenWelcome', 'true');
+            setShowWelcomeModal(true);
         }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -492,66 +493,72 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
       
-      {/* Refresh Button */}
-      <Tooltip content={t('refresh')} position="bottom">
-          <button 
-              onClick={loadWeather} 
-              className="fixed top-6 right-6 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-              aria-label={t('refresh')}
-          >
-              <Icon name="refresh" className={`text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
-          </button>
-      </Tooltip>
+      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
+        <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8 relative pointer-events-auto h-0">
+          <div className="absolute top-6 right-4 sm:right-6 lg:right-8 flex items-center gap-2 sm:gap-3 flex-row-reverse">
+              {/* Refresh Button */}
+              <Tooltip content={t('refresh')} position="bottom">
+                  <button 
+                      onClick={loadWeather} 
+                      className="p-3 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label={t('refresh')}
+                  >
+                      <Icon name="refresh" className={`text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
+                  </button>
+              </Tooltip>
 
-      <Tooltip content={isFavorite(location) ? t('remove_favorite') : t('add_favorite')} position="bottom">
-          <button
-              onClick={toggleFavorite}
-              className={`fixed top-6 right-[8.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm`}
-              aria-label="Toggle Favorite"
-          >
-              <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
-          </button>
-      </Tooltip>
+              <Tooltip content={t('search')} position="bottom">
+                  <button
+                      onClick={() => setIsSearchOpen(v => !v)}
+                      className="p-3 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label={t('search')}
+                  >
+                      <Icon name="search" className="text-2xl" />
+                  </button>
+              </Tooltip>
 
-      <Tooltip content={t('nav.map')} position="bottom">
-          <button
-              onClick={() => onNavigate(ViewState.MAP)}
-              className="fixed top-6 right-[15.5rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-              aria-label={t('nav.map')}
-          >
-              <Icon name="map" className="text-2xl" />
-          </button>
-      </Tooltip>
+              <Tooltip content={isFavorite(location) ? t('remove_favorite') : t('add_favorite')} position="bottom">
+                  <button
+                      onClick={toggleFavorite}
+                      className="p-3 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label="Toggle Favorite"
+                  >
+                      <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
+                  </button>
+              </Tooltip>
 
-      <Tooltip content={t('nav.country_map')} position="bottom">
-          <button
-              onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
-              className="fixed top-6 right-[12rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-              aria-label="Country Map"
-          >
-              <Icon name="public" className="text-2xl" />
-          </button>
-      </Tooltip>
+              <Tooltip content={t('nav.country_map')} position="bottom">
+                  <button
+                      onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
+                      className="p-3 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label="Country Map"
+                  >
+                      <Icon name="public" className="text-2xl" />
+                  </button>
+              </Tooltip>
 
-      <Tooltip content={t('favorites_list') || 'Favorietenlijst'} position="bottom">
-          <button
-              onClick={() => setShowFavorites(true)}
-              className="fixed top-6 right-[19rem] z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-              aria-label="Favorites List"
-          >
-              <Icon name="list" className="text-2xl" />
-          </button>
-      </Tooltip>
+              <Tooltip content={t('nav.map')} position="bottom">
+                  <button
+                      onClick={() => onNavigate(ViewState.MAP)}
+                      className="p-3 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label={t('nav.map')}
+                  >
+                      <Icon name="map" className="text-2xl" />
+                  </button>
+              </Tooltip>
 
-      <Tooltip content={t('search')} position="bottom">
-          <button
-              onClick={() => setIsSearchOpen(v => !v)}
-              className="fixed top-6 right-20 z-50 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
-              aria-label={t('search')}
-          >
-              <Icon name="search" className="text-2xl" />
-          </button>
-      </Tooltip>
+              <Tooltip content={t('favorites_list') || 'Favorietenlijst'} position="bottom">
+                  <button
+                      onClick={() => setShowFavorites(true)}
+                      className="p-3 bg-white/80 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label="Favorites List"
+                  >
+                      <Icon name="list" className="text-2xl" />
+                  </button>
+              </Tooltip>
+          </div>
+        </div>
+      </div>
 
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
@@ -1204,6 +1211,13 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               setShowFavorites(false);
           }}
           settings={settings}
+      />
+      <WelcomeModal 
+          isOpen={showWelcomeModal} 
+          onClose={() => {
+              setShowWelcomeModal(false);
+              localStorage.setItem('hasSeenWelcome', 'true');
+          }} 
       />
     </div>
   );

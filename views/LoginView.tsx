@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { loadSettings, saveSettings } from '../services/storageService';
 import { AppLanguage } from '../types';
@@ -20,10 +21,10 @@ import { twitterProvider, facebookProvider, microsoftProvider } from '../service
   4. activities.jpg - Collage or single photo of outdoor activities (cycling, running)
   */
   const IMAGES = {
-  hero: '/images/landing/hero-weather.jpg',        // Large hero background or visual
-  ensemble: '/images/landing/ensemble-chart.png',  // Screenshot of ensemble chart
-  history: '/images/landing/history-graph.png',    // Screenshot of history view
-  activities: '/images/landing/activities.jpg',    // Collage of biking/running/etc
+  hero: '/landing/hero-weather.jpg',        // Large hero background or visual
+  ensemble: '/landing/ensemble-chart.png',  // Screenshot of ensemble chart
+  history: '/landing/inzichten.png',    // Screenshot of history view
+  activities: '/landing/vakantie-weer-planner.png',    // Collage of biking/running/etc
   models: {
     ecmwf: '/images/logos/ecmwf.png',
     gfs: '/images/logos/gfs.png',
@@ -36,6 +37,7 @@ export const LoginView: React.FC = () => {
   const { signInWithGoogle, signInWithProvider } = useAuth();
   const [lang, setLang] = useState<AppLanguage>('en');
   const [scrolled, setScrolled] = useState(false);
+  const [providerModalOpen, setProviderModalOpen] = useState(false);
 
   useEffect(() => {
     // Load initial language preference
@@ -70,38 +72,36 @@ export const LoginView: React.FC = () => {
 
   const handleSocialLogin = async (provider: any) => {
       // Temporary popup for other providers
-      alert("Coming soon!");
+      setProviderModalOpen(true);
   };
 
-  const FeatureCard = ({ icon, title, desc, colorClass, delay, image }: { icon: string, title: string, desc: string, colorClass: string, delay: string, image?: string }) => {
-    const colors: Record<string, string> = {
-      blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-      purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-      green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-      orange: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
-    };
-
+  const FeatureSection = ({ icon, title, desc, image, reversed }: { icon: string, title: string, desc: string, image: string, reversed?: boolean }) => {
     return (
-      <div 
-          className="group relative bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-slate-100 dark:border-white/5 overflow-hidden"
-          style={{ animationDelay: delay }}
-      >
-          {/* Optional Background Image Overlay on Hover */}
-          {image && (
-              <div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-700 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${image})` }}
-              />
-          )}
-
-        <div className={`w-14 h-14 rounded-2xl ${colors[colorClass]} flex items-center justify-center mb-6 text-2xl group-hover:scale-110 transition-transform duration-500 relative z-10`}>
-          <Icon name={icon} />
-        </div>
-        <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white relative z-10">{title}</h3>
-        <p className="text-slate-500 dark:text-slate-400 leading-relaxed relative z-10">{desc}</p>
-        
-        {/* Decorative gradient blob */}
-        <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full opacity-10 blur-2xl transition-all duration-700 group-hover:scale-150 ${colorClass === 'blue' ? 'bg-blue-500' : colorClass === 'purple' ? 'bg-purple-500' : colorClass === 'green' ? 'bg-green-500' : 'bg-orange-500'}`}></div>
+      <div className={`flex flex-col lg:flex-row items-center gap-12 py-16 ${reversed ? 'lg:flex-row-reverse' : ''}`}>
+          <div className="flex-1 w-full perspective-1000 group">
+             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-transform duration-700 hover:rotate-y-2 hover:scale-[1.02] bg-slate-800">
+                <img 
+                    src={image} 
+                    alt={title} 
+                    className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                />
+                <div className="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-2xl"></div>
+                {/* Glare effect */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+             </div>
+          </div>
+          <div className="flex-1 text-left">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-6 shadow-lg shadow-blue-500/10">
+                  <Icon name={icon} className="text-3xl" />
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold mb-6 text-slate-900 dark:text-white leading-tight">{title}</h3>
+              <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-8">
+                  {desc}
+              </p>
+              <button onClick={handleLogin} className="group flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:gap-3 transition-all">
+                  {t('landing.start')} <Icon name="arrow_forward" />
+              </button>
+          </div>
       </div>
     );
   };
@@ -155,13 +155,6 @@ export const LoginView: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-8 border border-blue-100 dark:border-blue-500/20 shadow-sm hover:shadow-md transition-shadow cursor-default animate-fade-in-down">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-            </span>
-            v2.0 Professional
-          </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-8 leading-tight animate-fade-in-up">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 dark:from-white dark:via-blue-200 dark:to-white">
@@ -206,22 +199,23 @@ export const LoginView: React.FC = () => {
           </div>
 
           {/* Hero Dashboard Visual Mockup */}
-          <div className="mt-24 relative mx-auto max-w-6xl perspective-1000 animate-fade-in-up delay-300">
-             {/* Main Dashboard Image Placeholder */}
-             <div className="relative bg-slate-900 rounded-2xl shadow-2xl border-4 border-slate-200 dark:border-slate-700 overflow-hidden transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out group">
-                <div className="aspect-[16/9] bg-gradient-to-br from-slate-800 to-slate-900 relative flex items-center justify-center">
-                    {/* Placeholder content if no image */}
-                    <div className="text-center p-10">
-                        <Icon name="dashboard" className="text-6xl text-blue-500 mb-4 mx-auto" />
-                        <h3 className="text-2xl font-bold text-white mb-2">Interactive Dashboard</h3>
-                        <p className="text-slate-400">Place 'hero-weather.jpg' in /public/images/landing/</p>
+          <div className="mt-24 relative mx-auto max-w-6xl">
+             <div className="relative group transition-all duration-500 hover:scale-[1.01]">
+                {/* Main Dashboard Image Placeholder */}
+                <div className="relative bg-slate-900 rounded-2xl shadow-2xl border-4 border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="aspect-[16/9] bg-slate-900 relative flex items-center justify-center overflow-hidden">
+                        <img 
+                            src={IMAGES.hero} 
+                            alt="Weather Dashboard" 
+                            className="w-full h-full object-cover opacity-90 transition-transform duration-700"
+                        />
+                        {/* Overlay Gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
                     </div>
-                    {/* Overlay Gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
                 </div>
                 
-                {/* Floating Elements */}
-                <div className="absolute -right-10 top-10 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-8 group-hover:translate-x-4 transition-transform duration-500">
+                {/* Floating Elements - Now outside overflow-hidden */}
+                <div className="absolute -right-4 md:-right-10 top-10 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-0 group-hover:-translate-y-2 transition-transform duration-500 z-10 hidden sm:block">
                     <div className="flex items-center gap-3">
                         <div className="bg-orange-100 dark:bg-orange-900/50 p-2 rounded-lg text-orange-500"><Icon name="sunny" /></div>
                         <div>
@@ -231,7 +225,7 @@ export const LoginView: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="absolute -left-10 bottom-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform -translate-x-8 group-hover:-translate-x-4 transition-transform duration-500">
+                <div className="absolute -left-4 md:-left-10 bottom-20 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 transform translate-x-0 group-hover:-translate-y-2 transition-transform duration-500 z-10 hidden sm:block">
                     <div className="flex items-center gap-3">
                         <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg text-blue-500"><Icon name="water_drop" /></div>
                         <div>
@@ -255,34 +249,27 @@ export const LoginView: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <FeatureCard 
+          <div className="space-y-12">
+            <FeatureSection 
                 icon="stacked_line_chart" 
                 title={t('landing.feature_ensemble')} 
                 desc={t('landing.feature_ensemble_desc')}
-                colorClass="blue"
-                delay="0ms"
+                image={IMAGES.ensemble}
             />
-            <FeatureCard 
+            
+            <FeatureSection 
                 icon="history" 
                 title={t('landing.feature_history')} 
                 desc={t('landing.feature_history_desc')}
-                colorClass="purple"
-                delay="100ms"
+                image={IMAGES.history}
+                reversed={true}
             />
-            <FeatureCard 
+            
+            <FeatureSection 
                 icon="directions_bike" 
                 title={t('landing.feature_activities')} 
                 desc={t('landing.feature_activities_desc')}
-                colorClass="green"
-                delay="200ms"
-            />
-            <FeatureCard 
-                icon="auto_awesome" 
-                title={t('landing.feature_ai')} 
-                desc={t('landing.feature_ai_desc')}
-                colorClass="orange"
-                delay="300ms"
+                image={IMAGES.activities}
             />
           </div>
         </div>
@@ -333,12 +320,34 @@ export const LoginView: React.FC = () => {
                 {t('landing.copyright')}
             </p>
             <div className="flex gap-6 text-sm text-slate-400">
-                <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                <a href="#" className="hover:text-white transition-colors">Terms</a>
-                <a href="#" className="hover:text-white transition-colors">Contact</a>
             </div>
         </div>
       </footer>
+
+      {/* Provider Coming Soon Modal */}
+      <Modal 
+          isOpen={providerModalOpen} 
+          onClose={() => setProviderModalOpen(false)}
+          title="Coming Soon"
+      >
+          <div className="text-center p-4">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 dark:text-blue-400">
+                  <Icon name="rocket_launch" className="text-3xl" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                  Provider Integration Underway
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
+                  We are currently integrating this login provider. Please use Google Login for now.
+              </p>
+              <button 
+                  onClick={() => setProviderModalOpen(false)}
+                  className="w-full py-3 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold hover:opacity-90 transition-all"
+              >
+                  Got it
+              </button>
+          </div>
+      </Modal>
     </div>
   );
 };

@@ -155,6 +155,13 @@ const emitUsageWarning = (scope: UsageScope, stats: UsageStats) => {
     window.dispatchEvent(event);
 };
 
+const emitLimitReached = (scope: UsageScope, limit: number) => {
+    if (typeof window === 'undefined') return;
+    const detail = { scope, limit };
+    const event = new CustomEvent('usage:limit_reached', { detail });
+    window.dispatchEvent(event);
+};
+
 export const checkLimit = (): void => {
     const stats = getUsage();
     const now = Date.now();
@@ -164,6 +171,7 @@ export const checkLimit = (): void => {
     // Check Minute Limit
     if (now - stats.minuteStart < 60000) {
         if (stats.minuteCount >= API_LIMITS.MINUTE) {
+            emitLimitReached('minute', API_LIMITS.MINUTE);
             throw new Error(`API limit exceeded: ${API_LIMITS.MINUTE} calls per minute.`);
         }
     }
@@ -171,6 +179,7 @@ export const checkLimit = (): void => {
     // Check Hour Limit
     if (now - stats.hourStart < 3600000) {
         if (stats.hourCount >= API_LIMITS.HOUR) {
+             emitLimitReached('hour', API_LIMITS.HOUR);
              throw new Error(`API limit exceeded: ${API_LIMITS.HOUR} calls per hour.`);
         }
     }
@@ -178,6 +187,7 @@ export const checkLimit = (): void => {
     // Check Day Limit
     if (stats.dayStart === today) {
         if (stats.dayCount >= API_LIMITS.DAY) {
+            emitLimitReached('day', API_LIMITS.DAY);
             throw new Error(`Daily API limit exceeded (${API_LIMITS.DAY} calls). Please try again tomorrow.`);
         }
     }
@@ -185,6 +195,7 @@ export const checkLimit = (): void => {
     // Check Month Limit
     if (stats.monthStart === thisMonth) {
         if (stats.monthCount >= API_LIMITS.MONTH) {
+            emitLimitReached('month', API_LIMITS.MONTH);
             throw new Error(`Monthly API limit exceeded (${API_LIMITS.MONTH} calls).`);
         }
     }

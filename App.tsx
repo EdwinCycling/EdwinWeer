@@ -26,6 +26,7 @@ import { loadSettings, saveSettings } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
 import { useAuth } from './contexts/AuthContext';
+import { LimitReachedModal } from './components/LimitReachedModal';
 
 const App: React.FC = () => {
   const { user, loading, logout, sessionExpiry } = useAuth();
@@ -91,8 +92,21 @@ const App: React.FC = () => {
           if (!limit || current < 0.8 * limit) return;
           setUsageWarning({ scope, current, limit });
       };
+      
+      const limitHandler = (event: Event) => {
+          const custom = event as CustomEvent<any>;
+          if (custom.detail) {
+              setLimitReached(custom.detail);
+          }
+      };
+
       window.addEventListener('usage:warning', handler);
-      return () => window.removeEventListener('usage:warning', handler);
+      window.addEventListener('usage:limit_reached', limitHandler);
+      
+      return () => {
+          window.removeEventListener('usage:warning', handler);
+          window.removeEventListener('usage:limit_reached', limitHandler);
+      };
   }, [settings.language]);
 
   // Dynamic Title Update
@@ -103,6 +117,13 @@ const App: React.FC = () => {
       const viewName = t(viewKey) || currentView; // Fallback if translation missing
       document.title = `${t('app.title_prefix')} - ${viewName}`;
   }, [currentView, settings.language]);
+
+  // Reload settings when user logs in to capture any changes made on Landing Page (e.g. language)
+  useEffect(() => {
+      if (user) {
+          setSettings(loadSettings());
+      }
+  }, [user]);
 
   if (loading) {
     return (

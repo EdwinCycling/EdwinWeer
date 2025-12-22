@@ -365,7 +365,8 @@ export const FavoritesList: React.FC<Props> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-slate-100 dark:bg-background-dark flex flex-col animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-0 z-[100] bg-slate-100/50 dark:bg-black/50 backdrop-blur-sm flex justify-center animate-in fade-in duration-300">
+            <div className="w-full max-w-5xl h-full bg-slate-100 dark:bg-background-dark flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300 relative">
              {/* Header */}
              <div className="flex items-center justify-between p-4 pt-6 bg-white/50 dark:bg-black/20 backdrop-blur-md sticky top-0 z-20">
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white pl-2">
@@ -408,6 +409,7 @@ export const FavoritesList: React.FC<Props> = ({
                     )}
                 </div>
             </div>
+        </div>
         </div>
     );
 };
