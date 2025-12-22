@@ -25,12 +25,20 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
   const t = (key: string) => getTranslation(key, settings.language);
 
-  useEffect(() => {
+    useEffect(() => {
     const loadWeather = async () => {
         setLoading(true);
         setError('');
         try {
             const data = await fetchForecast(location.lat, location.lon);
+            
+            // Check for empty data
+            if (!data || !data.daily || data.daily.time.length === 0) {
+                 setError(`${t('error_no_data_for_forecast') || 'Geen voorspelling beschikbaar voor deze locatie'}`);
+                 setWeatherData(null);
+                 return;
+            }
+
             setWeatherData(data);
         } catch (e) {
             console.error(e);
@@ -279,6 +287,15 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
+      {error && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-bounce">
+            <div className="flex items-center gap-2">
+                <Icon name="error_outline" />
+                <span className="font-medium">{error}</span>
+            </div>
+        </div>
+      )}
+
       {weatherData && (
         <div className="absolute inset-0 z-0">
             <StaticWeatherBackground 

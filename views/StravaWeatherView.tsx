@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, RideData, WindUnit } from '../types';
 import { ResponsiveContainer, ComposedChart, Area, Line, Bar, XAxis, Tooltip, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -71,10 +72,89 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null); 
   const markersLayerRef = useRef<any>(null); 
+  const exportRef = useRef<HTMLDivElement>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<GPXPoint[]>([]);
   const [isFullScreenMap, setIsFullScreenMap] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  const handleDownload = async () => {
+    if (!exportRef.current) return;
+    try {
+        const canvas = await html2canvas(exportRef.current, { 
+            backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
+            scale: 2,
+            useCORS: true,
+            allowTaint: true 
+        });
+        const link = document.createElement('a');
+        link.download = `Strava-Weather-${rideData?.name || 'Ride'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (e) {
+        console.error("Download failed", e);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!exportRef.current) return;
+    try {
+        const canvas = await html2canvas(exportRef.current, { 
+            backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
+            scale: 2,
+            useCORS: true,
+            allowTaint: true
+        });
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const file = new File([blob], `Strava-Weather-${rideData?.name || 'Ride'}.png`, { type: 'image/png' });
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Strava Weather Ride',
+                    text: 'Check out my ride with real weather data!'
+                });
+            } else {
+                const link = document.createElement('a');
+                link.download = `Strava-Weather-${rideData?.name || 'Ride'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        });
+    } catch (e) {
+        console.error("Share failed", e);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!exportRef.current) return;
+    try {
+        const canvas = await html2canvas(exportRef.current, { 
+            backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
+            scale: 2,
+            useCORS: true,
+            allowTaint: true
+        });
+        const dataUrl = canvas.toDataURL('image/png');
+        const windowContent = `
+            <!DOCTYPE html>
+            <html>
+                <head><title>Print Ride</title></head>
+                <body style="margin:0; display:flex; justify-content:center; align-items:center;">
+                    <img src="${dataUrl}" style="max-width:100%; max-height:100vh;" />
+                    <script>window.onload = () => { window.print(); window.close(); }</script>
+                </body>
+            </html>
+        `;
+        const printWindow = window.open('', '', 'width=800,height=600');
+        if (printWindow) {
+            printWindow.document.write(windowContent);
+            printWindow.document.close();
+        }
+    } catch (e) {
+        console.error("Print failed", e);
+    }
+  };
 
   const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; 
@@ -435,7 +515,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
                 <Icon name="arrow_back_ios_new" />
             </button>
-            <h1 className="text-lg font-bold">Strava {t('weather_analysis')}</h1>
+            <h1 className="text-lg font-bold">{t('strava.ride_with_weather')}</h1>
         </div>
       )}
 
@@ -473,6 +553,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
         {/* Results Dashboard */}
         {rideData && (
             <>
+                <div ref={exportRef} className="flex flex-col gap-6 bg-slate-50 dark:bg-background-dark p-2 rounded-xl">
                 {/* 1. Map Container - Responsive & Full Screen Capable */}
                 <div className={`relative bg-white dark:bg-card-dark rounded-2xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-sm transition-all duration-300 ${isFullScreenMap ? 'h-full rounded-none border-none' : ''}`}>
                    
@@ -695,6 +776,33 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 </div>
                 </>
                 )}
+                </div>
+
+                <div className="w-full max-w-md mx-auto mb-6">
+                    <div className="grid grid-cols-3 gap-3">
+                        <button 
+                            onClick={handleDownload}
+                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <Icon name="download" className="text-xl mb-1 text-blue-500" />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Download</span>
+                        </button>
+                        <button 
+                            onClick={handleShare}
+                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <Icon name="share" className="text-xl mb-1 text-green-500" />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('share')}</span>
+                        </button>
+                        <button 
+                            onClick={handlePrint}
+                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <Icon name="print" className="text-xl mb-1 text-purple-500" />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('print')}</span>
+                        </button>
+                    </div>
+                </div>
 
                 <button 
                     onClick={() => { setRideData(null); setChartData([]); setRouteCoordinates([]); }}

@@ -28,6 +28,7 @@ interface Props {
 interface RecordEntry {
   value: number;
   date: string;
+  meta?: any;
 }
 
 interface TimeTempDiffEntry {
@@ -447,7 +448,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const tMax = maxTemps[i];
         const tMin = minTemps[i];
         if (typeof tMax === 'number' && !Number.isNaN(tMax) && typeof tMin === 'number' && !Number.isNaN(tMin)) {
-             amplitudeEntries.push({ value: tMax - tMin, date: times[i] });
+             amplitudeEntries.push({ 
+                 value: tMax - tMin, 
+                 date: times[i],
+                 meta: { max: tMax, min: tMin }
+             });
         }
       }
 
@@ -1115,8 +1120,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </span>
                   </button>
                 </div>
-                <div className="text-sm font-bold text-slate-800 dark:text-white text-right">
-                  {formatValue(entry.value)}
+                <div className="flex flex-col items-end">
+                  <div className="text-sm font-bold text-slate-800 dark:text-white text-right">
+                    {formatValue(entry.value)}
+                  </div>
+                  {entry.meta && typeof entry.meta.max === 'number' && typeof entry.meta.min === 'number' && (
+                     <div className="text-[10px] text-slate-500 dark:text-white/60">
+                        Max: {formatTempValue(entry.meta.max)}° / Min: {formatTempValue(entry.meta.min)}°
+                     </div>
+                  )}
                 </div>
               </li>
             ))}

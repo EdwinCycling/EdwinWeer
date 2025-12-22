@@ -31,10 +31,11 @@ const DEFAULT_LOCATION: Location = {
 
 const DEFAULT_FAVORITES: Location[] = [
     {name: "Amsterdam", country: "NL", lat: 52.3676, lon: 4.9041},
-    {name: "Tokyo", country: "Japan", lat: 35.6762, lon: 139.6503},
-    {name: "New York", country: "USA", lat: 40.7128, lon: -74.0060},
+    {name: "Rome", country: "IT", lat: 41.9028, lon: 12.4964},
     {name: "London", country: "UK", lat: 51.5074, lon: -0.1278},
-    {name: "Paris", country: "FR", lat: 48.8566, lon: 2.3522},
+    {name: "New York", country: "USA", lat: 40.7128, lon: -74.0060},
+    {name: "Tokyo", country: "Japan", lat: 35.6762, lon: 139.6503},
+    {name: "Melbourne", country: "Australia", lat: -37.8136, lon: 144.9631},
 ];
 
 const DEFAULT_ENABLED_ACTIVITIES: Record<ActivityType, boolean> = {

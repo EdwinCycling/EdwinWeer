@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
 import { loadCurrentLocation, saveCurrentLocation, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
@@ -135,27 +136,33 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
       if (!currentPressure || !yesterdayPressure) return { title: t('loading'), desc: '', diffType: 'none' };
       
       const diff = currentPressure - yesterdayPressure;
-      let diffKey = 'barometer.diff.none';
-      let expKey = 'barometer.explanation.stable';
+            let diffKey = 'barometer.diff.none';
+            let expKey = 'barometer.explanation.stable';
 
-      if (diff > 2) {
-          diffKey = 'barometer.diff.very_large_rise';
-          expKey = 'barometer.explanation.rise';
-      } else if (diff > 0.5) {
-          diffKey = 'barometer.diff.large_rise'; // > 0.5 is decent rise
-          if (diff < 1.0) diffKey = 'barometer.diff.small_rise';
-          expKey = 'barometer.explanation.rise';
-      } else if (diff > -0.5) {
-          diffKey = 'barometer.diff.none';
-          expKey = 'barometer.explanation.stable';
-      } else if (diff > -2) {
-          diffKey = 'barometer.diff.large_fall';
-          if (diff > -1.0) diffKey = 'barometer.diff.small_fall';
-          expKey = 'barometer.explanation.fall';
-      } else {
-          diffKey = 'barometer.diff.very_large_fall';
-          expKey = 'barometer.explanation.fall';
-      }
+            // Thresholds based on 24h change
+            // < 0.7 hPa: Stable
+            // 0.7 - 3.0 hPa: Small
+            // 3.0 - 6.0 hPa: Large
+            // > 6.0 hPa: Very Large
+
+            if (diff > 6) {
+                diffKey = 'barometer.diff.very_large_rise';
+                expKey = 'barometer.explanation.rise';
+            } else if (diff > 0.7) {
+                diffKey = 'barometer.diff.large_rise';
+                if (diff < 3.0) diffKey = 'barometer.diff.small_rise';
+                expKey = 'barometer.explanation.rise';
+            } else if (diff > -0.7) {
+                diffKey = 'barometer.diff.none';
+                expKey = 'barometer.explanation.stable';
+            } else if (diff > -6) {
+                diffKey = 'barometer.diff.large_fall';
+                if (diff > -3.0) diffKey = 'barometer.diff.small_fall';
+                expKey = 'barometer.explanation.fall';
+            } else {
+                diffKey = 'barometer.diff.very_large_fall';
+                expKey = 'barometer.explanation.fall';
+            }
 
       return {
           title: t(diffKey),
@@ -242,6 +249,33 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                                 <span className="text-xl font-bold text-amber-600 dark:text-amber-500 font-mono">{yesterdayPressure} <span className="text-xs font-normal">hPa</span></span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Export Buttons */}
+                <div className="w-full max-w-md px-6 mt-6 mb-10">
+                    <div className="grid grid-cols-3 gap-3">
+                        <button 
+                            onClick={handleDownload}
+                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <Icon name="download" className="text-xl mb-1 text-blue-500" />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Download</span>
+                        </button>
+                        <button 
+                            onClick={handleShare}
+                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <Icon name="share" className="text-xl mb-1 text-green-500" />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('share')}</span>
+                        </button>
+                        <button 
+                            onClick={handlePrint}
+                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            <Icon name="print" className="text-xl mb-1 text-purple-500" />
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('print')}</span>
+                        </button>
                     </div>
                 </div>
 

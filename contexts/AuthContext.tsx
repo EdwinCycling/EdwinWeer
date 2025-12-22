@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { User, signInWithPopup, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 import { setStorageUserId, loadRemoteData } from '../services/storageService';
 import { setUsageUserId, loadRemoteUsage } from '../services/usageService';
@@ -12,6 +12,7 @@ interface AuthContextType {
   loading: boolean;
   sessionExpiry: Date | null;
   signInWithGoogle: () => Promise<void>;
+  signInWithProvider: (provider: FirebaseAuthProvider) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -99,6 +100,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const signInWithProvider = async (provider: FirebaseAuthProvider) => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+          await logAuthEvent(result.user.uid, 'login');
+          sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+      }
+    } catch (error) {
+      console.error("Error signing in with provider", error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       if (user) {
@@ -116,7 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, sessionExpiry, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, sessionExpiry, signInWithGoogle, signInWithProvider, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );

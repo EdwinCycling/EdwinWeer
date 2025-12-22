@@ -49,7 +49,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     }
   }, [isSearchOpen]);
 
-  useEffect(() => {
+    useEffect(() => {
+        // Welcome popup for new users
+        const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+        if (!hasSeenWelcome) {
+            alert(t('welcome_message') || "Welkom! Bij instellingen kun je alles naar wens aanpassen. Veel plezier met de app!");
+            localStorage.setItem('hasSeenWelcome', 'true');
+        }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
       saveCurrentLocation(location);
       loadWeather();
@@ -112,11 +119,19 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       }
   };
 
-  const loadWeather = async () => {
+    const loadWeather = async () => {
     setLoadingWeather(true);
     setError('');
     try {
         const data = await fetchForecast(location.lat, location.lon, selectedModel);
+        
+        // Check for empty data
+        if (!data || !data.current || !data.hourly) {
+            setError(`${t('error_no_data_for_model') || 'Geen data beschikbaar voor model'}: ${selectedModel}`);
+            setWeatherData(null);
+            return;
+        }
+
         setWeatherData(data);
     } catch (e) {
         console.error(e);
@@ -455,6 +470,15 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
+      {error && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-bounce">
+            <div className="flex items-center gap-2">
+                <Icon name="error_outline" />
+                <span className="font-medium">{error}</span>
+            </div>
+        </div>
+      )}
+
       {weatherData && (
         <div className="absolute inset-0 z-0">
              <StaticWeatherBackground 

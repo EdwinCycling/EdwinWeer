@@ -27,6 +27,10 @@ const en: Dictionary = {
     // General
     'loading': 'Loading...',
     'error': 'Error',
+    'error_no_data_for_model': 'No data available for model',
+    'error_no_data_for_forecast': 'No forecast data available',
+    'welcome_message': 'Welcome! You can customize everything in settings. Enjoy the app!',
+    'weather': 'Weather',
     'back': 'Back',
     'cancel': 'Cancel',
     'update': 'Update',
@@ -88,6 +92,8 @@ const en: Dictionary = {
     'barometer.explanation.rise': 'Pressure is rising, usually indicating improving weather and lower chance of rain.',
     'barometer.explanation.fall': 'Pressure is falling, often indicating deteriorating weather, clouds, and chance of rain.',
     'barometer.explanation.stable': 'Pressure is stable. Current weather is likely to persist.',
+    'yesterday': 'Yesterday',
+    'strava.ride_with_weather': 'Strava Ride with Real Weather Data',
     'bonus.sunshine': 'Mixed sun and rain',
     'records.frost.first': 'First frost (autumn)',
     'records.frost.last': 'Last frost (spring)',
@@ -726,6 +732,9 @@ const nl: Dictionary = {
 
     'app.title_prefix': 'Weer & Rit',
 
+    'error_no_data_for_model': 'Geen data beschikbaar voor model',
+    'error_no_data_for_forecast': 'Geen voorspellingsdata beschikbaar',
+    'welcome_message': 'Welkom! Bij instellingen kun je alles naar wens aanpassen. Veel plezier met de app!',
     'loading': 'Laden...',
     'error': 'Fout',
     'back': 'Terug',
@@ -927,6 +936,7 @@ const nl: Dictionary = {
     'map_data_msg': 'Lokale Weerdata (30 min)',
     'view_route': 'Route Bekijken',
     'strava.analysis': 'Analyse',
+    'strava.ride_with_weather': 'Strava rit met de echte weergegevens',
 
     'map.updated': 'Data',
     'map.global_weather': 'Wereldweer',
@@ -941,6 +951,8 @@ const nl: Dictionary = {
     'map.aria.toggle_temp': 'Toon/verberg temperatuur op kaart',
     'map.aria.toggle_wind': 'Toon/verberg wind op kaart',
 
+    'country_map.choose_country': 'Kies een land',
+    'country_map.search_country_placeholder': 'Zoek land...',
     'country_map.legend.beaufort': 'Beaufort (km/u)',
     'country_map.view.cities': 'Steden',
     'country_map.view.grid': 'Raster',

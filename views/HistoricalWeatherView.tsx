@@ -22,16 +22,16 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   const [location1, setLocation1] = useState<Location>(loadCurrentLocation());
   const [location2, setLocation2] = useState<Location>(loadHistoricalLocation());
   
-  // Date 1: Today (Default) or from params
-  const [date1, setDate1] = useState<Date>(() => initialParams?.date1 || new Date());
-  
-  // Date 2: 1 Year Ago (Default) or from params
-  const [date2, setDate2] = useState<Date>(() => {
-      if (initialParams?.date2) return initialParams.date2;
+  // Date 1: 1 Year Ago (Default) or from params
+  const [date1, setDate1] = useState<Date>(() => {
+      if (initialParams?.date1) return initialParams.date1;
       const d = new Date();
       d.setFullYear(d.getFullYear() - 1);
       return d;
   });
+  
+  // Date 2: Today (Default) or from params
+  const [date2, setDate2] = useState<Date>(() => initialParams?.date2 || new Date());
 
   const [pickerOpen, setPickerOpen] = useState<null | 'date1' | 'date2'>(null);
   const [dashboardOpen, setDashboardOpen] = useState<{date: Date, location: Location} | null>(null);

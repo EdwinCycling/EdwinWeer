@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { loadSettings, saveSettings } from '../services/storageService';
 import { AppLanguage } from '../types';
+import { twitterProvider, facebookProvider, microsoftProvider } from '../services/firebase';
 
 /* 
   PLACEHOLDER IMAGES GUIDE
@@ -26,7 +27,7 @@ const IMAGES = {
 };
 
 export const LoginView: React.FC = () => {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInWithProvider } = useAuth();
   const [lang, setLang] = useState<AppLanguage>('en');
   const [scrolled, setScrolled] = useState(false);
 
@@ -59,6 +60,11 @@ export const LoginView: React.FC = () => {
     } catch (error) {
       console.error("Login failed", error);
     }
+  };
+
+  const handleSocialLogin = async (provider: any) => {
+      // Temporary popup for other providers
+      alert("Coming soon!");
   };
 
   const FeatureCard = ({ icon, title, desc, colorClass, delay }: any) => (
@@ -141,19 +147,33 @@ export const LoginView: React.FC = () => {
             {t('landing.hero_desc')}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up delay-200">
-            <button 
-              onClick={handleLogin}
-              className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-600/30 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 overflow-hidden"
-            >
-              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
-              <span className="flex items-center gap-3 relative z-10">
-                <Icon name="rocket_launch" />
-                {t('landing.start')}
-              </span>
-            </button>
+          <div className="flex flex-col items-center justify-center gap-8 animate-fade-in-up delay-200">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button 
+                onClick={handleLogin}
+                className="group relative px-6 py-4 bg-white hover:bg-slate-50 text-slate-800 rounded-2xl font-bold text-lg shadow-xl shadow-slate-200/50 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 overflow-hidden border border-slate-200"
+              >
+                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-slate-400/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                <span className="flex items-center gap-2 relative z-10">
+                  <Icon name="rocket_launch" className="text-blue-600" />
+                  Google
+                </span>
+              </button>
+
+              <button onClick={() => handleSocialLogin(twitterProvider)} className="px-6 py-4 bg-[#1DA1F2] hover:bg-[#1a94df] text-white rounded-2xl font-bold text-lg shadow-xl shadow-[#1DA1F2]/30 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 flex items-center gap-2">
+                 <Icon name="flutter_dash" /> Twitter
+              </button>
+
+              <button onClick={() => handleSocialLogin(facebookProvider)} className="px-6 py-4 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl font-bold text-lg shadow-xl shadow-[#1877F2]/30 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 flex items-center gap-2">
+                 <Icon name="facebook" /> Facebook
+              </button>
+              
+              <button onClick={() => handleSocialLogin(microsoftProvider)} className="px-6 py-4 bg-[#2F2F2F] hover:bg-[#252525] text-white rounded-2xl font-bold text-lg shadow-xl shadow-[#2F2F2F]/30 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 flex items-center gap-2">
+                 <Icon name="window" /> Microsoft
+              </button>
+            </div>
             
-            <a href="#features" className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-lg border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all transform hover:scale-105 flex items-center gap-2">
+            <a href="#features" className="px-8 py-4 bg-transparent text-slate-500 dark:text-slate-400 font-bold text-lg hover:text-slate-800 dark:hover:text-white transition-all transform hover:scale-105 flex items-center gap-2">
                 {t('landing.cta_title') || 'Learn More'}
                 <Icon name="arrow_downward" className="text-sm" />
             </a>
