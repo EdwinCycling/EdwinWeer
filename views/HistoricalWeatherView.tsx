@@ -6,7 +6,7 @@ import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip, Cartes
 import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchHistorical, convertTemp, convertWind, convertPrecip, mapWmoCodeToIcon, mapWmoCodeToText } from '../services/weatherService';
-import { loadCurrentLocation, saveCurrentLocation, saveHistoricalLocation, loadHistoricalLocation } from '../services/storageService';
+import { loadCurrentLocation, saveCurrentLocation, saveHistoricalLocation } from '../services/storageService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { getTranslation } from '../services/translations';
 import { HistoricalDashboard } from './HistoricalDashboard';
@@ -20,7 +20,7 @@ interface Props {
 
 export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
   const [location1, setLocation1] = useState<Location>(loadCurrentLocation());
-  const [location2, setLocation2] = useState<Location>(loadHistoricalLocation());
+  const [location2, setLocation2] = useState<Location>(loadCurrentLocation());
   
   // Date 1: 1 Year Ago (Default) or from params
   const [date1, setDate1] = useState<Date>(() => {

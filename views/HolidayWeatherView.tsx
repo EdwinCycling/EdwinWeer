@@ -133,6 +133,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   useEffect(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       saveCurrentLocation(location);
+      setHistoricalCache({});
       loadAllData();
   }, [location]);
 
