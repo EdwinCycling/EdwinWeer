@@ -14,6 +14,7 @@ import { Tooltip } from '../components/Tooltip';
 import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
 import { WelcomeModal } from '../components/WelcomeModal';
+import { Modal } from '../components/Modal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -703,21 +704,23 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                             {currentTemp}°
                         </h1>
-                        {feelsLike < 10 ? (
-                            <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm">
-                                <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
-                                <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
-                                <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
-                            </div>
-                        ) : (
-                            heatIndex > currentTemp && (
-                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm">
-                                    <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
-                                    <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
-                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
+                        <div className="flex flex-row gap-2">
+                            {feelsLike < 10 ? (
+                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[70px] h-[70px]">
+                                    <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
+                                    <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
+                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
                                 </div>
-                            )
-                        )}
+                            ) : (
+                                heatIndex > currentTemp && (
+                                    <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[70px] h-[70px]">
+                                        <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
+                                        <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
+                                        <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
+                                    </div>
+                                )
+                            )}
+                        </div>
                     </div>
                     <p className="text-2xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
                          <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
@@ -926,7 +929,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Thermodynamics */}
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
+                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm relative group">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</p>

@@ -7,6 +7,10 @@ const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 const ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble";
 const SEASONAL_URL = "https://seasonal-api.open-meteo.com/v1/seasonal";
 
+// --- CACHE ---
+const forecastCache: Record<string, { timestamp: number, data: any }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // --- SECURITY: REQUEST THROTTLING ---
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 1000; // 1 seconde delay between requests
@@ -259,6 +263,12 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   const modelParam = model ? `&models=${model}` : '';
   const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16${modelParam}`;
 
+  const cacheKey = `forecast-${lat}-${lon}-${model || 'default'}`;
+  const cached = forecastCache[cacheKey];
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      return cached.data;
+  }
+
   checkLimit();
   trackCall();
 
@@ -273,7 +283,9 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   if (!response.ok) {
       throw new Error(`Weather fetch failed: ${response.status}`);
   }
-  return response.json();
+  const data = await response.json();
+  forecastCache[cacheKey] = { timestamp: Date.now(), data };
+  return data;
 };
 
 export const fetchHistorical = async (lat: number, lon: number, startDate: string, endDate: string) => {

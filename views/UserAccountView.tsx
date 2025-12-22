@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { ViewState, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
-import { getUsage, UsageStats, getLimit } from '../services/usageService';
+import { getUsage, UsageStats, getLimit, resetDailyUsage } from '../services/usageService';
 import { API_LIMITS } from '../services/apiConfig';
 import { getTranslation } from '../services/translations';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  installPWA?: () => void;
+  canInstallPWA?: boolean;
 }
 
-export const UserAccountView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, installPWA, canInstallPWA }) => {
   const { user, sessionExpiry, logout } = useAuth();
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
 
@@ -54,6 +56,16 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings }) => {
                       {sessionExpiry.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
                 </div>
+            )}
+
+            {canInstallPWA && (
+                <button 
+                    onClick={installPWA}
+                    className="w-full mb-3 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                >
+                    <Icon name="download" />
+                    Install App
+                </button>
             )}
 
             <button 
@@ -125,6 +137,19 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </>
                 )}
             </div>
+
+            {(user?.email === 'edwin@editsolutions.nl' || user?.email === 'edwin@editsolutions') && (
+                <div className="mt-8 pt-8 border-t border-slate-200 dark:border-white/10">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Admin Zone</h3>
+                    <button 
+                        onClick={() => user.uid && resetDailyUsage(user.uid)}
+                        className="w-full py-3 px-4 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Icon name="refresh" />
+                        Reset Daily Limits (Local & DB)
+                    </button>
+                </div>
+            )}
         </section>
 
       </div>

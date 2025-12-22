@@ -20,6 +20,8 @@ const en: Dictionary = {
     'nav.model_info': 'Weather Models',
     'nav.info': 'Info',
     'nav.user_account': 'My Account',
+    'nav.climate_change': 'Climate Change',
+    'nav.favorites': 'Favorites',
 
     // App
     'app.title_prefix': 'EdwinWeer',
@@ -396,6 +398,10 @@ const en: Dictionary = {
     'records.diverse_title': 'Miscellaneous Extremes',
     'records.max_rise': 'Largest Temp Rise (Max Temp)',
     'records.max_drop': 'Largest Temp Drop (Max Temp)',
+
+    // Errors
+    'error.too_many_requests': 'Please wait a moment',
+    'error.too_many_requests.desc': 'It is currently very busy. We have reached the maximum number of requests for historical data. Please try again in a few minutes.',
     'records.diff_day1': 'Day 1',
     'records.diff_day2': 'Day 2',
     'records.extremes.first_summer': 'First Summer Day (≥25°C)',
@@ -714,6 +720,19 @@ const en: Dictionary = {
     'reason.geomag_storm': 'Geomagnetic storm (GPS issues)',
     'reason.perfect': 'Perfect conditions!',
     'activity.score_info': 'Activity scores based on current weather conditions (snapshot)',
+
+    // Climate Change
+    'climate.title': 'Climate Change',
+    'climate.subtitle': 'Historical warming and trends',
+    'climate.hero_title': 'The "New Normal"',
+    'climate.period': 'Period',
+    'climate.max': 'Max',
+    'climate.min': 'Min',
+    'climate.diff': 'Diff',
+    'climate.calc': 'Calculate',
+    'climate.loading': 'Loading historical data (1950-2023)...',
+    'climate.info': '30-year average (week around selected date).',
+    'climate.chart_title': 'Temperature Trend',
 };
 
 const nl: Dictionary = {
@@ -732,6 +751,7 @@ const nl: Dictionary = {
     'nav.model_info': 'Weermodellen',
     'nav.info': 'Info',
     'nav.user_account': 'Mijn Account',
+    'nav.climate_change': 'Klimaatverandering',
 
     'app.title_prefix': 'Weer & Rit',
 
@@ -1477,6 +1497,34 @@ const nl: Dictionary = {
     'records.extremes.last_nice': 'Laatste Lekkere Dag',
     'records.extremes.first_summer': 'Eerste Zomerse Dag',
     'records.extremes.threshold': 'Drempel',
+
+    // Climate Change
+    'climate.title': 'Klimaatverandering',
+    'climate.subtitle': 'Historische opwarming en trends',
+    'climate.hero_title': 'Het "Nieuwe Normaal"',
+    'climate.period': 'Periode',
+    'climate.max': 'Max',
+    'climate.min': 'Min',
+    'climate.diff': 'Verschil',
+    'climate.calc': 'Bereken',
+    'climate.loading': 'Historische data ophalen (1950-2023)...',
+    'climate.info': 'Gemiddelde over 30 jaar (week rondom deze datum).',
+    'climate.chart_title': 'Temperatuur Trend',
+    'climate.rain_title': 'Neerslag (Maandgemiddelde)',
+    'climate.wind_sun_title': 'Wind & Zon Trends',
+    'climate.rain': 'Neerslag',
+    'climate.wind': 'Wind (km/u)',
+    'climate.sun': 'Zon (%)',
+    'nav.favorites': 'Favorieten',
+    'climate.period_type': 'Periode Type',
+    'climate.type_30year': '30-Jaar (Schuivend)',
+    'climate.type_decade': 'Decades (Vast)',
+    'climate.forecast': 'Voorspelling',
+    'climate.forecast_label': 'Trend Voorspelling',
+    'climate.increase': 'Stijging',
+    'climate.expl_30year': 'Elke regel is het gemiddelde van 30 jaar (schuift elke 10 jaar op).',
+    'climate.expl_decade': 'Elke regel is het gemiddelde van 30 jaar (Standaard referentie periodes).',
+    'climate.delta_chart_title': 'Verandering in % (t.o.v. oudste meting)',
 };
 
 export const getTranslation = (key: string, lang: AppLanguage): string => {

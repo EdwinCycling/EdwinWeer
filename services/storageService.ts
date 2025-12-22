@@ -75,6 +75,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
         iceStreakTemp: 0
     },
     weekStartDay: 'monday',
+    climatePeriodType: '30year',
     calendar: {
         showHeatmap: true,
         showDetails: true

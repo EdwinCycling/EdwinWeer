@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, ZoomControl, LayersControl, useMapEvents } from 'react-leaflet';
 import { ViewState, AppSettings, MapBaseLayer } from '../types';
 import { Icon } from '../components/Icon';
@@ -7,6 +7,15 @@ import { MAJOR_CITIES, City } from '../services/cityData';
 import { convertTemp } from '../services/weatherService';
 import { getTranslation } from '../services/translations';
 import L from 'leaflet';
+
+// Helper for debouncing map moves
+const debounce = (func: (...args: any[]) => void, wait: number) => {
+    let timeoutId: NodeJS.Timeout | null;
+    return (...args: any[]) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func(...args), wait);
+    };
+};
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -78,7 +87,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
     const selectedBaseLayer: MapBaseLayer = settings.mapBaseLayer ?? (settings.theme === 'dark' ? 'dark' : 'light');
 
     // 2. Handle Map Move & Fetch Weather
-    const handleMapMove = async (map: L.Map, forceRefresh = false) => {
+    const fetchMapData = async (map: L.Map, forceRefresh = false) => {
         if (!map) return;
         const bounds = map.getBounds();
         
@@ -221,9 +230,24 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
         }
     };
 
+    // Use ref to hold the latest version of fetchMapData
+    const fetchMapDataRef = useRef(fetchMapData);
+    useEffect(() => {
+        fetchMapDataRef.current = fetchMapData;
+    });
+
+    // Create a stable debounced function
+    const debouncedMapMove = useMemo(() => 
+        debounce((...args) => {
+            if (fetchMapDataRef.current) {
+                fetchMapDataRef.current(...args);
+            }
+        }, 500), 
+    []);
+
     const refreshMap = () => {
         if (isLoading || !mapInstance) return;
-        handleMapMove(mapInstance, true);
+        fetchMapData(mapInstance, true);
     };
 
     // Calculate points to render
@@ -403,7 +427,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
 
                 <ZoomControl position="bottomright" />
                 <MapEvents
-                    onMove={handleMapMove}
+                    onMove={debouncedMapMove}
                     setMap={setMapInstance}
                     selectedBaseLayer={selectedBaseLayer}
                     onChangeBaseLayer={(next) => {

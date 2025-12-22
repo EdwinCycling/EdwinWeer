@@ -1,0 +1,940 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
+import { AppSettings, Location, TempUnit, WindUnit, PrecipUnit } from '../types';
+import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
+import { getTranslation } from '../services/translations';
+import { searchCityByName } from '../services/geoService';
+import { convertTempPrecise, convertWind, convertPrecip, getTempLabel } from '../services/weatherService';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+
+interface ClimateChangeViewProps {
+  onNavigate: (view: any) => void;
+  settings: AppSettings;
+  onUpdateSettings: (settings: AppSettings) => void;
+}
+
+interface ClimateData {
+    period: string;
+    max: number;
+    min: number;
+    rain: number; // Average monthly total (mm)
+    wind: number; // Average daily max wind (km/h)
+    sun: number; // Average daily sun (%)
+    diffMax: number;
+    diffMin: number;
+    diffRain: number;
+    diffWind: number;
+    diffSun: number;
+    pctRain?: number;
+    pctWind?: number;
+    pctSun?: number;
+    isForecast?: boolean;
+}
+
+const getRainUnitLabel = (unit: PrecipUnit) => unit === PrecipUnit.INCH ? 'inch' : 'mm';
+const getWindUnitLabel = (unit: WindUnit) => {
+    switch (unit) {
+        case WindUnit.BFT: return 'Bft';
+        case WindUnit.MS: return 'm/s';
+        case WindUnit.MPH: return 'mph';
+        case WindUnit.KNOTS: return 'kn';
+        default: return 'km/h';
+    }
+};
+
+export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate, settings, onUpdateSettings }) => {
+  const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
+      // Default to first favorite or a default location
+      return settings.favorites.length > 0 ? settings.favorites[0] : {
+          name: 'Utrecht', country: 'NL', lat: 52.09, lon: 5.12, isCurrentLocation: false
+      };
+  });
+  
+  const [day, setDay] = useState(new Date().getDate());
+  const [month, setMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [loading, setLoading] = useState(false);
+  const [climateData, setClimateData] = useState<ClimateData[]>([]);
+  const [currentNormal, setCurrentNormal] = useState<ClimateData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Cache raw data to avoid refetching on every setting change
+  const [rawDailyData, setRawDailyData] = useState<any>(null);
+  const [lastFetchedLocation, setLastFetchedLocation] = useState<string>('');
+
+  const t = (key: string) => getTranslation(key, settings.language);
+
+  // Initial Fetch & Refetch on Location Change
+  useEffect(() => {
+      const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
+      if (rawDailyData && lastFetchedLocation === locKey) {
+          // Data already available for this location, just recalc
+          processData(rawDailyData);
+      } else {
+          // Fetch new data
+          calculateClimate();
+      }
+  }, [selectedLocation]);
+
+  // Recalculate on Settings/Date Change (without fetch)
+  useEffect(() => {
+      if (rawDailyData) {
+          processData(rawDailyData);
+      }
+  }, [settings.climatePeriodType, settings.tempUnit, settings.windUnit, settings.precipUnit, day, month]);
+
+  const months = [
+      t('tab.month'), // Placeholder or just use index
+      "Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"
+  ];
+  
+  // Fix for "Mrt" / "May" etc translation if needed, but for now hardcoded or simple array is fine.
+  // Better to use a proper date formatter or the array from user input.
+  const monthNames = ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Location[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+
+  const calculateClimate = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+          // Fetch historical data from 1950 to 2023
+          // Using Archive API
+          const startDate = '1950-01-01';
+          const endDate = '2023-12-31';
+          
+          const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
+          
+          const response = await fetch(url);
+          
+          if (response.status === 429) {
+              setShowLimitModal(true);
+              setLoading(false);
+              return;
+          }
+
+          if (!response.ok) throw new Error('Failed to fetch climate data');
+          
+          const data = await response.json();
+          setRawDailyData(data);
+          setLastFetchedLocation(`${selectedLocation.lat}-${selectedLocation.lon}`);
+          processData(data);
+      } catch (err) {
+          console.error(err);
+          setError('Failed to load climate data. Please try again.');
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  const processData = (data: any) => {
+      if (!data.daily || !data.daily.time) return;
+
+      const daily = data.daily;
+      const periodType = settings.climatePeriodType || '30year';
+      
+      const calculatedPeriods: ClimateData[] = [];
+
+      if (periodType === '30year') {
+          // Existing Logic: Rolling 30-year periods
+          const startYear = 1954;
+          const endYear = 2023;
+          const periodLength = 30;
+          const step = 10;
+
+          for (let end = endYear; end >= startYear + periodLength - 1; end -= step) {
+              const start = end - periodLength + 1;
+              const label = `${start}-${end}`;
+              
+              const stats = calculatePeriodStats(daily, start, end, month, day);
+              if (stats) {
+                  calculatedPeriods.push({
+                      period: label,
+                      max: convertTempPrecise(stats.avgMax, settings.tempUnit),
+                      min: convertTempPrecise(stats.avgMin, settings.tempUnit),
+                      rain: convertPrecip(stats.avgRain, settings.precipUnit),
+                      wind: convertWind(stats.avgWind, settings.windUnit),
+                      sun: stats.avgSun,
+                      diffMax: 0,
+                      diffMin: 0,
+                      diffRain: 0,
+                      diffWind: 0,
+                      diffSun: 0
+                  });
+              }
+          }
+      } else {
+          // Decade Logic: Fixed Decades (1950-1959, 1960-1969, ...)
+          // NOW CHANGED TO: 30-year periods ALIGNED with decades.
+          // Standard WMO reference periods: 1961-1990, 1971-2000, 1981-2010, 1991-2020.
+           
+           const currentYear = new Date().getFullYear(); 
+           // We find the last fully completed decade-aligned 30-year period.
+           // e.g. if we are in 2025, the last full decade ended in 2020.
+           // The last standard period is 1991-2020.
+           
+           const lastDecadeEnd = Math.floor((currentYear - 1) / 10) * 10;
+           
+           // Start from 1990 (period 1961-1990) or whenever data allows
+           // Data starts 1950. First full 30y period is 1951-1980? Or 1961-1990?
+           // WMO standard starts 1901, so 1931-1960, 1961-1990.
+           // Since we have data from 1950, first available standard period is 1961-1990.
+           
+           const periodLength = 30;
+           
+           for (let end = lastDecadeEnd; end >= 1950 + periodLength; end -= 10) {
+             const start = end - periodLength + 1;
+             const label = `${start}-${end}`;
+             
+             // Check if we have data for this period
+             // Our data starts 1950.
+             if (start < 1950) break;
+
+             const stats = calculatePeriodStats(daily, start, end, month, day);
+             if (stats) {
+                 calculatedPeriods.push({
+                     period: label,
+                     max: convertTempPrecise(stats.avgMax, settings.tempUnit),
+                     min: convertTempPrecise(stats.avgMin, settings.tempUnit),
+                     rain: convertPrecip(stats.avgRain, settings.precipUnit),
+                     wind: convertWind(stats.avgWind, settings.windUnit),
+                     sun: stats.avgSun,
+                     diffMax: 0,
+                     diffMin: 0,
+                     diffRain: 0,
+                     diffWind: 0,
+                     diffSun: 0
+                 });
+             }
+          }
+          
+          // Reverse to have newest first
+          // calculatedPeriods.reverse(); // They are pushed newest to oldest in the loop?
+          // Loop goes: 2020, 2010, 2000... so they are Newest First.
+          // Existing 30year loop: pushes Newest First.
+          // Existing Decade loop: pushed Oldest First then reversed.
+          // My new loop pushes Newest First. So NO reverse needed.
+      }
+
+      // Calculate Diffs
+      if (calculatedPeriods.length > 0) {
+          const oldest = calculatedPeriods[calculatedPeriods.length - 1];
+          calculatedPeriods.forEach(p => {
+              // Temp: Absolute Diff (vs oldest)
+              p.diffMax = parseFloat((p.max - oldest.max).toFixed(1));
+              p.diffMin = parseFloat((p.min - oldest.min).toFixed(1));
+              
+              // Absolute diffs
+              p.diffRain = parseFloat((p.rain - oldest.rain).toFixed(1));
+              p.diffWind = parseFloat((p.wind - oldest.wind).toFixed(1));
+              p.diffSun = parseFloat((p.sun - oldest.sun).toFixed(1));
+
+              // Calculate percentages for Rain/Wind (vs oldest)
+              if (oldest.rain > 0.1) {
+                  p.pctRain = Math.round(((p.rain - oldest.rain) / oldest.rain) * 100);
+              } else {
+                  p.pctRain = p.rain > 0.1 ? 100 : 0;
+              }
+
+              if (oldest.wind > 0.1) {
+                  p.pctWind = Math.round(((p.wind - oldest.wind) / oldest.wind) * 100);
+              } else {
+                  p.pctWind = 0;
+              }
+
+              if (oldest.sun > 0.1) {
+                  p.pctSun = Math.round(((p.sun - oldest.sun) / oldest.sun) * 100);
+              } else {
+                  p.pctSun = 0;
+              }
+          });
+      }
+      
+      // PREDICTION LOGIC (Only if we have enough data points)
+      if (calculatedPeriods.length >= 3) {
+          // Linear Regression on Max Temp
+          // We use the index as x (0, 1, 2...) but reversed because calculatedPeriods is newest first.
+          // Let's sort chronologically for calculation
+          const chronological = [...calculatedPeriods].reverse();
+          const n = chronological.length;
+          
+          let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+          
+          chronological.forEach((p, i) => {
+              sumX += i;
+              sumY += p.max;
+              sumXY += i * p.max;
+              sumXX += i * i;
+          });
+          
+          const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+          const intercept = (sumY - slope * sumX) / n;
+          
+          // Predict next period (index = n)
+          const nextMax = intercept + slope * n;
+          const nextDiffMax = nextMax - chronological[0].max; // vs oldest
+          
+          // Simple heuristic for other vars (can be refined)
+          const nextMin = chronological[n-1].min + (slope * 0.8); // Min usually rises slower/faster? assume correlated.
+          
+          // Create Prediction Label
+          let predLabel = '';
+          if (periodType === '30year') {
+             // 1994-2023 -> next is 2004-2033
+             const lastParts = chronological[n-1].period.split('-');
+             const nextStart = parseInt(lastParts[0]) + 10;
+             const nextEnd = parseInt(lastParts[1]) + 10;
+             predLabel = `${nextStart}-${nextEnd}`;
+          } else {
+             // 2010-2019 -> next is 2020-2029
+             const lastParts = chronological[n-1].period.split('-');
+             const nextStart = parseInt(lastParts[0]) + 10;
+             const nextEnd = parseInt(lastParts[1]) + 10;
+             predLabel = `${nextStart}-${nextEnd}`;
+          }
+
+          const prediction: ClimateData = {
+              period: predLabel,
+              max: parseFloat(nextMax.toFixed(1)),
+              min: parseFloat(nextMin.toFixed(1)),
+              rain: chronological[n-1].rain, // No trend for now
+              wind: chronological[n-1].wind,
+              sun: chronological[n-1].sun,
+              diffMax: parseFloat(nextDiffMax.toFixed(1)),
+              diffMin: parseFloat((nextMin - chronological[0].min).toFixed(1)), // vs oldest
+              diffRain: 0,
+              diffWind: 0,
+              diffSun: 0,
+              pctRain: 0,
+              pctWind: 0,
+              pctSun: 0,
+              isForecast: true
+          };
+          
+          // Add prediction to the beginning (since we display newest first)
+          calculatedPeriods.unshift(prediction);
+      }
+
+      setClimateData(calculatedPeriods);
+      // Current normal is the first REAL period (not forecast)
+      const current = calculatedPeriods.find(p => !p.isForecast);
+      if (current) {
+          setCurrentNormal(current);
+      }
+  };
+
+  const calculatePeriodStats = (daily: any, startYear: number, endYear: number, targetMonth: number, targetDay: number) => {
+      let totalMax = 0;
+      let totalMin = 0;
+      let countTemp = 0;
+
+      let totalRain = 0;
+      let countRainYears = 0;
+      
+      let totalWind = 0;
+      let countWind = 0;
+      
+      let totalSunPct = 0;
+      let countSun = 0;
+
+      for (let year = startYear; year <= endYear; year++) {
+          // 1. Temp: Week around date
+          const targetDate = new Date(year, targetMonth - 1, targetDay);
+          
+          for (let offset = -3; offset <= 3; offset++) {
+              const d = new Date(targetDate);
+              d.setDate(d.getDate() + offset);
+              
+              const dateStr = d.toISOString().split('T')[0];
+              const index = daily.time.indexOf(dateStr);
+              
+              if (index !== -1) {
+                  const max = daily.temperature_2m_max[index];
+                  const min = daily.temperature_2m_min[index];
+                  
+                  if (max !== null && min !== null) {
+                      totalMax += max;
+                      totalMin += min;
+                      countTemp++;
+                  }
+              }
+          }
+
+          // 2. Rain/Wind/Sun: Entire Month
+          const daysInMonthTotal = new Date(year, targetMonth, 0).getDate();
+          let monthlyRain = 0;
+          let hasRainData = false;
+
+          for (let d = 1; d <= daysInMonthTotal; d++) {
+             const dateStr = `${year}-${String(targetMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+             const index = daily.time.indexOf(dateStr);
+             
+             if (index !== -1) {
+                 const rain = daily.precipitation_sum ? daily.precipitation_sum[index] : null;
+                 const wind = daily.wind_speed_10m_max ? daily.wind_speed_10m_max[index] : null;
+                 const sun = daily.sunshine_duration ? daily.sunshine_duration[index] : null;
+                 const daylight = daily.daylight_duration ? daily.daylight_duration[index] : null;
+                 
+                 if (rain !== null) { monthlyRain += rain; hasRainData = true; }
+                 if (wind !== null) { totalWind += wind; countWind++; }
+                 if (sun !== null && daylight !== null && daylight > 0) { 
+                     const pct = (sun / daylight) * 100;
+                     totalSunPct += pct; 
+                     countSun++; 
+                 }
+             }
+          }
+          
+          if (hasRainData) {
+              totalRain += monthlyRain;
+              countRainYears++;
+          }
+      }
+
+      if (countTemp === 0) return null;
+
+      return {
+          avgMax: parseFloat((totalMax / countTemp).toFixed(1)),
+          avgMin: parseFloat((totalMin / countTemp).toFixed(1)),
+          avgRain: countRainYears > 0 ? parseFloat((totalRain / countRainYears).toFixed(1)) : 0,
+          avgWind: countWind > 0 ? parseFloat((totalWind / countWind).toFixed(1)) : 0,
+          avgSun: countSun > 0 ? parseFloat((totalSunPct / countSun).toFixed(0)) : 0 // Percentage as integer
+      };
+  };
+
+  // Search handler
+  const handleSearch = async (query: string) => {
+      setSearchQuery(query);
+      if (query.length < 3) {
+          setSearchResults([]);
+          return;
+      }
+
+      setIsSearching(true);
+      try {
+          const results = await searchCityByName(query);
+          setSearchResults(results);
+      } catch (error) {
+          console.error('Search failed', error);
+      } finally {
+          setIsSearching(false);
+      }
+  };
+
+  const selectLocation = (loc: Location) => {
+      setSelectedLocation(loc);
+      setSearchQuery('');
+      setSearchResults([]);
+      // Reset data
+      setClimateData([]);
+      setCurrentNormal(null);
+  };
+
+  // Chart data
+  const chartData = {
+      labels: climateData.map(d => d.period).reverse(),
+      datasets: [
+          {
+              label: t('climate.max'),
+              data: climateData.map(d => d.max).reverse(),
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.5)',
+              tension: 0.4,
+              segment: {
+                borderDash: (ctx: any) => {
+                    // Make the last segment (forecast) dashed
+                    // The data is reversed, so forecast is at the end
+                    return ctx.p0DataIndex === climateData.length - 2 ? [6, 6] : undefined;
+                }
+              }
+          },
+          {
+              label: t('climate.min'),
+              data: climateData.map(d => d.min).reverse(),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.5)',
+              tension: 0.4,
+              segment: {
+                borderDash: (ctx: any) => {
+                    return ctx.p0DataIndex === climateData.length - 2 ? [6, 6] : undefined;
+                }
+              }
+          }
+      ]
+  };
+
+  const chartOptions = {
+      responsive: true,
+      plugins: {
+          legend: {
+              position: 'top' as const,
+              labels: {
+                  color: settings.theme === 'dark' ? '#fff' : '#333'
+              }
+          },
+          title: {
+              display: true,
+              text: t('climate.chart_title'),
+              color: settings.theme === 'dark' ? '#fff' : '#333'
+          }
+      },
+      scales: {
+          y: {
+              ticks: { color: settings.theme === 'dark' ? '#ccc' : '#666' },
+              grid: { color: settings.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+          },
+          x: {
+              ticks: { color: settings.theme === 'dark' ? '#ccc' : '#666' },
+              grid: { color: settings.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+          }
+      }
+  };
+
+  const rainChartData = {
+      labels: climateData.map(d => d.period).reverse(),
+      datasets: [{
+          label: t('climate.rain'),
+          data: climateData.map(d => d.rain).reverse(),
+          backgroundColor: '#3b82f6',
+          borderRadius: 4,
+      }]
+  };
+
+  const otherChartData = {
+      labels: climateData.map(d => d.period).reverse(),
+      datasets: [
+          {
+              label: t('climate.wind'),
+              data: climateData.map(d => d.wind).reverse(),
+              borderColor: '#94a3b8',
+              backgroundColor: 'rgba(148, 163, 184, 0.5)',
+              tension: 0.4,
+              yAxisID: 'y'
+          },
+          {
+              label: t('climate.sun'),
+              data: climateData.map(d => d.sun).reverse(),
+              borderColor: '#fbbf24',
+              backgroundColor: 'rgba(251, 191, 36, 0.5)',
+              tension: 0.4,
+              yAxisID: 'y1'
+          }
+      ]
+  };
+
+  const rainChartOptions = {
+      ...chartOptions,
+      plugins: {
+          ...chartOptions.plugins,
+          title: { ...chartOptions.plugins.title, text: t('climate.rain_title') }
+      }
+  };
+
+  const otherChartOptions = {
+      ...chartOptions,
+      plugins: {
+          ...chartOptions.plugins,
+          title: { ...chartOptions.plugins.title, text: t('climate.wind_sun_title') }
+      },
+      scales: {
+          x: chartOptions.scales.x,
+          y: { 
+              ...chartOptions.scales.y, 
+              position: 'left' as const,
+              title: { display: true, text: t('climate.wind') }
+          },
+          y1: { 
+              ...chartOptions.scales.y, 
+              position: 'right' as const, 
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: t('climate.sun') }
+          }
+      }
+  };
+
+  const deltaChartData = {
+      labels: climateData.map(d => d.period).reverse(),
+      datasets: [
+          {
+              label: `${t('climate.rain')} (%)`,
+              data: climateData.map(d => d.pctRain || 0).reverse(),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.5)',
+              tension: 0.4,
+          },
+          {
+              label: `${t('climate.wind')} (%)`,
+              data: climateData.map(d => d.pctWind || 0).reverse(),
+              borderColor: '#94a3b8',
+              backgroundColor: 'rgba(148, 163, 184, 0.5)',
+              tension: 0.4,
+          },
+          {
+              label: `${t('climate.sun')} (%)`,
+              data: climateData.map(d => d.pctSun || 0).reverse(),
+              borderColor: '#fbbf24',
+              backgroundColor: 'rgba(251, 191, 36, 0.5)',
+              tension: 0.4,
+          }
+      ]
+  };
+
+  const deltaChartOptions = {
+      ...chartOptions,
+      plugins: {
+          ...chartOptions.plugins,
+          title: { ...chartOptions.plugins.title, text: t('climate.delta_chart_title') },
+          tooltip: {
+              callbacks: {
+                  label: (context: any) => {
+                      let label = context.dataset.label || '';
+                      if (label) {
+                          label += ': ';
+                      }
+                      if (context.parsed.y !== null) {
+                          label += (context.parsed.y > 0 ? '+' : '') + context.parsed.y + '%';
+                      }
+                      return label;
+                  }
+              }
+          }
+      },
+      scales: {
+          x: chartOptions.scales.x,
+          y: {
+              ...chartOptions.scales.y,
+              ticks: {
+                  ...chartOptions.scales.y.ticks,
+                  callback: (value: any) => (value > 0 ? '+' : '') + value + '%'
+              }
+          }
+      }
+  };
+
+  return (
+    <div className="w-full min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-4 shadow-sm mb-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+            <button onClick={() => onNavigate('CURRENT')} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
+                <Icon name="arrow_back" className="text-xl text-slate-600 dark:text-slate-300" />
+            </button>
+            <div>
+                <h1 className="text-xl font-bold flex items-center gap-2">
+                    <Icon name="thermostat" className="text-orange-500" />
+                    {t('climate.title')}
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('climate.subtitle')}</p>
+            </div>
+        </div>
+        
+        <div className="flex-1 min-w-[200px] relative">
+             <div className="flex items-center bg-slate-100 dark:bg-black/20 rounded-xl px-3 py-2 border border-transparent focus-within:border-blue-500 transition-colors">
+                <Icon name="search" className="text-slate-400 mr-2" />
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onFocus={() => setShowFavorites(true)}
+                    onBlur={() => setTimeout(() => setShowFavorites(false), 200)}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder={t('search')}
+                    className="bg-transparent border-none outline-none w-full text-sm placeholder:text-slate-400"
+                />
+            </div>
+            
+            {/* Search Results & Favorites Dropdown */}
+            {(searchResults.length > 0 || (showFavorites && settings.favorites.length > 0)) && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 z-50 overflow-hidden max-h-60 overflow-y-auto">
+                    {/* Favorites Section */}
+                    {showFavorites && searchQuery.length === 0 && settings.favorites.length > 0 && (
+                        <>
+                            <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-white/5">
+                                {t('nav.favorites') || 'Favorieten'}
+                            </div>
+                            {settings.favorites.map((loc, idx) => (
+                                <button
+                                    key={`fav-${loc.lat}-${loc.lon}-${idx}`}
+                                    onClick={() => selectLocation(loc)}
+                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-50 dark:border-white/5 last:border-0"
+                                >
+                                    <span className="font-medium">{loc.name}, {loc.country}</span>
+                                    <Icon name="star" className="text-xs text-yellow-400" />
+                                </button>
+                            ))}
+                        </>
+                    )}
+
+                    {searchResults.map((loc, idx) => (
+                        <button
+                            key={`${loc.lat}-${loc.lon}-${idx}`}
+                            onClick={() => selectLocation(loc)}
+                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-50 dark:border-white/5 last:border-0"
+                        >
+                            <span className="font-medium">{loc.name}, {loc.country}</span>
+                            {loc.isCurrentLocation && <Icon name="my_location" className="text-xs text-blue-500" />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+      </div>
+
+      {/* Rate Limit Modal */}
+      <Modal
+          isOpen={showLimitModal}
+          onClose={() => setShowLimitModal(false)}
+          title={t('error.too_many_requests') || "Even geduld a.u.b."}
+      >
+          <div className="flex flex-col items-center gap-4 text-center">
+              <div className="bg-orange-100 dark:bg-orange-900/30 p-4 rounded-full">
+                  <Icon name="timer" className="text-3xl text-orange-500" />
+              </div>
+              <div>
+                  <h3 className="text-lg font-bold mb-2">{t('error.too_many_requests') || "Het is momenteel erg druk"}</h3>
+                  <p className="text-slate-600 dark:text-slate-300">
+                      {t('error.too_many_requests.desc') || "We hebben het maximum aantal verzoeken voor historische data bereikt. Probeer het over een paar minuten nog eens."}
+                  </p>
+              </div>
+              <button
+                  onClick={() => setShowLimitModal(false)}
+                  className="mt-2 px-6 py-2 bg-primary text-white rounded-full font-bold hover:opacity-90 transition-opacity"
+              >
+                  Begrepen
+              </button>
+          </div>
+      </Modal>
+
+      <div className="max-w-3xl mx-auto space-y-6">
+          {/* Location & Controls */}
+          <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                  <div className="flex items-center gap-3">
+                      <div className="size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                          <Icon name="location_on" />
+                      </div>
+                      <div>
+                          <h2 className="text-2xl font-bold">{selectedLocation.name}</h2>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{selectedLocation.country}</p>
+                      </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3 items-end w-full md:w-auto">
+                      {/* Period Type Toggle */}
+                      <div className="flex flex-col items-end gap-1">
+                          <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl w-full md:w-auto">
+                              <button 
+                                  onClick={() => onUpdateSettings({...settings, climatePeriodType: '30year'})}
+                                  className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${(!settings.climatePeriodType || settings.climatePeriodType === '30year') ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                              >
+                                  {t('climate.type_30year')}
+                              </button>
+                              <button 
+                                  onClick={() => onUpdateSettings({...settings, climatePeriodType: 'decade'})}
+                                  className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${settings.climatePeriodType === 'decade' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                              >
+                                  {t('climate.type_decade')}
+                              </button>
+                          </div>
+                          <div className="bg-blue-50 dark:bg-blue-900/10 px-3 py-2 rounded-lg mt-2 w-full md:w-auto text-right md:text-left">
+                              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-end md:justify-start gap-2">
+                                  <Icon name="info" className="text-sm" />
+                                  {settings.climatePeriodType === 'decade' ? t('climate.expl_decade') : t('climate.expl_30year')}
+                              </p>
+                          </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl w-full md:w-auto justify-end">
+                          <select 
+                            value={day} 
+                            onChange={(e) => setDay(Number(e.target.value))}
+                            className="bg-transparent font-medium p-2 outline-none text-center cursor-pointer hover:bg-white dark:hover:bg-white/10 rounded-xl transition-colors"
+                          >
+                              {Array.from({length: 31}, (_, i) => i + 1).map(d => (
+                                  <option key={d} value={d}>{d}</option>
+                              ))}
+                          </select>
+                          <span className="text-slate-300">|</span>
+                          <select 
+                            value={month} 
+                            onChange={(e) => setMonth(Number(e.target.value))}
+                            className="bg-transparent font-medium p-2 outline-none text-center cursor-pointer hover:bg-white dark:hover:bg-white/10 rounded-xl transition-colors"
+                          >
+                              {monthNames.map((m, i) => (
+                                  <option key={m} value={i + 1}>{m}</option>
+                              ))}
+                          </select>
+                          <button 
+                            onClick={calculateClimate}
+                            disabled={loading}
+                            className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                              {loading ? <div className="animate-spin size-4 border-2 border-white/30 border-t-white rounded-full" /> : <Icon name="calculate" />}
+                              {t('climate.calc')}
+                          </button>
+                      </div>
+                  </div>
+              </div>
+
+              {error && (
+                  <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-xl mb-4 text-sm flex items-center gap-2">
+                      <Icon name="error" />
+                      {error}
+                  </div>
+              )}
+
+              {/* Hero Card: Current Normal */}
+              {currentNormal && (
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-400 to-rose-500 text-white shadow-lg shadow-orange-500/20 p-6 md:p-8 text-center mb-8">
+                      <div className="relative z-10">
+                          <h3 className="text-xl md:text-2xl font-bold mb-1 opacity-90">{t('climate.hero_title')}</h3>
+                          <p className="text-sm font-medium opacity-75 mb-6">{currentNormal.period}</p>
+                          
+                          <div className="flex justify-center gap-8 md:gap-16">
+                              <div className="text-center">
+                                  <span className="block text-xs uppercase tracking-wider opacity-70 mb-1">{t('climate.max')}</span>
+                                  <span className="text-4xl md:text-5xl font-bold tracking-tight">{currentNormal.max}°</span>
+                              </div>
+                              <div className="w-px bg-white/20"></div>
+                              <div className="text-center">
+                                  <span className="block text-xs uppercase tracking-wider opacity-70 mb-1">{t('climate.min')}</span>
+                                  <span className="text-4xl md:text-5xl font-bold tracking-tight">{currentNormal.min}°</span>
+                              </div>
+                          </div>
+                          
+                          <div className="mt-6 pt-6 border-t border-white/10 text-xs md:text-sm opacity-70 flex items-center justify-center gap-2">
+                              <Icon name="info" className="text-base" />
+                              {t('climate.info')}
+                          </div>
+                      </div>
+                      
+                      {/* Decorative circles */}
+                      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                      <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black/10 rounded-full blur-2xl"></div>
+                  </div>
+              )}
+          </div>
+
+          {/* Data Content */}
+          {climateData.length > 0 && (
+              <>
+                {/* Temp Chart */}
+                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                    <Line data={chartData} options={chartOptions} />
+                </div>
+
+                {/* Rain Chart */}
+                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                    <Bar data={rainChartData} options={rainChartOptions} />
+                </div>
+
+                {/* Wind/Sun Chart */}
+                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                    <Line data={otherChartData} options={otherChartOptions} />
+                </div>
+
+                {/* Delta Chart (New) */}
+                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                    <Line data={deltaChartData} options={deltaChartOptions} />
+                </div>
+
+                {/* Table */}
+                <div className="bg-white dark:bg-card-dark rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
+                                <tr>
+                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">
+                                        {settings.climatePeriodType === 'decade' ? `${t('climate.period')} (30 jaar, vast)` : `${t('climate.period')} (30 jaar, schuivend)`}
+                                    </th>
+                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.max')}</th>
+                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.min')}</th>
+                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.rain')}</th>
+                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.wind')}</th>
+                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.sun')}</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                                {climateData.map((row, i) => {
+                                    const oldestYear = climateData[climateData.length - 1]?.period.split('-')[0];
+                                    return (
+                                    <tr key={row.period} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${row.isForecast ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}>
+                                        <td className="p-4 font-medium">
+                                            {row.period}
+                                            {row.isForecast && (
+                                                <span className="block text-[10px] uppercase tracking-wider text-blue-500 font-bold mt-1">
+                                                    {t('climate.forecast')}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-orange-500 font-bold">
+                                            {row.max}°
+                                            {row.isForecast && (
+                                               <span className="block text-[10px] text-orange-400 font-normal">
+                                                  +{row.diffMax}°
+                                               </span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-blue-500 font-bold">
+                                        {row.min}°
+                                        {row.isForecast && (
+                                           <span className="block text-[10px] text-blue-400 font-normal">
+                                              {row.diffMin > 0 ? '+' : ''}{row.diffMin}°
+                                           </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-blue-400 font-bold">
+                                        {row.rain}<span className="text-xs font-normal text-slate-400 ml-0.5">{getRainUnitLabel(settings.precipUnit)}</span>
+                                        {row.isForecast ? (
+                                           <span className="block text-[10px] text-blue-300 font-normal">
+                                              {row.diffRain > 0 ? '+' : ''}{row.diffRain}
+                                           </span>
+                                        ) : (
+                                            <span className={`block text-[10px] font-normal ${row.pctRain && row.pctRain > 0 ? 'text-blue-500' : 'text-slate-400'}`}>
+                                               {row.pctRain && row.pctRain > 0 ? '+' : ''}{row.pctRain || 0}% <span className="text-[9px] opacity-70">(vs {oldestYear})</span>
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-slate-500 font-bold">
+                                        {row.wind}<span className="text-xs font-normal text-slate-400 ml-0.5">{getWindUnitLabel(settings.windUnit)}</span>
+                                        {row.isForecast ? (
+                                           <span className="block text-[10px] text-slate-400 font-normal">
+                                              {row.diffWind > 0 ? '+' : ''}{row.diffWind}
+                                           </span>
+                                        ) : (
+                                            <span className={`block text-[10px] font-normal ${row.pctWind && row.pctWind > 0 ? 'text-slate-500' : 'text-slate-400'}`}>
+                                               {row.pctWind && row.pctWind > 0 ? '+' : ''}{row.pctWind || 0}% <span className="text-[9px] opacity-70">(vs {oldestYear})</span>
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-yellow-500 font-bold">
+                                        {row.sun}%
+                                        {row.isForecast ? (
+                                           <span className="block text-[10px] text-yellow-600 dark:text-yellow-400 font-normal">
+                                              {row.diffSun > 0 ? '+' : ''}{row.diffSun}%
+                                           </span>
+                                        ) : (
+                                            <span className={`block text-[10px] font-normal ${row.pctSun && row.pctSun > 0 ? 'text-yellow-600' : 'text-slate-400'}`}>
+                                               {row.pctSun && row.pctSun > 0 ? '+' : ''}{row.pctSun || 0}% <span className="text-[9px] opacity-70">(vs {oldestYear})</span>
+                                            </span>
+                                        )}
+                                    </td>
+                                    </tr>
+                                )})}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+              </>
+          )}
+      </div>
+    </div>
+  );
+};

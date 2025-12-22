@@ -189,6 +189,7 @@ export interface AppSettings {
     mapBaseLayer?: MapBaseLayer;
     weekStartDay?: 'monday' | 'sunday' | 'saturday';
     calendar?: CalendarSettings;
+    climatePeriodType?: '30year' | 'decade';
 }
 
 export enum ViewState {
@@ -210,7 +211,8 @@ export enum ViewState {
   COUNTRY_MAP = 'COUNTRY_MAP',
   USER_ACCOUNT = 'USER_ACCOUNT',
   SHARE = 'SHARE',
-  BAROMETER = 'BAROMETER'
+  BAROMETER = 'BAROMETER',
+  CLIMATE_CHANGE = 'CLIMATE_CHANGE'
 }
 
 export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';

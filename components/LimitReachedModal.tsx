@@ -50,18 +50,6 @@ export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, on
                     >
                         Close
                     </button>
-
-                    {user?.email === 'edwin@editsolutions.nl' && (
-                        <button 
-                            onClick={() => {
-                                localStorage.removeItem(STORAGE_KEY);
-                                window.location.reload();
-                            }}
-                            className="w-full py-2 text-xs text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                            Reset Local Usage Data (Fix Sync Issues)
-                        </button>
-                    )}
                 </div>
             </div>
         </Modal>

@@ -20,6 +20,7 @@ import { UserAccountView } from './views/UserAccountView';
 import { RecordsWeatherView } from './views/RecordsWeatherView';
 import { ShareWeatherView } from './views/ShareWeatherView';
 import { BarometerView } from './views/BarometerView';
+import { ClimateChangeView } from './views/ClimateChangeView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -41,6 +42,10 @@ const App: React.FC = () => {
   const [modal, setModal] = useState<'disclaimer' | 'cookies' | null>(null);
   const [usageWarning, setUsageWarning] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; current: number; limit: number }>(null);
   const [limitReached, setLimitReached] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; limit: number }>(null);
+  
+  // PWA State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showPWABanner, setShowPWABanner] = useState(false);
 
   const navigate = (view: ViewState, params?: any) => {
       setPreviousView(currentView);
@@ -59,6 +64,43 @@ const App: React.FC = () => {
           html.classList.remove('dark');
       }
   }, [settings]);
+
+  // PWA Logic
+  useEffect(() => {
+    // Check if PWA
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (!isPWA && !isMobile) {
+        // Increment count
+        const count = parseInt(localStorage.getItem('pwa_login_count') || '0') + 1;
+        localStorage.setItem('pwa_login_count', count.toString());
+
+        // Check if we should show banner (between 2 and 5 logins)
+        if (count >= 2 && count <= 5) {
+            setShowPWABanner(true);
+        }
+    }
+
+    const handler = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const installPWA = () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult: any) => {
+            if (choiceResult.outcome === 'accepted') {
+                setShowPWABanner(false);
+            }
+            setDeferredPrompt(null);
+        });
+    }
+  };
 
   // Helper for translations in this component
   const t = (key: string) => getTranslation(key, settings.language);
@@ -164,6 +206,8 @@ const App: React.FC = () => {
         return <ShareWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.BAROMETER:
         return <BarometerView onNavigate={navigate} settings={settings} />;
+      case ViewState.CLIMATE_CHANGE:
+        return <ClimateChangeView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
         return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.TEAM:
@@ -175,7 +219,7 @@ const App: React.FC = () => {
       case ViewState.COUNTRY_MAP:
         return <CountryMapView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.USER_ACCOUNT:
-        return <UserAccountView onNavigate={navigate} settings={settings} />;
+        return <UserAccountView onNavigate={navigate} settings={settings} installPWA={installPWA} canInstallPWA={!!deferredPrompt} />;
       case ViewState.INFO:
         return <InfoView onNavigate={navigate} settings={settings} />;
       default:
@@ -219,6 +263,36 @@ const App: React.FC = () => {
                     >
                         <Icon name="close" className="text-sm" />
                     </button>
+                </div>
+            </div>
+        )}
+
+        {showPWABanner && deferredPrompt && (
+            <div className={`fixed inset-x-0 flex justify-center z-[2900] px-4 pointer-events-none transition-all duration-300 ${usageWarning ? 'top-32' : 'top-4'}`}>
+                <div className="max-w-xl w-full bg-blue-600 text-white rounded-2xl shadow-xl px-4 py-3 flex items-center justify-between gap-3 pointer-events-auto">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/20 p-2 rounded-lg">
+                            <Icon name="download" className="text-xl" />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Install App</p>
+                            <p className="text-xs opacity-90">Install for a better experience</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => setShowPWABanner(false)}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            <Icon name="close" />
+                        </button>
+                        <button 
+                            onClick={installPWA}
+                            className="px-3 py-1.5 bg-white text-blue-600 rounded-lg text-xs font-bold hover:bg-white/90 transition-colors"
+                        >
+                            Install
+                        </button>
+                    </div>
                 </div>
             </div>
         )}
@@ -297,6 +371,16 @@ const App: React.FC = () => {
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
                     
                     <div className="space-y-4">
+                         <button onClick={() => { navigate(ViewState.CLIMATE_CHANGE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                                <Icon name="thermostat" className="text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-lg">{t('climate.title')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('climate.subtitle')}</span>
+                            </div>
+                         </button>
+
                          <button onClick={() => { navigate(ViewState.BAROMETER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-12 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
                                 <Icon name="speed" className="text-2xl" />

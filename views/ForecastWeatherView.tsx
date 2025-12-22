@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText } from '../services/weatherService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
+import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
@@ -24,6 +25,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+    const currentTemp = weatherData ? Math.round(convertTemp(weatherData.current.temperature_2m, settings.tempUnit)) : 0;
+    const feelsLike = weatherData ? convertTemp(weatherData.current.apparent_temperature, settings.tempUnit) : 0;
+    const heatIndex = weatherData ? calculateHeatIndex(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
+    const highTemp = weatherData ? Math.round(convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit)) : 0;
+    const lowTemp = weatherData ? Math.round(convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit)) : 0;
 
     useEffect(() => {
     const loadWeather = async () => {
@@ -62,10 +69,6 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
     }
     return () => { document.body.style.overflow = 'unset'; };
   }, [selectedDayIndex]);
-
-  const currentTemp = weatherData ? convertTemp(weatherData.current.temperature_2m, settings.tempUnit) : 0;
-  const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
-  const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
 
   const [activitiesMode, setActivitiesMode] = useState<'none' | 'positive' | 'all'>(loadForecastActivitiesMode());
   const [viewMode, setViewMode] = useState<ForecastViewMode>(loadForecastViewMode());
@@ -388,6 +391,24 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
                     </h1>
+                    
+                    <div className="flex gap-3">
+                        {feelsLike < 10 ? (
+                            <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px]">
+                                <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
+                                <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
+                                <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
+                            </div>
+                        ) : (
+                            heatIndex > currentTemp && (
+                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px]">
+                                    <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
+                                    <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
+                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
+                                </div>
+                            )
+                        )}
+                    </div>
                 </div>
                 <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2 text-white">
                         <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-2xl" />
@@ -871,6 +892,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             </div>
         </div>
       )}
+
     </div>
   );
 };

@@ -278,3 +278,24 @@ export const trackCall = () => {
 };
 
 export const getLimit = () => API_LIMITS.DAY;
+
+export const resetDailyUsage = async (uid: string) => {
+    const stats = getUsage();
+    stats.dayCount = 0;
+    // Reset others if needed, but user specifically asked for day count. 
+    // We'll reset minute/hour too to be clean.
+    stats.minuteCount = 0;
+    stats.hourCount = 0;
+    
+    saveUsage(stats);
+    
+    if (db && uid) {
+        try {
+            const userRef = doc(db, 'users', uid);
+            await setDoc(userRef, { usage: stats }, { merge: true });
+        } catch (e) {
+            console.error("Failed to reset remote usage", e);
+        }
+    }
+    window.location.reload();
+};

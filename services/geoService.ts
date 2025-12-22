@@ -40,12 +40,17 @@ export const reverseGeocode = async (lat: number, lon: number): Promise<string |
     if (!data || !data.address) return null;
     
     // Try to find the most relevant name
-    return data.address.city || 
+    const result = data.address.city || 
            data.address.town || 
            data.address.village || 
            data.address.municipality || 
            data.address.suburb || 
            null;
+    
+    if (result) {
+        return result;
+    }
+    return null;
   } catch (e) {
     console.error("Reverse geocoding failed", e);
     return null;
