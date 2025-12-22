@@ -60,6 +60,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     language: 'en',
     timeFormat: '24h',
     enabledActivities: DEFAULT_ENABLED_ACTIVITIES,
+    historicalMode: 'single',
     heatwave: {
         minLength: 5,
         lowerThreshold: 25,

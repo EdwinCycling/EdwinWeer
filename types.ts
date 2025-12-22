@@ -152,6 +152,7 @@ export enum PressureUnit {
 export type AppTheme = 'dark' | 'light';
 export type AppLanguage = 'en' | 'nl';
 export type TimeFormat = '12h' | '24h';
+export type MapBaseLayer = 'light' | 'dark' | 'satellite';
 
 export interface HeatwaveSettings {
     minLength: number;
@@ -184,6 +185,8 @@ export interface AppSettings {
     enabledActivities: Record<ActivityType, boolean>;
     heatwave: HeatwaveSettings;
     recordThresholds: RecordThresholds;
+    historicalMode?: 'single' | 'compare';
+    mapBaseLayer?: MapBaseLayer;
     weekStartDay?: 'monday' | 'sunday' | 'saturday';
     calendar?: CalendarSettings;
 }

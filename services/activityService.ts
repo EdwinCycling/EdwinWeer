@@ -135,7 +135,7 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
 
         case 'running':
-            // Hardlopen 🏃
+            // Hardlopen
             // Focus: Thermoregulatie.
             // 1. Temperatuur
             if (w.tempFeelsLike > 25) penalize(6, 'reason.heat_stress');
@@ -158,7 +158,7 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
 
         case 'beach':
-            // Strand & Zonnen 🏖️
+            // Strand & Zonnen
             // Focus: Comfort in rust.
             // 1. Temperatuur
             if (w.tempFeelsLike < 15) penalize(9, 'reason.too_cold');
@@ -177,7 +177,7 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
 
         case 'gardening':
-            // Tuinieren 🌻
+            // Tuinieren
             // Focus: Werkbaarheid.
             // 1. Neerslag
             if (w.precipMm > 0.5) penalize(8, 'reason.working_rain');
@@ -199,7 +199,7 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
 
         case 'stargazing':
-            // Sterrenkijken 🔭
+            // Sterrenkijken
             // Focus: Zichtbaarheid.
             // 1. Bewolking
             if (w.cloudCover > 75) penalize(9, 'reason.cant_see_anything');
@@ -228,7 +228,7 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
 
         case 'golf':
-            // Golf ⛳
+            // Golf
             // Focus: Balvlucht en Baanconditie.
             // 1. Wind
             if (w.windKmh > 49) penalize(9, 'reason.unplayable');
@@ -250,7 +250,7 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             break;
 
         case 'drone':
-            // Drone Vliegen 🚁
+            // Drone Vliegen
             // Focus: Apparatuur Veiligheid.
             // 1. Neerslag
             if (w.precipMm > 0) {

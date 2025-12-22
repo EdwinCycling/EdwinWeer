@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from '../components/Icon';
-import { ViewState, AppSettings, RideData } from '../types';
+import { ViewState, AppSettings, RideData, WindUnit } from '../types';
 import { ResponsiveContainer, ComposedChart, Area, Line, Bar, XAxis, Tooltip, YAxis, CartesianGrid, Legend } from 'recharts';
 import { fetchHistorical, convertTemp, convertWind, convertPrecip } from '../services/weatherService';
 import { getTranslation } from '../services/translations';
@@ -26,6 +26,7 @@ interface ChartDataPoint {
     temp: number; // variable unit
     rain: number; // variable unit
     wind: number; // variable unit
+    windKmh: number;
     windDir: number; // degrees
     sun: number; // minutes
     lat?: number;
@@ -62,13 +63,15 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const [loadingStep, setLoadingStep] = useState(''); 
   const [error, setError] = useState('');
   const [isRouteOnly, setIsRouteOnly] = useState(false);
+  const [isMapMenuOpen, setIsMapMenuOpen] = useState(true);
+  const [showMapTemp, setShowMapTemp] = useState(false);
+  const [showMapWind, setShowMapWind] = useState(false);
   
   // Map State
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null); 
   const markersLayerRef = useRef<any>(null); 
   const [routeCoordinates, setRouteCoordinates] = useState<GPXPoint[]>([]);
-  const [weatherMarkers, setWeatherMarkers] = useState<any[]>([]); 
   const [isFullScreenMap, setIsFullScreenMap] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
@@ -112,7 +115,12 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
         // Default to Standard (OSM) layout as requested
         osm.addTo(map); 
 
-        const baseMaps = { "Standard": osm, "Dark": cartoDark, "Satellite": satellite, "Cycle": cyclosm };
+        const baseMaps: Record<string, any> = {
+            [t('map.layer.standard')]: osm,
+            [t('map.layer.dark')]: cartoDark,
+            [t('map.layer.satellite')]: satellite,
+            [t('map.layer.cycle')]: cyclosm
+        };
         L.control.layers(baseMaps).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map);
@@ -146,40 +154,52 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
     if (!mapInstanceRef.current || chartData.length === 0 || isRouteOnly) return;
     const L = (window as any).L;
     
-    // Clear old markers if any
-    if (weatherMarkers.length > 0) {
-        weatherMarkers.forEach(m => m.remove());
+    const markersLayer = markersLayerRef.current;
+    if (markersLayer && typeof markersLayer.clearLayers === 'function') {
+        markersLayer.clearLayers();
     }
 
-    const newMarkers: any[] = [];
-    const step = Math.max(1, Math.floor(chartData.length / 10)); // ~10 markers along route
+    if (!showMapTemp && !showMapWind) return;
 
-    chartData.forEach((point, i) => {
-        if (i % step === 0 && point.lat && point.lon) {
-             const iconHtml = `
-                <div style="background: ${settings.theme === 'dark' ? '#1e293b' : 'white'}; padding: 4px; border-radius: 8px; border: 2px solid ${settings.theme === 'dark' ? '#fff' : '#666'}; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; text-align: center; min-width: 60px;">
-                    <div style="font-size: 12px; font-weight: bold; color: ${settings.theme === 'dark' ? '#fff' : '#333'}; line-height: 1.2;">${Math.round(point.temp)}°</div>
-                    <div style="font-size: 10px; color: ${settings.theme === 'dark' ? '#ccc' : '#666'}; margin-bottom: 2px;">${Math.round(point.wind)}${settings.windUnit}</div>
-                    <div style="transform: rotate(${point.windDir + 180}deg); display: inline-block; width: 12px; height: 12px;">
-                        <svg viewBox="0 0 24 24" fill="${settings.theme === 'dark' ? '#38bdf8' : '#0ea5e9'}"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" /></svg>
-                    </div>
+    chartData.forEach((point) => {
+        if (!point.lat || !point.lon) return;
+
+        const tempHtml = showMapTemp
+            ? `<div style="font-size: 12px; font-weight: bold; color: ${settings.theme === 'dark' ? '#fff' : '#333'}; line-height: 1.2;">${Math.round(point.temp)}°</div>`
+            : '';
+
+        const windHtml = showMapWind
+            ? `
+                <div style="font-size: 10px; color: ${settings.theme === 'dark' ? '#ccc' : '#666'}; ${showMapTemp ? 'margin-bottom: 2px;' : 'margin-bottom: 0px;'}">${Math.round(point.wind)}${settings.windUnit}</div>
+                <div style="transform: rotate(${point.windDir + 180}deg); display: inline-block; width: 12px; height: 12px;">
+                    <svg viewBox="0 0 24 24" fill="${settings.theme === 'dark' ? '#38bdf8' : '#0ea5e9'}"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" /></svg>
                 </div>
-            `;
-            
-            const icon = L.divIcon({
-                html: iconHtml,
-                className: '',
-                iconSize: [60, 45],
-                iconAnchor: [30, 45]
-            });
+            `
+            : '';
 
-            const marker = L.marker([point.lat, point.lon], { icon, zIndexOffset: 1000 }).addTo(mapInstanceRef.current);
-            newMarkers.push(marker);
+        const iconHtml = `
+            <div style="background: ${settings.theme === 'dark' ? '#1e293b' : 'white'}; padding: 4px; border-radius: 8px; border: 2px solid ${settings.theme === 'dark' ? '#fff' : '#666'}; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; text-align: center; min-width: 56px;">
+                ${tempHtml}
+                ${windHtml}
+            </div>
+        `;
+
+        const icon = L.divIcon({
+            html: iconHtml,
+            className: '',
+            iconSize: [56, 44],
+            iconAnchor: [28, 44]
+        });
+
+        const marker = L.marker([point.lat, point.lon], { icon, zIndexOffset: 1000 });
+        if (markersLayer && typeof markersLayer.addLayer === 'function') {
+            markersLayer.addLayer(marker);
+        } else {
+            marker.addTo(mapInstanceRef.current);
         }
     });
-    setWeatherMarkers(newMarkers);
 
-  }, [chartData, settings.theme]);
+  }, [chartData, settings.theme, settings.windUnit, isRouteOnly, showMapTemp, showMapWind]);
 
   // Separate Effect to handle re-init when view switches back to dashboard
   useEffect(() => {
@@ -323,6 +343,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     
                     const temp = convertTemp(data.hourly.temperature_2m[hour], settings.tempUnit);
                     const wind = convertWind(data.hourly.wind_speed_10m[hour], settings.windUnit);
+                    const windKmh = convertWind(data.hourly.wind_speed_10m[hour], WindUnit.KMH);
                     const rain = convertPrecip(data.hourly.precipitation[hour], settings.precipUnit);
                     const windDir = data.hourly.wind_direction_10m[hour] || 0;
                     const sun = data.hourly.sunshine_duration ? (data.hourly.sunshine_duration[hour] / 60) : 0; // minutes
@@ -336,6 +357,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                         temp,
                         rain,
                         wind,
+                        windKmh,
                         windDir,
                         sun,
                         lat: pt.lat,
@@ -465,10 +487,47 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                     {/* Legend - Only on Map */}
                     <div className="absolute top-4 left-16 z-[1001] bg-white/90 dark:bg-[#1e293b]/90 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-white/10 text-xs font-medium flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-[#10b981]"></span> Start
-                        <span className="size-2 rounded-full bg-[#ef4444]"></span> End
+                        <span className="size-2 rounded-full bg-[#10b981]"></span> {t('map.legend.start')}
+                        <span className="size-2 rounded-full bg-[#ef4444]"></span> {t('map.legend.end')}
                         {!isRouteOnly && <span className="ml-2 flex items-center gap-1 opacity-60"><Icon name="cloud" className="text-[10px]" /> {t('map_data_msg')}</span>}
                     </div>
+
+                    {!isRouteOnly && (
+                        <div className="absolute bottom-4 left-4 z-[1002] flex flex-col items-start">
+                            {isMapMenuOpen && (
+                                <div className="mb-2 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-white/10 p-3 w-52">
+                                    <div className="flex items-center justify-between py-1">
+                                        <span className="text-sm font-medium">{t('temp')}</span>
+                                        <button
+                                            onClick={() => setShowMapTemp(v => !v)}
+                                            className={`w-10 h-6 rounded-full p-1 transition-colors ${showMapTemp ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                            aria-label={t('map.aria.toggle_temp')}
+                                        >
+                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showMapTemp ? 'translate-x-4' : ''}`} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center justify-between py-1">
+                                        <span className="text-sm font-medium">{t('wind')}</span>
+                                        <button
+                                            onClick={() => setShowMapWind(v => !v)}
+                                            className={`w-10 h-6 rounded-full p-1 transition-colors ${showMapWind ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                                            aria-label={t('map.aria.toggle_wind')}
+                                        >
+                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showMapWind ? 'translate-x-4' : ''}`} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => setIsMapMenuOpen(v => !v)}
+                                className="bg-white dark:bg-[#1e293b] text-slate-800 dark:text-white p-2 rounded-lg shadow-md border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                                title={t('map.options')}
+                            >
+                                <Icon name="tune" />
+                            </button>
+                        </div>
+                    )}
 
                     {/* The Leaflet Map Div */}
                     <div ref={mapContainerRef} className="w-full h-full" style={{ height: isFullScreenMap ? '100%' : '500px', minHeight: '500px' }} />
@@ -581,7 +640,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     <h3 className="font-bold mb-4 flex items-center gap-2">
                         <Icon name="insights" className="text-strava" /> {t('strava.analysis')}
                     </h3>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[360px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                                 <defs>
@@ -594,11 +653,19 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 <XAxis dataKey="dist" type="number" unit="km" tick={{fontSize: 10, fill: '#888'}} />
                                 <YAxis yAxisId="left" orientation="left" tick={{fontSize: 10, fill: '#888'}} />
                                 <YAxis yAxisId="right" orientation="right" tick={{fontSize: 10, fill: '#888'}} />
+                                <YAxis
+                                    yAxisId="wind"
+                                    orientation="right"
+                                    hide
+                                    domain={[0, Math.max(10, Math.ceil((Math.max(...chartData.map(p => p.windKmh || 0)) || 0) / 10) * 10)]}
+                                />
                                 
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: settings.theme === 'dark' ? '#1d2b32' : 'white', borderRadius: '12px', border: '1px solid rgba(128,128,128,0.1)', fontSize: '12px' }}
                                     formatter={(value: any, name: string, props: any) => {
-                                        if (name === 'Wind') return [`${value} ${settings.windUnit} (${getWindCardinal(props.payload.windDir)})`, name];
+                                        if (props?.dataKey === 'windKmh') {
+                                            return [`${value} km/h (${getWindCardinal(props.payload.windDir)})`, name];
+                                        }
                                         return [value, name];
                                     }}
                                     labelFormatter={(label) => `Km ${label}`}
@@ -607,24 +674,18 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                                 {/* Elevation Area */}
                                 <Area yAxisId="left" type="monotone" dataKey="ele" name={t('elevation')} fill="url(#eleGradient)" stroke="#8884d8" strokeWidth={1} />
-                                
-                                {/* Rain Bars */}
-                                <Bar yAxisId="right" dataKey="rain" name={t('rain')} fill="#3b82f6" barSize={20} opacity={0.6} />
-
-                                {/* Sun Bars */}
-                                <Bar yAxisId="right" dataKey="sun" name={t('sunshine')} fill="#facc15" barSize={20} opacity={0.4} />
 
                                 {/* Temperature Line */}
                                 <Line yAxisId="right" type="monotone" dataKey="temp" name={t('temp')} stroke="#13b6ec" strokeWidth={3} dot={false} />
 
                                 {/* Wind Line with Arrows */}
                                 <Line 
-                                    yAxisId="right" 
+                                    yAxisId="wind" 
                                     type="monotone" 
-                                    dataKey="wind" 
+                                    dataKey="windKmh" 
                                     name={t('wind')} 
                                     stroke="#22c55e" 
-                                    strokeWidth={2} 
+                                    strokeWidth={3} 
                                     dot={<CustomWindArrow />} 
                                 />
 

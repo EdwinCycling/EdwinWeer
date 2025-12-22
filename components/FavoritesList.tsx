@@ -5,6 +5,7 @@ import { getTranslation } from '../services/translations';
 import { convertTemp, mapWmoCodeToText, mapWmoCodeToIcon, convertWind } from '../services/weatherService';
 import { StaticWeatherBackground } from './StaticWeatherBackground';
 import { loadFavoritesCompactMode, saveFavoritesCompactMode } from '../services/storageService';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface FavoriteWeather {
     temp: number;
@@ -52,6 +53,8 @@ export const FavoritesList: React.FC<Props> = ({
     const [compactMode, setCompactMode] = useState<boolean>(() => loadFavoritesCompactMode());
     const observerTarget = useRef(null);
     const BATCH_SIZE = 10;
+
+    useScrollLock(isOpen);
 
     const t = (key: string) => getTranslation(key, settings.language);
 
@@ -301,8 +304,8 @@ export const FavoritesList: React.FC<Props> = ({
                                 {weather ? convertTemp(weather.temp, settings.tempUnit) : '--'}°
                             </div>
                             <div className="flex items-center gap-2 text-xs font-medium text-white/90 mt-1">
-                                <span>H:{weather ? convertTemp(weather.maxTemp, settings.tempUnit) : '--'}°</span>
-                                <span>L:{weather ? convertTemp(weather.minTemp, settings.tempUnit) : '--'}°</span>
+                                <span>{t('temp.high_short')}:{weather ? convertTemp(weather.maxTemp, settings.tempUnit) : '--'}°</span>
+                                <span>{t('temp.low_short')}:{weather ? convertTemp(weather.minTemp, settings.tempUnit) : '--'}°</span>
                             </div>
                             {/* Feels Like moved here */}
                             {weather && (

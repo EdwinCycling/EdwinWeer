@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { AppSettings, ViewState, Location } from '../types';
+import { AppSettings, ViewState, Location, MapBaseLayer, AppLanguage } from '../types';
 import { Icon } from '../components/Icon';
 import L from 'leaflet';
 import { getTranslation } from '../services/translations';
@@ -26,6 +26,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 interface CountryMapViewProps {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
+    onUpdateSettings?: (newSettings: AppSettings) => void;
 }
 
 interface WeatherStation {
@@ -137,11 +138,12 @@ function getDewPointColor(dew: number) {
 }
 
 // Legend Component
-const MapLegend = ({ layer, isDark }: { layer: MapLayer, isDark: boolean }) => {
+const MapLegend = ({ layer, isDark, lang, tempUnit }: { layer: MapLayer, isDark: boolean, lang: AppLanguage, tempUnit: AppSettings['tempUnit'] }) => {
+    const t = (key: string) => getTranslation(key, lang);
     if (layer === 'wind' || layer === 'gusts') {
         return (
-            <div className={`absolute bottom-8 left-4 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
-                <div className="font-bold mb-1">Beaufort (km/u)</div>
+            <div className={`absolute bottom-[104px] left-4 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+                <div className="font-bold mb-1">{t('country_map.legend.beaufort')}</div>
                 <div className="grid grid-cols-2 gap-1 w-32">
                     {BFT_COLORS.map(b => (
                         <div key={b.bft} className="flex items-center gap-1">
@@ -164,25 +166,25 @@ const MapLegend = ({ layer, isDark }: { layer: MapLayer, isDark: boolean }) => {
         case 'min_temp':
         case 'feels_like':
             stops = TEMP_STOPS;
-            title = 'Temperatuur';
-            unit = '°C';
+            title = t('temp');
+            unit = tempUnit === 'F' ? '°F' : '°C';
             break;
         case 'humidity':
             stops = HUMIDITY_STOPS;
-            title = 'Vochtigheid';
+            title = t('humidity');
             unit = '%';
             break;
         case 'dew_point':
             stops = DEW_STOPS;
-            title = 'Dauwpunt';
-            unit = '°C';
+            title = t('dew_point');
+            unit = tempUnit === 'F' ? '°F' : '°C';
             break;
         default:
             return null;
     }
 
     return (
-        <div className={`absolute bottom-8 left-4 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
+        <div className={`absolute bottom-[104px] left-4 z-[1000] p-2 rounded-lg shadow-lg text-xs ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-800'}`}>
             <div className="font-bold mb-1">{title} ({unit})</div>
             <div className="flex flex-col-reverse gap-0.5">
                 {stops.map((s, i) => (
@@ -219,7 +221,7 @@ function isPointInPolygon(lat: number, lon: number, polygon: number[][]): boolea
 
 
 // Generate grid points for better coverage
-const generateGridPoints = (countryCode: string): {lat: number, lon: number, name: string, isGrid: boolean}[] => {
+const generateGridPoints = (countryCode: string, gridLabel: string): {lat: number, lon: number, name: string, isGrid: boolean}[] => {
     const polygon = COUNTRY_POLYGONS[countryCode];
     if (!polygon) return [];
 
@@ -257,7 +259,7 @@ const generateGridPoints = (countryCode: string): {lat: number, lon: number, nam
                 points.push({
                     lat: Number(lat.toFixed(2)),
                     lon: Number(lon.toFixed(2)),
-                    name: `Raster (${lat.toFixed(1)}, ${lon.toFixed(1)})`,
+                    name: `${gridLabel} (${lat.toFixed(1)}, ${lon.toFixed(1)})`,
                     isGrid: true
                 });
             }
@@ -270,25 +272,45 @@ const generateGridPoints = (countryCode: string): {lat: number, lon: number, nam
 
 type MapLayer = 'temp' | 'min_temp' | 'max_temp' | 'feels_like' | 'wind' | 'humidity' | 'pressure' | 'clouds' | 'precip' | 'gusts' | 'dew_point';
 
-// Control to reset map view
-const ResetViewControl = ({ center, zoom }: { center: [number, number], zoom: number }) => {
+const MapBaseLayerSync = ({
+    onMap,
+    selectedBaseLayer,
+    onChangeBaseLayer,
+    labels,
+}: {
+    onMap: (map: L.Map) => void;
+    selectedBaseLayer: MapBaseLayer;
+    onChangeBaseLayer: (next: MapBaseLayer) => void;
+    labels: { light: string; dark: string; satellite: string };
+}) => {
     const map = useMap();
-    return (
-        <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '100px', marginRight: '10px', pointerEvents: 'auto', zIndex: 1000 }}>
-             <div className="leaflet-control leaflet-bar">
-                <a 
-                    role="button" 
-                    title="Herstel weergave" 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); map.setView(center, zoom, { animate: true }); }}
-                    className="flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-white hover:bg-slate-50 w-[30px] h-[30px] cursor-pointer"
-                    style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                    <Icon name="refresh" className="text-lg" />
-                </a>
-            </div>
-        </div>
-    );
+
+    useEffect(() => {
+        onMap(map);
+    }, [map, onMap]);
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            const name = String(e?.name || '').toLowerCase();
+            const light = labels.light.toLowerCase();
+            const dark = labels.dark.toLowerCase();
+            const satellite = labels.satellite.toLowerCase();
+            const next: MapBaseLayer =
+                name === satellite || name.includes('sat') ? 'satellite' :
+                name === dark || name.includes('donker') || name.includes('dark') ? 'dark' :
+                name === light ? 'light' :
+                'light';
+            if (next !== selectedBaseLayer) {
+                onChangeBaseLayer(next);
+            }
+        };
+        map.on('baselayerchange', handler);
+        return () => {
+            map.off('baselayerchange', handler);
+        };
+    }, [map, onChangeBaseLayer, selectedBaseLayer, labels]);
+
+    return null;
 };
 
 // Helper to center map on country change
@@ -411,60 +433,58 @@ const COUNTRY_CONFIG: Record<string, { lat: number, lon: number, zoom: number, c
     }
 };
 
-// Helper to get flag emoji
-function getFlagEmoji(countryCode: string) {
-    if (!countryCode || countryCode === '??') return '🏳️';
-    try {
-        const codePoints = countryCode
-          .toUpperCase()
-          .split('')
-          .map(char =>  127397 + char.charCodeAt(0));
-        return String.fromCodePoint(...codePoints);
-    } catch (e) {
-        return '🏳️';
-    }
+// Helper to show a country badge without emojis
+function getCountryBadgeText(countryCode: string) {
+    if (!countryCode || countryCode === '??') return '??';
+    return countryCode.toUpperCase().slice(0, 2);
 }
 
-const COUNTRY_MAPPING: Record<string, { name: string, code: string }> = {
-    'NL': { name: 'Nederland', code: 'NL' },
-    'NEDERLAND': { name: 'Nederland', code: 'NL' },
-    'THE NETHERLANDS': { name: 'Nederland', code: 'NL' },
-    'BE': { name: 'België', code: 'BE' },
-    'BELGIE': { name: 'België', code: 'BE' },
-    'BELGIUM': { name: 'België', code: 'BE' },
-    'DE': { name: 'Duitsland', code: 'DE' },
-    'GERMANY': { name: 'Duitsland', code: 'DE' },
-    'DEUTSCHLAND': { name: 'Duitsland', code: 'DE' },
-    'FR': { name: 'Frankrijk', code: 'FR' },
-    'FRANCE': { name: 'Frankrijk', code: 'FR' },
-    'UK': { name: 'Verenigd Koninkrijk', code: 'UK' },
-    'UNITED KINGDOM': { name: 'Verenigd Koninkrijk', code: 'UK' },
-    'GREAT BRITAIN': { name: 'Verenigd Koninkrijk', code: 'UK' },
-    'US': { name: 'Verenigde Staten', code: 'US' },
-    'USA': { name: 'Verenigde Staten', code: 'US' },
-    'JP': { name: 'Japan', code: 'JP' },
-    'JAPAN': { name: 'Japan', code: 'JP' },
-    'ES': { name: 'Spanje', code: 'ES' },
-    'SPAIN': { name: 'Spanje', code: 'ES' },
-    'IT': { name: 'Italië', code: 'IT' },
-    'ITALY': { name: 'Italië', code: 'IT' },
-    'CH': { name: 'Zwitserland', code: 'CH' },
-    'SWITZERLAND': { name: 'Zwitserland', code: 'CH' },
-    'AT': { name: 'Oostenrijk', code: 'AT' },
-    'AUSTRIA': { name: 'Oostenrijk', code: 'AT' },
-    'DK': { name: 'Denemarken', code: 'DK' },
-    'DENMARK': { name: 'Denemarken', code: 'DK' },
-    'SE': { name: 'Zweden', code: 'SE' },
-    'SWEDEN': { name: 'Zweden', code: 'SE' },
-    'NO': { name: 'Noorwegen', code: 'NO' },
-    'NORWAY': { name: 'Noorwegen', code: 'NO' },
+type CountryMappingValue = { code: string; nameNl: string; nameEn: string };
+
+const COUNTRY_MAPPING: Record<string, CountryMappingValue> = {
+    'NL': { code: 'NL', nameNl: 'Nederland', nameEn: 'Netherlands' },
+    'NEDERLAND': { code: 'NL', nameNl: 'Nederland', nameEn: 'Netherlands' },
+    'THE NETHERLANDS': { code: 'NL', nameNl: 'Nederland', nameEn: 'Netherlands' },
+    'BE': { code: 'BE', nameNl: 'België', nameEn: 'Belgium' },
+    'BELGIE': { code: 'BE', nameNl: 'België', nameEn: 'Belgium' },
+    'BELGIUM': { code: 'BE', nameNl: 'België', nameEn: 'Belgium' },
+    'DE': { code: 'DE', nameNl: 'Duitsland', nameEn: 'Germany' },
+    'GERMANY': { code: 'DE', nameNl: 'Duitsland', nameEn: 'Germany' },
+    'DEUTSCHLAND': { code: 'DE', nameNl: 'Duitsland', nameEn: 'Germany' },
+    'FR': { code: 'FR', nameNl: 'Frankrijk', nameEn: 'France' },
+    'FRANCE': { code: 'FR', nameNl: 'Frankrijk', nameEn: 'France' },
+    'UK': { code: 'UK', nameNl: 'Verenigd Koninkrijk', nameEn: 'United Kingdom' },
+    'UNITED KINGDOM': { code: 'UK', nameNl: 'Verenigd Koninkrijk', nameEn: 'United Kingdom' },
+    'GREAT BRITAIN': { code: 'UK', nameNl: 'Verenigd Koninkrijk', nameEn: 'United Kingdom' },
+    'US': { code: 'US', nameNl: 'Verenigde Staten', nameEn: 'United States' },
+    'USA': { code: 'US', nameNl: 'Verenigde Staten', nameEn: 'United States' },
+    'JP': { code: 'JP', nameNl: 'Japan', nameEn: 'Japan' },
+    'JAPAN': { code: 'JP', nameNl: 'Japan', nameEn: 'Japan' },
+    'ES': { code: 'ES', nameNl: 'Spanje', nameEn: 'Spain' },
+    'SPAIN': { code: 'ES', nameNl: 'Spanje', nameEn: 'Spain' },
+    'IT': { code: 'IT', nameNl: 'Italië', nameEn: 'Italy' },
+    'ITALY': { code: 'IT', nameNl: 'Italië', nameEn: 'Italy' },
+    'CH': { code: 'CH', nameNl: 'Zwitserland', nameEn: 'Switzerland' },
+    'SWITZERLAND': { code: 'CH', nameNl: 'Zwitserland', nameEn: 'Switzerland' },
+    'AT': { code: 'AT', nameNl: 'Oostenrijk', nameEn: 'Austria' },
+    'AUSTRIA': { code: 'AT', nameNl: 'Oostenrijk', nameEn: 'Austria' },
+    'DK': { code: 'DK', nameNl: 'Denemarken', nameEn: 'Denmark' },
+    'DENMARK': { code: 'DK', nameNl: 'Denemarken', nameEn: 'Denmark' },
+    'SE': { code: 'SE', nameNl: 'Zweden', nameEn: 'Sweden' },
+    'SWEDEN': { code: 'SE', nameNl: 'Zweden', nameEn: 'Sweden' },
+    'NO': { code: 'NO', nameNl: 'Noorwegen', nameEn: 'Norway' },
+    'NORWAY': { code: 'NO', nameNl: 'Noorwegen', nameEn: 'Norway' }
 };
 
-function normalizeCountry(input: string): { name: string, code: string } {
-    if (!input) return { name: 'Onbekend', code: '??' };
+function normalizeCountry(input: string, lang: AppLanguage): { name: string, code: string } {
+    if (!input) return { name: getTranslation('country_map.unknown_country', lang), code: '??' };
     const upper = input.trim().toUpperCase();
-    if (COUNTRY_MAPPING[upper]) {
-        return COUNTRY_MAPPING[upper];
+    const mapped = COUNTRY_MAPPING[upper];
+    if (mapped) {
+        return {
+            code: mapped.code,
+            name: lang === 'nl' ? mapped.nameNl : mapped.nameEn
+        };
     }
     // Fallback: use input as name if long, assume code if short
     if (upper.length === 2) {
@@ -473,13 +493,14 @@ function normalizeCountry(input: string): { name: string, code: string } {
     return { name: input, code: input.substring(0, 2).toUpperCase() };
 }
 
-export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, settings }) => {
+export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, settings, onUpdateSettings }) => {
     const [selectedCountry, setSelectedCountry] = useState<{name: string, code: string} | null>(null);
     const [selectedLocationName, setSelectedLocationName] = useState<string | null>(null);
     const [weatherData, setWeatherData] = useState<WeatherStation[]>([]);
     const [layer, setLayer] = useState<MapLayer>('temp');
     const [viewMode, setViewMode] = useState<'points' | 'surface'>('points');
     const [loading, setLoading] = useState(false);
+    const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
     // Map Layers Control
     const [progress, setProgress] = useState<number>(0);
@@ -491,6 +512,10 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
     const [searchResults, setSearchResults] = useState<Location[]>([]);
     const [searching, setSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
+
+    const t = (key: string) => getTranslation(key, settings.language);
+
+    const selectedBaseLayer: MapBaseLayer = settings.mapBaseLayer ?? (settings.theme === 'dark' ? 'dark' : 'light');
 
     // Pre-fill country search on mount
     useEffect(() => {
@@ -505,7 +530,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
         const unique = new Map<string, {name: string, code: string}>();
         
         const add = (c: string) => {
-             const norm = normalizeCountry(c);
+             const norm = normalizeCountry(c, settings.language);
              if (!unique.has(norm.code)) {
                  unique.set(norm.code, norm);
              }
@@ -515,7 +540,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
         settings.favorites.forEach(f => add(f.country));
 
         return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name));
-    }, [settings.favorites]);
+    }, [settings.favorites, settings.language]);
 
     // Handle country selection
     const handleCountrySelect = (country: {name: string, code: string}, location?: Location) => {
@@ -573,7 +598,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
         let cities = config?.cities ? [...config.cities] : [];
         
         // Add favorites for this country
-        const favs = settings.favorites.filter(f => normalizeCountry(f.country).code === country.code);
+        const favs = settings.favorites.filter(f => normalizeCountry(f.country, settings.language).code === country.code);
         if (favs.length > 0) {
             favs.forEach(f => {
                 // Avoid duplicates
@@ -595,13 +620,13 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
         }
 
         // ALWAYS generate grid points for Raster view, combined with cities
-        const grid = generateGridPoints(country.code);
+        const grid = generateGridPoints(country.code, t('country_map.view.grid'));
         
         // Combine all points to fetch
         let allPoints = [...cities, ...grid];
 
         if (allPoints.length === 0) {
-             setError(`Geen weerstations gevonden voor ${country.name}. Voeg eerst een favoriete plaats toe in dit land of zoek specifiek naar een plaats.`);
+             setError(`${t('country_map.error.no_stations')} ${country.name}. ${t('country_map.error.no_stations_hint')}`);
              setLoading(false);
              return;
         }
@@ -710,7 +735,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
                         <Icon name="arrow_back_ios_new" />
                     </button>
-                    <h1 className="text-lg font-bold">Kies een land</h1>
+                    <h1 className="text-lg font-bold">{t('country_map.choose_country')}</h1>
                 </div>
 
                 <div className="p-4 w-full max-w-lg mx-auto space-y-6">
@@ -724,11 +749,11 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                 onChange={(e) => handleSearch(e.target.value)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && searchResults.length > 0) {
-                                        const norm = normalizeCountry(searchResults[0].country);
+                                        const norm = normalizeCountry(searchResults[0].country, settings.language);
                                         handleCountrySelect(norm, searchResults[0]);
                                     }
                                 }}
-                                placeholder="Zoek een ander land..."
+                                placeholder={t('country_map.search_country_placeholder')}
                                 className="flex-1 bg-transparent outline-none placeholder:text-slate-400"
                             />
                             {searching && <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />}
@@ -738,7 +763,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                         {showDropdown && searchResults.length > 0 && (
                             <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden max-h-60 overflow-y-auto">
                                 {searchResults.map((result, idx) => {
-                                    const norm = normalizeCountry(result.country);
+                                    const norm = normalizeCountry(result.country, settings.language);
                                     return (
                                         <button
                                             key={`${result.name}-${idx}`}
@@ -749,7 +774,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                                 <div className="font-medium">{result.country}</div>
                                                 <div className="text-xs text-slate-500">{result.name}</div>
                                             </div>
-                                            <span className="text-2xl">{getFlagEmoji(norm.code)}</span>
+                                            <span className="text-xs font-bold px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white">{getCountryBadgeText(norm.code)}</span>
                                         </button>
                                     );
                                 })}
@@ -759,10 +784,10 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
 
                     {/* Favorites List */}
                     <div>
-                        <h2 className="text-xs font-bold uppercase text-slate-500 mb-3 tracking-wider">Uit mijn favorieten</h2>
+                        <h2 className="text-xs font-bold uppercase text-slate-500 mb-3 tracking-wider">{t('country_map.from_favorites')}</h2>
                         <div className="space-y-3">
                             {availableCountries.length === 0 ? (
-                                <p className="text-slate-400 text-sm italic">Geen landen gevonden in favorieten.</p>
+                                <p className="text-slate-400 text-sm italic">{t('country_map.no_favorite_countries')}</p>
                             ) : (
                                 availableCountries.map(country => (
                                     <button
@@ -771,7 +796,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                         className="w-full p-4 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all group"
                                     >
                                         <span className="text-lg font-medium flex items-center gap-3">
-                                            <span className="text-2xl shadow-sm rounded-sm">{getFlagEmoji(country.code)}</span> 
+                                            <span className="text-xs font-bold px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white shadow-sm">{getCountryBadgeText(country.code)}</span>
                                             <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{country.name}</span>
                                         </span>
                                         <Icon name="chevron_right" className="w-5 h-5 opacity-30 group-hover:opacity-100 transition-opacity" />
@@ -807,6 +832,9 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                 .dark .leaflet-container {
                     background: #0f172a;
                 }
+                .map-safe-controls .leaflet-bottom {
+                    bottom: 96px;
+                }
             `}</style>
 
             {/* Header */}
@@ -833,7 +861,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                     {selectedLocationName && <span className="text-sm font-normal text-slate-500 dark:text-slate-400">({selectedLocationName})</span>}
                                 </h2>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    {isToday ? 'Actueel' : (isFuture ? 'Voorspelling' : 'Historie')} - {selectedDate.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'long' })}
+                                    {(isToday ? t('country_map.status.current') : (isFuture ? t('country_map.status.forecast') : t('country_map.status.history')))} - {selectedDate.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long' })}
                                 </p>
                             </div>
                         </div>
@@ -846,6 +874,15 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                              <button onClick={() => handleDateChange(1)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md">
                                  <Icon name="chevron_right" className="w-5 h-5" />
                              </button>
+                             <button
+                                 onClick={() => {
+                                     if (!mapInstance) return;
+                                     mapInstance.setView([mapConfig.lat, mapConfig.lon], mapConfig.zoom, { animate: true });
+                                 }}
+                                 className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md"
+                             >
+                                 <Icon name="refresh" className="w-5 h-5" />
+                             </button>
                         </div>
                     </div>
 
@@ -856,13 +893,13 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                 onClick={() => setViewMode('points')}
                                 className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'points' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
                             >
-                                Steden
+                                {t('country_map.view.cities')}
                             </button>
                             <button 
                                 onClick={() => setViewMode('surface')}
                                 className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'surface' ? 'bg-white dark:bg-slate-700 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
                             >
-                                Raster
+                                {t('country_map.view.grid')}
                             </button>
                         </div>
                     </div>
@@ -870,21 +907,21 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     {/* Layer Toggles (Scrollable) */}
                     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-2 px-2">
                         {(isToday ? [
-                            { id: 'temp', label: 'Actuele temp' },
-                            { id: 'max_temp', label: 'Max temp' },
-                            { id: 'min_temp', label: 'Min temp' },
-                            { id: 'feels_like', label: 'Gevoel' },
+                            { id: 'temp', label: t('country_map.layer.current_temp') },
+                            { id: 'max_temp', label: t('max_temp') },
+                            { id: 'min_temp', label: t('min_temp') },
+                            { id: 'feels_like', label: t('feels_like') },
                         ] : [
-                            { id: 'max_temp', label: 'Max temp' },
-                            { id: 'min_temp', label: 'Min temp' },
+                            { id: 'max_temp', label: t('max_temp') },
+                            { id: 'min_temp', label: t('min_temp') },
                         ]).concat([
-                            { id: 'wind', label: 'Wind' },
-                            { id: 'gusts', label: 'Windstoten' },
-                            { id: 'precip', label: 'Neerslag' },
-                            { id: 'humidity', label: 'Vochtigheid' },
-                            { id: 'clouds', label: 'Bewolking' },
-                            { id: 'pressure', label: 'Luchtdruk' },
-                            { id: 'dew_point', label: 'Dauwpunt' },
+                            { id: 'wind', label: t('wind') },
+                            { id: 'gusts', label: t('wind_gusts') },
+                            { id: 'precip', label: t('precip') },
+                            { id: 'humidity', label: t('humidity') },
+                            { id: 'clouds', label: t('cloud_cover') },
+                            { id: 'pressure', label: t('pressure') },
+                            { id: 'dew_point', label: t('dew_point') },
                         ]).map((item) => (
                             <button 
                                 key={item.id}
@@ -903,8 +940,8 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                 <div className="absolute inset-0 z-[800] flex flex-col items-center justify-center bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl flex flex-col items-center">
                         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-4" />
-                        <div className="font-bold text-slate-800 dark:text-white">Weerdata ophalen...</div>
-                        <div className="text-sm text-slate-500">Moment geduld a.u.b.</div>
+                        <div className="font-bold text-slate-800 dark:text-white">{t('country_map.loading.title')}</div>
+                        <div className="text-sm text-slate-500">{t('country_map.loading.subtitle')}</div>
                     </div>
                 </div>
             )}
@@ -921,7 +958,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                             onClick={() => setSelectedCountry(null)}
                             className="text-primary font-bold hover:underline"
                         >
-                            Terug naar overzicht
+                            {t('country_map.error.back_overview')}
                         </button>
                     </div>
                 </div>
@@ -929,37 +966,51 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
 
             {/* Map */}
             <div className="flex-grow w-full h-full relative z-0">
-                <MapLegend layer={layer} isDark={settings.theme === 'dark'} />
+                <MapLegend layer={layer} isDark={settings.theme === 'dark'} lang={settings.language} tempUnit={settings.tempUnit} />
                 <MapContainer 
                     key={selectedCountry.code}
                     center={[mapConfig.lat, mapConfig.lon]} 
                     zoom={mapConfig.zoom} 
                     style={{ height: '100%', width: '100%' }}
                     zoomControl={false}
+                    className="map-safe-controls"
                 >
-                    <ZoomControl position="bottomright" />
                     <LayersControl position="bottomright">
-                        <LayersControl.BaseLayer checked={settings.theme !== 'dark'} name="Kaart (Licht)">
+                        <LayersControl.BaseLayer checked={selectedBaseLayer === 'light'} name={t('country_map.base.light')}>
                             <TileLayer
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
                         </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer checked={settings.theme === 'dark'} name="Kaart (Donker)">
+                        <LayersControl.BaseLayer checked={selectedBaseLayer === 'dark'} name={t('country_map.base.dark')}>
                             <TileLayer
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                             />
                         </LayersControl.BaseLayer>
-                        <LayersControl.BaseLayer name="Satelliet">
+                        <LayersControl.BaseLayer checked={selectedBaseLayer === 'satellite'} name={t('country_map.base.satellite')}>
                             <TileLayer
                                 attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
                                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                             />
                         </LayersControl.BaseLayer>
                     </LayersControl>
-                    
-                    <ResetViewControl center={[mapConfig.lat, mapConfig.lon]} zoom={mapConfig.zoom} />
+                    <ZoomControl position="bottomright" />
+
+                    <MapBaseLayerSync
+                        onMap={(m) => setMapInstance(m)}
+                        selectedBaseLayer={selectedBaseLayer}
+                        onChangeBaseLayer={(next) => {
+                            if (!onUpdateSettings) return;
+                            if (next === selectedBaseLayer) return;
+                            onUpdateSettings({ ...settings, mapBaseLayer: next });
+                        }}
+                        labels={{
+                            light: t('country_map.base.light'),
+                            dark: t('country_map.base.dark'),
+                            satellite: t('country_map.base.satellite')
+                        }}
+                    />
                     <MapUpdater center={[mapConfig.lat, mapConfig.lon]} zoom={mapConfig.zoom} />
                     
                     {/* Markers */}
@@ -1046,12 +1097,12 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                         <div className="p-2 min-w-[150px]">
                                             <h3 className="font-bold text-sm mb-1">{station.name}</h3>
                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                                                <div className="text-slate-500">Temp:</div>
-                                                <div className="font-medium">{Math.round(station.temp)}°</div>
-                                                <div className="text-slate-500">Wind:</div>
-                                                <div className="font-medium">{station.windSpeed} km/u</div>
-                                                <div className="text-slate-500">Neerslag:</div>
-                                                <div className="font-medium">{station.precip} mm</div>
+                                                <div className="text-slate-500">{t('temp')}:</div>
+                                                <div className="font-medium">{convertTemp(station.temp, settings.tempUnit)}°</div>
+                                                <div className="text-slate-500">{t('wind')}:</div>
+                                                <div className="font-medium">{convertWind(station.windSpeed, settings.windUnit)} {settings.windUnit}</div>
+                                                <div className="text-slate-500">{t('precip')}:</div>
+                                                <div className="font-medium">{convertPrecip(station.precip, settings.precipUnit)} {settings.precipUnit}</div>
                                             </div>
                                         </div>
                                     </Popup>
@@ -1096,16 +1147,16 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                                     <div className="p-2 min-w-[150px]">
                                         <h3 className="font-bold text-base mb-1">{station.name}</h3>
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                                            <div className="text-slate-500">Temperatuur:</div>
-                                            <div className="font-medium">{Math.round(station.temp)}°C</div>
-                                            <div className="text-slate-500">Gevoel:</div>
-                                            <div className="font-medium">{Math.round(station.feelsLike)}°C</div>
-                                            <div className="text-slate-500">Wind:</div>
-                                            <div className="font-medium">{station.windSpeed} km/u</div>
-                                            <div className="text-slate-500">Vochtigheid:</div>
+                                            <div className="text-slate-500">{t('temp')}:</div>
+                                            <div className="font-medium">{convertTemp(station.temp, settings.tempUnit)}°</div>
+                                            <div className="text-slate-500">{t('feels_like')}:</div>
+                                            <div className="font-medium">{convertTemp(station.feelsLike, settings.tempUnit)}°</div>
+                                            <div className="text-slate-500">{t('wind')}:</div>
+                                            <div className="font-medium">{convertWind(station.windSpeed, settings.windUnit)} {settings.windUnit}</div>
+                                            <div className="text-slate-500">{t('humidity')}:</div>
                                             <div className="font-medium">{station.humidity}%</div>
-                                            <div className="text-slate-500">Neerslag:</div>
-                                            <div className="font-medium">{station.precip} mm</div>
+                                            <div className="text-slate-500">{t('precip')}:</div>
+                                            <div className="font-medium">{convertPrecip(station.precip, settings.precipUnit)} {settings.precipUnit}</div>
                                         </div>
                                     </div>
                                 </Popup>

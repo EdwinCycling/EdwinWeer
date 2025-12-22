@@ -59,6 +59,63 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
         return String(Math.round(valueC));
     };
 
+    const formatRecordTempValue = (valueC: number): string => {
+        if (settings.tempUnit === TempUnit.FAHRENHEIT) {
+            const f = (valueC * 9) / 5 + 32;
+            return String(Math.round(f));
+        }
+        return String(Math.round(valueC));
+    };
+
+    const updateRecordThresholdTemp = (
+        field: 'summerStreakTemp' | 'niceStreakTemp' | 'coldStreakTemp' | 'iceStreakTemp',
+        raw: string,
+        minC: number,
+        maxC: number
+    ) => {
+        const minInput = settings.tempUnit === TempUnit.FAHRENHEIT ? (minC * 9) / 5 + 32 : minC;
+        const maxInput = settings.tempUnit === TempUnit.FAHRENHEIT ? (maxC * 9) / 5 + 32 : maxC;
+        const parsed = parseNumberInRange(raw, minInput, maxInput);
+        if (parsed === null) return;
+
+        let valueC = parsed;
+        if (settings.tempUnit === TempUnit.FAHRENHEIT) {
+            valueC = ((parsed - 32) * 5) / 9;
+        }
+
+        const nextThresholds = {
+            ...settings.recordThresholds,
+            [field]: Math.round(valueC),
+        };
+
+        const summerC = nextThresholds.summerStreakTemp ?? 25;
+        const niceC = nextThresholds.niceStreakTemp ?? 20;
+        const coldC = nextThresholds.coldStreakTemp ?? 5;
+        const iceC = nextThresholds.iceStreakTemp ?? 0;
+
+        if (nextThresholds.niceStreakTemp !== undefined && nextThresholds.summerStreakTemp !== undefined) {
+            if (niceC >= summerC) {
+                if (field === 'summerStreakTemp') {
+                    nextThresholds.niceStreakTemp = summerC - 1;
+                } else {
+                    return;
+                }
+            }
+        }
+
+        if (nextThresholds.iceStreakTemp !== undefined && nextThresholds.coldStreakTemp !== undefined) {
+            if (iceC >= coldC) {
+                if (field === 'coldStreakTemp') {
+                    nextThresholds.iceStreakTemp = coldC - 1;
+                } else {
+                    return;
+                }
+            }
+        }
+
+        updateSetting('recordThresholds', nextThresholds);
+    };
+
     const updateHeatwaveLength = (raw: string) => {
         const parsed = parseNumberInRange(raw, 1, 60);
         if (parsed === null) return;
@@ -498,7 +555,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 {t('settings.records_title')}
                             </h2>
                             <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                                 {/* Summer Streak */}
+                                {/* Summer Streak */}
                                 <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                                     <div className="flex flex-col">
                                         <span className="font-medium text-sm text-slate-700 dark:text-white/80">
@@ -508,23 +565,13 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            min={15}
-                                            max={40}
-                                            value={settings.recordThresholds?.summerStreakTemp ?? 25}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                if (!isNaN(val)) {
-                                                    const newThresholds = { ...settings.recordThresholds, summerStreakTemp: val };
-                                                    // Ensure nice < summer
-                                                    if (val <= (newThresholds.niceStreakTemp ?? 20)) {
-                                                        newThresholds.niceStreakTemp = val - 1;
-                                                    }
-                                                    updateSetting('recordThresholds', newThresholds);
-                                                }
-                                            }}
+                                            min={settings.tempUnit === TempUnit.FAHRENHEIT ? (15 * 9) / 5 + 32 : 15}
+                                            max={settings.tempUnit === TempUnit.FAHRENHEIT ? (40 * 9) / 5 + 32 : 40}
+                                            value={formatRecordTempValue(settings.recordThresholds?.summerStreakTemp ?? 25)}
+                                            onChange={(e) => updateRecordThresholdTemp('summerStreakTemp', e.target.value, 15, 40)}
                                             className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
-                                        <span className="text-sm font-medium">°C</span>
+                                        <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
                                 </div>
 
@@ -538,23 +585,13 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            min={10}
-                                            max={35}
-                                            value={settings.recordThresholds?.niceStreakTemp ?? 20}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                if (!isNaN(val)) {
-                                                    const newThresholds = { ...settings.recordThresholds, niceStreakTemp: val };
-                                                     // Ensure nice < summer
-                                                     if (val >= (newThresholds.summerStreakTemp ?? 25)) {
-                                                         return; // Prevent setting higher or equal
-                                                     }
-                                                    updateSetting('recordThresholds', newThresholds);
-                                                }
-                                            }}
+                                            min={settings.tempUnit === TempUnit.FAHRENHEIT ? (10 * 9) / 5 + 32 : 10}
+                                            max={settings.tempUnit === TempUnit.FAHRENHEIT ? (35 * 9) / 5 + 32 : 35}
+                                            value={formatRecordTempValue(settings.recordThresholds?.niceStreakTemp ?? 20)}
+                                            onChange={(e) => updateRecordThresholdTemp('niceStreakTemp', e.target.value, 10, 35)}
                                             className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
-                                        <span className="text-sm font-medium">°C</span>
+                                        <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
                                 </div>
 
@@ -568,23 +605,13 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            min={-30}
-                                            max={15}
-                                            value={settings.recordThresholds?.coldStreakTemp ?? 5}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                if (!isNaN(val)) {
-                                                    const newThresholds = { ...settings.recordThresholds, coldStreakTemp: val };
-                                                    // Ensure ice < cold
-                                                    if (val <= (newThresholds.iceStreakTemp ?? 0)) {
-                                                        newThresholds.iceStreakTemp = val - 1;
-                                                    }
-                                                    updateSetting('recordThresholds', newThresholds);
-                                                }
-                                            }}
+                                            min={settings.tempUnit === TempUnit.FAHRENHEIT ? (-30 * 9) / 5 + 32 : -30}
+                                            max={settings.tempUnit === TempUnit.FAHRENHEIT ? (15 * 9) / 5 + 32 : 15}
+                                            value={formatRecordTempValue(settings.recordThresholds?.coldStreakTemp ?? 5)}
+                                            onChange={(e) => updateRecordThresholdTemp('coldStreakTemp', e.target.value, -30, 15)}
                                             className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
-                                        <span className="text-sm font-medium">°C</span>
+                                        <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
                                 </div>
 
@@ -598,23 +625,13 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="number"
-                                            min={-40}
-                                            max={10}
-                                            value={settings.recordThresholds?.iceStreakTemp ?? 0}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                if (!isNaN(val)) {
-                                                    const newThresholds = { ...settings.recordThresholds, iceStreakTemp: val };
-                                                     // Ensure ice < cold
-                                                     if (val >= (newThresholds.coldStreakTemp ?? 5)) {
-                                                        return;
-                                                    }
-                                                    updateSetting('recordThresholds', newThresholds);
-                                                }
-                                            }}
+                                            min={settings.tempUnit === TempUnit.FAHRENHEIT ? (-40 * 9) / 5 + 32 : -40}
+                                            max={settings.tempUnit === TempUnit.FAHRENHEIT ? (10 * 9) / 5 + 32 : 10}
+                                            value={formatRecordTempValue(settings.recordThresholds?.iceStreakTemp ?? 0)}
+                                            onChange={(e) => updateRecordThresholdTemp('iceStreakTemp', e.target.value, -40, 10)}
                                             className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
-                                        <span className="text-sm font-medium">°C</span>
+                                        <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
                                 </div>
                             </div>

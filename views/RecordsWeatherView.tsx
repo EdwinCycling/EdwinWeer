@@ -30,6 +30,13 @@ interface RecordEntry {
   date: string;
 }
 
+interface TimeTempDiffEntry {
+  value: number;
+  date: string;
+  temp13: number;
+  temp22: number;
+}
+
 interface YearlyCounts {
   warmDays: number;
   summerDays: number;
@@ -139,6 +146,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [windGustMax, setWindGustMax] = useState<RecordEntry[]>([]);
   const [rainMax, setRainMax] = useState<RecordEntry[]>([]);
   const [maxAmplitude, setMaxAmplitude] = useState<RecordEntry[]>([]);
+  const [minAmplitude, setMinAmplitude] = useState<RecordEntry[]>([]);
+  const [colderAt13Than22, setColderAt13Than22] = useState<TimeTempDiffEntry[]>([]);
   const [yearlyCounts, setYearlyCounts] = useState<YearlyCounts | null>(null);
   const [frostInfo, setFrostInfo] = useState<FrostInfo | null>(null);
   const [yearlySequences, setYearlySequences] = useState<YearlySequences | null>(null);
@@ -162,12 +171,42 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
   const t = (key: string) => getTranslation(key, settings.language);
 
+  const parseIsoDateLocal = (dateStr: string): Date | null => {
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return null;
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+    const dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+    return dt;
+  };
+
+  const navigateToHistoricalSingle = (dateStr: string) => {
+    const dt = parseIsoDateLocal(dateStr);
+    if (!dt) return;
+    saveCurrentLocation(location);
+    if (onUpdateSettings) {
+      onUpdateSettings({ ...settings, historicalMode: 'single' });
+    }
+    onNavigate(ViewState.HISTORICAL, { date1: dt });
+  };
+
   const formatTempValue = (valueC: number): string => {
     if (settings.tempUnit === 'F') {
       const f = (valueC * 9) / 5 + 32;
       return f.toFixed(1);
     }
     return valueC.toFixed(1);
+  };
+
+  const formatTempDeltaValue = (deltaC: number): string => {
+    if (settings.tempUnit === 'F') {
+      const f = (deltaC * 9) / 5;
+      return f.toFixed(1);
+    }
+    return deltaC.toFixed(1);
   };
 
   const formatDateWithDay = (dateStr: string) => {
@@ -201,6 +240,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setMinTempHigh([]);
     setMinTempLow([]);
     setRainMax([]);
+    setMinAmplitude([]);
+    setColderAt13Than22([]);
      setYearlyCounts(null);
     setFrostInfo(null);
     setYearlySequences(null);
@@ -261,6 +302,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       const rainValues: number[] | undefined = daily?.precipitation_sum;
       const sunshineValues: number[] | undefined = daily?.sunshine_duration;
       const daylightValues: number[] | undefined = daily?.daylight_duration;
+
+      const hourly = data?.hourly;
+      const hourlyTimes: string[] | undefined = hourly?.time;
+      const hourlyTemps: number[] | undefined = hourly?.temperature_2m;
 
       if (recordType !== 'monthly' && recordType !== 'calendar' && (!times || !maxTemps || !minTemps || times.length === 0)) {
         setError(t('errors.no_data'));
@@ -418,6 +463,41 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       setWindGustMax(sortDesc(windGustEntries));
       setRainMax(sortDesc(rainEntries));
       setMaxAmplitude(sortDesc(amplitudeEntries));
+      setMinAmplitude(sortAsc(amplitudeEntries));
+
+      if (hourlyTimes && hourlyTemps && hourlyTimes.length === hourlyTemps.length) {
+        const byDay = new Map<string, { t13?: number; t22?: number }>();
+        for (let i = 0; i < hourlyTimes.length; i++) {
+          const ts = hourlyTimes[i];
+          const temp = hourlyTemps[i];
+          if (typeof ts !== 'string' || ts.length < 13) continue;
+          if (typeof temp !== 'number' || Number.isNaN(temp)) continue;
+
+          const dateKey = ts.slice(0, 10);
+          const hourStr = ts.slice(11, 13);
+          const hour = Number(hourStr);
+          if (!Number.isFinite(hour)) continue;
+
+          if (hour !== 13 && hour !== 22) continue;
+          const cur = byDay.get(dateKey) || {};
+          if (hour === 13) cur.t13 = temp;
+          if (hour === 22) cur.t22 = temp;
+          byDay.set(dateKey, cur);
+        }
+
+        const entries: TimeTempDiffEntry[] = [];
+        for (const [date, temps] of byDay.entries()) {
+          if (typeof temps.t13 !== 'number' || typeof temps.t22 !== 'number') continue;
+          if (!(temps.t13 < temps.t22)) continue;
+          entries.push({
+            date,
+            value: temps.t22 - temps.t13,
+            temp13: temps.t13,
+            temp22: temps.t22,
+          });
+        }
+        setColderAt13Than22([...entries].sort((a, b) => b.value - a.value).slice(0, 3));
+      }
 
       // Calculate diverse records (rise/drop)
       let maxRiseVal = -Infinity;
@@ -1018,20 +1098,82 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             {entries.map((entry, index) => (
               <li key={`${entry.date}-${index}`} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-white/40 shadow-sm ${
-                      medalClasses[index] ?? 'bg-slate-200 text-slate-800'
-                    }`}
+                  <button
+                    type="button"
+                    onClick={() => navigateToHistoricalSingle(entry.date)}
+                    className="flex items-center gap-2 text-left hover:opacity-90"
                   >
-                    {index + 1}
-                  </div>
-                  <span className="text-sm text-slate-600 dark:text-white/70">
-                    {formatDateLabel(entry.date)}
-                  </span>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-white/40 shadow-sm ${
+                        medalClasses[index] ?? 'bg-slate-200 text-slate-800'
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <span className="text-sm text-slate-600 dark:text-white/70 underline-offset-2 hover:underline">
+                      {formatDateLabel(entry.date)}
+                    </span>
+                  </button>
                 </div>
                 <div className="text-sm font-bold text-slate-800 dark:text-white text-right">
                   {formatValue(entry.value)}
                 </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-white/60">{t('no_data_available')}</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderTimeTempDiffCard = (
+    titleKey: string,
+    icon: string,
+    iconColor: string,
+    entries: TimeTempDiffEntry[]
+  ) => {
+    const medalClasses = [
+      'bg-amber-500 text-white',
+      'bg-slate-400 text-white',
+      'bg-orange-400 text-white',
+    ];
+
+    return (
+      <div className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <Icon name={icon} className={iconColor} />
+            {t(titleKey)}
+          </h3>
+        </div>
+        {entries.length ? (
+          <ul className="mt-2 space-y-2">
+            {entries.map((entry, index) => (
+              <li key={`${entry.date}-${index}`} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigateToHistoricalSingle(entry.date)}
+                    className="flex items-center gap-2 text-left hover:opacity-90"
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-white/40 shadow-sm ${
+                        medalClasses[index] ?? 'bg-slate-200 text-slate-800'
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-sm text-slate-600 dark:text-white/70 underline-offset-2 hover:underline">{formatDateLabel(entry.date)}</span>
+                      <span className="text-xs text-slate-500 dark:text-white/60">
+                        13:00 {formatTempValue(entry.temp13)}° {' • '}22:00 {formatTempValue(entry.temp22)}°
+                      </span>
+                    </div>
+                  </button>
+                </div>
+                <div className="text-sm font-bold text-slate-800 dark:text-white text-right">{formatTempDeltaValue(entry.value)}°</div>
               </li>
             ))}
           </ul>
@@ -1609,7 +1751,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               </div>
           ) : (
             <div className="flex flex-col items-center gap-6 px-4 pb-10">
-              <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="w-full max-w-2xl grid grid-cols-1 gap-4">
                 {renderRecordCard(
                   'records.max_temp_high',
                   'trending_up',
@@ -1643,7 +1785,20 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   'unfold_more',
                   'text-purple-500',
                   maxAmplitude,
-                  value => `${formatTempValue(value)}°`
+                  value => `${formatTempDeltaValue(value)}°`
+                )}
+                {renderRecordCard(
+                  'records.min_amplitude',
+                  'unfold_less',
+                  'text-purple-500',
+                  minAmplitude,
+                  value => `${formatTempDeltaValue(value)}°`
+                )}
+                {renderTimeTempDiffCard(
+                  'records.colder_13_than_22',
+                  'schedule',
+                  'text-indigo-500',
+                  colderAt13Than22
                 )}
                 {renderRecordCard(
                   'records.max_gust',
@@ -1988,7 +2143,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                           </h3>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                           {/* Max Rise */}
                           <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
                               <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
@@ -2055,7 +2210,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                           {/* Extremes Section */}
                           {diverseRecords.extremes && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 gap-4">
                                   {/* Summer Days (>= 25) */}
                                   <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">

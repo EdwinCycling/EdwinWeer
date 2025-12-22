@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Icon } from './Icon';
 import { getTranslation } from '../services/translations';
 import { AppSettings } from '../types';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface Props {
     isOpen: boolean;
@@ -10,14 +11,7 @@ interface Props {
 }
 
 export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) => {
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [isOpen]);
+    useScrollLock(isOpen);
 
     if (!isOpen) return null;
 

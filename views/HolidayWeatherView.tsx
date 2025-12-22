@@ -34,6 +34,49 @@ interface WeekData {
     } | null;
 }
 
+import { useScrollLock } from '../hooks/useScrollLock';
+
+// Component for the Map Modal
+const MapModal = ({ isOpen, onClose, location, rainViewerTileUrl }: any) => {
+    useScrollLock(isOpen);
+    if (!isOpen) return null;
+    
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
+             <div className="bg-white dark:bg-[#1e293b] w-full max-w-4xl h-[80vh] rounded-3xl overflow-hidden relative flex flex-col">
+                <div className="p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
+                    <h3 className="font-bold text-lg flex items-center gap-2">
+                        <Icon name="public" className="text-primary" />
+                        {location.name}
+                    </h3>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full">
+                        <Icon name="close" />
+                    </button>
+                </div>
+                <div className="flex-grow relative z-0">
+                    <MapContainer center={[location.lat, location.lon]} zoom={10} style={{ height: '100%', width: '100%' }}>
+                        <LayersControl position="topright">
+                            <LayersControl.BaseLayer checked name="OpenStreetMap">
+                                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+                            </LayersControl.BaseLayer>
+                            <LayersControl.BaseLayer name="Satelliet">
+                                <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution="&copy; Esri" />
+                            </LayersControl.BaseLayer>
+                            {rainViewerTileUrl && (
+                                <LayersControl.Overlay checked name="Regenradar (Afgelopen 2u)">
+                                    <TileLayer url={rainViewerTileUrl} opacity={0.6} />
+                                </LayersControl.Overlay>
+                            )}
+                        </LayersControl>
+                        <CircleMarker center={[location.lat, location.lon]} radius={8} pathOptions={{ color: 'white', fillColor: '#3b82f6', fillOpacity: 1, weight: 2 }} />
+                        <ZoomControl position="bottomright" />
+                    </MapContainer>
+                </div>
+             </div>
+        </div>
+    );
+};
+
 export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
   const [loadingCity, setLoadingCity] = useState(false);

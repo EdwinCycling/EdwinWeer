@@ -267,7 +267,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </div>
             </div>
             
-            <p className="text-center text-xs opacity-30 italic pb-8">Scroll horizontally for more data</p>
+            <p className="text-center text-xs opacity-30 italic pb-8">{t('hourly.scroll_hint')}</p>
         </div>
       )}
     </div>

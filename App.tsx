@@ -61,6 +61,13 @@ const App: React.FC = () => {
   // Helper for translations in this component
   const t = (key: string) => getTranslation(key, settings.language);
 
+  const getUsageScopeLabel = (scope: 'minute' | 'hour' | 'day' | 'month') => {
+      if (scope === 'minute') return t('usage.scope.minute');
+      if (scope === 'hour') return t('usage.scope.hour');
+      if (scope === 'day') return t('usage.scope.day');
+      return t('usage.scope.month');
+  };
+
   useEffect(() => {
       const handler = (event: Event) => {
           const custom = event as CustomEvent<any>;
@@ -116,7 +123,7 @@ const App: React.FC = () => {
       case ViewState.FORECAST:
         return <ForecastWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.MAP:
-        return <MapView onNavigate={navigate} settings={settings} />;
+        return <MapView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.RECORDS:
         return <RecordsWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.HOURLY_DETAIL:
@@ -128,7 +135,7 @@ const App: React.FC = () => {
       case ViewState.HOLIDAY_REPORT:
         return <HolidayReportView onNavigate={navigate} settings={settings} />;
       case ViewState.HISTORICAL:
-        return <HistoricalWeatherView onNavigate={navigate} settings={settings} initialParams={viewParams} />;
+        return <HistoricalWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} initialParams={viewParams} />;
       case ViewState.STRAVA:
         return <StravaWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.SHARE:
@@ -144,11 +151,11 @@ const App: React.FC = () => {
       case ViewState.MODEL_INFO:
         return <ModelInfoView onNavigate={navigate} settings={settings} previousView={previousView} />;
       case ViewState.COUNTRY_MAP:
-        return <CountryMapView onNavigate={navigate} settings={settings} />;
+        return <CountryMapView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.USER_ACCOUNT:
         return <UserAccountView onNavigate={navigate} settings={settings} />;
       case ViewState.INFO:
-        return <InfoView onNavigate={navigate} />;
+        return <InfoView onNavigate={navigate} settings={settings} />;
       default:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }
@@ -170,23 +177,17 @@ const App: React.FC = () => {
                     </div>
                     <div className="flex-1">
                         <p className="text-sm font-bold">
-                            {settings.language === 'nl' ? 'API verbruik bijna op' : 'API usage nearly reached'}
+                            {t('usage.warning_title')}
                         </p>
                         <p className="text-xs mt-0.5">
                             {(() => {
-                                const scopeLabelNl =
-                                    usageWarning.scope === 'minute' ? 'per minuut' :
-                                    usageWarning.scope === 'hour' ? 'per uur' :
-                                    usageWarning.scope === 'day' ? 'per dag' : 'per maand';
-                                const scopeLabelEn =
-                                    usageWarning.scope === 'minute' ? 'per minute' :
-                                    usageWarning.scope === 'hour' ? 'per hour' :
-                                    usageWarning.scope === 'day' ? 'per day' : 'per month';
                                 const percent = Math.round((usageWarning.current / usageWarning.limit) * 100);
-                                if (settings.language === 'nl') {
-                                    return `Je zit op ${percent}% van je limiet ${scopeLabelNl} (${usageWarning.current} / ${usageWarning.limit} calls).`;
-                                }
-                                return `You are at ${percent}% of your ${scopeLabelEn} limit (${usageWarning.current} / ${usageWarning.limit} calls).`;
+                                const scopeLabel = getUsageScopeLabel(usageWarning.scope);
+                                return t('usage.warning_message')
+                                    .replace('{percent}', percent.toString())
+                                    .replace('{scope}', scopeLabel)
+                                    .replace('{current}', usageWarning.current.toString())
+                                    .replace('{limit}', usageWarning.limit.toString());
                             })()}
                         </p>
                     </div>
@@ -215,7 +216,7 @@ const App: React.FC = () => {
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.FORECAST ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="date_range" />
-                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">Vooruitzicht</span>
+                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.forecast')}</span>
             </button>
             <button 
                 onClick={() => navigate(ViewState.ENSEMBLE)}
@@ -279,8 +280,8 @@ const App: React.FC = () => {
                                 <Icon name="speed" className="text-2xl" />
                             </div>
                             <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{settings.language === 'nl' ? 'De Barometer' : 'The Barometer'}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{settings.language === 'nl' ? 'Analoge luchtdruk' : 'Analog pressure'}</span>
+                                <span className="font-bold text-lg">{t('barometer.title')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('barometer.subtitle')}</span>
                             </div>
                          </button>
 
@@ -289,8 +290,8 @@ const App: React.FC = () => {
                                 <Icon name="flight_takeoff" className="text-2xl" />
                             </div>
                             <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">Vakantie Rapport</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">Jouw vakantie overzicht</span>
+                                <span className="font-bold text-lg">{t('holiday_report.title_default')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('holiday_report.menu_subtitle')}</span>
                             </div>
                          </button>
 
@@ -338,7 +339,7 @@ const App: React.FC = () => {
                             <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <Icon name="groups" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">Het Team</span>
+                            <span className="font-bold text-sm">{t('nav.team')}</span>
                          </button>
                          <button onClick={() => { navigate(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
@@ -350,19 +351,19 @@ const App: React.FC = () => {
                             <div className="size-10 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                                 <Icon name="model_training" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">Weermodellen</span>
+                            <span className="font-bold text-sm">{t('nav.model_info')}</span>
                          </button>
                          <button onClick={() => { navigate(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                                 <Icon name="info" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">Info</span>
+                            <span className="font-bold text-sm">{t('nav.info')}</span>
                          </button>
                          <button onClick={() => { navigate(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-white/60">
                                 <Icon name="account_circle" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">Mijn Account</span>
+                            <span className="font-bold text-sm">{t('nav.user_account')}</span>
                          </button>
                     </div>
                     
@@ -373,8 +374,8 @@ const App: React.FC = () => {
                     )}
                     
                     <div className="relative flex justify-center gap-8 text-xs font-medium text-slate-500 dark:text-white/40">
-                         <button onClick={() => setModal('disclaimer')} className="hover:text-primary transition-colors hover:underline">Disclaimer</button>
-                         <button onClick={() => setModal('cookies')} className="hover:text-primary transition-colors hover:underline">Cookies</button>
+                         <button onClick={() => setModal('disclaimer')} className="hover:text-primary transition-colors hover:underline">{t('footer.disclaimer')}</button>
+                         <button onClick={() => setModal('cookies')} className="hover:text-primary transition-colors hover:underline">{t('footer.cookies')}</button>
                          <span className="absolute right-0 top-0">v{pkg.version}</span>
                     </div>
                 </div>

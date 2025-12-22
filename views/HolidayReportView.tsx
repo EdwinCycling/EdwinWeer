@@ -199,10 +199,10 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
             ctx.fillStyle = '#FFFFFF';
         };
 
-        drawStat('Warmste Dag', `${Math.round(reportData.stats.maxTemp)}°C`, 'MAX', colW * 0.5);
-        drawStat('Koudste Nacht', `${Math.round(reportData.stats.coldestNight)}°C`, 'MIN', colW * 1.5);
-        drawStat('Totaal Regen', `${Math.round(reportData.stats.totalRain)}mm`, 'RAIN', colW * 2.5);
-        drawStat('Totaal Zon', `${Math.round(reportData.stats.totalSun)}u`, 'SUN', colW * 3.5);
+        drawStat(t('holiday_report.stat.warmest_day'), `${Math.round(reportData.stats.maxTemp)}°C`, 'MAX', colW * 0.5);
+        drawStat(t('holiday_report.stat.coldest_night'), `${Math.round(reportData.stats.coldestNight)}°C`, 'MIN', colW * 1.5);
+        drawStat(t('holiday_report.stat.total_rain'), `${Math.round(reportData.stats.totalRain)}mm`, 'RAIN', colW * 2.5);
+        drawStat(t('holiday_report.stat.total_sun'), `${Math.round(reportData.stats.totalSun)}u`, 'SUN', colW * 3.5);
     };
 
     const handleCopy = async () => {
@@ -213,18 +213,18 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                 await navigator.clipboard.write([
                     new ClipboardItem({ 'image/png': blob })
                 ]);
-                alert('Foto gekopieerd naar klembord!');
+                alert(t('holiday_report.copy_success'));
             }
         } catch (e) {
             console.error(e);
-            alert('Kon foto niet kopiëren');
+            alert(t('holiday_report.copy_error'));
         }
     };
 
     const handleDownload = () => {
         if (!canvasRef.current) return;
         const link = document.createElement('a');
-        link.download = `Vakantie-${location.name}.png`;
+        link.download = `${t('holiday_report.download_filename_prefix')}-${location.name}.png`;
         link.href = canvasRef.current.toDataURL('image/png');
         link.click();
     };
@@ -236,12 +236,12 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
             if (blob && navigator.share) {
                 const file = new File([blob], 'holiday-report.png', { type: 'image/png' });
                 await navigator.share({
-                    title: 'Mijn Vakantie Overzicht',
-                    text: `Kijk eens naar mijn vakantie in ${location.name}! ${reportData.vibe.text}`,
+                    title: t('holiday_report.share_title'),
+                    text: `${t('holiday_report.share_text_prefix')} ${location.name}! ${reportData.vibe.text}`,
                     files: [file]
                 });
             } else {
-                alert("Delen wordt niet ondersteund op dit apparaat.");
+                alert(t('holiday_report.share_not_supported'));
             }
         } catch (e) {
             console.error(e);
@@ -599,7 +599,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                         {/* Dates */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Start datum</label>
+                                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.start_date')}</label>
                                 <input 
                                     type="date" 
                                     value={startDate}
@@ -608,7 +608,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Eind datum</label>
+                                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.end_date')}</label>
                                 <input 
                                     type="date" 
                                     value={endDate}
@@ -620,7 +620,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                         
                         {/* Rain Threshold Selector */}
                         <div>
-                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Regen drempelwaarde</label>
+                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.rain_threshold')}</label>
                             <div className="flex gap-2">
                                 {[1, 2, 5].map(val => (
                                     <button
@@ -649,7 +649,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                             disabled={loading}
                             className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                         >
-                            {loading ? 'Analyseren...' : 'Genereer Rapport'}
+                            {loading ? t('holiday_report.button.analyzing') : t('holiday_report.button.generate')}
                         </button>
                     </div>
                 </div>
@@ -657,9 +657,9 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                 <div className="flex flex-col gap-6 animate-in slide-in-from-bottom duration-500">
                     {/* Header Card */}
                     <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-white/10 text-center">
-                        <h1 className="text-2xl font-bold mb-1">{title || 'Vakantie Rapport'}</h1>
+                        <h1 className="text-2xl font-bold mb-1">{title || t('holiday_report.title_default')}</h1>
                         <p className="text-slate-500 dark:text-slate-400">
-                            {location.name} • {reportData.period.days} dagen
+                            {location.name} • {reportData.period.days} {t('holiday_report.days')}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
                             {formatDate(startDate)} - {formatDate(endDate)}
@@ -675,7 +675,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
                                 {reportData.vibe.text}
                             </h2>
-                            <p className="text-sm text-slate-500 mt-1">Vibe Score: {reportData.vibe.score}/10</p>
+                            <p className="text-sm text-slate-500 mt-1">{t('holiday_report.vibe_score')}: {reportData.vibe.score}/10</p>
                         </div>
                     </div>
                     
@@ -684,22 +684,22 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <Icon name="thermostat" className="text-3xl text-red-500" />
                             <span className="text-2xl font-bold">{Math.round(reportData.stats.maxTemp)}°C</span>
-                            <span className="text-xs text-slate-500 uppercase tracking-wider text-center">Warmste Dag</span>
+                            <span className="text-xs text-slate-500 uppercase tracking-wider text-center">{t('holiday_report.stat.warmest_day')}</span>
                         </div>
                         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <Icon name="ac_unit" className="text-3xl text-blue-500" />
                             <span className="text-2xl font-bold">{Math.round(reportData.stats.coldestNight)}°C</span>
-                            <span className="text-xs text-slate-500 uppercase tracking-wider text-center">Koudste Nacht</span>
+                            <span className="text-xs text-slate-500 uppercase tracking-wider text-center">{t('holiday_report.stat.coldest_night')}</span>
                         </div>
                         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <Icon name="water_drop" className="text-3xl text-blue-400" />
                             <span className="text-2xl font-bold">{Math.round(reportData.stats.totalRain)}mm</span>
                             <div className="flex flex-col items-center">
                                 <span className="text-xs text-slate-500 uppercase tracking-wider text-center">
-                                    {reportData.stats.rainChanceDays} dagen kans &gt;2mm
+                                    {reportData.stats.rainChanceDays} {t('holiday_report.days')} {t('holiday_report.rain_chance_gt')} 2mm
                                 </span>
                                 <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">
-                                    Gem. {Math.round(reportData.stats.avgRainChanceGt2mm)}%
+                                    {t('holiday_report.avg_prefix')} {Math.round(reportData.stats.avgRainChanceGt2mm)}%
                                 </span>
                             </div>
                         </div>
@@ -707,32 +707,32 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                             <Icon name="wb_sunny" className="text-3xl text-orange-500" />
                             <span className="text-2xl font-bold">{Math.round(reportData.stats.avgSunPerDay)}u</span>
                             <span className="text-xs text-slate-500 uppercase tracking-wider text-center">
-                                Gem. zon per dag
+                                {t('holiday_report.stat.avg_sun_per_day')}
                             </span>
                         </div>
 
                         {/* Extended Stats */}
                         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <span className="text-xl font-bold">{Math.round(reportData.stats.lowestMax)}°C</span>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">Laagste Max</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">{t('holiday_report.stat.lowest_max')}</span>
                         </div>
                         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <span className="text-xl font-bold">{Math.round(reportData.stats.avgTemp)}°C</span>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">Gem. Dag</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">{t('holiday_report.stat.avg_day')}</span>
                         </div>
                         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <span className="text-xl font-bold">{Math.round(reportData.stats.avgNightTemp)}°C</span>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">Gem. Nacht</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">{t('holiday_report.stat.avg_night')}</span>
                         </div>
                          <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2">
                             <span className="text-xl font-bold">{Math.round(reportData.stats.totalSun)}u</span>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">Totaal Zon</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider text-center">{t('holiday_report.stat.total_sun')}</span>
                         </div>
                     </div>
                     
                     {/* Graph */}
                     <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/10 h-80">
-                         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Verloop</h3>
+                         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">{t('holiday_report.chart.trend')}</h3>
                          <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={reportData.days}>
                                 <defs>

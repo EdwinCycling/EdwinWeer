@@ -428,7 +428,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000
       };
 
-      const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing'];
+      const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'running'];
       return activities.map(type => ({
           type,
           ...calculateActivityScore(activityData, type, settings.language)
@@ -441,6 +441,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             case 'cycling': return 'directions_bike';
             case 'walking': return 'hiking';
             case 'sailing': return 'sailing';
+            case 'running': return 'directions_run';
         }
     };
 

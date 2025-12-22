@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, ZoomControl, LayersControl, useMapEvents } from 'react-leaflet';
-import { ViewState, AppSettings } from '../types';
+import { ViewState, AppSettings, MapBaseLayer } from '../types';
 import { Icon } from '../components/Icon';
 import { loadCurrentLocation } from '../services/storageService';
 import { MAJOR_CITIES, City } from '../services/cityData';
@@ -11,10 +11,21 @@ import L from 'leaflet';
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  onUpdateSettings?: (newSettings: AppSettings) => void;
 }
 
 // Component to handle map events and access map instance
-const MapEvents = ({ onMove, setMap }: { onMove: (map: L.Map, forceRefresh?: boolean) => void, setMap: (map: L.Map) => void }) => {
+const MapEvents = ({
+    onMove,
+    setMap,
+    selectedBaseLayer,
+    onChangeBaseLayer,
+}: {
+    onMove: (map: L.Map, forceRefresh?: boolean) => void;
+    setMap: (map: L.Map) => void;
+    selectedBaseLayer: MapBaseLayer;
+    onChangeBaseLayer: (next: MapBaseLayer) => void;
+}) => {
     const map = useMap();
     
     useEffect(() => {
@@ -24,7 +35,25 @@ const MapEvents = ({ onMove, setMap }: { onMove: (map: L.Map, forceRefresh?: boo
             map.invalidateSize();
             onMove(map);
         }, 500);
-    }, [map]);
+    }, [map, onMove, setMap]);
+
+    useEffect(() => {
+        const handler = (e: any) => {
+            const name = String(e?.name || '').toLowerCase();
+            const next: MapBaseLayer =
+                name.includes('sat') ? 'satellite' :
+                name.includes('donker') ? 'dark' :
+                name.includes('dark') ? 'dark' :
+                'light';
+            if (next !== selectedBaseLayer) {
+                onChangeBaseLayer(next);
+            }
+        };
+        map.on('baselayerchange', handler);
+        return () => {
+            map.off('baselayerchange', handler);
+        };
+    }, [map, onChangeBaseLayer, selectedBaseLayer]);
 
     useMapEvents({
         moveend: () => onMove(map)
@@ -33,7 +62,7 @@ const MapEvents = ({ onMove, setMap }: { onMove: (map: L.Map, forceRefresh?: boo
     return null;
 };
 
-export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
     // Store temps: "lat,lon" -> temp
     const [cityTemps, setCityTemps] = useState<Record<string, number>>({});
     // Store virtual points that don't have names
@@ -45,6 +74,8 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     const t = (key: string) => getTranslation(key, settings.language);
+
+    const selectedBaseLayer: MapBaseLayer = settings.mapBaseLayer ?? (settings.theme === 'dark' ? 'dark' : 'light');
 
     // 2. Handle Map Move & Fetch Weather
     const handleMapMove = async (map: L.Map, forceRefresh = false) => {
@@ -303,6 +334,11 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
 
     return (
         <div className="flex flex-col h-screen w-full bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white transition-colors duration-300 fixed inset-0 z-[10]">
+            <style>{`
+                .map-safe-controls .leaflet-bottom {
+                    bottom: 96px;
+                }
+            `}</style>
             
             {/* Floating Header */}
             <div className="absolute top-0 left-0 right-0 p-4 pt-8 z-[1001] pointer-events-none flex justify-center">
@@ -342,22 +378,22 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
                 zoom={5} 
                 zoomControl={false}
                 style={{ height: '100%', width: '100%' }}
-                className="w-full h-full bg-slate-200 dark:bg-[#0f172a]"
+                className="w-full h-full bg-slate-200 dark:bg-[#0f172a] map-safe-controls"
             >
                 <LayersControl position="bottomright">
-                    <LayersControl.BaseLayer checked={settings.theme !== 'dark'} name="Kaart (Licht)">
+                    <LayersControl.BaseLayer checked={selectedBaseLayer === 'light'} name="Kaart (Licht)">
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer checked={settings.theme === 'dark'} name="Kaart (Donker)">
+                    <LayersControl.BaseLayer checked={selectedBaseLayer === 'dark'} name="Kaart (Donker)">
                         <TileLayer
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                         />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Satelliet">
+                    <LayersControl.BaseLayer checked={selectedBaseLayer === 'satellite'} name="Satelliet">
                         <TileLayer
                             attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
                             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -366,7 +402,16 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </LayersControl>
 
                 <ZoomControl position="bottomright" />
-                <MapEvents onMove={handleMapMove} setMap={setMapInstance} />
+                <MapEvents
+                    onMove={handleMapMove}
+                    setMap={setMapInstance}
+                    selectedBaseLayer={selectedBaseLayer}
+                    onChangeBaseLayer={(next) => {
+                        if (!onUpdateSettings) return;
+                        if (next === selectedBaseLayer) return;
+                        onUpdateSettings({ ...settings, mapBaseLayer: next });
+                    }}
+                />
 
                 {pointsToRender.map(point => (
                     <Marker 
