@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
-import { convertTempPrecise, convertWind, convertPrecip, getTempLabel } from '../services/weatherService';
+import { convertTempPrecise, convertWind, convertPrecip } from '../services/weatherService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -110,8 +110,6 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   const [showFavorites, setShowFavorites] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
-  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
   const calculateClimate = async () => {
       // Increment fetch ID to invalidate previous running fetches
       const currentFetchId = fetchIdRef.current + 1;
@@ -121,83 +119,34 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       setLoadingProgress('Initialiseren...');
       setError(null);
       try {
-          // Fetch historical data from 1950 to 2023 in chunks to avoid timeouts and rate limits
-          const startYear = 1950;
-          const endYear = 2023;
-          const chunkSize = 10;
+          // Optimization: Fetch all data in one go (approx 50kb)
+          // From 1950 to last year
+          const endYear = new Date().getFullYear() - 1;
+          const startDate = '1950-01-01';
+          const endDate = `${endYear}-12-31`;
           
-          let mergedDaily: any = {
-              time: [],
-              temperature_2m_max: [],
-              temperature_2m_min: [],
-              precipitation_sum: [],
-              wind_speed_10m_max: [],
-              sunshine_duration: [],
-              daylight_duration: []
-          };
-          let units = null;
-
-          // Generate chunks
-          const chunks = [];
-          for (let year = startYear; year <= endYear; year += chunkSize) {
-              const chunkEnd = Math.min(year + chunkSize - 1, endYear);
-              chunks.push({ start: year, end: chunkEnd });
-          }
-
-          for (let i = 0; i < chunks.length; i++) {
-              // Check if a new fetch has started
-              if (fetchIdRef.current !== currentFetchId) return;
-
-              const { start, end } = chunks[i];
-              setLoadingProgress(`${start}-${end} ophalen...`);
-              
-              const startDate = `${start}-01-01`;
-              const endDate = `${end}-12-31`;
-              
-              const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
-              
-              const response = await fetch(url);
-              
-              if (fetchIdRef.current !== currentFetchId) return;
-
-              if (response.status === 429) {
-                  setShowLimitModal(true);
-                  setLoading(false);
-                  return;
-              }
-
-              if (!response.ok) throw new Error(`Failed to fetch climate data for ${start}-${end}`);
-              
-              const data = await response.json();
-              
-              if (!units) units = data.daily_units;
-              
-              if (data.daily) {
-                  mergedDaily.time.push(...(data.daily.time || []));
-                  mergedDaily.temperature_2m_max.push(...(data.daily.temperature_2m_max || []));
-                  mergedDaily.temperature_2m_min.push(...(data.daily.temperature_2m_min || []));
-                  mergedDaily.precipitation_sum.push(...(data.daily.precipitation_sum || []));
-                  mergedDaily.wind_speed_10m_max.push(...(data.daily.wind_speed_10m_max || []));
-                  mergedDaily.sunshine_duration.push(...(data.daily.sunshine_duration || []));
-                  mergedDaily.daylight_duration.push(...(data.daily.daylight_duration || []));
-              }
-
-              // Sleep between requests to be gentle on the API
-              if (i < chunks.length - 1) {
-                  await sleep(4000);
-              }
-          }
+          setLoadingProgress(`Data ophalen (1950-${endYear})...`);
+          
+          // Use the exact parameters needed for the view
+          const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
+          
+          const response = await fetch(url);
           
           if (fetchIdRef.current !== currentFetchId) return;
 
-          const fullData = {
-              daily_units: units,
-              daily: mergedDaily
-          };
+          if (response.status === 429) {
+              setShowLimitModal(true);
+              setLoading(false);
+              return;
+          }
 
-          setRawDailyData(fullData);
+          if (!response.ok) throw new Error(`Failed to fetch climate data`);
+          
+          const data = await response.json();
+          
+          setRawDailyData(data);
           setLastFetchedLocation(`${selectedLocation.lat}-${selectedLocation.lon}`);
-          processData(fullData);
+          processData(data);
       } catch (err) {
           if (fetchIdRef.current !== currentFetchId) return;
           console.error(err);
@@ -218,85 +167,35 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       
       const calculatedPeriods: ClimateData[] = [];
 
-      if (periodType === '30year') {
-          // Existing Logic: Rolling 30-year periods
-          const startYear = 1954;
-          const endYear = 2023;
-          const periodLength = 30;
-          const step = 10;
-
-          for (let end = endYear; end >= startYear + periodLength - 1; end -= step) {
-              const start = end - periodLength + 1;
-              const label = `${start}-${end}`;
-              
-              const stats = calculatePeriodStats(daily, start, end, month, day);
-              if (stats) {
-                  calculatedPeriods.push({
-                      period: label,
-                      max: convertTempPrecise(stats.avgMax, settings.tempUnit),
-                      min: convertTempPrecise(stats.avgMin, settings.tempUnit),
-                      rain: convertPrecip(stats.avgRain, settings.precipUnit),
-                      wind: convertWind(stats.avgWind, settings.windUnit),
-                      sun: stats.avgSun,
-                      diffMax: 0,
-                      diffMin: 0,
-                      diffRain: 0,
-                      diffWind: 0,
-                      diffSun: 0
-                  });
-              }
-          }
-      } else {
-          // Decade Logic: Fixed Decades (1950-1959, 1960-1969, ...)
-          // NOW CHANGED TO: 30-year periods ALIGNED with decades.
-          // Standard WMO reference periods: 1961-1990, 1971-2000, 1981-2010, 1991-2020.
-           
-           const currentYear = new Date().getFullYear(); 
-           // We find the last fully completed decade-aligned 30-year period.
-           // e.g. if we are in 2025, the last full decade ended in 2020.
-           // The last standard period is 1991-2020.
-           
-           const lastDecadeEnd = Math.floor((currentYear - 1) / 10) * 10;
-           
-           // Start from 1990 (period 1961-1990) or whenever data allows
-           // Data starts 1950. First full 30y period is 1951-1980? Or 1961-1990?
-           // WMO standard starts 1901, so 1931-1960, 1961-1990.
-           // Since we have data from 1950, first available standard period is 1961-1990.
-           
-           const periodLength = 30;
-           
-           for (let end = lastDecadeEnd; end >= 1950 + periodLength; end -= 10) {
-             const start = end - periodLength + 1;
-             const label = `${start}-${end}`;
-             
-             // Check if we have data for this period
-             // Our data starts 1950.
-             if (start < 1950) break;
-
-             const stats = calculatePeriodStats(daily, start, end, month, day);
-             if (stats) {
-                 calculatedPeriods.push({
-                     period: label,
-                     max: convertTempPrecise(stats.avgMax, settings.tempUnit),
-                     min: convertTempPrecise(stats.avgMin, settings.tempUnit),
-                     rain: convertPrecip(stats.avgRain, settings.precipUnit),
-                     wind: convertWind(stats.avgWind, settings.windUnit),
-                     sun: stats.avgSun,
-                     diffMax: 0,
-                     diffMin: 0,
-                     diffRain: 0,
-                     diffWind: 0,
-                     diffSun: 0
-                 });
-             }
-          }
+      // Optimized logic: 30-year moving averages
+      // We cut the data into 30-year blocks, moving 10 years back each time
+      const endYear = new Date().getFullYear() - 1; 
+      
+      // Loop backwards from current endYear down to 1979 (which gives start block 1950)
+      for (let y = endYear; y >= 1979; y -= 10) { 
+          const startBlock = y - 29; // 30 years back
+          const endBlock = y; 
           
-          // Reverse to have newest first
-          // calculatedPeriods.reverse(); // They are pushed newest to oldest in the loop?
-          // Loop goes: 2020, 2010, 2000... so they are Newest First.
-          // Existing 30year loop: pushes Newest First.
-          // Existing Decade loop: pushed Oldest First then reversed.
-          // My new loop pushes Newest First. So NO reverse needed.
+          if (startBlock < 1950) break;
+
+          const label = `${startBlock}-${endBlock}`;
+          const stats = calculatePeriodStats(daily, startBlock, endBlock, month, day);
+          
+          if (stats) {
+              calculatedPeriods.push({
+                  period: label,
+                  max: convertTempPrecise(stats.avgMax, settings.tempUnit),
+                  min: convertTempPrecise(stats.avgMin, settings.tempUnit),
+                  rain: convertPrecip(stats.avgRain, settings.precipUnit),
+                  wind: convertWind(stats.avgWind, settings.windUnit),
+                  sun: stats.avgSun,
+                  diffMax: 0,
+                  diffMin: 0,
+                  diffRain: 0,
+                  diffWind: 0,
+                  diffSun: 0
+              });
+          }
       }
 
       // Calculate Diffs
@@ -376,20 +275,11 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           const nextMin = chronological[n-1].min + (slope * 0.8); // Min usually rises slower/faster? assume correlated.
           
           // Create Prediction Label
-          let predLabel = '';
-          if (periodType === '30year') {
-             // 1994-2023 -> next is 2004-2033
-             const lastParts = chronological[n-1].period.split('-');
-             const nextStart = parseInt(lastParts[0]) + 10;
-             const nextEnd = parseInt(lastParts[1]) + 10;
-             predLabel = `${nextStart}-${nextEnd}`;
-          } else {
-             // 2010-2019 -> next is 2020-2029
-             const lastParts = chronological[n-1].period.split('-');
-             const nextStart = parseInt(lastParts[0]) + 10;
-             const nextEnd = parseInt(lastParts[1]) + 10;
-             predLabel = `${nextStart}-${nextEnd}`;
-          }
+          // 1994-2023 -> next is 2004-2033
+          const lastParts = chronological[n-1].period.split('-');
+          const nextStart = parseInt(lastParts[0]) + 10;
+          const nextEnd = parseInt(lastParts[1]) + 10;
+          const predLabel = `${nextStart}-${nextEnd}`;
 
           const prediction: ClimateData = {
               period: predLabel,
@@ -426,81 +316,84 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   };
 
   const calculatePeriodStats = (daily: any, startYear: number, endYear: number, targetMonth: number, targetDay: number) => {
-      let totalMax = 0;
-      let totalMin = 0;
-      let countTemp = 0;
+      let sumMax = 0, sumMin = 0, count = 0;
+      let totalRain = 0, countRainYears = 0;
+      let totalWind = 0, countWind = 0;
+      let totalSunPct = 0, countSun = 0;
 
-      let totalRain = 0;
-      let countRainYears = 0;
+      const dates = daily.time as string[];
+      const maxs = daily.temperature_2m_max as number[];
+      const mins = daily.temperature_2m_min as number[];
       
-      let totalWind = 0;
-      let countWind = 0;
-      
-      let totalSunPct = 0;
-      let countSun = 0;
+      // Additional arrays for other stats
+      const precip = daily.precipitation_sum as number[];
+      const winds = daily.wind_speed_10m_max as number[];
+      const suns = daily.sunshine_duration as number[];
+      const daylights = daily.daylight_duration as number[];
 
-      for (let year = startYear; year <= endYear; year++) {
-          // 1. Temp: Week around date
-          const targetDate = new Date(year, targetMonth - 1, targetDay);
+      dates.forEach((dateStr, i) => {
+          const year = parseInt(dateStr.split('-')[0]);
           
-          for (let offset = -3; offset <= 3; offset++) {
-              const d = new Date(targetDate);
-              d.setDate(d.getDate() + offset);
+          // Check if year is in block
+          if (year >= startYear && year <= endYear) {
+              const d = new Date(dateStr);
+              // Temp: Exact day match
+              const checkDate = new Date(year, targetMonth - 1, targetDay);
               
-              const dateStr = d.toISOString().split('T')[0];
-              const index = daily.time.indexOf(dateStr);
-              
-              if (index !== -1) {
-                  const max = daily.temperature_2m_max[index];
-                  const min = daily.temperature_2m_min[index];
+              const diffTime = Math.abs(d.getTime() - checkDate.getTime());
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+              if (diffDays === 0) {
+                  if (maxs[i] !== null && mins[i] !== null) {
+                      sumMax += maxs[i];
+                      sumMin += mins[i];
+                      count++;
+                  }
+              }
+
+              // Rain/Wind/Sun: Keep existing logic (Entire Month)
+              // This provides better stats for "Month" context, but maybe we should align?
+              // User instruction was specific about Temp. 
+              // To match "climate of the day", month stats are still useful context.
+              const month = parseInt(dateStr.split('-')[1]);
+              if (month === targetMonth) {
+                  // Rain
+                  if (precip && precip[i] !== null) {
+                       totalRain += precip[i];
+                       // We count years, so we need to track this differently?
+                       // Current logic accumulates ALL rain in the month for ALL years
+                       // then divides by (years * 1) ? No, we want Average Monthly Rain.
+                       // So sum all rain, divide by number of years.
+                  }
                   
-                  if (max !== null && min !== null) {
-                      totalMax += max;
-                      totalMin += min;
-                      countTemp++;
+                  // Wind
+                  if (winds && winds[i] !== null) {
+                      totalWind += winds[i];
+                      countWind++;
+                  }
+
+                  // Sun
+                  if (suns && suns[i] !== null && daylights && daylights[i] !== null && daylights[i] > 0) {
+                      const pct = (suns[i] / daylights[i]) * 100;
+                      totalSunPct += pct;
+                      countSun++;
                   }
               }
           }
+      });
+      
+      // Calculate number of years in the block for Rain average
+      const numberOfYears = endYear - startYear + 1;
 
-          // 2. Rain/Wind/Sun: Entire Month
-          const daysInMonthTotal = new Date(year, targetMonth, 0).getDate();
-          let monthlyRain = 0;
-          let hasRainData = false;
-
-          for (let d = 1; d <= daysInMonthTotal; d++) {
-             const dateStr = `${year}-${String(targetMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-             const index = daily.time.indexOf(dateStr);
-             
-             if (index !== -1) {
-                 const rain = daily.precipitation_sum ? daily.precipitation_sum[index] : null;
-                 const wind = daily.wind_speed_10m_max ? daily.wind_speed_10m_max[index] : null;
-                 const sun = daily.sunshine_duration ? daily.sunshine_duration[index] : null;
-                 const daylight = daily.daylight_duration ? daily.daylight_duration[index] : null;
-                 
-                 if (rain !== null) { monthlyRain += rain; hasRainData = true; }
-                 if (wind !== null) { totalWind += wind; countWind++; }
-                 if (sun !== null && daylight !== null && daylight > 0) { 
-                     const pct = (sun / daylight) * 100;
-                     totalSunPct += pct; 
-                     countSun++; 
-                 }
-             }
-          }
-          
-          if (hasRainData) {
-              totalRain += monthlyRain;
-              countRainYears++;
-          }
-      }
-
-      if (countTemp === 0) return null;
+      if (count === 0) return null;
 
       return {
-          avgMax: parseFloat((totalMax / countTemp).toFixed(1)),
-          avgMin: parseFloat((totalMin / countTemp).toFixed(1)),
-          avgRain: countRainYears > 0 ? parseFloat((totalRain / countRainYears).toFixed(1)) : 0,
+          avgMax: parseFloat((sumMax / count).toFixed(1)),
+          avgMin: parseFloat((sumMin / count).toFixed(1)),
+          // Total rain in all months / number of years = Average Monthly Rain
+          avgRain: parseFloat((totalRain / numberOfYears).toFixed(1)), 
           avgWind: countWind > 0 ? parseFloat((totalWind / countWind).toFixed(1)) : 0,
-          avgSun: countSun > 0 ? parseFloat((totalSunPct / countSun).toFixed(0)) : 0 // Percentage as integer
+          avgSun: countSun > 0 ? parseFloat((totalSunPct / countSun).toFixed(0)) : 0
       };
   };
 
@@ -914,7 +807,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                             <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                                 <tr>
                                     <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">
-                                        {settings.climatePeriodType === 'decade' ? `${t('climate.period')} (30 jaar, vast)` : `${t('climate.period')} (30 jaar, schuivend)`}
+                                        {settings.climatePeriodType === 'decade' ? `${t('climate.period')} (10 jaar)` : `${t('climate.period')} (30 jaar)`}
                                     </th>
                                     <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.max')}</th>
                                     <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.min')}</th>

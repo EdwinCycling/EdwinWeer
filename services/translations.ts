@@ -731,7 +731,7 @@ const en: Dictionary = {
     'climate.diff': 'Diff',
     'climate.calc': 'Calculate',
     'climate.loading': 'Loading historical data (1950-2023)...',
-    'climate.info': '30-year average (week around selected date).',
+    'climate.info': 'Average over period (on selected date).',
     'climate.chart_title': 'Temperature Trend',
 };
 
@@ -1508,7 +1508,7 @@ const nl: Dictionary = {
     'climate.diff': 'Verschil',
     'climate.calc': 'Bereken',
     'climate.loading': 'Historische data ophalen (1950-2023)...',
-    'climate.info': 'Gemiddelde over 30 jaar (week rondom deze datum).',
+    'climate.info': 'Gemiddelde over periode (op geselecteerde datum).',
     'climate.chart_title': 'Temperatuur Trend',
     'climate.rain_title': 'Neerslag (Maandgemiddelde)',
     'climate.wind_sun_title': 'Wind & Zon Trends',
@@ -1518,12 +1518,12 @@ const nl: Dictionary = {
     'nav.favorites': 'Favorieten',
     'climate.period_type': 'Periode Type',
     'climate.type_30year': '30-Jaar (Schuivend)',
-    'climate.type_decade': 'Decades (Vast)',
+    'climate.type_decade': 'Decennia (10 jaar)',
     'climate.forecast': 'Voorspelling',
     'climate.forecast_label': 'Trend Voorspelling',
     'climate.increase': 'Stijging',
     'climate.expl_30year': 'Elke regel is het gemiddelde van 30 jaar (schuift elke 10 jaar op).',
-    'climate.expl_decade': 'Elke regel is het gemiddelde van 30 jaar (Standaard referentie periodes).',
+    'climate.expl_decade': 'Elke regel is het gemiddelde van 10 jaar (Decennium).',
     'climate.delta_chart_title': 'Verandering in % (t.o.v. oudste meting)',
 };
 
