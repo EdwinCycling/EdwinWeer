@@ -163,17 +163,15 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       if (!data.daily || !data.daily.time) return;
 
       const daily = data.daily;
-      const periodType = settings.climatePeriodType || '30year';
-      
       const calculatedPeriods: ClimateData[] = [];
 
-      // Optimized logic: 30-year moving averages
-      // We cut the data into 30-year blocks, moving 10 years back each time
+      // Logic: 10-year blocks (Decades) as requested
+      const windowSize = 10;
       const endYear = new Date().getFullYear() - 1; 
       
-      // Loop backwards from current endYear down to 1979 (which gives start block 1950)
-      for (let y = endYear; y >= 1979; y -= 10) { 
-          const startBlock = y - 29; // 30 years back
+      // Loop backwards from current endYear
+      for (let y = endYear; y >= 1950 + (windowSize - 1); y -= 10) { 
+          const startBlock = y - (windowSize - 1); 
           const endBlock = y; 
           
           if (startBlock < 1950) break;
@@ -337,13 +335,14 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           // Check if year is in block
           if (year >= startYear && year <= endYear) {
               const d = new Date(dateStr);
-              // Temp: Exact day match
+              // Temp: 7-day window (3 days before, target, 3 days after)
+              // We create a checkDate for the target day in THIS year
               const checkDate = new Date(year, targetMonth - 1, targetDay);
               
               const diffTime = Math.abs(d.getTime() - checkDate.getTime());
               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
-              if (diffDays === 0) {
+              if (diffDays <= 3) {
                   if (maxs[i] !== null && mins[i] !== null) {
                       sumMax += maxs[i];
                       sumMin += mins[i];
@@ -685,29 +684,6 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                   </div>
                   
                   <div className="flex flex-col gap-3 items-end w-full md:w-auto">
-                      {/* Period Type Toggle */}
-                      <div className="flex flex-col items-end gap-1">
-                          <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl w-full md:w-auto">
-                              <button 
-                                  onClick={() => onUpdateSettings({...settings, climatePeriodType: '30year'})}
-                                  className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${(!settings.climatePeriodType || settings.climatePeriodType === '30year') ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                              >
-                                  {t('climate.type_30year')}
-                              </button>
-                              <button 
-                                  onClick={() => onUpdateSettings({...settings, climatePeriodType: 'decade'})}
-                                  className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${settings.climatePeriodType === 'decade' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                              >
-                                  {t('climate.type_decade')}
-                              </button>
-                          </div>
-                          <div className="bg-blue-50 dark:bg-blue-900/10 px-3 py-2 rounded-lg mt-2 w-full md:w-auto text-right md:text-left">
-                              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-end md:justify-start gap-2">
-                                  <Icon name="info" className="text-sm" />
-                                  {settings.climatePeriodType === 'decade' ? t('climate.expl_decade') : t('climate.expl_30year')}
-                              </p>
-                          </div>
-                      </div>
 
                       <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl w-full md:w-auto justify-end">
                           <select 
@@ -806,8 +782,9 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                                 <tr>
+
                                     <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">
-                                        {settings.climatePeriodType === 'decade' ? `${t('climate.period')} (10 jaar)` : `${t('climate.period')} (30 jaar)`}
+                                        {`${t('climate.period')} (10 jaar)`}
                                     </th>
                                     <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.max')}</th>
                                     <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.min')}</th>
