@@ -382,7 +382,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
     // Cold & Wind Chances
     const chanceMinLT0 = yearData.filter(d => d.min < 0).length;
     const chanceMaxLT0 = yearData.filter(d => d.max < 0).length;
-    const chanceGustGT5Bft = yearData.filter(d => d.gust > 38).length; // > 5 Bft means >= 6 Bft (min 39 km/h)
+    const chanceGustGT6Bft = yearData.filter(d => d.gust > 49).length; // > 6 Bft means >= 7 Bft (min 50 km/h)
 
     return {
         avgMax: totalMax / yearData.length,
@@ -393,7 +393,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
         chanceMaxGT30: (chanceMaxGT30 / yearData.length) * 100,
         chanceMinLT0: (chanceMinLT0 / yearData.length) * 100,
         chanceMaxLT0: (chanceMaxLT0 / yearData.length) * 100,
-        chanceGustGT5Bft: (chanceGustGT5Bft / yearData.length) * 100
+        chanceGustGT6Bft: (chanceGustGT6Bft / yearData.length) * 100
     };
   }, [yearData]);
 
@@ -644,8 +644,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                                       <span className="font-bold">{Math.round(averageStats.chanceMaxLT0)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Windstoot {'>'} 5 Bft</span>
-                                      <span className="font-bold">{Math.round(averageStats.chanceGustGT5Bft)}%</span>
+                                      <span>Windstoot {'>'} 6 Bft ({'>'} 50 km/hr)</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceGustGT6Bft)}%</span>
                                   </div>
                               </div>
                           </div>
