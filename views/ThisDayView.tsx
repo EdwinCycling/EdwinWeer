@@ -283,6 +283,63 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
               intersect: false,
           }
       },
+      animation: {
+        onComplete: (animation: any) => {
+            const chart = animation.chart;
+            const ctx = chart.ctx;
+            const datasetMax = chart.data.datasets[0]; // Max Temp (Red)
+            const datasetMin = chart.data.datasets[1]; // Min Temp (Blue)
+            
+            // Helper to find index of max/min value in filtered data
+            // Note: chart.data.datasets data matches the filteredYearData order
+            
+            let maxVal = -Infinity;
+            let maxIndex = -1;
+            datasetMax.data.forEach((val: number, i: number) => {
+                if (val > maxVal) {
+                    maxVal = val;
+                    maxIndex = i;
+                }
+            });
+
+            let minVal = Infinity;
+            let minIndex = -1;
+            datasetMin.data.forEach((val: number, i: number) => {
+                if (val < minVal) {
+                    minVal = val;
+                    minIndex = i;
+                }
+            });
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.font = 'bold 12px sans-serif';
+
+            // Draw Max Label
+            if (maxIndex !== -1) {
+                const meta = chart.getDatasetMeta(0);
+                const point = meta.data[maxIndex];
+                if (point) {
+                    ctx.fillStyle = '#ef4444'; // Red
+                    ctx.fillText(`${maxVal.toFixed(1)}°`, point.x, point.y - 10);
+                }
+            }
+
+            // Draw Min Label
+            if (minIndex !== -1) {
+                const meta = chart.getDatasetMeta(1);
+                const point = meta.data[minIndex];
+                if (point) {
+                    ctx.textBaseline = 'top';
+                    ctx.fillStyle = '#3b82f6'; // Blue
+                    ctx.fillText(`${minVal.toFixed(1)}°`, point.x, point.y + 10);
+                }
+            }
+
+            ctx.restore();
+        }
+      },
       scales: {
           y: {
               ticks: { 
@@ -334,7 +391,10 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                         // User wants: `speed (unit)`.
                         
                         if (type === 'wind') {
-                             valStr = `${convertWind(val, settings.windUnit)} (${settings.windUnit})`;
+                            let unitStr = settings.windUnit as string;
+                            if (unitStr === 'km/h') unitStr = 'km/hr';
+                            if (unitStr === 'mph') unitStr = 'miles/hr';
+                            valStr = `${convertWind(val, settings.windUnit)} (${unitStr})`;
                         }
 
                         return (
@@ -518,6 +578,13 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                               className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors ${chartView === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
                           >
                               Alles
+                          </button>
+
+                          <button 
+                              onClick={() => setChartView('paged')}
+                              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors ${chartView === 'paged' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
+                          >
+                              10 Jaar
                           </button>
                           
                           <div className="w-px h-6 bg-slate-200 dark:bg-white/10" />
