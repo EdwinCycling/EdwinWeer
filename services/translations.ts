@@ -21,6 +21,7 @@ const en: Dictionary = {
     'nav.info': 'Info',
     'nav.user_account': 'My Account',
     'nav.climate_change': 'Climate Change',
+    'nav.this_day': 'This Day',
     'nav.favorites': 'Favorites',
 
     // App
@@ -733,6 +734,8 @@ const en: Dictionary = {
     'climate.loading': 'Loading historical data (1950-2023)...',
     'climate.info': '30-year average (week around selected date).',
     'climate.chart_title': 'Temperature Trend',
+    'this_day.title': 'This Day in History',
+    'this_day.subtitle': 'Historical extremes for this date',
 };
 
 const nl: Dictionary = {
@@ -752,6 +755,9 @@ const nl: Dictionary = {
     'nav.info': 'Info',
     'nav.user_account': 'Mijn Account',
     'nav.climate_change': 'Klimaatverandering',
+    'nav.this_day': 'Deze Dag',
+    'this_day.title': 'Deze Dag in de Geschiedenis',
+    'this_day.subtitle': 'Historische extremen voor deze datum',
 
     'app.title_prefix': 'Weer & Rit',
 

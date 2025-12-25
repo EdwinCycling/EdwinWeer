@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
 import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex } from '../services/weatherService';
-import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode } from '../services/storageService';
+import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode, loadEnsembleModel } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
@@ -37,7 +37,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         setLoading(true);
         setError('');
         try {
-            const data = await fetchForecast(location.lat, location.lon);
+            const model = loadEnsembleModel();
+            const data = await fetchForecast(location.lat, location.lon, model);
             
             // Check for empty data
             if (!data || !data.daily || data.daily.time.length === 0) {

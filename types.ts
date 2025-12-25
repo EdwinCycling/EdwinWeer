@@ -212,7 +212,8 @@ export enum ViewState {
   USER_ACCOUNT = 'USER_ACCOUNT',
   SHARE = 'SHARE',
   BAROMETER = 'BAROMETER',
-  CLIMATE_CHANGE = 'CLIMATE_CHANGE'
+  CLIMATE_CHANGE = 'CLIMATE_CHANGE',
+  THIS_DAY = 'THIS_DAY'
 }
 
 export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';
@@ -231,4 +232,5 @@ export type EnsembleModel =
     'bom_access_global' | 
     'metoffice_global' | 
     'metoffice_uk' | 
-    'icon_ch1_eps';
+    'icon_ch1_eps' |
+    'best_match';

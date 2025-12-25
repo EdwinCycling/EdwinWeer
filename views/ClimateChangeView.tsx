@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
+import { loadClimateData, saveClimateData } from '../services/storageService';
 import { convertTempPrecise, convertWind, convertPrecip } from '../services/weatherService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
@@ -76,6 +77,16 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   // Initial Fetch & Refetch on Location Change
   useEffect(() => {
       const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
+      
+      // Check persistent cache first
+      const cached = loadClimateData(locKey);
+      if (cached) {
+          setRawDailyData(cached);
+          setLastFetchedLocation(locKey);
+          processData(cached);
+          return;
+      }
+
       if (rawDailyData && lastFetchedLocation === locKey) {
           // Data already available for this location, just recalc
           processData(rawDailyData);
@@ -114,6 +125,17 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       // Increment fetch ID to invalidate previous running fetches
       const currentFetchId = fetchIdRef.current + 1;
       fetchIdRef.current = currentFetchId;
+      
+      const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
+      
+      // Check cache again
+      const cached = loadClimateData(locKey);
+      if (cached) {
+           setRawDailyData(cached);
+           setLastFetchedLocation(locKey);
+           processData(cached);
+           return;
+      }
 
       setLoading(true);
       setLoadingProgress('Initialiseren...');
@@ -144,8 +166,11 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           
           const data = await response.json();
           
+          // Save to persistent cache
+          saveClimateData(locKey, data);
+          
           setRawDailyData(data);
-          setLastFetchedLocation(`${selectedLocation.lat}-${selectedLocation.lon}`);
+          setLastFetchedLocation(locKey);
           processData(data);
       } catch (err) {
           if (fetchIdRef.current !== currentFetchId) return;

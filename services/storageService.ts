@@ -299,11 +299,11 @@ export const saveEnsembleModel = (model: EnsembleModel) => {
 };
 
 export const loadEnsembleModel = (): EnsembleModel => {
-    if (typeof window === "undefined") return 'gfs_seamless';
+    if (typeof window === "undefined") return 'best_match';
     const stored = localStorage.getItem(KEY_ENSEMBLE_MODEL);
     // Fallback for deprecated models
-    if (stored === 'icon_ch2_eps') return 'gfs_seamless';
-    return (stored as EnsembleModel) || 'gfs_seamless';
+    if (stored === 'icon_ch2_eps') return 'best_match';
+    return (stored as EnsembleModel) || 'best_match';
 };
 
 export const saveEnsembleViewMode = (mode: string) => {
@@ -386,6 +386,52 @@ export const loadForecastTrendArrowsMode = (): boolean => {
     if (typeof window === "undefined") return true;
     const stored = localStorage.getItem(KEY_FORECAST_TREND_ARROWS_MODE);
     return stored === null ? true : stored === 'true';
+};
+
+const KEY_CLIMATE_CACHE = "weather_app_climate_cache";
+
+export const saveClimateData = (locationKey: string, data: any) => {
+    if (typeof window !== "undefined") {
+        try {
+            const cache = JSON.parse(localStorage.getItem(KEY_CLIMATE_CACHE) || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            // Clear old keys to save space (keep only today's)
+            const newCache: Record<string, { date: string, data: any }> = {};
+            
+            // Keep existing valid entries for today
+            Object.keys(cache).forEach(k => {
+                if (cache[k].date === today) {
+                    newCache[k] = cache[k];
+                }
+            });
+
+            // Add new entry
+            newCache[locationKey] = {
+                date: today,
+                data: data
+            };
+            
+            localStorage.setItem(KEY_CLIMATE_CACHE, JSON.stringify(newCache));
+        } catch (e) {
+            console.error("Failed to save climate cache", e);
+        }
+    }
+};
+
+export const loadClimateData = (locationKey: string): any | null => {
+    if (typeof window === "undefined") return null;
+    try {
+        const cache = JSON.parse(localStorage.getItem(KEY_CLIMATE_CACHE) || '{}');
+        const entry = cache[locationKey];
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (entry && entry.date === today) {
+            return entry.data;
+        }
+    } catch (e) {
+        console.error("Failed to load climate cache", e);
+    }
+    return null;
 };
 
 // DEPRECATED: Use loadForecastViewMode instead

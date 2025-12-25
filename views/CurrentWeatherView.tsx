@@ -706,14 +706,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </h1>
                         <div className="flex flex-row gap-2">
                             {feelsLike < 10 ? (
-                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[70px] h-[70px]">
+                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
                                     <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
                                     <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
                                     <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
                                 </div>
                             ) : (
                                 heatIndex > currentTemp && (
-                                    <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[70px] h-[70px]">
+                                    <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
                                         <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
                                         <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
                                         <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
@@ -758,6 +758,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
                                 className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-lg px-3 py-2 appearance-none text-xs font-medium text-slate-600 dark:text-slate-300 outline-none focus:border-primary/50 transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                             >
+                                <option value="best_match" className="text-slate-800 bg-white font-bold">Auto (Best Match)</option>
                                 <option value="icon_seamless" className="text-slate-800 bg-white">DWD ICON EPS Seamless</option>
                                 <option value="icon_global" className="text-slate-800 bg-white">DWD ICON EPS Global</option>
                                 <option value="icon_eu" className="text-slate-800 bg-white">DWD ICON EPS EU</option>

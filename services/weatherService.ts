@@ -260,7 +260,7 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   
   const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_hours,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
 
-  const modelParam = model ? `&models=${model}` : '';
+  const modelParam = (model && model !== 'best_match') ? `&models=${model}` : '';
   const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16${modelParam}`;
 
   const cacheKey = `forecast-${lat}-${lon}-${model || 'default'}`;

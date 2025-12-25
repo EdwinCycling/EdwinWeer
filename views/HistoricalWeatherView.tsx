@@ -15,12 +15,12 @@ interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
   onUpdateSettings?: (settings: AppSettings) => void;
-  initialParams?: { date1?: Date; date2?: Date };
+  initialParams?: { date1?: Date; date2?: Date; location?: Location };
 }
 
 export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
-  const [location1, setLocation1] = useState<Location>(loadCurrentLocation());
-  const [location2, setLocation2] = useState<Location>(loadCurrentLocation());
+  const [location1, setLocation1] = useState<Location>(() => initialParams?.location || loadCurrentLocation());
+  const [location2, setLocation2] = useState<Location>(() => initialParams?.location || loadCurrentLocation());
   
   // Date 1: 1 Year Ago (Default) or from params
   const [date1, setDate1] = useState<Date>(() => {

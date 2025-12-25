@@ -21,6 +21,7 @@ import { RecordsWeatherView } from './views/RecordsWeatherView';
 import { ShareWeatherView } from './views/ShareWeatherView';
 import { BarometerView } from './views/BarometerView';
 import { ClimateChangeView } from './views/ClimateChangeView';
+import { ThisDayView } from './views/ThisDayView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -208,6 +209,8 @@ const App: React.FC = () => {
         return <BarometerView onNavigate={navigate} settings={settings} />;
       case ViewState.CLIMATE_CHANGE:
         return <ClimateChangeView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.THIS_DAY:
+        return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
         return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.TEAM:
@@ -378,6 +381,16 @@ const App: React.FC = () => {
                             <div className="flex flex-col items-start">
                                 <span className="font-bold text-lg">{t('climate.title')}</span>
                                 <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('climate.subtitle')}</span>
+                            </div>
+                         </button>
+
+                         <button onClick={() => { navigate(ViewState.THIS_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-12 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <Icon name="calendar_today" className="text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-lg">{t('this_day.title')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('this_day.subtitle')}</span>
                             </div>
                          </button>
 
