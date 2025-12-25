@@ -366,6 +366,21 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       }
   };
 
+  // Calculate Averages
+  const averageStats = React.useMemo(() => {
+    if (yearData.length === 0) return null;
+
+    const totalMax = yearData.reduce((acc, curr) => acc + curr.max, 0);
+    const totalMin = yearData.reduce((acc, curr) => acc + curr.min, 0);
+    const rainDays = yearData.filter(d => d.rain >= 2).length;
+
+    return {
+        avgMax: totalMax / yearData.length,
+        avgMin: totalMin / yearData.length,
+        rainChance: (rainDays / yearData.length) * 100
+    };
+  }, [yearData]);
+
   const renderStatCard = (title: string, stats: YearStats[], type: 'temp' | 'rain' | 'wind', valueField: 'max' | 'min' | 'rain' | 'gust') => {
         const currentYear = new Date().getFullYear();
         
@@ -557,6 +572,27 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
                   {/* Top Stats Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Averages Card */}
+                      {averageStats && (
+                          <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
+                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Gemiddelden & Kans</h3>
+                              <div className="space-y-2">
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Gem. Max Temp</span>
+                                      <span className="font-bold">{convertTempPrecise(averageStats.avgMax, settings.tempUnit).toFixed(1)}°</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Gem. Min Temp</span>
+                                      <span className="font-bold">{convertTempPrecise(averageStats.avgMin, settings.tempUnit).toFixed(1)}°</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Kans op ≥ 2mm</span>
+                                      <span className="font-bold">{Math.round(averageStats.rainChance)}%</span>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+
                       {renderStatCard('Top 3 Warmste Jaren (Max)', topStats.warmestMax, 'temp', 'max')}
                       {renderStatCard('Top 3 Koudste Jaren (Max)', topStats.coldestMax, 'temp', 'max')}
                       {renderStatCard('Top 3 Koudste Nachten (Min)', topStats.coldestMin, 'temp', 'min')}
