@@ -382,7 +382,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
     // Cold & Wind Chances
     const chanceMinLT0 = yearData.filter(d => d.min < 0).length;
     const chanceMaxLT0 = yearData.filter(d => d.max < 0).length;
-    const chanceGustLT5Bft = yearData.filter(d => d.gust < 29).length; // < 5 Bft means <= 4 Bft (max 28 km/h)
+    const chanceGustGT5Bft = yearData.filter(d => d.gust > 38).length; // > 5 Bft means >= 6 Bft (min 39 km/h)
 
     return {
         avgMax: totalMax / yearData.length,
@@ -393,7 +393,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
         chanceMaxGT30: (chanceMaxGT30 / yearData.length) * 100,
         chanceMinLT0: (chanceMinLT0 / yearData.length) * 100,
         chanceMaxLT0: (chanceMaxLT0 / yearData.length) * 100,
-        chanceGustLT5Bft: (chanceGustLT5Bft / yearData.length) * 100
+        chanceGustGT5Bft: (chanceGustGT5Bft / yearData.length) * 100
     };
   }, [yearData]);
 
@@ -414,18 +414,18 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                         let valStr = '';
                         if (type === 'temp') valStr = `${convertTempPrecise(val, settings.tempUnit).toFixed(1)}°`;
                         else if (type === 'rain') valStr = `${convertPrecip(val, settings.precipUnit)} ${settings.precipUnit}`;
-                        else if (type === 'wind') valStr = `${convertWind(val, settings.windUnit)} ${settings.windUnit}`; // Wind unit added below in the span to match request better or just here?
-                        // User said: "bij wind altijd de snelheid km/hr of miles/hr erbij zetten tussen haakjes)"
-                        // So: "50 (km/h)" or "50 km/h". The current code does `${val} ${unit}`.
-                        // Let's adjust to match "erbij zetten tussen haakjes". 
-                        // Actually, existing code was `${convertWind(...)} ${settings.windUnit}`.
-                        // User wants: `speed (unit)`.
+                        else if (type === 'wind') valStr = `${convertWind(val, settings.windUnit)} ${settings.windUnit}`;
                         
                         if (type === 'wind') {
-                            let unitStr = settings.windUnit as string;
-                            if (unitStr === 'km/h') unitStr = 'km/hr';
-                            if (unitStr === 'mph') unitStr = 'miles/hr';
-                            valStr = `${convertWind(val, settings.windUnit)} (${unitStr})`;
+                            if (settings.windUnit === 'bft') {
+                                const bftVal = convertWind(val, 'bft');
+                                valStr = `${bftVal} Bft (${Math.round(val)} km/hr)`;
+                            } else {
+                                let unitStr = settings.windUnit as string;
+                                if (unitStr === 'km/h') unitStr = 'km/hr';
+                                if (unitStr === 'mph') unitStr = 'miles/hr';
+                                valStr = `${convertWind(val, settings.windUnit)} (${unitStr})`;
+                            }
                         }
 
                         return (
@@ -644,8 +644,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                                       <span className="font-bold">{Math.round(averageStats.chanceMaxLT0)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Windstoot {'<'} 5 Bft</span>
-                                      <span className="font-bold">{Math.round(averageStats.chanceGustLT5Bft)}%</span>
+                                      <span>Windstoot {'>'} 5 Bft</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceGustGT5Bft)}%</span>
                                   </div>
                               </div>
                           </div>
