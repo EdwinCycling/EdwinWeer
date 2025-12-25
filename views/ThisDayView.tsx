@@ -221,7 +221,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       }
       setIsSearching(true);
       try {
-          const results = await searchCityByName(query);
+          const results = await searchCityByName(query, settings.language);
           setSearchResults(results);
       } catch (error) {
           console.error('Search failed', error);
@@ -232,7 +232,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
   const selectLocation = (loc: Location) => {
       setSelectedLocation(loc);
-      setSearchQuery('');
+      setSearchQuery(`${loc.name}, ${loc.country}`);
       setSearchResults([]);
       setYearData([]);
       setTopStats(null);
@@ -381,13 +381,18 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                   <div className="flex items-center bg-slate-100 dark:bg-black/20 rounded-xl px-3 py-2">
                       <Icon name="search" className="text-slate-400" />
                       <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => handleSearch(e.target.value)}
-                          placeholder={t('search_placeholder')}
-                          className="bg-transparent border-none outline-none ml-2 w-full text-slate-800 dark:text-white placeholder-slate-400"
-                          onFocus={() => setShowFavorites(true)}
-                      />
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && searchResults.length > 0) {
+                                selectLocation(searchResults[0]);
+                            }
+                        }}
+                        placeholder={t('search_placeholder')}
+                        className="bg-transparent border-none outline-none ml-2 w-full text-slate-800 dark:text-white placeholder-slate-400"
+                        onFocus={() => setShowFavorites(true)}
+                    />
                       {searchQuery && (
                           <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="p-1">
                               <Icon name="close" className="text-slate-400" />
