@@ -373,11 +373,27 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
     const totalMax = yearData.reduce((acc, curr) => acc + curr.max, 0);
     const totalMin = yearData.reduce((acc, curr) => acc + curr.min, 0);
     const rainDays = yearData.filter(d => d.rain >= 2).length;
+    
+    // Heat Chances
+    const chanceMaxGT20 = yearData.filter(d => d.max > 20).length;
+    const chanceMaxGT25 = yearData.filter(d => d.max > 25).length;
+    const chanceMaxGT30 = yearData.filter(d => d.max > 30).length;
+
+    // Cold & Wind Chances
+    const chanceMinLT0 = yearData.filter(d => d.min < 0).length;
+    const chanceMaxLT0 = yearData.filter(d => d.max < 0).length;
+    const chanceGustLT5Bft = yearData.filter(d => d.gust < 29).length; // < 5 Bft means <= 4 Bft (max 28 km/h)
 
     return {
         avgMax: totalMax / yearData.length,
         avgMin: totalMin / yearData.length,
-        rainChance: (rainDays / yearData.length) * 100
+        rainChance: (rainDays / yearData.length) * 100,
+        chanceMaxGT20: (chanceMaxGT20 / yearData.length) * 100,
+        chanceMaxGT25: (chanceMaxGT25 / yearData.length) * 100,
+        chanceMaxGT30: (chanceMaxGT30 / yearData.length) * 100,
+        chanceMinLT0: (chanceMinLT0 / yearData.length) * 100,
+        chanceMaxLT0: (chanceMaxLT0 / yearData.length) * 100,
+        chanceGustLT5Bft: (chanceGustLT5Bft / yearData.length) * 100
     };
   }, [yearData]);
 
@@ -588,6 +604,48 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                                   <div className="flex justify-between items-center text-sm p-1">
                                       <span>Kans op ≥ 2mm</span>
                                       <span className="font-bold">{Math.round(averageStats.rainChance)}%</span>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Heat Chances Card */}
+                      {averageStats && (
+                          <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
+                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Kans op Warmte</h3>
+                              <div className="space-y-2">
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Max {'>'} 20°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGT20)}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Max {'>'} 25°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGT25)}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Max {'>'} 30°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGT30)}%</span>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Cold & Wind Chances Card */}
+                      {averageStats && (
+                          <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
+                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Kou & Wind</h3>
+                              <div className="space-y-2">
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Min {'<'} 0°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMinLT0)}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Max {'<'} 0°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxLT0)}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm p-1">
+                                      <span>Windstoot {'<'} 5 Bft</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceGustLT5Bft)}%</span>
                                   </div>
                               </div>
                           </div>
