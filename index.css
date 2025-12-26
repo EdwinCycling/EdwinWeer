@@ -3,13 +3,16 @@
 @theme {
   --color-primary: #13b6ec;
   --color-background-light: #f6f8f8;
-  --color-background-dark: var(--bg-primary);
-  --color-card-dark: var(--bg-card);
+  --color-background-dark: #0f172a;
+  --color-card-dark: #1e293b;
   --color-strava: #FC4C02;
   --font-display: "Space Grotesk", sans-serif;
 }
 
 :root {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

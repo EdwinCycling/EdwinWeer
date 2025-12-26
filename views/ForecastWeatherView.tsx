@@ -37,7 +37,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         setLoading(true);
         setError('');
         try {
-            const model = loadEnsembleModel();
+            // Force auto model (best_match)
+            const model = 'best_match'; 
             const data = await fetchForecast(location.lat, location.lon, model);
             
             // Check for empty data
@@ -288,6 +289,34 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       return 'text-red-500 dark:text-red-400';
   };
 
+  const getWeekendAreas = () => {
+      const areas = [];
+      for (let i = 0; i < graphData.length; i++) {
+          const d = graphData[i];
+          const date = new Date(d.dayDate + ' ' + new Date().getFullYear()); // Approximation for weekday check
+          // Better: use the original index to find the date from weatherData if needed, but dayName has weekday.
+          // Or just check day name? "Saturday" / "Zaterdag"
+          // Let's rely on the index and initial date.
+          // Actually, weatherData.daily.time[i] is available.
+          if (weatherData && weatherData.daily && weatherData.daily.time[i]) {
+              const dt = new Date(weatherData.daily.time[i]);
+              const day = dt.getDay(); // 0 = Sunday, 6 = Saturday
+              if (day === 0 || day === 6) {
+                  areas.push(
+                      <ReferenceArea 
+                          key={`weekend-${i}`} 
+                          x1={d.day} 
+                          x2={d.day} 
+                          fill="rgba(255, 255, 0, 0.1)" 
+                          ifOverflow="extendDomain"
+                      />
+                  );
+              }
+          }
+      }
+      return areas;
+  };
+
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
@@ -434,7 +463,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         {expandedMode && (
                             <div className="flex items-center gap-2 select-none">
                                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Activiteiten</span>
-                                <div className="flex bg-slate-100 dark:bg-black/40 rounded-full p-0.5 text-[10px]">
+                                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-full p-0.5 text-[10px]">
                                     <button
                                         type="button"
                                         onClick={() => setActivitiesMode('none')}
@@ -591,7 +620,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     
                                     <div className="flex-1 flex items-center gap-1 px-1 sm:px-2 min-w-0">
                                         <span className="text-slate-500 dark:text-white/60 text-xs font-medium text-right min-w-[24px]">{d.min}°</span>
-                                        <div className="h-2 flex-1 mx-1 sm:mx-2 bg-slate-300 dark:bg-black/40 rounded-full overflow-hidden relative">
+                                        <div className="h-2 flex-1 mx-1 sm:mx-2 bg-slate-300 dark:bg-slate-800 rounded-full overflow-hidden relative">
                                             <div className={`absolute h-full rounded-full bg-gradient-to-r ${d.color}`} style={{ left: `${((d.min - tempScaleMin) / tempScaleRange) * 100}%`, width: `${Math.max(2, ((d.max - d.min) / tempScaleRange) * 100)}%` }}></div>
                                         </div>
                                         <span className="font-bold text-sm min-w-[24px]">{d.max}°</span>
@@ -838,7 +867,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 </div>
 
                 <div className="mt-6">
-                    <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">Activiteiten</h4>
+                    <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">{t('activities')}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {dailyForecast[selectedDayIndex].activityScores.map(score => (
                              <div key={score.type} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5 shadow-sm">

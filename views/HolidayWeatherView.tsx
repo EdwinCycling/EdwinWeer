@@ -547,7 +547,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                     {/* Search Button (Floating like CurrentWeather) */}
                     <button
                         onClick={() => setIsSearchOpen(v => !v)}
-                        className="absolute right-4 top-0 p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-black/40 transition-all active:scale-95 shadow-sm"
+                        className="absolute right-4 top-0 p-3 bg-white/20 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
                     >
                         <Icon name="search" className="text-2xl" />
                     </button>
@@ -590,7 +590,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             placeholder={t('search')}
-                            className="flex-1 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                            className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
                         />
                         <button
                             disabled={loadingSearch || !searchQuery.trim()}
@@ -771,7 +771,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                     <button
                                                         key={val}
                                                         onClick={() => setRainThreshold(val)}
-                                                        className={`px-2 py-0.5 rounded-md transition-colors ${rainThreshold === val ? 'bg-blue-500 text-white shadow-sm' : 'bg-white dark:bg-black/20 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                                        className={`px-2 py-0.5 rounded-md transition-colors ${rainThreshold === val ? 'bg-blue-500 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                                                     >
                                                         {val}mm
                                                     </button>
@@ -1048,7 +1048,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                         {activityScores && (
                                             <div className="mt-6">
                                                 <h5 className="text-xs font-bold uppercase text-slate-500 dark:text-white/50 mb-4">Activiteiten (Gemiddeld)</h5>
-                                                <p className="text-xs text-slate-500 dark:text-white/60 mb-4 italic">Gemiddelde scores van de gekozen periode</p>
+                                                <p className="text-xs text-slate-500 dark:text-white/60 mb-4 italic">{t('average_scores')}</p>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                                                     {activityScores.map((activity) => (
                                                         <div key={activity.type} className="bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center gap-2">

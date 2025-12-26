@@ -32,7 +32,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             >
                 {/* Header */}
                 {(title || onClose) && (
-                    <div className={`p-4 border-b border-slate-100 dark:border-white/10 flex justify-between items-center bg-slate-50/50 dark:bg-white/5 ${fullScreen ? 'absolute top-0 left-0 right-0 z-[2001] bg-white/80 dark:bg-black/40 backdrop-blur-md' : ''}`}>
+                    <div className={`p-4 border-b border-slate-100 dark:border-white/10 flex justify-between items-center bg-slate-50/50 dark:bg-white/5 ${fullScreen ? 'absolute top-0 left-0 right-0 z-[2001] bg-white/80 dark:bg-slate-900/90 backdrop-blur-md' : ''}`}>
                         {title && (
                             <h3 className="font-bold text-lg text-slate-800 dark:text-white">
                                 {title}

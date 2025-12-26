@@ -1686,7 +1686,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                       <div className="flex justify-between items-start relative z-10">
                                                           <div className="flex items-center gap-1">
                                                               {(settings.calendar?.showDetails !== false) && (
-                                                                  <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full shadow-sm ${day.date === new Date().toISOString().split('T')[0] ? 'bg-primary text-white' : 'bg-white/60 dark:bg-black/40'}`}>
+                                                                  <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full shadow-sm ${day.date === new Date().toISOString().split('T')[0] ? 'bg-primary text-white' : 'bg-white/60 dark:bg-slate-800'}`}>
                                                                       {day.day}
                                                                   </span>
                                                               )}
@@ -1704,7 +1704,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                                   </div>
                                                               )}
                                                           </div>
-                                                          <div className="flex flex-col items-end bg-white/40 dark:bg-black/20 px-1.5 py-0.5 rounded-lg backdrop-blur-sm ml-auto">
+                                                          <div className="flex flex-col items-end bg-white/40 dark:bg-slate-800 px-1.5 py-0.5 rounded-lg backdrop-blur-sm ml-auto">
                                                               <span className="text-sm font-bold">{day.maxTemp?.toFixed(1)}°</span>
                                                               <span className="text-[10px] opacity-70">{day.minTemp?.toFixed(1)}°</span>
                                                           </div>
@@ -2157,7 +2157,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       
                       <div className="grid grid-cols-1 gap-4">
                           {/* Max Rise */}
-                          <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                          <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                               <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                   {t('records.max_rise')}
                               </span>
@@ -2189,7 +2189,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                           </div>
 
                           {/* Max Drop */}
-                          <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                          <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                               <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                   {t('records.max_drop')}
                               </span>
@@ -2224,7 +2224,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                           {diverseRecords.extremes && (
                               <div className="grid grid-cols-1 gap-4">
                                   {/* Summer Days (>= 25) */}
-                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                           {t('records.extremes.first_summer')}
                                       </span>
@@ -2235,7 +2235,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                           </div>
                                       ) : <span className="text-sm text-slate-400">-</span>}
                                   </div>
-                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                           {t('records.extremes.last_summer')}
                                       </span>
@@ -2248,7 +2248,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   </div>
 
                                   {/* Warm Days (>= 20) -> "Lekker" */}
-                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                           {t('records.extremes.first_warm')}
                                       </span>
@@ -2259,7 +2259,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                           </div>
                                       ) : <span className="text-sm text-slate-400">-</span>}
                                   </div>
-                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                           {t('records.extremes.last_warm')}
                                       </span>
@@ -2276,7 +2276,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                           {/* Frost Info - Moved here */}
                           {frostInfo && (
                               <>
-                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                           {t('records.frost.first')}
                                       </span>
@@ -2289,7 +2289,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                       )}
                                   </div>
 
-                                  <div className="bg-white/60 dark:bg-black/20 rounded-xl p-4">
+                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
                                       <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
                                           {t('records.frost.last')}
                                       </span>

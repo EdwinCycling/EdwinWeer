@@ -780,7 +780,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                             className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                         >
                             <Icon name="download" className="text-xl mb-1 text-blue-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Download</span>
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('download')}</span>
                         </button>
                         <button 
                             onClick={handleShare}

@@ -861,7 +861,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
                 {/* Variable Selector */}
                 <div>
-                    <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Variable</label>
+                    <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('variable')}</label>
                     <select 
                         value={selectedVariable} 
                         onChange={(e) => setSelectedVariable(e.target.value)}

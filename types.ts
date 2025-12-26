@@ -1,4 +1,6 @@
 
+export type Dictionary = Record<string, string>;
+
 export interface WeatherData {
   time: string;
   temp: number;
@@ -150,7 +152,7 @@ export enum PressureUnit {
 }
 
 export type AppTheme = 'dark' | 'light';
-export type AppLanguage = 'en' | 'nl';
+export type AppLanguage = 'en' | 'nl' | 'fr' | 'de' | 'es';
 export type TimeFormat = '12h' | '24h';
 export type MapBaseLayer = 'light' | 'dark' | 'satellite';
 

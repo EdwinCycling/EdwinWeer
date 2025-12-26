@@ -31,6 +31,8 @@ interface VisibleFields {
   cloud_cover: boolean;
   sunrise: boolean;
   sunset: boolean;
+  feels_like: boolean;
+  heat_index: boolean;
 }
 
 interface Sticker {
@@ -84,10 +86,12 @@ const DEFAULT_SETTINGS: ShareViewSettings = {
         pressure: false,
         visibility: false,
         cloud_cover: false,
-        sunrise: false,
-        sunset: false,
-    },
-    style: {
+    sunrise: false,
+    sunset: false,
+    feels_like: false,
+    heat_index: false,
+  },
+  style: {
         textColor: '#FFFFFF',
         fontFamily: 'sans-serif',
         fontSizeScale: 1.0,
@@ -204,7 +208,9 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
     sunrise: '',
     sunset: '',
     desc: '',
-    wind: ''
+    wind: '',
+    feels_like: 0,
+    heat_index: 0
   });
 
   // Search State
@@ -955,6 +961,8 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
         if (visibleFields.cloud_cover) list.push(`Cloud: ${weatherData.cloud_cover}%`);
         if (visibleFields.sunrise) list.push(`Sun ↑: ${weatherData.sunrise}`);
         if (visibleFields.sunset) list.push(`Sun ↓: ${weatherData.sunset}`);
+        if (visibleFields.feels_like) list.push(`Feels: ${weatherData.feels_like}°`);
+        if (visibleFields.heat_index) list.push(`Heat Index: ${weatherData.heat_index}°`);
 
         if (singleLine) {
              ctx.fillText(list.join(' • '), x, y);
@@ -1380,7 +1388,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                             <select 
                                 value={viewSettings.style.overlay || 'none'}
                                 onChange={(e) => updateStyle({ overlay: e.target.value as any })}
-                                className="w-full p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10"
+                                className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
                             >
                                 <option value="none">{t('share.overlay.none')}</option>
                                 <option value="snow">{t('share.overlay.snow')}</option>
@@ -1480,7 +1488,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     <select 
                                         value={viewSettings.style.fontFamily} 
                                         onChange={(e) => updateStyle({ fontFamily: e.target.value })}
-                                        className="w-full p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10"
+                                        className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
                                     >
                                         <option value="sans-serif">Sans Serif</option>
                                         <option value="serif">Serif</option>
@@ -1525,7 +1533,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     value={searchQuery || customLocation} 
                                     onChange={(e) => handleSearch(e.target.value)}
                                     placeholder={t('share.search_location') || "Search Location..."}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10"
+                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
                                 />
                                 {loadingSearch && (
                                     <div className="absolute right-3 top-2.5">
@@ -1560,7 +1568,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     type="date" 
                                     value={customDate} 
                                     onChange={(e) => setCustomDate(e.target.value)}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10"
+                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
                                 />
                             </div>
 
@@ -1571,7 +1579,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     <select 
                                         value={viewSettings.content.dateFormat} 
                                         onChange={(e) => updateContent({ dateFormat: e.target.value as any })}
-                                        className="flex-1 p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10"
+                                        className="flex-1 p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
                                     >
                                         <option value="short">{getSampleDate('short')}</option>
                                         <option value="medium">{getSampleDate('medium')}</option>
@@ -1593,7 +1601,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     value={customTime} 
                                     onChange={(e) => setCustomTime(e.target.value)}
                                     disabled={viewSettings.content.displayMode !== 'current'}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10 disabled:opacity-50"
+                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10 disabled:opacity-50"
                                 >
                                     {Array.from({length: 24}).map((_, i) => {
                                         const h = i.toString().padStart(2, '0');
@@ -1604,11 +1612,11 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
 
                             {/* Display Mode */}
                             <div className="col-span-1">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Display</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">{t('share.display')}</label>
                                 <select 
                                     value={viewSettings.content.displayMode} 
                                     onChange={(e) => updateContent({ displayMode: e.target.value as any })}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-black/20 rounded-lg border border-slate-200 dark:border-white/10"
+                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
                                 >
                                     <option value="current">Current Temp</option>
                                     <option value="max">Max Temp</option>
@@ -1683,7 +1691,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             </div>
 
             {/* Preview */}
-            <div className="flex-1 flex items-start justify-center bg-slate-100 dark:bg-black/20 rounded-3xl p-8 border border-dashed border-slate-300 dark:border-white/10 overflow-hidden">
+            <div className="flex-1 flex items-start justify-center bg-slate-100 dark:bg-slate-800 rounded-3xl p-8 border border-dashed border-slate-300 dark:border-white/10 overflow-hidden">
                 <canvas 
                     ref={canvasRef} 
                     width={canvasSize.w} 

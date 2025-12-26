@@ -540,7 +540,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Mijn vakantie..."
-                                className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
                             />
                         </div>
                         
@@ -550,7 +550,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => setShowSearch(!showSearch)}
-                                    className="flex-1 bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-left flex items-center gap-2"
+                                    className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-left flex items-center gap-2"
                                 >
                                     <Icon name="location_on" className="text-primary" />
                                     <span className="truncate">{location.name}, {location.country}</span>
@@ -558,7 +558,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 <button
                                     type="button"
                                     onClick={() => setIsMapOpen(true)}
-                                    className="shrink-0 w-12 flex items-center justify-center bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                                    className="shrink-0 w-12 flex items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                     title="Open Kaart"
                                 >
                                     <Icon name="public" className="text-slate-500 dark:text-slate-400 text-xl" />
@@ -574,7 +574,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Zoek stad..."
-                                            className="w-full bg-slate-100 dark:bg-black/20 rounded-lg px-3 py-2 outline-none"
+                                            className="w-full bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 outline-none"
                                         />
                                     </div>
                                     <div className="max-h-48 overflow-y-auto">
@@ -604,7 +604,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     type="date" 
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors dark:text-white"
+                                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors dark:text-white"
                                 />
                             </div>
                             <div>
@@ -613,7 +613,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     type="date" 
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors dark:text-white"
+                                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors dark:text-white"
                                 />
                             </div>
                         </div>
@@ -629,7 +629,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         className={`flex-1 py-2 px-3 rounded-xl border transition-colors text-sm font-medium ${
                                             rainThreshold === val 
                                             ? 'bg-blue-500 text-white border-blue-500' 
-                                            : 'bg-slate-100 dark:bg-black/20 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
                                         }`}
                                     >
                                         &gt; {val}mm
@@ -812,7 +812,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                             <table className="w-full text-sm text-left">
                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
                                     <tr>
-                                        <th className="px-4 py-3 rounded-tl-lg">Datum</th>
+                                        <th className="px-4 py-3 rounded-tl-lg">{t('share.date')}</th>
                                         <th className="px-4 py-3">Max/Min</th>
                                         <th className="px-4 py-3">Zon</th>
                                         <th className="px-4 py-3">Regen</th>
@@ -886,7 +886,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             </div>
                                             <div className="flex flex-col items-end">
                                                 <span className={`text-xl font-bold ${getScoreColor(score10)}`}>{score10.toFixed(1)}</span>
-                                                <span className="text-[10px] text-slate-500 dark:text-white/50 uppercase tracking-wider">Gemiddeld</span>
+                                                <span className="text-[10px] text-slate-500 dark:text-white/50 uppercase tracking-wider">{t('average')}</span>
                                             </div>
                                         </div>
                                     );
@@ -897,7 +897,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                     {/* Photo Upload & Overlay */}
                     <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/10 mb-6">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Deel je ervaring</h3>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">{t('share_experience')}</h3>
                         
                         {!uploadedImage ? (
                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-white/20 rounded-xl p-8 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer relative">
@@ -908,7 +908,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     className="absolute inset-0 opacity-0 cursor-pointer"
                                 />
                                 <Icon name="add_a_photo" className="text-4xl text-slate-400 mb-2" />
-                                <span className="text-sm font-medium text-slate-500">Upload een vakantiefoto</span>
+                                <span className="text-sm font-medium text-slate-500">{t('upload_holiday_photo')}</span>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-4">
@@ -929,21 +929,21 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                     >
                                         <Icon name="download" className="text-xl mb-1 text-blue-500" />
-                                        <span className="text-xs font-medium">Download</span>
+                                        <span className="text-xs font-medium">{t('download')}</span>
                                     </button>
                                     <button 
                                         onClick={handleShare}
                                         className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                     >
                                         <Icon name="share" className="text-xl mb-1 text-green-500" />
-                                        <span className="text-xs font-medium">Delen</span>
+                                        <span className="text-xs font-medium">{t('share')}</span>
                                     </button>
                                     <button 
                                         onClick={handlePrint}
                                         className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                     >
                                         <Icon name="print" className="text-xl mb-1 text-purple-500" />
-                                        <span className="text-xs font-medium">Print</span>
+                                        <span className="text-xs font-medium">{t('print')}</span>
                                     </button>
                                 </div>
                                 
@@ -977,7 +977,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/10">
                         <div className="flex flex-col">
                             <div className="font-bold">{location.name}, {location.country}</div>
-                            <div className="text-xs text-slate-500 dark:text-white/60">Kaart met overlays</div>
+                            <div className="text-xs text-slate-500 dark:text-white/60">{t('map_overlay')}</div>
                         </div>
                         <button
                             type="button"

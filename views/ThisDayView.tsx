@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { AppSettings, Location, TempUnit, WindUnit, PrecipUnit, ViewState } from '../types';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
+import { ThisDayHistoryTable } from '../components/ThisDayHistoryTable';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { loadClimateData, saveClimateData } from '../services/storageService';
@@ -23,6 +24,7 @@ interface YearStats {
     min: number;
     rain: number;
     gust: number;
+    windSpeed: number;
 }
 
 interface TopStats {
@@ -78,6 +80,19 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
   const [isSearching, setIsSearching] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showHistoryTable, setShowHistoryTable] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<'all' | number | string>('all');
+
+  // Generate decades
+  const decades = useMemo(() => {
+      const currentYear = new Date().getFullYear();
+      const startYear = 1950;
+      const decadeList: number[] = [];
+      for (let y = startYear; y < currentYear; y += 10) {
+          decadeList.push(y);
+      }
+      return decadeList.reverse(); // Newest decades first
+  }, []);
 
   // Initial Fetch Check (reuse cache logic from ClimateChangeView)
   useEffect(() => {
@@ -111,7 +126,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
       
       const cached = loadClimateData(locKey);
-      if (cached) {
+      // Check if cached data has wind speed (new requirement), if not, re-fetch
+      if (cached && cached.daily && cached.daily.wind_speed_10m_max) {
            setRawDailyData(cached);
            setLastFetchedLocation(locKey);
            processData(cached);
@@ -128,8 +144,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           
           setLoadingProgress(`Data ophalen (1950-${endYear})...`);
           
-          // Added wind_gusts_10m_max
-          const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_gusts_10m_max&timezone=auto`;
+          // Added wind_gusts_10m_max and wind_speed_10m_max
+          const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_gusts_10m_max,wind_speed_10m_max&timezone=auto`;
           
           const response = await fetch(url);
           
@@ -170,6 +186,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       const mins = data.daily.temperature_2m_min as number[];
       const precips = data.daily.precipitation_sum as number[];
       const gusts = data.daily.wind_gusts_10m_max as number[];
+      const windSpeeds = data.daily.wind_speed_10m_max as number[];
 
       const yearsFound: YearStats[] = [];
 
@@ -183,24 +200,39 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       max: maxs[i],
                       min: mins[i],
                       rain: precips ? precips[i] || 0 : 0,
-                      gust: gusts ? gusts[i] || 0 : 0
+                      gust: gusts ? gusts[i] || 0 : 0,
+                      windSpeed: windSpeeds ? windSpeeds[i] || 0 : 0
                   });
               }
           }
       });
 
+      // Filter based on selected range
+      let filteredYears = yearsFound;
+      const currentYear = new Date().getFullYear();
+      
+      if (selectedRange !== 'all') {
+          if (typeof selectedRange === 'number') {
+              const minYear = currentYear - selectedRange;
+              filteredYears = yearsFound.filter(y => y.year >= minYear);
+          } else if (typeof selectedRange === 'string' && selectedRange.startsWith('decade-')) {
+              const startDecade = parseInt(selectedRange.split('-')[1]);
+              filteredYears = yearsFound.filter(y => y.year >= startDecade && y.year < startDecade + 10);
+          }
+      }
+
       // Sort by year for chart
-      yearsFound.sort((a, b) => a.year - b.year);
-      setYearData(yearsFound);
+      filteredYears.sort((a, b) => a.year - b.year);
+      setYearData(filteredYears);
 
       // Calculate Top 3s
-      if (yearsFound.length > 0) {
-          const sortedMax = [...yearsFound].sort((a, b) => b.max - a.max);
-          const sortedMinMax = [...yearsFound].sort((a, b) => a.max - b.max);
-          const sortedMin = [...yearsFound].sort((a, b) => a.min - b.min);
-          const sortedMaxMin = [...yearsFound].sort((a, b) => b.min - a.min);
-          const sortedRain = [...yearsFound].sort((a, b) => b.rain - a.rain);
-          const sortedWind = [...yearsFound].sort((a, b) => b.gust - a.gust);
+      if (filteredYears.length > 0) {
+          const sortedMax = [...filteredYears].sort((a, b) => b.max - a.max);
+          const sortedMinMax = [...filteredYears].sort((a, b) => a.max - b.max);
+          const sortedMin = [...filteredYears].sort((a, b) => a.min - b.min);
+          const sortedMaxMin = [...filteredYears].sort((a, b) => b.min - a.min);
+          const sortedRain = [...filteredYears].sort((a, b) => b.rain - a.rain);
+          const sortedWind = [...filteredYears].sort((a, b) => b.gust - a.gust);
 
           setTopStats({
               warmestMax: sortedMax.slice(0, 3),
@@ -210,8 +242,17 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
               wettest: sortedRain.slice(0, 3),
               windiest: sortedWind.slice(0, 3)
           });
+      } else {
+          setTopStats(null);
       }
   };
+
+  // Re-process when range changes
+  useEffect(() => {
+    if (rawDailyData) {
+        processData(rawDailyData);
+    }
+  }, [selectedRange]);
 
   const handleSearch = async (query: string) => {
       setSearchQuery(query);
@@ -374,10 +415,28 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
     const totalMin = yearData.reduce((acc, curr) => acc + curr.min, 0);
     const rainDays = yearData.filter(d => d.rain >= 2).length;
     
-    // Heat Chances
-    const chanceMaxGT20 = yearData.filter(d => d.max > 20).length;
-    const chanceMaxGT25 = yearData.filter(d => d.max > 25).length;
-    const chanceMaxGT30 = yearData.filter(d => d.max > 30).length;
+    // Heat Chances (Dynamic Thresholds)
+    let t1 = 20, t2 = 25, t3 = 30;
+    let c1 = 0, c2 = 0, c3 = 0;
+
+    // Loop to find suitable thresholds
+    // "als deze alle drie 0% zijn, verlaag dan de grenzen met 5 graden... totdat er minimaal 2 meer dan 0% hebben"
+    while (true) {
+        c1 = yearData.filter(d => d.max > t1).length;
+        c2 = yearData.filter(d => d.max > t2).length;
+        c3 = yearData.filter(d => d.max > t3).length;
+
+        const nonZeroCount = (c1 > 0 ? 1 : 0) + (c2 > 0 ? 1 : 0) + (c3 > 0 ? 1 : 0);
+
+        if (nonZeroCount >= 2) break;
+        
+        // Safety break
+        if (t1 <= -50) break;
+
+        t1 -= 5;
+        t2 -= 5;
+        t3 -= 5;
+    }
 
     // Cold & Wind Chances
     const chanceMinLT0 = yearData.filter(d => d.min < 0).length;
@@ -388,9 +447,10 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
         avgMax: totalMax / yearData.length,
         avgMin: totalMin / yearData.length,
         rainChance: (rainDays / yearData.length) * 100,
-        chanceMaxGT20: (chanceMaxGT20 / yearData.length) * 100,
-        chanceMaxGT25: (chanceMaxGT25 / yearData.length) * 100,
-        chanceMaxGT30: (chanceMaxGT30 / yearData.length) * 100,
+        heatThresholds: [t1, t2, t3],
+        chanceMaxGTLow: (c1 / yearData.length) * 100,
+        chanceMaxGTMid: (c2 / yearData.length) * 100,
+        chanceMaxGTHigh: (c3 / yearData.length) * 100,
         chanceMinLT0: (chanceMinLT0 / yearData.length) * 100,
         chanceMaxLT0: (chanceMaxLT0 / yearData.length) * 100,
         chanceGustGT6Bft: (chanceGustGT6Bft / yearData.length) * 100
@@ -417,14 +477,14 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                         else if (type === 'wind') valStr = `${convertWind(val, settings.windUnit)} ${settings.windUnit}`;
                         
                         if (type === 'wind') {
-                            if (settings.windUnit === 'bft') {
-                                const bftVal = convertWind(val, 'bft');
+                            if (settings.windUnit === WindUnit.BFT) {
+                                const bftVal = convertWind(val, WindUnit.BFT);
                                 valStr = `${bftVal} Bft (${Math.round(val)} km/hr)`;
                             } else {
                                 let unitStr = settings.windUnit as string;
                                 if (unitStr === 'km/h') unitStr = 'km/hr';
                                 if (unitStr === 'mph') unitStr = 'miles/hr';
-                                valStr = `${convertWind(val, settings.windUnit)} (${unitStr})`;
+                                valStr = `${convertWind(val, settings.windUnit)} ${unitStr}`;
                             }
                         }
 
@@ -469,7 +529,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           <div className="bg-white dark:bg-white/5 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 space-y-4">
               {/* Location Search */}
               <div className="relative z-50">
-                  <div className="flex items-center bg-slate-100 dark:bg-black/20 rounded-xl px-3 py-2">
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
                       <Icon name="search" className="text-slate-400" />
                       <input
                         type="text"
@@ -537,7 +597,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                           <select 
                               value={day} 
                               onChange={(e) => setDay(parseInt(e.target.value))}
-                              className="bg-slate-100 dark:bg-black/20 rounded-lg px-3 py-2 w-20 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 w-20 outline-none focus:ring-2 focus:ring-blue-500"
                           >
                               {Array.from({length: 31}, (_, i) => i + 1).map(d => (
                                   <option key={d} value={d}>{d}</option>
@@ -546,7 +606,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                           <select 
                               value={month} 
                               onChange={(e) => setMonth(parseInt(e.target.value))}
-                              className="bg-slate-100 dark:bg-black/20 rounded-lg px-3 py-2 flex-1 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 flex-1 outline-none focus:ring-2 focus:ring-blue-500"
                           >
                               {months.slice(1).map((m, i) => (
                                   <option key={i} value={i + 1}>{m}</option>
@@ -584,6 +644,27 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                   <div className="text-center">
                       <h2 className="text-xl font-bold">{day} {monthNamesFull[month]}</h2>
                       <p className="text-sm text-slate-500 dark:text-slate-400">{selectedLocation.name}</p>
+                      
+                      {/* Range Filter */}
+                      <div className="mt-2 flex justify-center">
+                          <select 
+                              value={selectedRange} 
+                              onChange={(e) => setSelectedRange(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                              className="bg-white dark:bg-slate-800 dark:text-white text-sm border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                              <option value="all" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Alle jaren (1950 - Nu)</option>
+                              {Array.from({length: 7}, (_, i) => {
+                                  const years = (i + 1) * 10;
+                                  return (
+                                      <option key={years} value={years} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Laatste {years} jaar</option>
+                                  );
+                              }).reverse()}
+                              <option disabled className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">──────────</option>
+                              {decades.map(d => (
+                                  <option key={d} value={`decade-${d}`} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Jaren {d.toString().slice(2)} ({d}-{d+9})</option>
+                              ))}
+                          </select>
+                      </div>
                   </div>
 
                   {/* Top Stats Grid */}
@@ -615,16 +696,16 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                               <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Kans op Warmte</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Max {'>'} 20°</span>
-                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGT20)}%</span>
+                                      <span>Max {'>'} {averageStats.heatThresholds[0]}°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGTLow)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Max {'>'} 25°</span>
-                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGT25)}%</span>
+                                      <span>Max {'>'} {averageStats.heatThresholds[1]}°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGTMid)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Max {'>'} 30°</span>
-                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGT30)}%</span>
+                                      <span>Max {'>'} {averageStats.heatThresholds[2]}°</span>
+                                      <span className="font-bold">{Math.round(averageStats.chanceMaxGTHigh)}%</span>
                                   </div>
                               </div>
                           </div>
@@ -657,6 +738,17 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       {renderStatCard('Top 3 Warmste Nachten (Min)', topStats.warmestMin, 'temp', 'min')}
                       {renderStatCard('Top 3 Natste Jaren', topStats.wettest, 'rain', 'rain')}
                       {renderStatCard('Top 3 Hardste Windstoten', topStats.windiest, 'wind', 'gust')}
+                  </div>
+
+                  {/* Day Overview Button */}
+                  <div className="flex justify-center">
+                      <button 
+                          onClick={() => setShowHistoryTable(true)}
+                          className="bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-white/10 px-6 py-3 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
+                      >
+                          <Icon name="list" />
+                          <span>Dag overzicht (Tabel & Export)</span>
+                      </button>
                   </div>
 
                   {/* Chart */}
@@ -725,9 +817,20 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           <Modal isOpen={true} onClose={() => setShowLimitModal(false)} title="Limiet Bereikt">
              <div className="p-4">
                   <p>U heeft de dagelijkse limiet voor data-aanvragen bereikt. Probeer het morgen opnieuw.</p>
-                  <button onClick={() => setShowLimitModal(false)} className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg">Sluiten</button>
+                  <button onClick={() => setShowLimitModal(false)} className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg">{t('close')}</button>
              </div>
           </Modal>
+      )}
+
+      {/* History Table Overlay */}
+      {showHistoryTable && (
+          <ThisDayHistoryTable
+              data={yearData}
+              onClose={() => setShowHistoryTable(false)}
+              settings={settings}
+              title={`${day} ${monthNamesFull[month]}`}
+              subTitle={selectedLocation.name}
+          />
       )}
     </div>
   );

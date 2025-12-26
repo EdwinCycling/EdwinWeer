@@ -282,7 +282,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         onChange={(e) => setNewCity(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && searchCities()}
                                         placeholder={t('settings.add_city')}
-                                        className="flex-1 bg-slate-100 dark:bg-black/40 text-slate-800 dark:text-white text-sm rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-primary outline-none"
+                                        className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white text-sm rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-primary outline-none"
                                     />
                                     <button 
                                         onClick={searchCities}
@@ -322,7 +322,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             onDragStart={(e) => handleDragStart(e, index)}
                                             onDragOver={(e) => handleDragOver(e, index)}
                                             onDragEnd={handleDragEnd}
-                                            className={`flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 rounded-xl group ${draggedItemIndex === index ? 'opacity-50' : ''} cursor-move`}
+                                            className={`flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl group ${draggedItemIndex === index ? 'opacity-50' : ''} cursor-move`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <Icon name="drag_indicator" className="text-slate-300 dark:text-white/20 cursor-grab active:cursor-grabbing" />
@@ -395,7 +395,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="contrast" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.theme')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         <button onClick={() => updateSetting('theme', 'light')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'light' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             <Icon name="light_mode" className="text-sm mr-1 inline" /> {t('theme.light')}
                                         </button>
@@ -411,13 +411,16 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="language" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.language')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
-                                        <button onClick={() => updateSetting('language', 'en')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
-                                            EN
-                                        </button>
-                                        <button onClick={() => updateSetting('language', 'nl')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.language === 'nl' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
-                                            NL
-                                        </button>
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 overflow-x-auto max-w-[200px] scrollbar-hide">
+                                        {(['en', 'nl', 'fr', 'de', 'es'] as AppLanguage[]).map((lang) => (
+                                            <button 
+                                                key={lang}
+                                                onClick={() => updateSetting('language', lang)} 
+                                                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors uppercase ${settings.language === lang ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}
+                                            >
+                                                {lang}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -427,7 +430,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="schedule" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.time_format')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         <button onClick={() => updateSetting('timeFormat', '24h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '24h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             24h
                                         </button>
@@ -443,7 +446,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="calendar_today" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.week_start')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         {(['monday', 'sunday', 'saturday'] as const).map(day => (
                                             <button
                                                 key={day}
@@ -474,7 +477,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="thermostat" className="text-slate-600 dark:text-white/60" />
                                         <span className="font-medium">{t('temp')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         {Object.values(TempUnit).map(u => (
                                             <button
                                                 key={u}
@@ -494,14 +497,14 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <span className="font-medium">{t('wind')}</span>
                                     </div>
                                     <select 
-                                        value={settings.windUnit} 
-                                        onChange={(e) => updateSetting('windUnit', e.target.value)}
-                                        className="bg-slate-100 dark:bg-black/40 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
-                                    >
-                                        {Object.values(WindUnit).map(u => (
-                                            <option key={u} value={u}>{u}</option>
-                                        ))}
-                                    </select>
+                  value={settings.windUnit} 
+                  onChange={(e) => updateSetting('windUnit', e.target.value)}
+                  className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                >
+                  {Object.values(WindUnit).map(u => (
+                    <option key={u} value={u} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{u}</option>
+                  ))}
+                </select>
                                 </div>
 
                                 {/* Precip */}
@@ -510,7 +513,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="water_drop" className="text-slate-600 dark:text-white/60" />
                                         <span className="font-medium">{t('precip')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         {Object.values(PrecipUnit).map(u => (
                                             <button
                                                 key={u}
@@ -527,9 +530,9 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 <div className="p-4 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Icon name="compress" className="text-slate-600 dark:text-white/60" />
-                                        <span className="font-medium">Druk</span>
+                                        <span className="font-medium">{t('pressure')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1">
+                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
                                         {Object.values(PressureUnit).map(u => (
                                             <button
                                                 key={u}
@@ -569,7 +572,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             max={settings.tempUnit === TempUnit.FAHRENHEIT ? (40 * 9) / 5 + 32 : 40}
                                             value={formatRecordTempValue(settings.recordThresholds?.summerStreakTemp ?? 25)}
                                             onChange={(e) => updateRecordThresholdTemp('summerStreakTemp', e.target.value, 15, 40)}
-                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-20 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
                                         <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
@@ -589,7 +592,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             max={settings.tempUnit === TempUnit.FAHRENHEIT ? (35 * 9) / 5 + 32 : 35}
                                             value={formatRecordTempValue(settings.recordThresholds?.niceStreakTemp ?? 20)}
                                             onChange={(e) => updateRecordThresholdTemp('niceStreakTemp', e.target.value, 10, 35)}
-                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-20 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
                                         <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
@@ -609,7 +612,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             max={settings.tempUnit === TempUnit.FAHRENHEIT ? (15 * 9) / 5 + 32 : 15}
                                             value={formatRecordTempValue(settings.recordThresholds?.coldStreakTemp ?? 5)}
                                             onChange={(e) => updateRecordThresholdTemp('coldStreakTemp', e.target.value, -30, 15)}
-                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-20 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
                                         <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
@@ -629,7 +632,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             max={settings.tempUnit === TempUnit.FAHRENHEIT ? (10 * 9) / 5 + 32 : 10}
                                             value={formatRecordTempValue(settings.recordThresholds?.iceStreakTemp ?? 0)}
                                             onChange={(e) => updateRecordThresholdTemp('iceStreakTemp', e.target.value, -40, 10)}
-                                            className="w-20 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-20 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
                                         <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>
@@ -668,7 +671,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                 max={60}
                                                 value={settings.heatwave.minLength}
                                                 onChange={(e) => updateHeatwaveLength(e.target.value)}
-                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                                className="w-16 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                             />
                                             <span className="text-sm font-medium w-8">
                                                 {t('days')}
@@ -692,7 +695,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                 max={60}
                                                 value={formatHeatwaveTempValue(settings.heatwave.lowerThreshold)}
                                                 onChange={(e) => updateHeatwaveThreshold('lowerThreshold', e.target.value)}
-                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                                className="w-16 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                             />
                                             <span className="text-sm font-medium w-8">
                                                 °{settings.tempUnit}
@@ -716,7 +719,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                 max={60}
                                                 value={formatHeatwaveTempValue(settings.heatwave.heatThreshold)}
                                                 onChange={(e) => updateHeatwaveThreshold('heatThreshold', e.target.value)}
-                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                                className="w-16 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                             />
                                             <span className="text-sm font-medium w-8">
                                                 °{settings.tempUnit}
@@ -740,7 +743,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                 max={60}
                                                 value={settings.heatwave.minHeatDays ?? 3}
                                                 onChange={(e) => updateHeatwaveMinHeatDays(e.target.value)}
-                                                className="w-16 bg-slate-100 dark:bg-black/40 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                                className="w-16 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-2 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                             />
                                             <span className="text-sm font-medium w-8">
                                                 {t('days')}

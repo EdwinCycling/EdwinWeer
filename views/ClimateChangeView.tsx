@@ -591,7 +591,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
         </div>
         
         <div className="flex-1 min-w-[200px] relative">
-             <div className="flex items-center bg-slate-100 dark:bg-black/20 rounded-xl px-3 py-2 border border-transparent focus-within:border-blue-500 transition-colors">
+             <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 border border-transparent focus-within:border-blue-500 transition-colors">
                 <Icon name="search" className="text-slate-400 mr-2" />
                 <input
                     type="text"
@@ -710,7 +710,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                   
                   <div className="flex flex-col gap-3 items-end w-full md:w-auto">
 
-                      <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-black/20 p-2 rounded-2xl w-full md:w-auto justify-end">
+                      <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-2xl w-full md:w-auto justify-end">
                           <select 
                             value={day} 
                             onChange={(e) => setDay(Number(e.target.value))}

@@ -279,7 +279,7 @@ const App: React.FC = () => {
                         </div>
                         <div>
                             <p className="font-bold text-sm">Install App</p>
-                            <p className="text-xs opacity-90">Install for a better experience</p>
+                            <p className="text-xs opacity-90">{t('pwa.install_desc')}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -304,50 +304,50 @@ const App: React.FC = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-50 shadow-2xl transition-colors duration-300 print:hidden">
             <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4">
             <button 
-                onClick={() => navigate(ViewState.CURRENT)}
+                onClick={() => { navigate(ViewState.CURRENT); setMenuOpen(false); setExtraMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="sunny" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.current')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.FORECAST)}
+                onClick={() => { navigate(ViewState.FORECAST); setMenuOpen(false); setExtraMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.FORECAST ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="date_range" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.forecast')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.ENSEMBLE)}
+                onClick={() => { navigate(ViewState.ENSEMBLE); setMenuOpen(false); setExtraMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.ENSEMBLE ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="ssid_chart" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.ensemble')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.RECORDS)}
+                onClick={() => { navigate(ViewState.RECORDS); setMenuOpen(false); setExtraMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.RECORDS ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="bar_chart" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.records')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.HISTORICAL)}
+                onClick={() => { navigate(ViewState.THIS_DAY); setMenuOpen(false); setExtraMenuOpen(false); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.THIS_DAY ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+            >
+                <Icon name="calendar_today" />
+                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('this_day.title')}</span>
+            </button>
+            <button 
+                onClick={() => { navigate(ViewState.HISTORICAL); setMenuOpen(false); setExtraMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HISTORICAL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="calendar_month" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.historical')}</span>
             </button>
             <button 
-                onClick={() => navigate(ViewState.HOLIDAY)}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HOLIDAY ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-            >
-                <Icon name="flight" />
-                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.holiday')}</span>
-            </button>
-            <button 
-                onClick={() => setExtraMenuOpen(true)}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.STRAVA || currentView === ViewState.SHARE ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+                onClick={() => { setExtraMenuOpen(!extraMenuOpen); setMenuOpen(false); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${extraMenuOpen ? 'text-slate-800 dark:text-white scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="add_circle" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('share.extra_menu')}</span>
@@ -355,7 +355,7 @@ const App: React.FC = () => {
             
             {/* Hamburger Menu Button */}
             <button 
-                onClick={() => setMenuOpen(true)}
+                onClick={() => { setMenuOpen(!menuOpen); setExtraMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${menuOpen ? 'text-slate-800 dark:text-white scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="menu" />
@@ -366,71 +366,71 @@ const App: React.FC = () => {
 
         {/* Extra Menu Overlay */}
         {extraMenuOpen && (
-            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
+            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-6 pb-28 animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl" 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 pb-24 md:p-6 md:pb-28 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
+                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
                     
-                    <div className="space-y-4">
-                         <button onClick={() => { navigate(ViewState.CLIMATE_CHANGE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
-                            <div className="size-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
-                                <Icon name="thermostat" className="text-2xl" />
+                    <div className="space-y-3 md:space-y-4">
+                         <button onClick={() => { navigate(ViewState.CLIMATE_CHANGE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                                <Icon name="thermostat" className="text-xl md:text-2xl" />
                             </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{t('climate.title')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('climate.subtitle')}</span>
-                            </div>
-                         </button>
-
-                         <button onClick={() => { navigate(ViewState.THIS_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
-                            <div className="size-12 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                <Icon name="calendar_today" className="text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{t('this_day.title')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('this_day.subtitle')}</span>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">{t('climate.title')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('climate.subtitle')}</span>
                             </div>
                          </button>
 
-                         <button onClick={() => { navigate(ViewState.BAROMETER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
-                            <div className="size-12 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                                <Icon name="speed" className="text-2xl" />
+                         <button onClick={() => { navigate(ViewState.THIS_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <Icon name="calendar_today" className="text-xl md:text-2xl" />
                             </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{t('barometer.title')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('barometer.subtitle')}</span>
-                            </div>
-                         </button>
-
-                         <button onClick={() => { navigate(ViewState.HOLIDAY_REPORT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
-                            <div className="size-12 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                                <Icon name="flight_takeoff" className="text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{t('holiday_report.title_default')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('holiday_report.menu_subtitle')}</span>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">{t('this_day.title')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('this_day.subtitle')}</span>
                             </div>
                          </button>
 
-                         <button onClick={() => { navigate(ViewState.STRAVA); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
-                            <div className="size-12 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                <Icon name="directions_bike" className="text-2xl" />
+                         <button onClick={() => { navigate(ViewState.BAROMETER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                <Icon name="speed" className="text-xl md:text-2xl" />
                             </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{t('nav.strava')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('share.strava')}</span>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">{t('barometer.title')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('barometer.subtitle')}</span>
                             </div>
                          </button>
 
-                         <button onClick={() => { navigate(ViewState.SHARE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-4 transition-colors border border-slate-100 dark:border-white/5">
-                            <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                <Icon name="add_a_photo" className="text-2xl" />
+                         <button onClick={() => { navigate(ViewState.HOLIDAY_REPORT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                <Icon name="flight_takeoff" className="text-xl md:text-2xl" />
                             </div>
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-lg">{t('share.photo_weather')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left">{t('share.title')}</span>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">{t('holiday_report.title_default')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('holiday_report.menu_subtitle')}</span>
+                            </div>
+                         </button>
+
+                         <button onClick={() => { navigate(ViewState.STRAVA); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                <Icon name="directions_bike" className="text-xl md:text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">{t('nav.strava')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('share.strava')}</span>
+                            </div>
+                         </button>
+
+                         <button onClick={() => { navigate(ViewState.SHARE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <Icon name="add_a_photo" className="text-xl md:text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">{t('share.photo_weather')}</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('share.title')}</span>
                             </div>
                          </button>
                     </div>
@@ -440,45 +440,45 @@ const App: React.FC = () => {
 
         {/* Hamburger Menu Overlay */}
         {menuOpen && (
-            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
+            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-6 pb-28 animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl" 
+                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-4 pb-24 md:p-6 md:pb-28 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
+                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
                     
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                         <button onClick={() => { navigate(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+                         <button onClick={() => { navigate(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-700 dark:text-white">
                                 <Icon name="settings" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.settings')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <Icon name="groups" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.team')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
                                 <Icon name="payments" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.pricing')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.MODEL_INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.MODEL_INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                                 <Icon name="model_training" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.model_info')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                                 <Icon name="info" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.info')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-white/60">
                                 <Icon name="account_circle" className="text-xl" />
                             </div>

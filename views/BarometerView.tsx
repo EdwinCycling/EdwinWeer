@@ -230,7 +230,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
        
        {/* --- Top Navigation Buttons (Fixed) --- */}
        <div className="fixed top-4 left-4 z-50 no-print">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 backdrop-blur-md transition-colors shadow-sm text-slate-700 dark:text-white">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 dark:bg-slate-800 dark:hover:bg-slate-700 backdrop-blur-md transition-colors shadow-sm text-slate-700 dark:text-white">
                 <Icon name="arrow_back_ios_new" />
             </button>
        </div>
@@ -297,7 +297,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                                 <span className="text-xl font-bold text-slate-800 dark:text-white font-mono">{currentPressure} <span className="text-xs font-normal">hPa</span></span>
                             </div>
                             <div className="flex flex-col items-center border-l border-slate-200 dark:border-white/10">
-                                <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold text-center">Reference</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold text-center">{t('reference')}</span>
                                 <span className="text-xl font-bold text-amber-600 dark:text-amber-500 font-mono">{yesterdayPressure} <span className="text-xs font-normal">hPa</span></span>
                             </div>
                         </div>
@@ -349,7 +349,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && searchCities()}
                         placeholder={t('search')}
-                        className="flex-1 bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                        className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
                     />
                     <button
                         onClick={searchCities}

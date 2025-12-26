@@ -294,6 +294,11 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
         }
     }
 
+    // User request: Extra penalty for sub-zero feels-like temperature for all activities except stargazing and drone
+    if (w.tempFeelsLike < 0 && activity !== 'stargazing' && activity !== 'drone') {
+        penalize(2, 'reason.feels_like_subzero');
+    }
+
     score = Math.max(1, Math.min(10, score));
     return { score10: score, stars: score / 2, text: reasons[0] || getTranslation('reason.perfect', lang), reasons };
 };

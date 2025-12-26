@@ -54,7 +54,9 @@ export const LoginView: React.FC = () => {
   }, []);
 
   const toggleLanguage = () => {
-    const newLang = lang === 'nl' ? 'en' : 'nl';
+    const langs: AppLanguage[] = ['en', 'nl', 'fr', 'de', 'es'];
+    const currentIndex = langs.indexOf(lang);
+    const newLang = langs[(currentIndex + 1) % langs.length];
     setLang(newLang);
     const currentSettings = loadSettings();
     saveSettings({ ...currentSettings, language: newLang });
