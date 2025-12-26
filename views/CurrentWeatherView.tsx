@@ -46,9 +46,20 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showFavorites, setShowFavorites] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  const changeLanguage = (lang: AppLanguage) => {
+    if (onUpdateSettings) {
+        onUpdateSettings({
+            ...settings,
+            language: lang
+        });
+    }
+    setIsLangOpen(false);
+  };
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -504,7 +515,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     className="p-2 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-xl text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10 flex items-center gap-2"
                 >
                     <FlagIcon countryCode={settings.language} className="w-6 h-4 rounded-sm shadow-sm" />
-                    <span className="text-xs font-bold uppercase">{settings.language}</span>
+                    <span className="text-xs font-bold uppercase hidden sm:inline">{settings.language}</span>
                     <Icon name="expand_more" className={`text-sm transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -756,9 +767,12 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                          <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                     </p>
-                    <p className="text-white/90 text-lg font-normal drop-shadow-md mt-1">
-                        H:{highTemp}° L:{lowTemp}°
-                    </p>
+                    <button 
+                        onClick={() => onNavigate(ViewState.FORECAST)}
+                        className="text-white/90 text-lg font-normal drop-shadow-md mt-1 hover:scale-105 transition-transform cursor-pointer flex items-center gap-1"
+                    >
+                        H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70" />
+                    </button>
                     <p className="text-white/70 text-sm font-normal drop-shadow-md mt-2">
                         {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                             hour: '2-digit', 
@@ -1213,7 +1227,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           onClose={() => {
               setShowWelcomeModal(false);
               localStorage.setItem('hasSeenWelcome', 'true');
-          }} 
+          }}
+          settings={settings}
+          onUpdateSettings={onUpdateSettings}
       />
       <FeelsLikeInfoModal 
           isOpen={showFeelsLikeModal}

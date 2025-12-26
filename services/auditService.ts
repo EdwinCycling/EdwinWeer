@@ -30,7 +30,7 @@ export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 
     }
 
     try {
-        console.log(`Attempting to log auth event: ${action} for user ${userId}`);
+        // console.log(`Attempting to log auth event: ${action} for user ${userId}`);
         const ip = await getIpAddress();
         
         const logEntry: AuditLog = {
