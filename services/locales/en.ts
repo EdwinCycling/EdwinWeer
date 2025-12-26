@@ -19,6 +19,11 @@ export const en: Dictionary = {
     'nav.user_account': 'My Account',
     'nav.climate_change': 'Climate Change',
     'nav.this_day': 'Your Day',
+    'this_day.title': 'Your Day',
+    'this_day.subtitle': 'Historical extremes for this date',
+    'install_app': 'Install App',
+    'pwa.install_desc': 'Install the app for faster access and offline use.',
+    'install': 'Install',
     'nav.favorites': 'Favorites',
 
     // App
@@ -782,8 +787,8 @@ export const en: Dictionary = {
     'climate.loading': 'Loading historical data (1950-2023)...',
     'climate.info': '30-year average (week around selected date).',
     'climate.chart_title': 'Temperature Trend',
-    'this_day.title': 'Your Day in History',
-    'this_day.subtitle': 'Historical extremes for this date',
+    // 'this_day.title': 'Your Day in History', // Duplicates removed
+    // 'this_day.subtitle': 'Historical extremes for this date',
     'climate.rain_title': 'Precipitation (Monthly Avg)',
     'climate.wind_sun_title': 'Wind & Sun Trends',
     'climate.rain': 'Precipitation',
@@ -799,7 +804,7 @@ export const en: Dictionary = {
     'climate.expl_decade': 'Each row is the average of 30 years (Standard reference periods).',
     'climate.delta_chart_title': 'Change in % (vs oldest measurement)',
     
-    'pwa.install_desc': 'Install for a better experience',
+    // 'pwa.install_desc': 'Install for a better experience', // Duplicate removed
     'share.font.serif': 'Serif',
     'share.font.monospace': 'Monospace',
     'share.font.cursive': 'Handwritten',

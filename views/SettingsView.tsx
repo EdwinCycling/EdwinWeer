@@ -34,7 +34,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
     
     // Tab State
-    const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records'>('cities');
+    const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records'>('general');
 
     React.useEffect(() => {
         setUsageStats(getUsage());

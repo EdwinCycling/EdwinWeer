@@ -17,9 +17,12 @@ export const nl: Dictionary = {
     'nav.info': 'Info',
     'nav.user_account': 'Mijn Account',
     'nav.climate_change': 'Klimaatverandering',
-    'nav.this_day': 'Jouw Dag',
-    'this_day.title': 'Jouw Dag in de Geschiedenis',
+    'nav.this_day': 'Jouw dag',
+    'this_day.title': 'Jouw dag',
     'this_day.subtitle': 'Historische extremen voor deze datum',
+    'install_app': 'Installeer App',
+    'pwa.install_desc': 'Installeer de app voor snellere toegang en offline gebruik.',
+    'install': 'Installeer',
 
     'app.title_prefix': 'Weer & Rit',
 
@@ -795,8 +798,7 @@ export const nl: Dictionary = {
     'climate.expl_30year': 'Elke regel is het gemiddelde van 30 jaar (schuift elke 10 jaar op).',
     'climate.expl_decade': 'Elke regel is het gemiddelde van 30 jaar (Standaard referentie periodes).',
     'climate.delta_chart_title': 'Verandering in % (t.o.v. oudste meting)',
-
-    'pwa.install_desc': 'Installeer voor een betere ervaring',
+    // 'pwa.install_desc': 'Installeer voor een betere ervaring', // Duplicate removed
     'share.font.serif': 'Serif',
     'share.font.monospace': 'Monospace',
     'share.font.cursive': 'Handgeschreven',

@@ -278,7 +278,7 @@ const App: React.FC = () => {
                             <Icon name="download" className="text-xl" />
                         </div>
                         <div>
-                            <p className="font-bold text-sm">Install App</p>
+                            <p className="font-bold text-sm">{t('install_app')}</p>
                             <p className="text-xs opacity-90">{t('pwa.install_desc')}</p>
                         </div>
                     </div>
@@ -293,7 +293,7 @@ const App: React.FC = () => {
                             onClick={installPWA}
                             className="px-3 py-1.5 bg-white text-blue-600 rounded-lg text-xs font-bold hover:bg-white/90 transition-colors"
                         >
-                            Install
+                            {t('install')}
                         </button>
                     </div>
                 </div>
@@ -381,16 +381,6 @@ const App: React.FC = () => {
                             <div className="flex flex-col items-start min-w-0 flex-1">
                                 <span className="font-bold text-base md:text-lg truncate w-full">{t('climate.title')}</span>
                                 <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('climate.subtitle')}</span>
-                            </div>
-                         </button>
-
-                         <button onClick={() => { navigate(ViewState.THIS_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                <Icon name="calendar_today" className="text-xl md:text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">{t('this_day.title')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('this_day.subtitle')}</span>
                             </div>
                          </button>
 

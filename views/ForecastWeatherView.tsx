@@ -9,7 +9,7 @@ import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
 
-import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceLine } from 'recharts';
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceLine, ReferenceArea } from 'recharts';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -37,9 +37,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         setLoading(true);
         setError('');
         try {
-            // Force auto model (best_match)
-            const model = 'best_match'; 
-            const data = await fetchForecast(location.lat, location.lon, model);
+            // Force auto model
+            const data = await fetchForecast(location.lat, location.lon);
             
             // Check for empty data
             if (!data || !data.daily || data.daily.time.length === 0) {

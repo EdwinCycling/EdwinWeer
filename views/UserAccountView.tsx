@@ -64,7 +64,7 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
                     className="w-full mb-3 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
                 >
                     <Icon name="download" />
-                    Install App
+                    {t('install_app')}
                 </button>
             )}
 

@@ -20,6 +20,11 @@ export const es: Dictionary = {
     'nav.user_account': 'Mi Cuenta',
     'nav.climate_change': 'Cambio Climático',
     'nav.this_day': 'Tu Día',
+    'this_day.title': 'Tu Día',
+    'this_day.subtitle': 'Extremos históricos para esta fecha',
+    'install_app': 'Instalar App',
+    'pwa.install_desc': 'Instala la aplicación para un acceso más rápido y uso sin conexión.',
+    'install': 'Instalar',
     'nav.favorites': 'Favoritos',
 
     'app.title_prefix': 'EdwinTiempo',

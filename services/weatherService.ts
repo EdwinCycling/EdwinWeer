@@ -632,6 +632,41 @@ export const calculateHeatIndex = (tempC: number, rh: number): number => {
     return c;
 };
 
+export const calculateJagTi = (tempC: number, windSpeedKmh: number): number | null => {
+    // JAG/TI conditions:
+    // T between -46 and +10 °C
+    // W between 1.3 m/s and 49.0 m/s (4.68 km/h and 176.4 km/h)
+    // If W < 1.3 m/s, Apparent Temp = T
+
+    if (tempC > 10 || tempC < -46) {
+        return null; // Not applicable
+    }
+
+    // Convert km/h to m/s for check
+    const windMs = windSpeedKmh / 3.6;
+
+    if (windMs < 1.3) {
+        return tempC;
+    }
+
+    if (windMs > 49.0) {
+        // Technically undefined by JAG/TI
+        return null; 
+    }
+
+    // Formula: GJ = 13.12 + 0.6215 * T - 11.37 * (W * 3.6)^0.16 + 0.3965 * T * (W * 3.6)^0.16
+    // Note: The user says "W in m/s" and formula has `(W * 3,6)`.
+    // My input `windSpeedKmh` IS `W * 3.6` (if W was m/s).
+    // So I use `windSpeedKmh` directly in place of `(W * 3.6)`.
+    
+    const V = windSpeedKmh;
+    const powV = Math.pow(V, 0.16);
+    
+    const gj = 13.12 + (0.6215 * tempC) - (11.37 * powV) + (0.3965 * tempC * powV);
+    
+    return Number(gj.toFixed(1));
+};
+
 export const getActivityIcon = (activity: string): string => {
     switch (activity) {
         case 'running': return 'directions_run';

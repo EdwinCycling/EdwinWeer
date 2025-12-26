@@ -649,7 +649,12 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       <div className="mt-2 flex justify-center">
                           <select 
                               value={selectedRange} 
-                              onChange={(e) => setSelectedRange(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                              onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === 'all') setSelectedRange('all');
+                                  else if (val.startsWith('decade-')) setSelectedRange(val);
+                                  else setSelectedRange(Number(val));
+                              }}
                               className="bg-white dark:bg-slate-800 dark:text-white text-sm border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-blue-500"
                           >
                               <option value="all" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Alle jaren (1950 - Nu)</option>

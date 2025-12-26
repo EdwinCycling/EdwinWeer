@@ -4,7 +4,7 @@ import { ViewState, AppSettings, Location, OpenMeteoResponse, EnsembleModel, Act
 import { calculateActivityScore, ActivityScore } from '../services/activityService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip, convertPressure, calculateHeatIndex, getWindDirection } from '../services/weatherService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection } from '../services/weatherService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
@@ -15,6 +15,7 @@ import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
 import { WelcomeModal } from '../components/WelcomeModal';
 import { Modal } from '../components/Modal';
+import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -42,6 +43,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
@@ -63,11 +65,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       saveCurrentLocation(location);
       loadWeather();
   }, [location]);
-
-  useEffect(() => {
-      saveEnsembleModel(selectedModel);
-      loadWeather();
-  }, [selectedModel]);
 
   const getLocationTime = () => {
     if (!weatherData) return new Date();
@@ -125,11 +122,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setLoadingWeather(true);
     setError('');
     try {
-        const data = await fetchForecast(location.lat, location.lon, selectedModel);
+        const data = await fetchForecast(location.lat, location.lon);
         
         // Check for empty data
         if (!data || !data.current || !data.hourly) {
-            setError(`${t('error_no_data_for_model') || 'Geen data beschikbaar voor model'}: ${selectedModel}`);
+            setError(`${t('error_no_data_for_forecast')}`);
             setWeatherData(null);
             return;
         }
@@ -569,7 +566,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="text-center cursor-pointer group">
+                <div className="text-center cursor-pointer group relative z-20" onClick={() => setIsSearchOpen(true)}>
                     {loadingCity ? (
                         <div className="flex items-center gap-2">
                              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
@@ -706,14 +703,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </h1>
                         <div className="flex flex-row gap-2">
                             {feelsLike < 10 ? (
-                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
                                     <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
                                     <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
                                     <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
                                 </div>
                             ) : (
                                 heatIndex > currentTemp && (
-                                    <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
+                                    <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
                                         <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
                                         <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
                                         <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
@@ -892,7 +889,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Thermodynamics */}
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm relative group">
+                            <div onClick={() => setShowFeelsLikeModal(true)} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</p>
@@ -1184,6 +1181,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               setShowWelcomeModal(false);
               localStorage.setItem('hasSeenWelcome', 'true');
           }} 
+      />
+      <FeelsLikeInfoModal 
+          isOpen={showFeelsLikeModal}
+          onClose={() => setShowFeelsLikeModal(false)}
       />
     </div>
   );
