@@ -1,7 +1,7 @@
 {
   "name": "edwin-weer",
   "private": true,
-  "version": "0.9251227.4",
+  "version": "0.9251227.5",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
