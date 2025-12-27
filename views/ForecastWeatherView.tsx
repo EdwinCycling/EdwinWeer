@@ -8,7 +8,7 @@ import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
-
+import { AIWeatherReport } from '../components/AIWeatherReport';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceLine, ReferenceArea } from 'recharts';
 
 interface Props {
@@ -452,6 +452,11 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         {/* Forecast Content */}
         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors min-h-[60vh]">
             
+            {/* AI Report Section */}
+            {weatherData && (
+                <AIWeatherReport weatherData={weatherData} profile={settings.aiProfile} profiles={settings.aiProfiles} onNavigate={onNavigate} />
+            )}
+
             {/* Daily Forecast List */}
             <div className="flex flex-col gap-1 mb-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-1 mb-4 gap-2">
@@ -511,22 +516,22 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             </label>
                         )}
                         
-                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1">
+                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1 overflow-hidden">
                             <button 
                                 onClick={() => setViewMode('expanded')}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'expanded' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'expanded' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 Uitgebreid
                             </button>
                             <button 
                                 onClick={() => setViewMode('compact')}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'compact' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'compact' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 Compact
                             </button>
                              <button  
                                 onClick={() => setViewMode('graph')}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'graph' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'graph' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 Grafiek
                             </button>

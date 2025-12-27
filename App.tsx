@@ -29,6 +29,8 @@ import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
 import { useAuth } from './contexts/AuthContext';
 import { LimitReachedModal } from './components/LimitReachedModal';
+import { useScrollLock } from './hooks/useScrollLock';
+import { LoginToast } from './components/LoginToast';
 
 const App: React.FC = () => {
   const { user, loading, logout, sessionExpiry } = useAuth();
@@ -47,6 +49,9 @@ const App: React.FC = () => {
   // PWA State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPWABanner, setShowPWABanner] = useState(false);
+  const [showLoginToast, setShowLoginToast] = useState(false);
+
+  useScrollLock(menuOpen || extraMenuOpen || modal !== null);
 
   const navigate = (view: ViewState, params?: any) => {
       setPreviousView(currentView);
@@ -212,7 +217,7 @@ const App: React.FC = () => {
       case ViewState.THIS_DAY:
         return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
-        return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
+        return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} initialTab={viewParams?.tab} />;
       case ViewState.TEAM:
         return <TeamView onNavigate={navigate} />;
       case ViewState.PRICING:
@@ -237,6 +242,10 @@ const App: React.FC = () => {
         <div className="flex-grow pb-4 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
             {renderView()}
         </div>
+
+        {showLoginToast && user && (
+            <LoginToast userEmail={user.email} onClose={() => setShowLoginToast(false)} />
+        )}
 
         {usageWarning && (
             <div className="fixed top-4 inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">

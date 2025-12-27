@@ -1,4 +1,4 @@
-import { Location } from "../types";
+import { Location, AIProfile } from "../types";
 import { MAJOR_CITIES } from "./cityData";
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -87,3 +87,41 @@ export const getLuckyCity = async (
 export const getWeatherDescription = async (): Promise<string> => {
   return "No data available";
 }
+
+export const generateAIWeatherReport = async (weatherData: any, profile: AIProfile): Promise<string> => {
+    try {
+        // Prepare the payload, ensuring types are serializable/friendly for the backend
+        const payload = {
+            weatherData,
+            profile: {
+                ...profile,
+                location: typeof profile.location === 'string' ? profile.location : (profile.location as any)?.name || "onbekend",
+                activities: Array.isArray(profile.activities) ? profile.activities.join(", ") : profile.activities
+            }
+        };
+
+        // Try to call the Netlify function
+        // We use a relative path which works if deployed or proxied.
+        // If running locally without proxy, this might fail (404).
+        const response = await fetch('/.netlify/functions/ai-weather', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-App-Source': 'EdwinWeerApp'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`AI Service Error: ${response.status} Details: ${errorText.substring(0, 100)}`);
+        }
+
+        const data = await response.json();
+        return data.text;
+
+    } catch (error) {
+        console.error("Failed to generate AI report:", error);
+        throw error;
+    }
+};

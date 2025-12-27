@@ -14,6 +14,16 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         strictPort: true,
         host: '0.0.0.0',
+        watch: {
+          ignored: ['**/.netlify/**'],
+        },
+        proxy: {
+          '/.netlify/functions': {
+            target: 'http://localhost:9998',
+            changeOrigin: true,
+            secure: false,
+          },
+        },
         headers: {
           'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
         },

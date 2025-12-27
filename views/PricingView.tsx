@@ -3,6 +3,7 @@ import React from 'react';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings } from '../types';
 import { getTranslation } from '../services/translations';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -11,6 +12,8 @@ interface Props {
 
 export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
   const t = (key: string) => getTranslation(key, settings.language);
+  const { user } = useAuth();
+  const isEdwin = user?.email === 'edwin@editsolutions.nl';
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-background-dark p-6 pb-24 text-slate-800 dark:text-white overflow-y-auto">
@@ -47,13 +50,13 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </li>
                 </ul>
 
-                <button className="w-full py-3 rounded-xl bg-slate-100 dark:bg-white/10 font-bold text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">
+                <button className="w-full py-3 rounded-xl bg-slate-100 dark:bg-white/10 font-bold text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors mt-auto">
                     {t('pricing.free_button')}
                 </button>
             </div>
 
             {/* Pro Tier */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-3xl p-8 border border-slate-200 dark:border-white/10 shadow-xl relative overflow-hidden text-white">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-3xl p-8 border border-slate-200 dark:border-white/10 shadow-xl relative overflow-hidden text-white flex flex-col">
                 <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
                     {t('pricing.pro_badge')}
                 </div>
@@ -72,8 +75,46 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </li>
                 </ul>
 
-                <button disabled className="w-full py-3 rounded-xl bg-primary text-white font-bold opacity-50 cursor-not-allowed">
+                <button disabled className="w-full py-3 rounded-xl bg-primary text-white font-bold opacity-50 cursor-not-allowed mt-auto">
                     {t('pricing.pro_button')}
+                </button>
+            </div>
+
+            {/* AI Tier */}
+            <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 border border-purple-500/30 shadow-2xl relative overflow-hidden text-white flex flex-col transform md:-translate-y-4">
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-400 to-pink-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                    AI POWERED
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-2">AI Weerman</h3>
+                <p className="text-purple-200 mb-2">Het meest gepersonaliseerde weerbericht ter wereld.</p>
+                <p className="text-[11px] font-medium text-purple-300 mb-4 uppercase tracking-wide">
+                    {isEdwin ? "Onbeperkt tijdens test" : "Coming Soon"}
+                </p>
+                <div className="text-2xl font-bold mb-8">
+                    Prijs volgt binnenkort
+                </div>
+
+                <ul className="space-y-2 mb-8">
+                    <li className="flex items-center gap-3 text-sm text-purple-100">
+                        <Icon name="smart_toy" className="text-pink-400" />
+                        <span>Gepersonaliseerd weerbericht</span>
+                    </li>
+                     <li className="flex items-center gap-3 text-sm text-purple-100">
+                        <Icon name="person" className="text-pink-400" />
+                        <span>Profiel voorkeuren</span>
+                    </li>
+                     <li className="flex items-center gap-3 text-sm text-purple-100">
+                        <Icon name="bolt" className="text-pink-400" />
+                        <span>AI Credits</span>
+                    </li>
+                </ul>
+
+                <button 
+                    disabled={true}
+                    className="w-full py-3 rounded-xl font-bold transition-colors mt-auto bg-white/10 text-white/50 cursor-not-allowed"
+                >
+                    Wachtlijst
                 </button>
             </div>
         </div>

@@ -192,6 +192,21 @@ export interface AppSettings {
     weekStartDay?: 'monday' | 'sunday' | 'saturday';
     calendar?: CalendarSettings;
     climatePeriodType?: '30year' | 'decade';
+    aiProfile?: AIProfile;
+    aiProfiles?: AIProfile[]; // Saved profiles
+}
+
+export interface AIProfile {
+    id?: string;
+    name?: string;
+    activities: string | ActivityType[]; // comma separated or free text OR array of types
+    location: string;
+    timeOfDay: string[]; // ['morning', 'afternoon', 'evening', 'night', 'combo']
+    transport: string[]; // ['walk', 'bike', 'motorcycle', 'car', 'combo', 'none']
+    hobbies?: string;
+    otherInstructions?: string;
+    daysAhead: number; // 1, 2, 3, 7, 14
+    reportStyle: string[]; // ['business', 'readable', 'humor', etc]
 }
 
 export enum ViewState {
@@ -218,7 +233,7 @@ export enum ViewState {
   THIS_DAY = 'THIS_DAY'
 }
 
-export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone';
+export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone' | 'home' | 'work';
 
 export type EnsembleModel = 
     'icon_seamless' | 

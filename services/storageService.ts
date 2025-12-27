@@ -257,6 +257,30 @@ export const loadComparisonType = (): ComparisonType => {
     return (localStorage.getItem(KEY_COMPARISON_TYPE) as ComparisonType) || ComparisonType.YESTERDAY;
 };
 
+const KEY_AI_PROFILE = "weather_app_ai_profile";
+
+export const saveAIProfile = (profile: any) => {
+    if (typeof window !== "undefined") {
+        localStorage.setItem(KEY_AI_PROFILE, JSON.stringify(profile));
+    }
+    // Sync to firestore if logged in
+    if (currentUserId && db) {
+        const userRef = doc(db, 'users', currentUserId);
+        setDoc(userRef, { aiProfile: profile }, { merge: true }).catch(e => console.error("Error syncing AI profile:", e));
+    }
+};
+
+export const loadAIProfile = (): any | null => {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(KEY_AI_PROFILE);
+    if (!stored) return null;
+    try {
+        return JSON.parse(stored);
+    } catch {
+        return null;
+    }
+};
+
 export const saveSettings = (settings: AppSettings) => {
     if (typeof window !== "undefined") {
         localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(settings));

@@ -1201,7 +1201,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
 
       <div className="relative z-10 flex flex-col h-full w-full">
-        <div className="flex flex-col pt-8 pb-4">
+        <div className="sticky top-0 z-40 bg-slate-50 dark:bg-background-dark pt-8 pb-4 shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-center relative px-4 mb-4">
             <button
               onClick={() => onNavigate(ViewState.CURRENT)}
@@ -1284,43 +1284,47 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <div className="flex bg-slate-100 dark:bg-white/5 rounded-full p-1">
                 <button
                 onClick={() => setRecordType('12month')}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === '12month'
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
                 }`}
                 >
-                {t('records.12month')}
+                <span className="hidden md:inline">{t('records.12month')}</span>
+                <Icon name="date_range" className="md:hidden" />
                 </button>
                 <button
                 onClick={() => setRecordType('yearly')}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'yearly'
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
                 }`}
                 >
-                {t('records.yearly')}
+                <span className="hidden md:inline">{t('records.yearly')}</span>
+                <Icon name="calendar_today" className="md:hidden" />
                 </button>
                  <button
                 onClick={() => setRecordType('monthly')}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'monthly'
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
                 }`}
                 >
-                {t('records.monthly')}
+                <span className="hidden md:inline">{t('records.monthly')}</span>
+                <Icon name="calendar_month" className="md:hidden" />
                 </button>
                  <button
                 onClick={() => setRecordType('calendar')}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'calendar'
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
                 }`}
                 >
-                {t('records.calendar')}
+                <span className="hidden md:inline">{t('records.calendar')}</span>
+                <Icon name="event" className="md:hidden" />
                 </button>
             </div>
 

@@ -2,6 +2,7 @@ import { Dictionary } from '../../types';
 
 export const es: Dictionary = {
     // Nav
+    'landing.cta_title': 'Empezar',
     'nav.current': 'Actual',
     'nav.forecast': 'Pronóstico',
     'nav.map': 'Mapa',

@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export interface UsageStats {
     totalCalls: number;
+    aiCalls: number;
     
     // Minute
     minuteCount: number;
@@ -25,6 +26,7 @@ export interface UsageStats {
 
 const DEFAULT_STATS: UsageStats = {
     totalCalls: 0,
+    aiCalls: 0,
     
     minuteCount: 0,
     minuteStart: Date.now(),
@@ -63,8 +65,9 @@ export const loadRemoteUsage = async (uid: string) => {
                 
                 const mergedUsage = { ...DEFAULT_STATS, ...localUsage };
 
-                // 1. Total Calls: Always take max (or remote if we trust it more, but max is safe)
+                // 1. Total Calls & AI Calls: Always take max
                 mergedUsage.totalCalls = Math.max(localUsage.totalCalls, remoteUsage.totalCalls || 0);
+                mergedUsage.aiCalls = Math.max(localUsage.aiCalls || 0, remoteUsage.aiCalls || 0);
 
                 // 2. Month: If same month, take max
                 if (remoteUsage.monthStart === localUsage.monthStart) {
@@ -274,6 +277,12 @@ export const trackCall = () => {
         }
     }
 
+    saveUsage(stats);
+};
+
+export const trackAiCall = () => {
+    const stats = getUsage();
+    stats.aiCalls = (stats.aiCalls || 0) + 1;
     saveUsage(stats);
 };
 

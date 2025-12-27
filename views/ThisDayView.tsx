@@ -518,7 +518,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
   return (
     <div className="h-full flex flex-col">
       {/* Header - Copied from ClimateChangeView */}
-      <div className="flex-none p-4 space-y-4">
+      <div className="flex-none p-4 space-y-4 sticky top-20 z-30 bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
           <div className="flex items-center gap-2 mb-4">
               <button onClick={() => onNavigate('CURRENT')} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full">
                   <Icon name="arrow_back" />
@@ -763,17 +763,17 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       </div>
                       
                       {/* Chart Controls */}
-                      <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                      <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
                           <button 
                               onClick={() => setChartView('all')}
-                              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors ${chartView === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
+                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${chartView === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
                           >
                               Alles
                           </button>
 
                           <button 
                               onClick={() => setChartView('paged')}
-                              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors ${chartView === 'paged' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
+                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${chartView === 'paged' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
                           >
                               10 Jaar
                           </button>

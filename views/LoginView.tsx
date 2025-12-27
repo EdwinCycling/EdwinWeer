@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Icon } from '../components/Icon';
+import { FlagIcon } from '../components/FlagIcon';
 import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
+import { useScrollLock } from '../hooks/useScrollLock';
 import { loadSettings, saveSettings } from '../services/storageService';
 import { AppLanguage } from '../types';
 import { twitterProvider, facebookProvider, microsoftProvider } from '../services/firebase';
@@ -36,8 +38,19 @@ import { twitterProvider, facebookProvider, microsoftProvider } from '../service
 export const LoginView: React.FC = () => {
   const { signInWithGoogle, signInWithProvider } = useAuth();
   const [lang, setLang] = useState<AppLanguage>('en');
+  const [langOpen, setLangOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [providerModalOpen, setProviderModalOpen] = useState(false);
+
+  useScrollLock(providerModalOpen);
+
+  const languages: { code: AppLanguage; label: string }[] = [
+      { code: 'nl', label: 'NL' },
+      { code: 'en', label: 'EN' },
+      { code: 'fr', label: 'FR' },
+      { code: 'de', label: 'DE' },
+      { code: 'es', label: 'ES' },
+  ];
 
   useEffect(() => {
     // Load initial language preference
@@ -52,15 +65,6 @@ export const LoginView: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const toggleLanguage = () => {
-    const langs: AppLanguage[] = ['en', 'nl', 'fr', 'de', 'es'];
-    const currentIndex = langs.indexOf(lang);
-    const newLang = langs[(currentIndex + 1) % langs.length];
-    setLang(newLang);
-    const currentSettings = loadSettings();
-    saveSettings({ ...currentSettings, language: newLang });
-  };
 
   const t = (key: string) => getTranslation(key, lang);
 
@@ -127,13 +131,37 @@ export const LoginView: React.FC = () => {
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-4">
-              <button 
-                onClick={toggleLanguage}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-sm font-medium border border-transparent hover:border-slate-300 dark:hover:border-white/20"
-              >
-                <Icon name="language" className="text-lg" />
-                <span>{lang.toUpperCase()}</span>
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setLangOpen(!langOpen)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-sm font-medium border border-transparent hover:border-slate-300 dark:hover:border-white/20"
+                >
+                  <FlagIcon countryCode={lang} className="w-6 h-4 rounded-sm shadow-sm" />
+                  <span>{lang.toUpperCase()}</span>
+                  <Icon name="expand_more" className="text-sm" />
+                </button>
+                
+                {langOpen && (
+                    <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 p-2 min-w-[150px] z-50 animate-fade-in-up">
+                        {languages.map(l => (
+                            <button 
+                                key={l.code}
+                                onClick={() => {
+                                    setLang(l.code);
+                                    const currentSettings = loadSettings();
+                                    saveSettings({ ...currentSettings, language: l.code });
+                                    setLangOpen(false);
+                                }}
+                                className={`flex items-center gap-3 w-full p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-left transition-colors ${lang === l.code ? 'bg-slate-50 dark:bg-white/5' : ''}`}
+                            >
+                                <FlagIcon countryCode={l.code} className="w-6 h-4 rounded-sm shadow-sm" />
+                                <span className="font-medium text-slate-700 dark:text-white">{l.label}</span>
+                                {lang === l.code && <Icon name="check" className="ml-auto text-blue-500 text-sm" />}
+                            </button>
+                        ))}
+                    </div>
+                )}
+              </div>
               
               <button 
                 onClick={handleLogin}

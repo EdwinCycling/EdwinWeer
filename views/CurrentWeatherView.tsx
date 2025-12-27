@@ -537,65 +537,65 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
           </div>
 
-          <div className="absolute top-6 right-4 sm:right-6 lg:right-8 flex items-center gap-2 sm:gap-3 flex-row-reverse">
+          <div className="absolute top-6 right-4 sm:right-6 lg:right-8 flex items-center gap-1 sm:gap-3 flex-row-reverse">
               {/* Refresh Button */}
               <Tooltip content={t('refresh')} position="bottom">
                   <button 
                       onClick={loadWeather} 
-                      className="p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
                       aria-label={t('refresh')}
                   >
-                      <Icon name="refresh" className={`text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
+                      <Icon name="refresh" className={`text-xl sm:text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
                   </button>
               </Tooltip>
 
               <Tooltip content={t('search')} position="bottom">
                   <button
                       onClick={() => setIsSearchOpen(v => !v)}
-                      className="p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
                       aria-label={t('search')}
                   >
-                      <Icon name="search" className="text-2xl" />
+                      <Icon name="search" className="text-xl sm:text-2xl" />
                   </button>
               </Tooltip>
 
               <Tooltip content={isFavorite(location) ? t('remove_favorite') : t('add_favorite')} position="bottom">
                   <button
                       onClick={toggleFavorite}
-                      className="p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
                       aria-label="Toggle Favorite"
                   >
-                      <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
+                      <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-xl sm:text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
                   </button>
               </Tooltip>
 
               <Tooltip content={t('nav.country_map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
-                      className="p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
                       aria-label="Country Map"
                   >
-                      <Icon name="public" className="text-2xl" />
+                      <Icon name="public" className="text-xl sm:text-2xl" />
                   </button>
               </Tooltip>
 
               <Tooltip content={t('nav.map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.MAP)}
-                      className="p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
                       aria-label={t('nav.map')}
                   >
-                      <Icon name="map" className="text-2xl" />
+                      <Icon name="map" className="text-xl sm:text-2xl" />
                   </button>
               </Tooltip>
 
               <Tooltip content={t('favorites_list') || 'Favorietenlijst'} position="bottom">
                   <button
                       onClick={() => setShowFavorites(true)}
-                      className="p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
                       aria-label="Favorites List"
                   >
-                      <Icon name="list" className="text-2xl" />
+                      <Icon name="list" className="text-xl sm:text-2xl" />
                   </button>
               </Tooltip>
           </div>
