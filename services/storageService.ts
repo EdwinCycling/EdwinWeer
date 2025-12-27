@@ -86,7 +86,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const syncSettingsToRemote = async (settings: AppSettings) => {
     if (!currentUserId || !db) {
-        console.log("Skipping sync: No User ID or DB", { currentUserId, hasDb: !!db });
         return;
     }
     try {

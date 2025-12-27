@@ -1176,10 +1176,13 @@ var handler = async (event) => {
       Het bericht MOET een voorspelling bevatten voor alle ${daysAhead} dagen die in de data staan (vandaag plus de komende dagen).
       
       Belangrijke inhoudelijke eisen:
+      - Begin met te vermelden dat dit het lokale weer is voor ${location} en de data is van ${safeWeatherData.current?.time || "vandaag"}.
       - Neem altijd de windkracht en windrichting mee in je verhaal. Vertaal graden naar windrichting (bijv. zuidwest) en km/u eventueel naar Beaufort als dat natuurlijker klinkt, maar haal ze niet door elkaar.
       - Als het koud is (< 10 graden), vermeld dan expliciet de gevoelstemperatuur.
       - Als het warm is (> 25 graden), vermeld dan expliciet de hitte-index of hoe warm het werkelijk aanvoelt.
       - Focus op wat voor de gebruiker belangrijk is (bijv. regen tijdens fietsen, wind voor zeilen).
+      - Voor dagen 1 t/m 7: Geef een gedetailleerde voorspelling.
+      ${daysAhead > 7 ? `- Voor dagen 8 t/m ${daysAhead}: Geef ALLEEN een algemene trend gebaseerd op de activiteiten, zonder specifieke details.` : ""}
       
       Houd de stijl aan die gevraagd is.
       Gebruik geen markdown formatting zoals bold of headers, gewoon platte tekst of met emoji's als de stijl dat toelaat.

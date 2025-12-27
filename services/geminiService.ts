@@ -96,7 +96,7 @@ export const generateAIWeatherReport = async (weatherData: any, profile: AIProfi
             profile: {
                 ...profile,
                 location: typeof profile.location === 'string' ? profile.location : (profile.location as any)?.name || "onbekend",
-                activities: Array.isArray(profile.activities) ? profile.activities.join(", ") : profile.activities
+                activities: profile.activities
             }
         };
 
