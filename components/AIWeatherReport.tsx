@@ -33,8 +33,8 @@ export const AIWeatherReport: React.FC<Props> = ({ weatherData, profile, profile
         
         // Check limits
         const stats = getUsage();
-        if (stats.aiCalls >= 5) {
-             setError("Je dagelijkse AI limiet is bereikt (5/5).");
+        if (stats.aiCalls >= 25) {
+             setError("Je dagelijkse AI limiet is bereikt (25/25).");
              return;
         }
 
