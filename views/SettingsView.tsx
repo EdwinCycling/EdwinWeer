@@ -26,7 +26,9 @@ const activityIcons: Record<ActivityType, string> = {
     gardening: 'yard',
     stargazing: 'auto_awesome',
     golf: 'golf_course',
-    drone: 'flight'
+    drone: 'flight',
+    home: 'home',
+    work: 'work'
 };
 
 export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNavigate, initialTab }) => {

@@ -48,7 +48,9 @@ const DEFAULT_ENABLED_ACTIVITIES: Record<ActivityType, boolean> = {
     gardening: true,
     stargazing: true,
     golf: true,
-    drone: true
+    drone: true,
+    home: false,
+    work: false
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
