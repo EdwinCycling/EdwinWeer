@@ -54,9 +54,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('session_expiry', newExpiry.toISOString());
         setSessionExpiry(newExpiry);
 
-        // Sync with Firestore
-        setStorageUserId(currentUser.uid);
-        setUsageUserId(currentUser.uid);
+     // Sync with Firestore
+            setStorageUserId(currentUser.uid);
+            setUsageUserId(currentUser.uid, currentUser.email);
         
         // Audit Log: Session Start (if new browser session)
         const sessionKey = `session_logged_${currentUser.uid}`;

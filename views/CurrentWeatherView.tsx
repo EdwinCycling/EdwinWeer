@@ -46,6 +46,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showFavorites, setShowFavorites] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitError, setLimitError] = useState('');
   const [isLangOpen, setIsLangOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -145,9 +147,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         }
 
         setWeatherData(data);
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        setError(t('error'));
+        if (e.message && e.message.includes("limit exceeded")) {
+            setLimitError(e.message);
+            setShowLimitModal(true);
+        } else {
+            setError(t('error'));
+        }
     } finally {
         setLoadingWeather(false);
     }
@@ -1235,6 +1242,32 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           isOpen={showFeelsLikeModal}
           onClose={() => setShowFeelsLikeModal(false)}
       />
+      
+      {/* API Limit Modal */}
+      <Modal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        title={t('error')}
+      >
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 text-red-500 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl">
+                <Icon name="warning" className="text-3xl" />
+                <p className="font-bold">{limitError}</p>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                Het lijkt erop dat je het limiet van de gratis weer-data hebt bereikt. 
+                Probeer het later opnieuw of neem contact op met de beheerder voor een upgrade.
+            </p>
+            <div className="flex justify-end mt-2">
+                <button
+                    onClick={() => setShowLimitModal(false)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                    Sluiten
+                </button>
+            </div>
+        </div>
+      </Modal>
     </div>
   );
 };

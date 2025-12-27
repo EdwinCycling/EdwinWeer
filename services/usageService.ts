@@ -42,9 +42,11 @@ const DEFAULT_STATS: UsageStats = {
 };
 
 let currentUserId: string | null = null;
+let currentUserEmail: string | null = null;
 
-export const setUsageUserId = (uid: string | null) => {
+export const setUsageUserId = (uid: string | null, email: string | null = null) => {
     currentUserId = uid;
+    currentUserEmail = email;
 };
 
 export const loadRemoteUsage = async (uid: string) => {
@@ -166,6 +168,11 @@ const emitLimitReached = (scope: UsageScope, limit: number) => {
 };
 
 export const checkLimit = (): void => {
+    // VIP Bypass
+    if (currentUserEmail === 'edwin@editsolutions.nl' || currentUserEmail === 'edwin@editsolutions') {
+        return;
+    }
+
     const stats = getUsage();
     const now = Date.now();
     const today = new Date().toISOString().split('T')[0];

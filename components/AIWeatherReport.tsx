@@ -72,7 +72,8 @@ export const AIWeatherReport: React.FC<Props> = ({ weatherData, profile, profile
         if (!report) return;
         const subject = encodeURIComponent(`Weerbericht voor ${profile?.location || 'jou'}`);
         const body = encodeURIComponent(report);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        const recipient = user?.email || '';
+        window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
     };
 
     const handleShare = async () => {

@@ -145,10 +145,12 @@ export const handler = async (event) => {
       
       Belangrijke inhoudelijke eisen:
       - Begin met te vermelden dat dit het lokale weer is voor ${location} en de data is van ${safeWeatherData.current?.time || "vandaag"}.
+      - CRITICAl: Je MOET het advies specifiek toespitsen op het opgegeven vervoer: ${transport}. Geef advies of waarschuwingen die direct relevant zijn voor dit vervoermiddel (bijv. gladheid/wind voor fiets/motor, paraplu voor OV/lopen).
+      - CRITICAl: Integreer de opgegeven activiteiten (${activities}) en hobby's (${hobbies}) in je voorspelling. Vertel wanneer het de beste tijd is om deze te doen.
+      - Houd rekening met de belangrijke dagdelen: ${timeOfDay}.
       - Neem altijd de windkracht en windrichting mee in je verhaal. Vertaal graden naar windrichting (bijv. zuidwest) en km/u eventueel naar Beaufort als dat natuurlijker klinkt, maar haal ze niet door elkaar.
       - Als het koud is (< 10 graden), vermeld dan expliciet de gevoelstemperatuur.
       - Als het warm is (> 25 graden), vermeld dan expliciet de hitte-index of hoe warm het werkelijk aanvoelt.
-      - Focus op wat voor de gebruiker belangrijk is (bijv. regen tijdens fietsen, wind voor zeilen).
       - Voor dagen 1 t/m 7: Geef een gedetailleerde voorspelling.
       ${daysAhead > 7 ? `- Voor dagen 8 t/m ${daysAhead}: Geef ALLEEN een algemene trend gebaseerd op de activiteiten, zonder specifieke details.` : ''}
       
