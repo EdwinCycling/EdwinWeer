@@ -46,8 +46,6 @@ var handler = async (event) => {
     }
     const params = new URLSearchParams({ latitude: String(lat), longitude: String(lon), ...otherParams });
     const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
-    const clientIp = event.headers?.["x-nf-client-connection-ip"] || event.headers?.["client-ip"];
-    console.log(`[Proxy] Request from ${clientIp || "unknown"} for ${lat},${lon}`);
     const response = await fetch(url);
     if (!response.ok) {
       const text = await response.text().catch(() => "");

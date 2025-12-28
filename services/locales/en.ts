@@ -64,6 +64,14 @@ export const en: Dictionary = {
     'temp.low_short': 'L',
     'days': 'days',
 
+    'days.monday': 'Monday',
+    'days.tuesday': 'Tuesday',
+    'days.wednesday': 'Wednesday',
+    'days.thursday': 'Thursday',
+    'days.friday': 'Friday',
+    'days.saturday': 'Saturday',
+    'days.sunday': 'Sunday',
+
     // Info
     'info.title': 'About App',
     'info.hero_title': 'Weather Reimagined',
@@ -289,6 +297,23 @@ export const en: Dictionary = {
     'country_map.base.satellite': 'Satellite',
     'country_map.error.no_stations': 'No weather stations found for',
     'country_map.error.no_stations_hint': 'Add a favorite place in this country or search for a specific place.',
+
+    'activity.score_info': 'Activity scores based on current weather conditions (snapshot)',
+
+    'profile.schedule.title': 'Email Schedule',
+    'profile.schedule.enable': 'Send periodic email',
+    'profile.schedule.days': 'Days',
+    'profile.schedule.breakfast': 'Breakfast (07:00)',
+    'profile.schedule.lunch': 'Lunch (12:00)',
+    'profile.schedule.dinner': 'Dinner (17:00)',
+    'profile.schedule.max_limit': 'Max 5 emails per week',
+    'profile.schedule.limit_reached': 'Limit reached (5/5)',
+    'profile.schedule.total': 'Total scheduled',
+    'profile.teaser.title': 'Automated Weather Report',
+    'profile.teaser.desc': 'Receive a daily personal weather report in your mailbox at your chosen times.',
+    'profile.teaser.upgrade': 'View Pro Plans',
+    'profile.teaser.pro_only': 'Available for Pro users',
+
 
     // Share
     'share.title': 'Share Weather',
@@ -783,7 +808,7 @@ export const en: Dictionary = {
     'reason.geomag_storm': 'Geomagnetic storm (GPS issues)',
     'reason.perfect': 'Perfect conditions!',
     'reason.feels_like_subzero': 'Feels like below zero',
-    'activity.score_info': 'Activity scores based on current weather conditions (snapshot)',
+
 
     // Climate Change
     'climate.title': 'Climate Change',

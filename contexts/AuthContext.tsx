@@ -34,7 +34,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const expiryDate = new Date(storedExpiry);
             if (expiryDate < now) {
                 // Session expired
-                console.log("Session expired, logging out");
                 await signOut(auth);
                 setStorageUserId(null);
                 setUsageUserId(null);

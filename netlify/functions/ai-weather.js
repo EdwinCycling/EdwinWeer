@@ -51,7 +51,7 @@ export const handler = async (event) => {
       };
     }
 
-    const { weatherData, profile } = body || {};
+    const { weatherData, profile, userName, language = 'nl' } = body || {};
 
     if (!weatherData || !profile) {
       return {
@@ -112,52 +112,114 @@ export const handler = async (event) => {
     };
 
     // Construct the prompt based on profile
-    const activities = toCommaList(profile.activities, "geen specifieke activiteiten");
+    // FILTER OUT empty/default values to prevent "Let op: geen..." messages
+    const isGeneral = profile.isGeneralReport === true;
+    
+    const hasActivities = !isGeneral && profile.activities && profile.activities.length > 0;
+    const activities = hasActivities ? toCommaList(profile.activities, "") : "";
+    
     const location = typeof profile.location === 'string' && profile.location.trim() ? profile.location.trim() : "onbekend";
-    const timeOfDay = toCommaList(profile.timeOfDay, "hele dag");
-    const transport = toCommaList(profile.transport, "geen specifiek vervoer");
-    const hobbies = typeof profile.hobbies === 'string' && profile.hobbies.trim() ? profile.hobbies.trim() : "geen";
-    const instructions = typeof profile.otherInstructions === 'string' && profile.otherInstructions.trim() ? profile.otherInstructions.trim() : "geen";
+    
+    const hasTimeOfDay = !isGeneral && profile.timeOfDay && profile.timeOfDay.length > 0;
+    const timeOfDay = hasTimeOfDay ? toCommaList(profile.timeOfDay, "") : "";
+    
+    const hasTransport = !isGeneral && profile.transport && profile.transport.length > 0;
+    const transport = hasTransport ? toCommaList(profile.transport, "") : "";
+    
+    const hasHobbies = !isGeneral && typeof profile.hobbies === 'string' && profile.hobbies.trim();
+    const hobbies = hasHobbies ? profile.hobbies.trim() : "";
+    
+    const hasInstructions = typeof profile.otherInstructions === 'string' && profile.otherInstructions.trim();
+    const instructions = hasInstructions ? profile.otherInstructions.trim() : "";
+    
     const styles = toCommaList(profile.reportStyle, "zakelijk");
 
-    const prompt = `
-      Je bent een gevatte, Nederlandse weerman voor een app.
-      Gebruikersprofiel:
-      - Activiteiten: ${activities}
-      - Locatie: ${location}
-      - Belangrijke dagdelen: ${timeOfDay}
-      - Vervoer: ${transport}
-      - Hobby's: ${hobbies}
-      - Extra instructies: ${instructions}
-      - Gewenste stijl: ${styles}
+    const userSalutation = userName ? userName.split(' ')[0] : (profile.name || "Gebruiker");
 
-      Weerdata (JSON):
-      ${JSON.stringify(safeWeatherData)}
+    // Language configuration
+    const lang = (language || 'nl').toLowerCase();
+    const isDutch = lang === 'nl';
 
-      Let op de eenheden in de data:
-      - wind_speed_10m is in km/u.
-      - wind_direction_10m is in graden (0=Noord, 90=Oost, 180=Zuid, 270=West).
-      - temperature is in graden Celsius.
+    let prompt = '';
+    
+    if (isDutch) {
+        prompt = `
+          Je bent een gevatte, Nederlandse weerman voor een app.
+          
+          CONTEXT:
+          - Type Rapport: ${isGeneral ? 'ALGEMEEN WEERBERICHT (Focus op algemeen beeld voor de regio, geen persoonlijke adviezen)' : 'Persoonlijk Weerbericht'}
+          - Gebruiker: ${userSalutation}
+          - Locatie: ${location}
+          - Gewenste stijl: ${styles}
+          ${hasActivities ? `- Activiteiten: ${activities}` : ''}
+          ${hasTimeOfDay ? `- Belangrijke dagdelen: ${timeOfDay}` : ''}
+          ${hasTransport ? `- Vervoer: ${transport}` : ''}
+          ${hasHobbies ? `- Hobby's: ${hobbies}` : ''}
+          ${hasInstructions ? `- Extra instructies: ${instructions}` : ''}
 
-      Opdracht:
-      Schrijf een persoonlijk weerbericht voor de gebruiker gebaseerd op bovenstaande data en profiel.
-      Het bericht MOET een voorspelling bevatten voor alle ${daysAhead} dagen die in de data staan (vandaag plus de komende dagen).
-      
-      Belangrijke inhoudelijke eisen:
-      - Begin met te vermelden dat dit het lokale weer is voor ${location} en de data is van ${safeWeatherData.current?.time || "vandaag"}.
-      - CRITICAl: Je MOET het advies specifiek toespitsen op het opgegeven vervoer: ${transport}. Geef advies of waarschuwingen die direct relevant zijn voor dit vervoermiddel (bijv. gladheid/wind voor fiets/motor, paraplu voor OV/lopen).
-      - CRITICAl: Integreer de opgegeven activiteiten (${activities}) en hobby's (${hobbies}) in je voorspelling. Vertel wanneer het de beste tijd is om deze te doen.
-      - Houd rekening met de belangrijke dagdelen: ${timeOfDay}.
-      - Neem altijd de windkracht en windrichting mee in je verhaal. Vertaal graden naar windrichting (bijv. zuidwest) en km/u eventueel naar Beaufort als dat natuurlijker klinkt, maar haal ze niet door elkaar.
-      - Als het koud is (< 10 graden), vermeld dan expliciet de gevoelstemperatuur.
-      - Als het warm is (> 25 graden), vermeld dan expliciet de hitte-index of hoe warm het werkelijk aanvoelt.
-      - Voor dagen 1 t/m 7: Geef een gedetailleerde voorspelling.
-      ${daysAhead > 7 ? `- Voor dagen 8 t/m ${daysAhead}: Geef ALLEEN een algemene trend gebaseerd op de activiteiten, zonder specifieke details.` : ''}
-      
-      Houd de stijl aan die gevraagd is.
-      Gebruik geen markdown formatting zoals bold of headers, gewoon platte tekst of met emoji's als de stijl dat toelaat.
-      Houd het beknopt maar waardevol.
-    `;
+          WEERDATA (JSON):
+          ${JSON.stringify(safeWeatherData)}
+
+          OPDRACHT:
+          Schrijf een weerbericht voor ${userSalutation} voor de locatie ${location}.
+          Gebruik de weerdata voor de komende ${daysAhead} dagen.
+
+          STRIKTE REGELS:
+          1. AANHEF: Begin het bericht ALTIJD met "Beste ${userSalutation},". Gebruik nooit "Beste inwoner van..." of iets dergelijks.
+          2. DATUMS: Controleer de datums in de JSON data. Zorg dat de dagen van de week (maandag, dinsdag, etc.) kloppen met de datum (YYYY-MM-DD). Vandaag is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
+          3. CONTENT: Vermeld NOOIT dat instellingen ontbreken (bijv. "Je hebt geen vervoer opgegeven"). Als een veld leeg is, negeer het volledig.
+          4. ACTIVITEITEN: Geef kwalitatief advies over de opgegeven activiteiten. Bereken GEEN scores (cijfers), dit doet het systeem al.
+          5. VERVOER: Als vervoer is opgegeven, geef specifiek advies (bijv. tegenwind op de fiets).
+          6. DATA: Gebruik altijd de exacte waarden uit de JSON (wind, temp, regen). Verzin er niets bij.
+          7. STIJL: Houd je aan de gevraagde stijl (${styles}). Geen markdown headers (#), gebruik platte tekst.
+
+          Structuur:
+          - Korte introductie over het huidige weer.
+          - Vooruitzicht voor de komende dagen.
+          - Specifiek advies voor activiteiten/vervoer (indien van toepassing).
+          - Afsluiting.
+        `;
+    } else {
+        // English / International Prompt
+        prompt = `
+          You are a witty weather reporter for an app.
+          
+          CONTEXT:
+          - Report Type: ${isGeneral ? 'GENERAL REPORT (Focus on general regional overview, no personal advice)' : 'Personal Weather Report'}
+          - User: ${userSalutation}
+          - Location: ${location}
+          - Requested Style: ${styles}
+          - Output Language: ${lang.toUpperCase()} (IMPORTANT: Write the report in this language)
+          ${hasActivities ? `- Activities: ${activities}` : ''}
+          ${hasTimeOfDay ? `- Important times: ${timeOfDay}` : ''}
+          ${hasTransport ? `- Transport: ${transport}` : ''}
+          ${hasHobbies ? `- Hobbies: ${hobbies}` : ''}
+          ${hasInstructions ? `- Extra instructions: ${instructions}` : ''}
+
+          WEATHER DATA (JSON):
+          ${JSON.stringify(safeWeatherData)}
+
+          ASSIGNMENT:
+          Write a weather report for ${userSalutation} for the location ${location}.
+          Use the weather data for the next ${daysAhead} days.
+          WRITE THE ENTIRE REPORT IN ${lang.toUpperCase()}.
+
+          STRICT RULES:
+          1. GREETING: ALWAYS start with "Dear ${userSalutation}," (or the equivalent in ${lang}).
+          2. DATES: Check the dates in the JSON data. Ensure days of the week match the date. Today is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
+          3. CONTENT: NEVER mention missing settings. If a field is empty, ignore it completely.
+          4. ACTIVITIES: Provide qualitative advice on the listed activities. Do NOT calculate scores.
+          5. TRANSPORT: If transport is listed, give specific advice.
+          6. DATA: Always use exact values from JSON. Do not invent data.
+          7. STYLE: Follow the requested style (${styles}). No markdown headers (#), use plain text.
+
+          Structure:
+          - Short introduction about current weather.
+          - Outlook for coming days.
+          - Specific advice for activities/transport (if applicable).
+          - Closing.
+        `;
+    }
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);

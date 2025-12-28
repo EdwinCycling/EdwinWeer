@@ -79,6 +79,14 @@ export const nl: Dictionary = {
     'temp.low_short': 'L',
     'days': 'dagen',
 
+    'days.monday': 'Maandag',
+    'days.tuesday': 'Dinsdag',
+    'days.wednesday': 'Woensdag',
+    'days.thursday': 'Donderdag',
+    'days.friday': 'Vrijdag',
+    'days.saturday': 'Zaterdag',
+    'days.sunday': 'Zondag',
+
     // Info
     'info.title': 'Over de App',
     'info.hero_title': 'Weer opnieuw bedacht',
@@ -347,6 +355,19 @@ export const nl: Dictionary = {
 
     'settings.general': 'Algemeen',
     'settings.week_start': 'Week begint op',
+    'profile.schedule.title': 'Email Planning',
+    'profile.schedule.enable': 'Periodiek mailen',
+    'profile.schedule.days': 'Dagen',
+    'profile.schedule.breakfast': 'Ontbijt (07:00)',
+    'profile.schedule.lunch': 'Lunch (12:00)',
+    'profile.schedule.dinner': 'Diner (17:00)',
+    'profile.schedule.max_limit': 'Max 5 emails per week',
+    'profile.schedule.limit_reached': 'Limiet bereikt (5/5)',
+    'profile.schedule.total': 'Totaal gepland',
+    'profile.teaser.title': 'Geautomatiseerd Weerbericht',
+    'profile.teaser.desc': 'Ontvang dagelijks een persoonlijk weerbericht in je mailbox op jouw gekozen momenten.',
+    'profile.teaser.upgrade': 'Bekijk Pro Pakketten',
+    'profile.teaser.pro_only': 'Beschikbaar voor Pro gebruikers',
     'settings.monday': 'Maandag',
     'settings.sunday': 'Zondag',
     'settings.saturday': 'Zaterdag',
@@ -368,7 +389,7 @@ export const nl: Dictionary = {
     'settings.heatwave.heat_desc': 'Heetste dagen die de hittegolf bepalen.',
     'settings.heatwave.heat_days': 'Dagen boven hittegolfdrempel',
     'settings.heatwave.heat_days_desc': 'Minimale aantal dagen boven de hittegolf-drempel binnen de reeks.',
-    'settings.ai_profile': 'AI Profiel',
+    'settings.ai_profile': 'Weer Profiel',
     
     'settings.records_title': 'Record Drempelwaardes',
     'settings.records.summer_streak': 'Zomerse reeks',
@@ -679,7 +700,7 @@ export const nl: Dictionary = {
     'reason.battery_perf': 'Accu prestaties minder',
     'reason.geomag_storm': 'Geomagnetische storm (GPS storing)',
     'reason.perfect': 'Perfecte omstandigheden!',
-    'activity.score_info': 'Activiteitenscores op basis van actuele weersomstandigheden (momentopname)',
+
 
     // Share
     'share.title': 'Deel Weer',

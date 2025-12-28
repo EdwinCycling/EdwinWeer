@@ -19,4 +19,7 @@
   to = "/index.html"
   status = 200
 
+[functions."scheduled-email"]
+  schedule = "@hourly"
+
 

@@ -38,7 +38,7 @@ export const StaticWeatherBackground: React.FC<Props> = ({ weatherCode, isDay, c
     if (cover === undefined) {
       // Approximate from weatherCode if cloudCover is missing
       if (weatherCode === 0) cover = 0; // Clear
-      else if (weatherCode === 1) cover = 20; // Mainly clear
+      else if (weatherCode === 1) cover = 15; // Mainly clear
       else if (weatherCode === 2) cover = 50; // Partly cloudy
       else if (weatherCode === 3) cover = 100; // Overcast
       else cover = 50; // Default fallback

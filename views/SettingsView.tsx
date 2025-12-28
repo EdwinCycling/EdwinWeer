@@ -454,6 +454,28 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     </div>
                                 </div>
 
+                                {/* Timezone */}
+                                <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <Icon name="public" className="text-slate-700 dark:text-white/60" />
+                                        <span className="font-medium text-slate-800 dark:text-white">Tijdzone</span>
+                                    </div>
+                                    <select
+                                        value={settings.timezone || 'Europe/Amsterdam'}
+                                        onChange={(e) => updateSetting('timezone', e.target.value)}
+                                        className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                                    >
+                                        <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
+                                        <option value="Europe/Brussels">Brussels</option>
+                                        <option value="Europe/London">London (GMT/BST)</option>
+                                        <option value="Europe/Paris">Paris</option>
+                                        <option value="Europe/Berlin">Berlin</option>
+                                        <option value="Europe/Madrid">Madrid</option>
+                                        <option value="America/New_York">New York (EST/EDT)</option>
+                                        <option value="UTC">UTC</option>
+                                    </select>
+                                </div>
+
                                 {/* Week Start Day */}
                                 <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
                                     <div className="flex items-center gap-3">
@@ -846,6 +868,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                             });
                         }}
                         currentLocationName={settings.favorites.find(f => f.isCurrentLocation)?.name || settings.favorites[0]?.name}
+                        language={settings.language}
                     />
                 )}
             </div>

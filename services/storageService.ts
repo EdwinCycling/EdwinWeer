@@ -91,14 +91,12 @@ const syncSettingsToRemote = async (settings: AppSettings) => {
         return;
     }
     try {
-        console.log("Syncing settings to Firestore for user:", currentUserId);
         // Exclude theme from sync (per user request)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { theme, ...settingsToSync } = settings;
         
         const userRef = doc(db, 'users', currentUserId);
         await setDoc(userRef, { settings: settingsToSync }, { merge: true });
-        console.log("Settings synced successfully");
     } catch (e) {
         console.error("Error syncing settings:", e);
     }

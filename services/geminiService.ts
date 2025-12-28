@@ -88,7 +88,7 @@ export const getWeatherDescription = async (): Promise<string> => {
   return "No data available";
 }
 
-export const generateAIWeatherReport = async (weatherData: any, profile: AIProfile): Promise<string> => {
+export const generateAIWeatherReport = async (weatherData: any, profile: AIProfile, userName?: string, language: string = 'nl'): Promise<string> => {
     try {
         // Prepare the payload, ensuring types are serializable/friendly for the backend
         const payload = {
@@ -97,7 +97,9 @@ export const generateAIWeatherReport = async (weatherData: any, profile: AIProfi
                 ...profile,
                 location: typeof profile.location === 'string' ? profile.location : (profile.location as any)?.name || "onbekend",
                 activities: profile.activities
-            }
+            },
+            userName,
+            language
         };
 
         // Try to call the Netlify function

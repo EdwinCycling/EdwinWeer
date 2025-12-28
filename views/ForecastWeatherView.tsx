@@ -74,6 +74,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [activitiesMode, setActivitiesMode] = useState<'none' | 'positive' | 'all'>(loadForecastActivitiesMode());
   const [viewMode, setViewMode] = useState<ForecastViewMode>(loadForecastViewMode());
   const [trendArrows, setTrendArrows] = useState(loadForecastTrendArrowsMode());
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     saveForecastActivitiesMode(activitiesMode);
@@ -197,12 +205,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       return dailyForecast.map((d, i) => ({
           ...d,
           index: i,
-          dayShort: d.day.split(' ')[0],
+          dayShort: isMobile ? d.day.substring(0, 2) : d.day.split(' ')[0],
           dayDate: d.day.split(' ').slice(1).join(' '),
           // Cap visual precipitation height at 10mm, but keep real amount for label
           visualPrecip: Math.min(d.precip, 10)
       }));
-  }, [dailyForecast]);
+  }, [dailyForecast, isMobile]);
 
   const CustomTopTick = ({ x, y, payload }: any) => {
       const data = graphData[payload.index];
@@ -356,7 +364,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             </div>
 
             {/* Favorite Cities Selector */}
-            <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 sticky top-0 z-20 bg-slate-50/95 dark:bg-background-dark/95 backdrop-blur-md py-2 transition-colors duration-300">
+            <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 transition-colors duration-300">
                 <div className="flex gap-3 pr-4">
                     <button 
                         onClick={() => {
@@ -454,27 +462,27 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             
             {/* AI Report Section */}
             {weatherData && (
-                <AIWeatherReport weatherData={weatherData} profile={settings.aiProfile} profiles={settings.aiProfiles} onNavigate={onNavigate} />
+                <AIWeatherReport weatherData={weatherData} profile={settings.aiProfile} profiles={settings.aiProfiles} onNavigate={onNavigate} language={settings.language} />
             )}
 
             {/* Daily Forecast List */}
             <div className="flex flex-col gap-1 mb-8">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-1 mb-4 gap-2">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-1 mb-4 gap-3 sm:gap-2">
                     <h3 className="text-slate-500 dark:text-white/60 text-xs font-bold uppercase tracking-wider">
                         {t('next_days')}
                     </h3>
-                    <div className="flex gap-4 items-center">
+                    <div className="flex flex-wrap gap-2 items-center justify-start sm:justify-end">
                         {expandedMode && (
-                            <div className="flex items-center gap-2 select-none">
-                                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Activiteiten</span>
-                                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-full p-0.5 text-[10px]">
+                            <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 rounded-lg p-1 flex-grow sm:flex-grow-0">
+                                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 ml-1">Activiteiten</span>
+                                <div className="flex bg-white dark:bg-slate-800 rounded-md p-0.5 text-[10px] flex-grow sm:flex-grow-0">
                                     <button
                                         type="button"
                                         onClick={() => setActivitiesMode('none')}
-                                        className={`px-2 py-1 rounded-full font-medium transition-colors ${
+                                        className={`flex-1 sm:flex-none px-2 py-1 rounded-md font-medium transition-colors ${
                                             activitiesMode === 'none'
-                                                ? 'bg-white dark:bg-white text-slate-800 dark:text-slate-900 shadow-sm'
-                                                : 'text-slate-500 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/10'
+                                                ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white shadow-sm'
+                                                : 'text-slate-500 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/10'
                                         }`}
                                     >
                                         Uit
@@ -482,10 +490,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     <button
                                         type="button"
                                         onClick={() => setActivitiesMode('positive')}
-                                        className={`px-2 py-1 rounded-full font-medium transition-colors ${
+                                        className={`flex-1 sm:flex-none px-2 py-1 rounded-md font-medium transition-colors ${
                                             activitiesMode === 'positive'
-                                                ? 'bg-white dark:bg-white text-slate-800 dark:text-slate-900 shadow-sm'
-                                                : 'text-slate-500 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/10'
+                                                ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white shadow-sm'
+                                                : 'text-slate-500 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/10'
                                         }`}
                                     >
                                         7+
@@ -493,10 +501,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     <button
                                         type="button"
                                         onClick={() => setActivitiesMode('all')}
-                                        className={`px-2 py-1 rounded-full font-medium transition-colors ${
+                                        className={`flex-1 sm:flex-none px-2 py-1 rounded-md font-medium transition-colors ${
                                             activitiesMode === 'all'
-                                                ? 'bg-white dark:bg-white text-slate-800 dark:text-slate-900 shadow-sm'
-                                                : 'text-slate-500 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/10'
+                                                ? 'bg-slate-200 dark:bg-white/20 text-slate-800 dark:text-white shadow-sm'
+                                                : 'text-slate-500 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/10'
                                         }`}
                                     >
                                         Alle
@@ -505,7 +513,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             </div>
                         )}
                         {viewMode === 'compact' && (
-                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <label className="flex items-center gap-2 cursor-pointer select-none bg-slate-100 dark:bg-white/5 rounded-lg p-1.5 px-3 h-[34px]">
                                 <input 
                                     type="checkbox" 
                                     checked={trendArrows} 
@@ -516,7 +524,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             </label>
                         )}
                         
-                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1 overflow-hidden">
+                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1 overflow-hidden flex-grow sm:flex-grow-0 h-[34px]">
                             <button 
                                 onClick={() => setViewMode('expanded')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'expanded' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
@@ -545,6 +553,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             <div className="h-full" style={{ minWidth: visibleDays > 7 ? '800px' : '100%' }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <ComposedChart data={graphData} margin={{ top: 40, right: 10, left: -20, bottom: 40 }}>
+                                        {getWeekendAreas()}
                                         <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} opacity={0.1} stroke="currentColor" />
                                         <XAxis 
                                             dataKey="day" 

@@ -190,6 +190,7 @@ export interface AppSettings {
     historicalMode?: 'single' | 'compare';
     mapBaseLayer?: MapBaseLayer;
     weekStartDay?: 'monday' | 'sunday' | 'saturday';
+    timezone?: string;
     calendar?: CalendarSettings;
     climatePeriodType?: '30year' | 'decade';
     aiProfile?: AIProfile;
@@ -207,6 +208,20 @@ export interface AIProfile {
     otherInstructions?: string;
     daysAhead: number; // 1, 2, 3, 7, 14
     reportStyle: string[]; // ['business', 'readable', 'humor', etc]
+    isGeneralReport?: boolean;
+    emailSchedule?: EmailSchedule;
+}
+
+export interface EmailSchedule {
+    enabled: boolean;
+    days: EmailScheduleDay[];
+}
+
+export interface EmailScheduleDay {
+    day: string; // 'monday', 'tuesday', etc.
+    breakfast: boolean;
+    lunch: boolean;
+    dinner: boolean;
 }
 
 export enum ViewState {
