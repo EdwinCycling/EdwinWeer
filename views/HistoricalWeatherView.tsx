@@ -1042,16 +1042,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   });
              }
 
-             // 28. Sun Consistency
-             const sunnyDays1 = [0,1,2,3,4,5,6].filter(i => getSun(context1, i) > 5).length;
-             if (sunnyDays1 >= 4) {
-                 insights.push({
-                      icon: 'wb_sunny',
-                      title: isNL ? 'Zonnige Week' : 'Sunny Week',
-                      desc: isNL ? `Veel zonneschijn in de week van ${d1Name}.` : `Lots of sunshine in the week of ${d1Name}.`,
-                      color: 'text-yellow-500'
-                  });
-             }
+             // 28. Sun Consistency - REMOVED
 
              // 29. Weather Monotony (Same Weather Code)
              const codes1 = [3,4,5,6].map(i => context1?.daily?.weather_code?.[i]);

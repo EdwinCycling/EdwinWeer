@@ -288,14 +288,27 @@ export const handler = async (event, context) => {
             const sent = await sendEmail(userEmail, baroProfile.name || "User", `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, emailContent);
 
             if (sent) {
-                // 5. Audit Log
-                await auditRef.set({
-                    userId,
-                    date: dateStr,
-                    slot: matchedSlot,
-                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                    status: 'sent'
-                });
+                if (forceTest) {
+                    // Reset flag
+                    try {
+                        await db.collection('users').doc(userId).update({
+                            forceEmailTest: false,
+                            'settings.forceEmailTest': false
+                        });
+                    } catch (e) {
+                        // Ignore update errors (e.g. if field missing)
+                        console.log("Could not reset force flag", e);
+                    }
+                } else if (auditRef) {
+                    // 5. Audit Log
+                    await auditRef.set({
+                        userId,
+                        date: dateStr,
+                        slot: matchedSlot,
+                        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                        status: 'sent'
+                    });
+                }
                 results.push({ userId, status: 'sent', slot: matchedSlot });
             } else {
                 results.push({ userId, status: 'failed', slot: matchedSlot });
