@@ -36,8 +36,11 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
             // Poll for credit updates (webhook latency)
             const checkCredits = async () => {
                 try {
+                    console.log("[PricingView] Checking credits...");
                     await loadRemoteUsage(user.uid);
-                    setUsageStats(getUsage());
+                    const newUsage = getUsage();
+                    console.log("[PricingView] New usage stats:", newUsage);
+                    setUsageStats(newUsage);
                 } catch (e) {
                     console.error("Error refreshing credits:", e);
                 }
@@ -123,18 +126,31 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         
                         <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Bedankt voor je aankoop!</h3>
                         <p className="text-slate-600 dark:text-slate-300 mb-6">
-                            Je betaling is succesvol verwerkt. De credits zijn toegevoegd aan je account.
+                            Je betaling is succesvol verwerkt. De credits worden toegevoegd aan je account.<br/>
+                            <span className="text-xs text-slate-400">Dit kan enkele seconden duren...</span>
                         </p>
 
-                        <button
-                            onClick={() => {
-                                setShowSuccess(false);
-                                window.location.reload();
-                            }}
-                            className="w-full py-3 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
-                        >
-                            Sluiten & Verversen
-                        </button>
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => {
+                                    setShowSuccess(false);
+                                    window.location.reload();
+                                }}
+                                className="w-full py-3 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
+                            >
+                                Sluiten & Verversen
+                            </button>
+                            
+                            <button
+                                onClick={async () => {
+                                    await loadRemoteUsage(user?.uid || '');
+                                    setUsageStats(getUsage());
+                                }}
+                                className="w-full py-2 px-4 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium"
+                            >
+                                Status handmatig checken
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -14,7 +14,10 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ErrorBoundary extends React.Component<Props, State> {
+  // Explicitly define props to satisfy TS if needed
+  public readonly props: Props;
+
   public state: State = {
     hasError: false,
     error: null
@@ -56,7 +59,8 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.props.onNavigate && (
                 <button
                   onClick={() => {
-                      this.setState({ hasError: false, error: null });
+                      // Reset error state and navigate
+                      (this as any).setState({ hasError: false, error: null });
                       this.props.onNavigate!(ViewState.CURRENT);
                   }}
                   className="w-full py-3 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"

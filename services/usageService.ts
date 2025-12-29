@@ -116,6 +116,8 @@ export const loadRemoteUsage = async (uid: string) => {
                 // Credits
                 if (remoteUsage.weatherCredits !== undefined) mergedUsage.weatherCredits = remoteUsage.weatherCredits;
                 if (remoteUsage.baroCredits !== undefined) mergedUsage.baroCredits = remoteUsage.baroCredits;
+                
+                console.log(`[UsageService] Merged credits - Weather: ${mergedUsage.weatherCredits}, Baro: ${mergedUsage.baroCredits}`);
 
                 // 2. Month
                 if (remoteUsage.monthStart === localUsage.monthStart) {

@@ -225,13 +225,20 @@ export const handler = async (event: any) => {
           // Update Firestore
           const userRef = db.collection('users').doc(userId);
           
+          console.log(`[Stripe Webhook] Updating user ${userId} with:`, updates);
+
           const updateData: Record<string, any> = {};
           for (const [key, value] of Object.entries(updates)) {
               updateData[`usage.${key}`] = admin.firestore.FieldValue.increment(value);
           }
           
           await userRef.update(updateData);
-          console.log(`Updated credits for user ${userId}:`, updates);
+          console.log(`[Stripe Webhook] Successfully updated credits for user ${userId}`);
+
+          // Verify update
+          const updatedDoc = await userRef.get();
+          console.log(`[Stripe Webhook] User state after update:`, updatedDoc.data()?.usage);
+
 
           // Send Confirmation Email
           if (session.customer_details?.email) {

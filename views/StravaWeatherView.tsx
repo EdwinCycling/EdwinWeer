@@ -31,9 +31,11 @@ interface ChartDataPoint {
     windDir: number; // degrees
     lat?: number;
     lon?: number;
+    sun: number; // minutes
 }
 
 interface ExtendedRideData extends RideData {
+    sunPercentage?: number;
     startTimeStr?: string;
     endTimeStr?: string;
     avgWindDir?: number; 
@@ -419,6 +421,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     const windKmh = convertWind(data.hourly.wind_speed_10m[hour], WindUnit.KMH);
                     const rain = convertPrecip(data.hourly.precipitation[hour], settings.precipUnit);
                     const windDir = data.hourly.wind_direction_10m[hour] || 0;
+                    const sun = (data.hourly.sunshine_duration?.[hour] || 0) / 60; // seconds -> minutes
 
                     windDirs.push(windDir);
 
@@ -432,7 +435,8 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                         windKmh,
                         windDir,
                         lat: pt.lat,
-                        lon: pt.lon
+                        lon: pt.lon,
+                        sun
                     });
                 } catch (e) {
                     console.error("Weather fetch failed for point", i, e);
