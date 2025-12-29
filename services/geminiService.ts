@@ -1,4 +1,4 @@
-import { Location, AIProfile } from "../types";
+import { Location, BaroProfile } from "../types";
 import { MAJOR_CITIES } from "./cityData";
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -88,7 +88,10 @@ export const getWeatherDescription = async (): Promise<string> => {
   return "No data available";
 }
 
-export const generateAIWeatherReport = async (weatherData: any, profile: AIProfile, userName?: string, language: string = 'nl'): Promise<string> => {
+/**
+ * Generates a personalized weather report using the Baro Netlify Function.
+ */
+export const generateBaroWeatherReport = async (weatherData: any, profile: BaroProfile, userName?: string, language: string = 'nl'): Promise<string> => {
     try {
         // Prepare the payload, ensuring types are serializable/friendly for the backend
         const payload = {
@@ -111,7 +114,7 @@ export const generateAIWeatherReport = async (weatherData: any, profile: AIProfi
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-App-Source': 'EdwinWeerApp'
+                    'X-App-Source': 'BaroWeatherApp'
                 },
                 body: JSON.stringify(payload)
             });

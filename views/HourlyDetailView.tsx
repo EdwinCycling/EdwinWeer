@@ -130,7 +130,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                             <Icon name="thermostat" className="text-primary" />
                             <span className="text-sm font-bold">{t('temp')}</span>
                         </div>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorTempDetail" x1="0" y1="0" x2="0" y2="1">
@@ -172,7 +172,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                                 <Icon name="thermostat" className="text-orange-400" />
                                 <span className="text-sm font-bold">{t('feels_like')}</span>
                             </div>
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <AreaChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorFeelsLike" x1="0" y1="0" x2="0" y2="1">
@@ -213,7 +213,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                             <Icon name="air" className="text-green-500" />
                             <span className="text-sm font-bold">{t('wind')} (Bft)</span>
                         </div>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <BarChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />
@@ -230,7 +230,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                             <Icon name="humidity_percentage" className="text-blue-400" />
                             <span className="text-sm font-bold">{t('humidity')} (%)</span>
                         </div>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
@@ -253,7 +253,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
                             <Icon name="compress" className="text-purple-400" />
                             <span className="text-sm font-bold">{t('pressure')} ({settings.pressureUnit})</span>
                         </div>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={2} />

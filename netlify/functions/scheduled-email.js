@@ -94,7 +94,7 @@ async function generateReport(weatherData, profile, userName) {
         // Construct prompt (Dutch only for now as requested context is Dutch mostly)
         // Ideally we fetch language from settings.
         const prompt = `
-          Je bent een gevatte, Nederlandse weerman voor een app.
+          Je bent Baro, een gevatte en deskundige Nederlandse weerman voor een app.
           
           CONTEXT:
           - Type Rapport: ${isGeneral ? 'ALGEMEEN WEERBERICHT' : 'Persoonlijk Weerbericht'}
@@ -153,13 +153,13 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
                         ${htmlContent}
                     </div>
                     <p style="font-size: 12px; color: #64748b; margin-top: 20px; text-align: center;">
-                        Verzonden door Edwin Weer App | <a href="https://edwin-weer.netlify.app">Open App</a>
+                        Verzonden door Baro | <a href="https://askbaro.com">Open App</a>
                     </p>
                 </div>
             </body>
         </html>
     `;
-    sendSmtpEmail.sender = { "name": "Edwin Weer App", "email": "noreply@edwin-weer.netlify.app" }; // Should be a verified sender in Brevo
+    sendSmtpEmail.sender = { "name": "Baro", "email": "no-reply@askbaro.com" }; // Should be a verified sender in Brevo
     sendSmtpEmail.to = [{ "email": toEmail, "name": toName }];
 
     try {
@@ -191,10 +191,10 @@ export const handler = async (event, context) => {
             
             // Extract settings
             const settings = userData.settings || {};
-            const aiProfile = settings.aiProfile || userData.aiProfile; // Check both locations
+            const baroProfile = settings.baroProfile || userData.baroProfile || settings.aiProfile || userData.aiProfile; // Check all locations for migration
             
             // Check if email schedule is enabled
-            if (!aiProfile || !aiProfile.emailSchedule || !aiProfile.emailSchedule.enabled) {
+            if (!baroProfile || !baroProfile.emailSchedule || !baroProfile.emailSchedule.enabled) {
                 continue;
             }
 
@@ -219,7 +219,7 @@ export const handler = async (event, context) => {
             }
 
             // Check if this day matches the schedule
-            const scheduleDays = aiProfile.emailSchedule.days || [];
+            const scheduleDays = baroProfile.emailSchedule.days || [];
             const dayConfig = scheduleDays.find(d => d.day.toLowerCase() === userDayName);
 
             if (!dayConfig || !dayConfig[matchedSlot]) {
@@ -247,7 +247,7 @@ export const handler = async (event, context) => {
             let lon = 4.9041;
             
             // Try to find location coordinates
-            const locName = aiProfile.location;
+            const locName = baroProfile.location;
             if (locName && settings.favorites) {
                 const fav = settings.favorites.find(f => f.name.toLowerCase() === locName.toLowerCase());
                 if (fav) {
@@ -267,7 +267,7 @@ export const handler = async (event, context) => {
             }
 
             // 3. Generate Content
-            const emailContent = await generateReport(weatherData, aiProfile, userData.displayName || aiProfile.name);
+            const emailContent = await generateReport(weatherData, baroProfile, userData.displayName || baroProfile.name);
 
             // 4. Send Email
             let userEmail = userData.email;
@@ -285,7 +285,7 @@ export const handler = async (event, context) => {
                 continue;
             }
 
-            const sent = await sendEmail(userEmail, aiProfile.name || "User", `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, emailContent);
+            const sent = await sendEmail(userEmail, baroProfile.name || "User", `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, emailContent);
 
             if (sent) {
                 // 5. Audit Log

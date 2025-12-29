@@ -1,6 +1,6 @@
 {
-  "name": "EdwinWeer",
-  "description": "Een geavanceerde weerapplicatie met historische vergelijkingen, AI-gestuurde locatieverkenning en Strava-integratie.",
+  "name": "Baro",
+  "description": "Een geavanceerde weerapplicatie met historische vergelijkingen, persoonlijke weerberichten en Strava-integratie.",
   "requestFramePermissions": [
     "geolocation"
   ]

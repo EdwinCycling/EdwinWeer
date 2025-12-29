@@ -66,9 +66,9 @@ export const ModelInfoView: React.FC<Props> = ({ onNavigate, settings, previousV
           )}
 
           {renderSection(
-            t('model_info.ai_title'),
+            t('model_info.baro_title'),
             <>
-              {renderModelItem('model_info.ai_ecmwf')}
+              {renderModelItem('model_info.baro_aifs')}
             </>
           )}
 

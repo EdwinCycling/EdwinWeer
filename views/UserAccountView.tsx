@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ViewState, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
+import { Modal } from '../components/Modal';
 import { useAuth } from '../contexts/AuthContext';
 import { getUsage, UsageStats, getLimit, resetDailyUsage } from '../services/usageService';
 import { API_LIMITS } from '../services/apiConfig';
@@ -14,10 +15,22 @@ interface Props {
 }
 
 export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, installPWA, canInstallPWA }) => {
-  const { user, sessionExpiry, logout } = useAuth();
+  const { user, sessionExpiry, logout, deleteAccount } = useAuth();
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount();
+      setShowDeleteConfirm(false);
+      onNavigate(ViewState.CURRENT);
+    } catch (error) {
+      console.error("Delete failed", error);
+      alert(t('error'));
+    }
+  };
 
   useEffect(() => {
     setUsageStats(getUsage());
@@ -96,6 +109,29 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
                                 {usageStats.totalCalls}
                             </div>
                         </div>
+
+                        {/* Credits Display */}
+                        {(usageStats.weatherCredits > 0 || usageStats.baroCredits > 0) && (
+                             <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-yellow-50/50 dark:bg-yellow-900/10">
+                                <div className="flex items-center gap-3">
+                                    <Icon name="stars" className="text-yellow-600 dark:text-yellow-400" />
+                                    <span className="font-medium">Credits</span>
+                                </div>
+                                <div className="text-right">
+                                    {usageStats.weatherCredits > 0 && (
+                                        <div className="font-bold text-slate-800 dark:text-white">
+                                            {usageStats.weatherCredits} <span className="text-xs font-normal text-slate-500">Weather</span>
+                                        </div>
+                                    )}
+                                    {usageStats.baroCredits > 0 && (
+                                        <div className="font-bold text-slate-800 dark:text-white">
+                                            {usageStats.baroCredits} <span className="text-xs font-normal text-slate-500">Baro</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Icon name="today" className="text-slate-600 dark:text-white/60" />
@@ -134,23 +170,65 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
                                 }
                             </div>
                         </div>
+
+                        {/* History Graph Removed as per request */}
                     </>
                 )}
             </div>
 
-            {(user?.email === 'edwin@editsolutions.nl' || user?.email === 'edwin@editsolutions') && (
-                <div className="mt-8 pt-8 border-t border-slate-200 dark:border-white/10">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Admin Zone</h3>
-                    <button 
-                        onClick={() => user.uid && resetDailyUsage(user.uid)}
-                        className="w-full py-3 px-4 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2"
+            <div className="mt-8 flex justify-center">
+                <button 
+                    onClick={() => onNavigate(ViewState.PRICING)}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/30"
+                >
+                    <Icon name="store" />
+                    <span>Credits & Abonnementen beheren</span>
+                </button>
+            </div>
+
+            {/* Delete Account Section */}
+            <div className="mt-8 pt-8 border-t border-slate-200 dark:border-white/10">
+                <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full py-3 px-4 text-red-500/60 dark:text-red-400/60 hover:text-red-600 dark:hover:text-red-400 text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                    <Icon name="delete" />
+                    {t('faq.q.delete')}
+                </button>
+            </div>
+        </section>
+
+        <Modal
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            title={t('faq.q.delete')}
+        >
+            <div className="text-center">
+                <div className="size-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 dark:text-red-400">
+                    <Icon name="warning" className="text-3xl" />
+                </div>
+                <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">
+                    {t('faq.q.delete')}?
+                </h3>
+                <p className="text-slate-600 dark:text-white/60 mb-6">
+                    {t('faq.a.delete')}
+                </p>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 py-3 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
                     >
-                        <Icon name="refresh" />
-                        Reset Daily Limits (Local & DB)
+                        {t('cancel')}
+                    </button>
+                    <button
+                        onClick={handleDeleteAccount}
+                        className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+                    >
+                        {t('delete')}
                     </button>
                 </div>
-            )}
-        </section>
+            </div>
+        </Modal>
 
       </div>
     </div>

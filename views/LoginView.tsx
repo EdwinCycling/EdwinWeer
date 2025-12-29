@@ -7,7 +7,7 @@ import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { loadSettings, saveSettings } from '../services/storageService';
-import { AppLanguage } from '../types';
+import { AppLanguage, ViewState } from '../types';
 import { twitterProvider, facebookProvider, microsoftProvider } from '../services/firebase';
 
   /* 
@@ -35,7 +35,11 @@ import { twitterProvider, facebookProvider, microsoftProvider } from '../service
   }
 };
 
-export const LoginView: React.FC = () => {
+interface Props {
+  onNavigate: (view: ViewState) => void;
+}
+
+export const LoginView: React.FC<Props> = ({ onNavigate }) => {
   const { signInWithGoogle, signInWithProvider } = useAuth();
   const [lang, setLang] = useState<AppLanguage>('en');
   const [langOpen, setLangOpen] = useState(false);
@@ -121,11 +125,9 @@ export const LoginView: React.FC = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="size-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 transform hover:rotate-12 transition-transform duration-300">
-                <Icon name="cloud" className="text-2xl" />
-              </div>
+              <img src="/icons/baro-icon-192.png" alt="Baro Logo" className="size-10 rounded-xl shadow-lg shadow-blue-500/30 transform hover:rotate-12 transition-transform duration-300" />
               <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300">
-                EdwinWeer
+                Baro
               </span>
             </div>
 
@@ -381,12 +383,35 @@ export const LoginView: React.FC = () => {
           </div>
       </section>
 
+      {/* Ask Baro FAQ Section */}
+      <section className="py-24 bg-gradient-to-br from-indigo-900 to-blue-900 text-white relative overflow-hidden">
+          {/* Background blobs */}
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+
+          <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+              <div className="inline-flex items-center justify-center p-4 bg-white/10 backdrop-blur-md rounded-2xl mb-8 border border-white/10 shadow-xl">
+                  <Icon name="help" className="text-4xl text-indigo-300" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">Ask Baro</h2>
+              <p className="text-xl text-indigo-100 mb-10 max-w-2xl mx-auto leading-relaxed">
+                  {t('landing.faq_desc') || 'Heb je vragen over de app? Wij hebben de antwoorden. Ontdek alles over functies, modellen en meer.'}
+              </p>
+              <button 
+                  onClick={() => onNavigate(ViewState.FAQ)}
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-900 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1"
+              >
+                  {t('landing.faq_button') || 'Ga naar FAQ'} <Icon name="arrow_forward" />
+              </button>
+          </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 bg-slate-900 text-white border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-                <Icon name="cloud" className="text-blue-400" />
-                <span className="font-bold">EdwinWeer</span>
+                <img src="/icons/baro-icon-192.png" alt="Baro Logo" className="size-6 rounded-lg" />
+                <span className="font-bold">Baro</span>
             </div>
             <p className="text-slate-400 text-sm">
                 {t('landing.copyright')}

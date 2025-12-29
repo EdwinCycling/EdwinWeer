@@ -196,7 +196,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
     if (navigator.share) {
         try {
             await navigator.share({
-                title: 'EdwinWeer Barometer',
+                title: 'Baro Barometer',
                 text: `Barometer: ${currentPressure} hPa (${details.title})`,
                 url: window.location.href
             });
@@ -206,7 +206,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
     } else {
         // Fallback: copy to clipboard
         try {
-            await navigator.clipboard.writeText(`EdwinWeer Barometer: ${currentPressure} hPa - ${details.title}`);
+            await navigator.clipboard.writeText(`Baro Barometer: ${currentPressure} hPa - ${details.title}`);
             alert(t('copied_to_clipboard') || 'Copied to clipboard');
         } catch (e) {
             console.error('Clipboard failed', e);

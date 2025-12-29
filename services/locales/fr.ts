@@ -15,22 +15,36 @@ export const fr: Dictionary = {
     'nav.team': 'L\'Équipe',
     'nav.model_info': 'Modèles Météo',
     'nav.info': 'Info',
-    'nav.user_account': 'Mon Compte',
+    'nav.user_account': 'Mon Compte & Utilisation',
     'nav.climate_change': 'Changement Climatique',
     'nav.this_day': 'Votre Journée',
+
+    'usage.limits_title': 'LIMITES',
+    'usage.overview_short': 'Aperçu de votre utilisation pour aujourd\'hui et ce mois.',
+    'usage.total': 'Total Calls',
+    'usage.today': 'Aujourd\'hui',
+    'usage.this_month': 'Ce Mois',
+    'usage.status': 'Statut',
+    'usage.limit_reached': 'Limite Atteinte',
+    'usage.warning': 'Limite Proche',
+    'usage.ok': 'OK',
+    'account.default_user': 'Utilisateur',
+    'account.logged_in_until': 'Connecté jusqu\'au',
+    'faq.q.delete': 'Supprimer le compte',
+    'faq.a.delete': 'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos données et paramètres seront perdus.',
     'this_day.title': 'Votre Journée',
     'this_day.subtitle': 'Extrêmes historiques pour cette date',
     'install_app': 'Installer l\'App',
     'pwa.install_desc': 'Installez l\'application pour un accès plus rapide et une utilisation hors ligne.',
     'install': 'Installer',
 
-    'app.title_prefix': 'Météo & Trajet',
+    'app.title_prefix': 'Baro',
 
     'error_no_data_for_model': 'Aucune donnée disponible pour ce modèle',
     'error_no_data_for_forecast': 'Aucune donnée de prévision disponible',
-    'welcome_message': 'Bienvenue ! Dans les paramètres, vous pouvez tout personnaliser selon vos souhaits. Profitez de l\'application !',
-    'welcome.title': 'Bienvenue sur EdwinWeer !',
-    'welcome.subtitle': 'Ravi de vous voir ! Avec cette application, vous avez toujours les prévisions météo les plus complètes en poche.',
+    'welcome_message': 'Bienvenue ! Dans les paramètres, vous pouvez tout personnaliser selon vos souhaits. Profitez de Baro !',
+    'welcome.title': 'Bienvenue chez Baro !',
+    'welcome.subtitle': 'Ravi de vous voir ! Avec Baro, vous avez toujours le rapport météo le plus complet en poche.',
     'welcome.ad_free_title': '100% Sans Publicité',
     'welcome.ad_free_desc': 'Nous n\'aimons pas les distractions. Profitez d\'une interface propre sans publicités gênantes, même dans la version gratuite.',
     'welcome.freemium_title': 'Modèle Freemium',
@@ -98,6 +112,95 @@ export const fr: Dictionary = {
     'info.card.soil_title': 'Sol profond & agriculture',
     'info.card.soil_desc': 'Données professionnelles sur le sol et l\'agriculture comme l\'humidité par profondeur et l\'évaporation.',
     'info.card.privacy_title': 'Confidentialité d\'abord',
+
+    // FAQ - Ask Baro
+    'faq.subtitle': 'Tout sur les fonctionnalités, les données et l\'utilisation de Baro.',
+    'faq.search_placeholder': 'Rechercher des questions...',
+    'faq.no_results': 'Aucune question trouvée.',
+    'faq.contact_title': 'Encore des questions ?',
+    'faq.contact_desc': 'Vous ne trouvez pas ce que vous cherchez ? Contactez notre équipe.',
+    
+    'faq.cat.all': 'Tous',
+    'faq.cat.general': 'Général',
+    'faq.cat.features': 'Fonctionnalités',
+    'faq.cat.models': 'Modèles & Données',
+    'faq.cat.account': 'Compte',
+    'faq.cat.pricing': 'Tarifs',
+
+    // FAQ Questions - General
+    'faq.q.what_is_baro': 'Qu\'est-ce que Baro exactement ?',
+    'faq.a.what_is_baro': 'Baro n\'est pas juste une autre application météo ; c\'est votre présentateur météo personnel. Contrairement aux applications standard, Baro analyse plusieurs modèles météo, des données historiques et vos préférences personnelles.',
+    
+    'faq.q.free': 'Baro est-il gratuit ?',
+    'faq.a.free': 'Oui ! Le cœur de Baro est entièrement gratuit. Vous avez accès à la météo actuelle, aux prévisions, aux graphiques d\'ensemble et au planificateur de vacances sans payer.',
+    
+    'faq.q.ads': 'Y a-t-il des publicités ?',
+    'faq.a.ads': 'Non. Absolument pas. Baro est conçu comme une expérience calme et propre où les données sont au centre.',
+
+    'faq.q.install': 'Puis-je installer Baro comme une application ?',
+    'faq.a.install': 'Certainement ! Baro est une Progressive Web App (PWA). Vous pouvez l\'installer directement depuis votre navigateur.',
+
+    'faq.q.offline': 'L\'application fonctionne-t-elle hors ligne ?',
+    'faq.a.offline': 'Partiellement. Vous avez besoin d\'Internet pour les dernières prévisions, mais l\'application stocke les dernières données récupérées.',
+
+    // FAQ Questions - Features
+    'faq.q.ai': 'Qu\'est-ce que le "Rapport Météo Baro" ?',
+    'faq.a.ai': 'C\'est notre fonctionnalité unique. Au lieu de tableaux ennuyeux, "Baro" rédige un rapport textuel pour vous. Il regarde votre profil et vous dit en langage naturel à quoi vous attendre.',
+
+    'faq.q.barometer': 'Où est le Baromètre ?',
+    'faq.a.barometer': 'Il est toujours là ! Nous l\'avons modernisé. Vous le trouverez sur le tableau de bord. Il indique si le temps s\'améliore ou se détériore.',
+
+    'faq.q.climate': 'Où trouver des infos sur le changement climatique ?',
+    'faq.a.climate': 'Dans le menu, vous trouverez "Changement Climatique". Ici, vous pouvez voir comment la température a changé au cours des dernières décennies.',
+
+    'faq.q.holiday': 'Qu\'est-ce que le Planificateur de Vacances ?',
+    'faq.a.holiday': 'Le Planificateur de Vacances vous aide à choisir la période de voyage idéale. Baro vous montre les chances climatologiques basées sur 40 ans de données.',
+
+    'faq.q.photo': 'Puis-je partager une photo avec des données météo ?',
+    'faq.a.photo': 'Certainement ! Cliquez sur l\'icône "Partager". Vous pouvez télécharger votre propre photo ou choisir un arrière-plan.',
+
+    'faq.q.profiles': 'Comment fonctionnent les Profils Personnels ?',
+    'faq.a.profiles': 'Dans Paramètres > Profil Baro, vous pouvez indiquer ce qui est important pour vous. Êtes-vous cycliste ? Alors nous vous avertissons plus tôt du vent.',
+
+    'faq.q.ensemble': 'Qu\'est-ce que les "Ensembles" ?',
+    'faq.a.ensemble': 'Les ensembles montrent 50+ calculs différents du même modèle météo. Si toutes les lignes sont proches, la prévision est certaine.',
+
+    'faq.q.history': 'Que puis-je faire avec la fonction "Historique" ?',
+    'faq.a.history': 'Cela vous permet de voyager dans le temps. Baro a accès à des archives remontant à des décennies.',
+
+    'faq.q.strava': 'Comment fonctionne l\'intégration Strava ?',
+    'faq.a.strava': 'Téléchargez votre itinéraire et Baro calcule la météo à chaque point de votre itinéraire au bon moment.',
+
+    'faq.q.alerts': 'Reçois-je des alertes météo ?',
+    'faq.a.alerts': 'Dans le tableau de bord, vous voyez immédiatement des avertissements pour des extrêmes comme la tempête ou la pluie forte.',
+
+    // FAQ Questions - Models
+    'faq.q.sources': 'D\'où viennent les données ?',
+    'faq.a.sources': 'Nous utilisons Open-Meteo, qui agrège les données des meilleurs instituts (DWD, NOAA, ECMWF).',
+
+    'faq.q.accuracy': 'Quelle est la précision de Baro ?',
+    'faq.a.accuracy': 'Comme nous utilisons des modèles haute résolution et actualisons les données toutes les heures, nous sommes parmi les meilleurs.',
+
+    'faq.q.updates': 'À quelle fréquence la météo est-elle mise à jour ?',
+    'faq.a.updates': 'La plupart des modèles sont actualisés 4x par jour. Baro récupère toujours la toute dernière exécution disponible.',
+
+    // FAQ Questions - Account
+    'faq.q.privacy': 'Que faites-vous de ma position ?',
+    'faq.a.privacy': 'Rien. Votre position est utilisée uniquement pour récupérer la météo sur votre téléphone.',
+
+    'faq.q.data': 'Quelles données sont stockées ?',
+    'faq.a.data': 'Si vous vous connectez avec Google, nous stockons uniquement votre email et nom pour synchroniser vos paramètres.',
+
+    'faq.q.delete': 'Puis-je supprimer mon compte ?',
+    'faq.a.delete': 'Bien sûr. Êtes-vous sûr ? Nous sommes désolés de vous voir partir. Dans les paramètres de l\'application, vous pouvez supprimer complètement votre compte et toutes les données associées à tout moment. Nous ne conservons pas de sauvegardes des comptes supprimés.',
+
+    // FAQ Questions - Pricing
+    'faq.q.credits': 'Que sont les Crédits Baro ?',
+    'faq.a.credits': 'Pour les rapports météo Baro, nous utilisons un système de crédits. Le forfait Baro vous donne du crédit pour des rapports personnalisés.',
+
+    'faq.q.premium': 'Y aura-t-il une version payante ?',
+    'faq.a.premium': 'L\'option "Baro Pro" pour les utilisateurs intensifs. Cela donne des limites plus élevées. L\'application de base restera gratuite.',
+
     'info.card.privacy_desc': 'Nous ne suivons pas votre historique de localisation. Vos données restent sur votre appareil.',
     'info.unique_title': 'Qu\'est-ce qui nous rend uniques ?',
     'info.unique_p1': 'Beaucoup d\'applis météo montrent une icône et une température. Nous visualisons l\'atmosphère pour plus de compréhension.',
@@ -364,8 +467,8 @@ export const fr: Dictionary = {
     'profile.schedule.max_limit': 'Max 5 emails par semaine',
     'profile.schedule.limit_reached': 'Limite atteinte (5/5)',
     'profile.schedule.total': 'Total planifié',
-    'profile.teaser.title': 'Météo Automatisée',
-    'profile.teaser.desc': 'Recevez un bulletin météo personnel quotidien dans votre boîte mail aux moments choisis.',
+    'profile.teaser.title': 'Rapport Météo Baro',
+    'profile.teaser.desc': 'Laissez Baro rédiger un rapport météo unique pour vous en fonction de vos activités et de votre emploi du temps.',
     'profile.teaser.upgrade': 'Voir les Packs Pro',
     'profile.teaser.pro_only': 'Disponible pour les utilisateurs Pro',
     'settings.monday': 'Lundi',
@@ -389,7 +492,7 @@ export const fr: Dictionary = {
     'settings.heatwave.heat_desc': 'Jours les plus chauds déterminant la vague de chaleur.',
     'settings.heatwave.heat_days': 'Jours au-dessus du seuil canicule',
     'settings.heatwave.heat_days_desc': 'Nombre minimal de jours au-dessus du seuil canicule dans la série.',
-    'settings.ai_profile': 'Profil Météo',
+    'settings.baro_profile': 'Profil Baro',
     
     'settings.records_title': 'Seuils des Records',
     'settings.records.summer_streak': 'Série estivale',
@@ -532,8 +635,8 @@ export const fr: Dictionary = {
     'model_info.eu_title': 'Les Leaders Européens (Recommandé pour NL/BE/FR)',
     'model_info.eu_ecmwf': '**ECMWF IFS** : Considéré mondialement comme le modèle le plus précis. Géré par le centre météo européen. En cas de doute, choisissez celui-ci.',
     'model_info.eu_dwd': '**DWD ICON (EU / D2)** : Le modèle du service météo allemand. Comme l\'Allemagne est voisine, ce modèle est extrêmement bon pour l\'Europe de l\'Ouest. La version D2 est très détaillée (haute résolution) et parfaite pour le court terme (prochaines 48 heures).',
-    'model_info.ai_title': 'La Nouvelle Technologie (IA)',
-    'model_info.ai_ecmwf': '**ECMWF AIFS** : C\'est révolutionnaire. Ce modèle utilise l\'Intelligence Artificielle (IA) au lieu de la physique classique. Il est ultra-rapide et s\'avère souvent meilleur dans les tests récents que les modèles traditionnels. Vaut vraiment le coup d\'essayer !',
+    'model_info.baro_title': 'La Nouvelle Technologie (Baro)',
+    'model_info.baro_aifs': '**Baro AIFS** : C\'est révolutionnaire. Ce modèle utilise la technologie avancée de Baro au lieu de la physique classique. Il est ultra-rapide et s\'avère often meilleur dans les tests récents que les modèles traditionnels. Vaut vraiment le coup d\'essayer !',
     'model_info.us_title': 'Le Standard Américain',
     'model_info.us_gfs': '**GFS (Global Forecast System)** : Le modèle américain bien connu. Il regarde loin devant. Parfois un peu moins précis pour les averses locales en Europe que ECMWF ou ICON, mais très bon pour voir les grands changements météorologiques.',
     'model_info.ens_title': 'Que signifie "Ensemble" ou "EPS" ?',
@@ -547,7 +650,7 @@ export const fr: Dictionary = {
     'model_info.summary_title': 'Bref, que choisir ?',
     'model_info.sum_daily': 'Pour un usage quotidien : Choisissez DWD ICON ou ECMWF IFS.',
     'model_info.sum_long': 'Pour le meilleur long terme : Choisissez une version Ensemble (EPS).',
-    'model_info.sum_tech': 'Pour l\'amateur de tech : Essayez ECMWF AIFS.',
+    'model_info.sum_tech': 'Pour l\'amateur de tech : Essayez Baro AIFS.',
 
     // Activities
     'activity.bbq': 'BBQ & Terrasse',
@@ -589,7 +692,7 @@ export const fr: Dictionary = {
 
     // Landing
     'landing.hero_title': 'L\'intelligence météo réinventée',
-    'landing.hero_desc': 'Vivez des prévisions météo avec une précision sans précédent. Comparez les modèles, analysez l\'historique et planifiez votre journée parfaite.',
+    'landing.hero_desc': 'Vivez des prévisions météo avec une précision sans précédent. Comparez les modèles, analysez l\'historique et planifiez votre journée parfaite et PAS DE PUBLICITÉ 😊',
     'landing.features_intro': 'Tout ce dont vous avez besoin pour planifier votre journée, semaine ou mois en toute confiance.',
     'landing.login_google': 'Connexion avec Google',
     'landing.feature_ensemble': 'Ensembles Multi-Modèles',
@@ -598,15 +701,16 @@ export const fr: Dictionary = {
     'landing.feature_history_desc': 'Est-ce normal aujourd\'hui ? Comparez la météo actuelle directement avec 40 ans de données climatiques.',
     'landing.feature_activities': 'Planificateur d\'Activités',
     'landing.feature_activities_desc': 'Que vous fassiez du vélo, de la voile ou du jardinage, obtenez des prévisions spécialisées adaptées à vos passions.',
-    'landing.feature_ai': 'Piloté par l\'IA',
-    'landing.feature_ai_desc': 'Utilisez les derniers modèles météo IA aux côtés des prévisions physiques traditionnelles.',
+    'landing.feature_ai': 'Baro-Power',
+    'landing.feature_ai_desc': 'Utilisez les derniers modèles météo Baro aux côtés des prévisions physiques traditionnelles.',
     'landing.start': 'Commencer Maintenant',
+    'landing.faq_button': 'Aller à la FAQ',
     'landing.cta_title': 'Plus d\'Info',
     'landing.models_title': 'Modèles Météo Mondiaux',
     'landing.models_desc': 'Accès aux données haute résolution des principaux instituts météorologiques.',
     'landing.privacy_title': 'Confidentialité d\'Abord',
     'landing.privacy_desc': 'Vos données vous appartiennent. Nous limitons strictement la collecte de données aux journaux essentiels.',
-    'landing.copyright': '© 2025 EdwinWeer. Tous droits réservés.',
+    'landing.copyright': '© 2025 Baro. Tous droits réservés.',
 
     // Activity Reasons
     'reason.rain_prob_high': 'Trop de risque de pluie',

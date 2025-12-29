@@ -1458,7 +1458,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   {/* Temp Chart */}
                   <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-96">
                       <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">{t('records.temperature_graph')}</h3>
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={dailyData} margin={{top: 5, right: 20, bottom: 5, left: 0}}>
                              {/* Custom Grid Lines */}
                              {tempDomain.ticks.map((tick) => (
@@ -1550,7 +1550,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                    {/* Rain/Sun Chart */}
                   <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-96">
                       <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">{t('records.rain_sun_graph')}</h3>
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={dailyData} margin={{top: 5, right: 20, bottom: 5, left: 0}} barGap={2}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.2)" />
                              {/* Weekend highlights */}

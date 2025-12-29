@@ -15,22 +15,36 @@ export const nl: Dictionary = {
     'nav.team': 'Het Team',
     'nav.model_info': 'Weermodellen',
     'nav.info': 'Info',
-    'nav.user_account': 'Mijn Account',
+    'nav.user_account': 'Mijn account en verbruik',
     'nav.climate_change': 'Klimaatverandering',
     'nav.this_day': 'Jouw dag',
+
+    'usage.limits_title': 'LIMIETEN',
+    'usage.overview_short': 'Overzicht van je gebruik voor vandaag en deze maand.',
+    'usage.total': 'Totaal Calls',
+    'usage.today': 'Vandaag',
+    'usage.this_month': 'Deze maand',
+    'usage.status': 'Status',
+    'usage.limit_reached': 'Limiet bereikt',
+    'usage.warning': 'Bijna bereikt',
+    'usage.ok': 'OK',
+    'account.default_user': 'Gebruiker',
+    'account.logged_in_until': 'Ingelogd tot',
+    'faq.q.delete': 'Account verwijderen',
+    'faq.a.delete': 'Weet je zeker dat je je account wilt verwijderen? Dit kan niet ongedaan worden gemaakt. Al je data en instellingen gaan verloren.',
     'this_day.title': 'Jouw dag',
     'this_day.subtitle': 'Historische extremen voor deze datum',
     'install_app': 'Installeer App',
     'pwa.install_desc': 'Installeer de app voor snellere toegang en offline gebruik.',
     'install': 'Installeer',
 
-    'app.title_prefix': 'Weer & Rit',
+    'app.title_prefix': 'Baro',
 
     'error_no_data_for_model': 'Geen data beschikbaar voor model',
     'error_no_data_for_forecast': 'Geen voorspellingsdata beschikbaar',
-    'welcome_message': 'Welkom! Bij instellingen kun je alles naar wens aanpassen. Veel plezier met de app!',
-    'welcome.title': 'Welkom bij EdwinWeer!',
-    'welcome.subtitle': 'Geweldig dat je er bent! Met deze app heb je altijd het meest uitgebreide weerbericht op zak.',
+    'welcome_message': 'Welkom! Bij instellingen kun je alles naar wens aanpassen. Veel plezier met Baro!',
+    'welcome.title': 'Welkom bij Baro!',
+    'welcome.subtitle': 'Geweldig dat je er bent! Met Baro heb je altijd het meest uitgebreide weerbericht op zak.',
     'welcome.ad_free_title': '100% Reclamevrij',
     'welcome.ad_free_desc': 'Wij houden niet van afleiding. Geniet van een schone interface zonder vervelende advertenties, ook in de gratis versie.',
     'welcome.freemium_title': 'Freemium Model',
@@ -364,10 +378,10 @@ export const nl: Dictionary = {
     'profile.schedule.max_limit': 'Max 5 emails per week',
     'profile.schedule.limit_reached': 'Limiet bereikt (5/5)',
     'profile.schedule.total': 'Totaal gepland',
-    'profile.teaser.title': 'Geautomatiseerd Weerbericht',
-    'profile.teaser.desc': 'Ontvang dagelijks een persoonlijk weerbericht in je mailbox op jouw gekozen momenten.',
+    'profile.teaser.title': 'Baro Weerbericht',
+    'profile.teaser.desc': 'Laat Baro een uniek weerbericht voor je schrijven op basis van jouw favoriete activiteiten en planning.',
     'profile.teaser.upgrade': 'Bekijk Pro Pakketten',
-    'profile.teaser.pro_only': 'Beschikbaar voor Pro gebruikers',
+    'profile.teaser.pro_only': 'Exclusief voor Pro',
     'settings.monday': 'Maandag',
     'settings.sunday': 'Zondag',
     'settings.saturday': 'Zaterdag',
@@ -389,7 +403,7 @@ export const nl: Dictionary = {
     'settings.heatwave.heat_desc': 'Heetste dagen die de hittegolf bepalen.',
     'settings.heatwave.heat_days': 'Dagen boven hittegolfdrempel',
     'settings.heatwave.heat_days_desc': 'Minimale aantal dagen boven de hittegolf-drempel binnen de reeks.',
-    'settings.ai_profile': 'Weer Profiel',
+    'settings.baro_profile': 'Baro Profiel',
     
     'settings.records_title': 'Record Drempelwaardes',
     'settings.records.summer_streak': 'Zomerse reeks',
@@ -532,8 +546,8 @@ export const nl: Dictionary = {
     'model_info.eu_title': 'De Europese Toppers (Aanbevolen voor NL/BE)',
     'model_info.eu_ecmwf': '**ECMWF IFS**: Dit wordt wereldwijd beschouwd als het meest accurate model. Het wordt beheerd door het Europese weercentrum. Als je twijfelt, kies deze.',
     'model_info.eu_dwd': '**DWD ICON (EU / D2)**: Het model van de Duitse weerdienst. Omdat Duitsland onze buurman is, is dit model extreem goed voor Nederland en België. De D2 versie is heel gedetailleerd (hoge resolutie) en perfect voor de korte termijn (komende 48 uur).',
-    'model_info.ai_title': 'De Nieuwe Technologie (AI)',
-    'model_info.ai_ecmwf': '**ECMWF AIFS**: Dit is revolutionair. Dit model gebruikt Kunstmatige Intelligentie (AI) in plaats van klassieke natuurkunde. Het is razendsnel en blijkt in recente tests vaak beter te scoren dan de traditionele modellen. Zeker het proberen waard!',
+    'model_info.baro_title': 'De Nieuwe Technologie (Baro)',
+    'model_info.baro_aifs': '**Baro AIFS**: Dit is revolutionair. Dit model gebruikt geavanceerde Baro-technologie in plaats van klassieke natuurkunde. Het is razendsnel en blijkt in recente tests vaak beter te scoren dan de traditionele modellen. Zeker het proberen waard!',
     'model_info.us_title': 'De Amerikaanse Standaard',
     'model_info.us_gfs': '**GFS (Global Forecast System)**: Het bekende Amerikaanse model. Het kijkt ver vooruit. Soms iets minder accuraat voor lokale buitjes in Europa dan ECMWF of ICON, maar erg goed in het zien van grote weersveranderingen.',
     'model_info.ens_title': 'Wat betekent "Ensemble" of "EPS"?',
@@ -547,7 +561,7 @@ export const nl: Dictionary = {
     'model_info.summary_title': 'Kortom, wat moet ik kiezen?',
     'model_info.sum_daily': 'Voor dagelijks gebruik: Kies DWD ICON of ECMWF IFS.',
     'model_info.sum_long': 'Voor de beste lange termijn: Kies een Ensemble (EPS) versie.',
-    'model_info.sum_tech': 'Voor de tech-liefhebber: Probeer ECMWF AIFS.',
+    'model_info.sum_tech': 'Voor de tech-liefhebber: Probeer Baro AIFS.',
 
     // Activities
     'activity.bbq': 'BBQ & Terras',
@@ -589,7 +603,7 @@ export const nl: Dictionary = {
 
     // Landing
     'landing.hero_title': 'Weerintelligentie opnieuw uitgevonden',
-    'landing.hero_desc': 'Ervaar weersvoorspellingen met ongekende precisie. Vergelijk modellen, analyseer historie en plan je perfecte dag.',
+    'landing.hero_desc': 'Ervaar weersvoorspellingen met ongekende precisie. Vergelijk modellen, analyseer historie en plan je perfecte dag en GEEN ADVERTENTIES 😊',
     'landing.features_intro': 'Alles wat je nodig hebt om je dag, week of maand met vertrouwen te plannen.',
     'landing.login_google': 'Inloggen met Google',
     'landing.feature_ensemble': 'Multi-Model Ensembles',
@@ -598,15 +612,104 @@ export const nl: Dictionary = {
     'landing.feature_history_desc': 'Is het vandaag normaal? Vergelijk het huidige weer direct met 40 jaar klimaatdata.',
     'landing.feature_activities': 'Activiteiten Planner',
     'landing.feature_activities_desc': 'Of je nu fietst, zeilt of tuiniert, krijg gespecialiseerde voorspellingen afgestemd op jouw passies.',
-    'landing.feature_ai': 'AI-Gedreven',
-    'landing.feature_ai_desc': 'Gebruik de nieuwste AI-weermodellen naast traditionele natuurkundige voorspellingen.',
+    'landing.feature_ai': 'Baro-Power',
+    'landing.feature_ai_desc': 'Gebruik de nieuwste Baro-weermodellen naast traditionele natuurkundige voorspellingen.',
     'landing.start': 'Start Nu',
+    'landing.faq_button': 'Ga naar FAQ',
     'landing.cta_title': 'Meer Info',
     'landing.models_title': 'Wereldwijde Weermodellen',
     'landing.models_desc': 'Toegang tot hoge-resolutie data van toonaangevende meteorologische instituten.',
     'landing.privacy_title': 'Privacy Eerst',
     'landing.privacy_desc': 'Jouw data is van jou. We beperken dataverzameling strikt tot essentiële logs.',
-    'landing.copyright': '© 2025 EdwinWeer. Alle rechten voorbehouden.',
+
+    // FAQ - Ask Baro
+    'faq.subtitle': 'Alles over functies, data en het gebruik van Baro.',
+    'faq.search_placeholder': 'Zoek in vragen...',
+    'faq.no_results': 'Geen vragen gevonden die aan je zoekopdracht voldoen.',
+    'faq.contact_title': 'Nog steeds vragen?',
+    'faq.contact_desc': 'Staat je vraag er niet tussen? Neem gerust contact op met ons team.',
+    
+    'faq.cat.all': 'Alle',
+    'faq.cat.general': 'Algemeen',
+    'faq.cat.features': 'Functies',
+    'faq.cat.models': 'Modellen & Data',
+    'faq.cat.account': 'Account',
+    'faq.cat.pricing': 'Kosten',
+
+    // FAQ Questions - General
+    'faq.q.what_is_baro': 'Wat is Baro precies?',
+    'faq.a.what_is_baro': 'Baro is niet zomaar een weer-app; het is jouw persoonlijke weerman. In tegenstelling tot standaard apps die slechts één icoontje tonen, analyseert Baro meerdere weermodellen, historische data en jouw persoonlijke voorkeuren om een genuanceerd beeld te geven. Of je nu wilt weten of je een paraplu nodig hebt, of je veilig kunt zeilen, of hoe het klimaat op je vakantiebestemming is: Baro geeft het antwoord.',
+    
+    'faq.q.free': 'Is Baro gratis te gebruiken?',
+    'faq.a.free': 'Ja! De kern van Baro is volledig gratis. Je krijgt toegang tot actueel weer, voorspellingen, ensemble-grafieken, historische analyses en de vakantieplanner zonder te betalen. We geloven dat goed weerinzicht voor iedereen beschikbaar moet zijn.',
+    
+    'faq.q.ads': 'Zitten er advertenties in de app?',
+    'faq.a.ads': 'Nee. Absoluut niet. Wij haten knipperende banners en tracking cookies net zo erg als jij. Baro is ontworpen als een rustige, schone ervaring waar de data centraal staat. Geen afleiding, puur weer.',
+
+    'faq.q.install': 'Kan ik Baro als app installeren?',
+    'faq.a.install': 'Zeker! Baro is een Progressive Web App (PWA). Dit betekent dat je hem direct vanuit je browser kunt installeren op je telefoon (iOS en Android) of computer. Druk op de "Deel" knop (iOS) of het menu (Android) en kies "Zet op beginscherm". Je krijgt dan een volwaardig app-icoon en een fullscreen ervaring.',
+
+    'faq.q.offline': 'Werkt de app ook offline?',
+    'faq.a.offline': 'Deels. Omdat weerdata snel veroudert, heb je internet nodig voor de laatste voorspellingen. Echter, de app slaat de laatst opgehaalde data op, zodat je altijd kunt zien wat de laatste stand van zaken was, zelfs zonder verbinding. De interface laadt sowieso direct.',
+
+    // FAQ Questions - Features
+    'faq.q.ai': 'Wat is het "Baro Weerbericht"?',
+    'faq.a.ai': 'Dit is onze unieke functie. In plaats van saaie tabellen, schrijft "Baro" (onze virtuele weerman) een geschreven rapport voor je. Hij kijkt naar je ingestelde profiel (bijv. "Ik houd van fietsen maar haat regen") en vertelt je in natuurlijke taal wat je kunt verwachten. Je kunt zelfs de toon aanpassen: van zakelijk tot sarcastisch of enthousiast!',
+
+    'faq.q.barometer': 'Waar is de Barometer?',
+    'faq.a.barometer': 'Die staat er nog steeds! We hebben hem alleen moderner gemaakt. Je vindt hem direct op het dashboard bij de luchtdruk tegels. Hij geeft aan of het weer verbetert (stijgende druk) of verslechtert (dalende druk).',
+
+    'faq.q.climate': 'Waar vind ik info over klimaatverandering?',
+    'faq.a.climate': 'In het menu vind je "Klimaatverandering". Hier zie je hoe de temperatuur op jouw locatie in de afgelopen decennia is veranderd en hoe dit zich verhoudt tot het langjarig gemiddelde.',
+
+    'faq.q.holiday': 'Wat is de Vakantie Planner?',
+    'faq.a.holiday': 'De Vakantie Planner (in het menu "Vakantieweer") helpt je de perfecte reisperiode te kiezen. In plaats van te gokken, toont Baro je de klimatologische kansen voor jouw bestemming op basis van 40 jaar aan echte meetgegevens.',
+
+    'faq.q.photo': 'Kan ik een foto met weergegevens delen?',
+    'faq.a.photo': 'Zeker! Klik op het "Deel" icoon (rechtsboven). Je kunt dan een eigen foto uploaden of een achtergrond kiezen. Wij plakken de actuele weerdata er mooi overheen voor je Insta of Facebook.',
+
+    'faq.q.profiles': 'Hoe werken de Persoonlijke Profielen?',
+    'faq.a.profiles': 'Bij Instellingen > Baro Profiel kun je aangeven wat jij belangrijk vindt. Ben je een fietser? Dan waarschuwen we eerder voor wind. Heb je een hekel aan regen? Dan stellen we de drempel lager. Het Baro Weerbericht past zich hierop aan.',
+
+    'faq.q.ensemble': 'Wat zijn "Ensembles" en waarom zou ik ze gebruiken?',
+    'faq.a.ensemble': 'Een normale weer-app toont één lijn: "morgen 20 graden". Maar hoe zeker is dat? Ensembles tonen 50+ verschillende berekeningen van hetzelfde weermodel. Liggen alle lijntjes dicht bij elkaar? Dan is de verwachting zeker. Waaieren ze uit? Dan is alles nog mogelijk. Baro maakt deze professionele tool toegankelijk voor iedereen.',
+
+    'faq.q.history': 'Wat kan ik met de "Historie" functie?',
+    'faq.a.history': 'Hiermee reis je terug in de tijd. Baro heeft toegang tot een archief dat tientallen jaren teruggaat. Je kunt zien wat het weer was op je geboortedag, of analyseren hoe het weer op jouw vakantiebestemming de afgelopen 40 jaar was in dezelfde week. Dit geeft veel meer inzicht dan een gemiddelde.',
+
+    'faq.q.strava': 'Hoe werkt de Strava integratie?',
+    'faq.a.strava': 'Uniek aan Baro is de mogelijkheid om GPX-bestanden (van Strava, Garmin, etc.) te analyseren. Upload je route en Baro berekent het weer *op elk punt van je route op het juiste tijdstip*. Zo zie je precies of je op kilometer 40 tegenwind hebt of dat het bij de finish gaat regenen.',
+
+    'faq.q.alerts': 'Krijg ik meldingen bij noodweer?',
+    'faq.a.alerts': 'In het dashboard zie je direct waarschuwingen voor extremen zoals storm, zware regenval of extreme hitte. We gebruiken kleurcodes en duidelijke iconen om je aandacht te trekken als het weer impact gaat hebben op je dag.',
+
+    // FAQ Questions - Models
+    'faq.q.sources': 'Waar komt de data vandaan?',
+    'faq.a.sources': 'Wij maken gebruik van Open-Meteo, die data aggregeert van de beste meteorologische instituten ter wereld, waaronder DWD (Duitsland), NOAA (VS) en ECMWF (Europa). We tonen je altijd de meest accurate lokale data.',
+
+    'faq.q.accuracy': 'Hoe accuraat is Baro?',
+    'faq.a.accuracy': 'Omdat we "high-resolution" modellen gebruiken (tot wel 1km nauwkeurigheid in sommige gebieden) en data elk uur verversen, behoren we tot de top qua precisie. Door de ensembles te bekijken, kun je bovendien zelf inschatten hoe betrouwbaar een voorspelling is.',
+
+    'faq.q.updates': 'Hoe vaak wordt het weer ververst?',
+    'faq.a.updates': 'De meeste modellen worden 4x per dag volledig vernieuwd. Baro haalt altijd de allerlaatste beschikbare run op zodra je de app opent. Voor regenradar en huidige condities is de data vaak nog actueler (per 15 minuten).',
+
+    // FAQ Questions - Account
+    'faq.q.privacy': 'Wat doen jullie met mijn locatie?',
+    'faq.a.privacy': 'Niets. Je locatie wordt alleen gebruikt om het weer *op je telefoon* op te halen. We slaan geen locatiegeschiedenis op, verkopen niets aan derden en volgen je niet. Je kunt de app ook prima gebruiken door handmatig steden te zoeken zonder GPS-toestemming.',
+
+    'faq.q.data': 'Welke gegevens worden opgeslagen?',
+    'faq.a.data': 'Als je inlogt met Google, slaan we alleen je e-mailadres en naam op om je instellingen (zoals favoriete locaties en profielvoorkeuren) te kunnen synchroniseren tussen apparaten. Meer niet.',
+
+    'faq.q.delete': 'Kan ik mijn account verwijderen?',
+    'faq.a.delete': 'Natuurlijk. Weet je het zeker? Jammer dat je gaat. In de app instellingen kun je op elk moment je account en alle bijbehorende data volledig wissen. We bewaren geen backups van verwijderde accounts.',
+
+    // FAQ Questions - Pricing
+    'faq.q.credits': 'Wat zijn Baro Credits?',
+    'faq.a.credits': 'Voor de Baro-weerberichten gebruiken we een creditsysteem. Het Baro pakket geeft je credit voor een groot aantal gepersonaliseerde weerberichten (eventueel dagelijks in je mail) met verschillende persoonlijke profielen en locaties. Wil je de hele dag meerdere rapporten genereren? Dan kun je extra Baro credits aanschaffen.',
+
+    'faq.q.premium': 'Komt er een betaalde versie?',
+    'faq.a.premium': 'De "Baro Pro" optie voor grootgebruikers. Dit geeft je hogere limieten voor het gebruik van weergevens. De basis-app blijft echter altijd gratis.',
+    'landing.copyright': '© 2025 Baro. Alle rechten voorbehouden.',
 
     // Activity Reasons
     'reason.rain_prob_high': 'Te veel kans op regen',

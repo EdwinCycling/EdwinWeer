@@ -8,7 +8,7 @@ import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
-import { AIWeatherReport } from '../components/AIWeatherReport';
+import { BaroWeatherReport } from '../components/BaroWeatherReport';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceLine, ReferenceArea } from 'recharts';
 
 interface Props {
@@ -462,7 +462,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             
             {/* AI Report Section */}
             {weatherData && (
-                <AIWeatherReport weatherData={weatherData} profile={settings.aiProfile} profiles={settings.aiProfiles} onNavigate={onNavigate} language={settings.language} />
+                <BaroWeatherReport weatherData={weatherData} profile={settings.baroProfile} profiles={settings.baroProfiles} onNavigate={onNavigate} language={settings.language} />
             )}
 
             {/* Daily Forecast List */}
@@ -551,7 +551,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     <div className="flex flex-col w-full mt-4">
                         <div className="w-full h-[400px] select-none pr-2 overflow-x-auto scrollbar-hide">
                             <div className="h-full" style={{ minWidth: visibleDays > 7 ? '800px' : '100%' }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <ComposedChart data={graphData} margin={{ top: 40, right: 10, left: -20, bottom: 40 }}>
                                         {getWeekendAreas()}
                                         <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} opacity={0.1} stroke="currentColor" />

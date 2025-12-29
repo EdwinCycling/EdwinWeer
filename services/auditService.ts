@@ -1,6 +1,6 @@
 
 import { db } from "./firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore";
 
 interface AuditLog {
     userId: string;
@@ -43,8 +43,24 @@ export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 
         };
 
         // Save to a subcollection 'audit_logs' under the user
-        // This keeps data organized per user and protected by user rules
-        await addDoc(collection(db, 'users', userId, 'audit_logs'), logEntry);
+        const auditCollectionRef = collection(db, 'users', userId, 'audit_logs');
+        await addDoc(auditCollectionRef, logEntry);
+
+        // Cleanup: Keep only the latest 50 records
+        try {
+            const q = query(auditCollectionRef, orderBy('timestamp', 'desc'));
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.size > 50) {
+                const docsToDelete = snapshot.docs.slice(50);
+                const deletePromises = docsToDelete.map(d => deleteDoc(doc(db, 'users', userId, 'audit_logs', d.id)));
+                await Promise.all(deletePromises);
+                console.log(`Cleaned up ${docsToDelete.length} old audit logs for user ${userId}`);
+            }
+        } catch (cleanupError) {
+            console.error("Error cleaning up audit logs:", cleanupError);
+        }
+
     } catch (error) {
         console.error("Error logging auth event:", error);
     }

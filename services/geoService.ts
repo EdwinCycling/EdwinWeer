@@ -30,7 +30,7 @@ export const reverseGeocode = async (lat: number, lon: number): Promise<string |
     
     // Add User-Agent as required by Nominatim usage policy
     const headers = {
-      'User-Agent': 'EdwinWeerApp/1.0' 
+      'User-Agent': 'BaroWeatherApp/1.0' 
     };
 
     const res = await fetch(url, { headers });

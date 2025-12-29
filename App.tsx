@@ -18,6 +18,7 @@ import { CountryMapView } from './views/CountryMapView';
 import { LoginView } from './views/LoginView';
 import { UserAccountView } from './views/UserAccountView';
 import { RecordsWeatherView } from './views/RecordsWeatherView';
+import { FAQView } from './views/FAQView';
 import { ShareWeatherView } from './views/ShareWeatherView';
 import { BarometerView } from './views/BarometerView';
 import { ClimateChangeView } from './views/ClimateChangeView';
@@ -183,7 +184,10 @@ const App: React.FC = () => {
   }
 
   if (!user) {
-    return <LoginView />;
+    if (currentView === ViewState.FAQ) {
+        return <FAQView onNavigate={navigate} settings={settings} />;
+    }
+    return <LoginView onNavigate={navigate} />;
   }
 
   const renderView = () => {
@@ -230,6 +234,8 @@ const App: React.FC = () => {
         return <UserAccountView onNavigate={navigate} settings={settings} installPWA={installPWA} canInstallPWA={!!deferredPrompt} />;
       case ViewState.INFO:
         return <InfoView onNavigate={navigate} settings={settings} />;
+      case ViewState.FAQ:
+        return <FAQView onNavigate={navigate} settings={settings} />;
       default:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }
@@ -452,6 +458,12 @@ const App: React.FC = () => {
                                 <Icon name="settings" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm">{t('nav.settings')}</span>
+                         </button>
+                         <button onClick={() => { navigate(ViewState.FAQ); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                            <div className="size-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                <Icon name="help" className="text-xl" />
+                            </div>
+                            <span className="font-bold text-sm">Ask Baro</span>
                          </button>
                          <button onClick={() => { navigate(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">

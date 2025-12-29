@@ -69,7 +69,7 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
                             <h3 className="text-base font-bold text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
                                 <span>🤖</span> {t('model_info.ai_title')}
                             </h3>
-                            <p>{renderText(t('model_info.ai_ecmwf'))}</p>
+                            <p>{renderText(t('model_info.baro_aifs'))}</p>
                         </div>
                     </div>
 

@@ -1,22 +1,22 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { AIProfile, ActivityType, Location, AppLanguage, EmailScheduleDay } from '../types';
+import { BaroProfile, ActivityType, Location, AppLanguage, EmailScheduleDay } from '../types';
 import { Icon } from './Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { searchCityByName } from '../services/geoService';
 import { getTranslation } from '../services/translations';
 
 interface Props {
-    profile: AIProfile | undefined;
-    profiles?: AIProfile[];
-    onUpdate: (profile: AIProfile) => void;
-    onSelectProfile?: (profile: AIProfile) => void;
+    profile: BaroProfile | undefined;
+    profiles?: BaroProfile[];
+    onUpdate: (profile: BaroProfile) => void;
+    onSelectProfile?: (profile: BaroProfile) => void;
     onCreateProfile?: () => void;
     onDeleteProfile?: (id: string) => void;
     currentLocationName?: string;
     language?: AppLanguage;
 }
 
-const DEFAULT_PROFILE: AIProfile = {
+const DEFAULT_PROFILE: BaroProfile = {
     id: 'default',
     name: 'Mijn Profiel',
     activities: [],
@@ -26,7 +26,8 @@ const DEFAULT_PROFILE: AIProfile = {
     hobbies: '',
     otherInstructions: '',
     daysAhead: 3,
-    reportStyle: ['enthousiast']
+    reportStyle: ['enthousiast'],
+    hayFever: false
 };
 
 const activityIcons: Record<ActivityType, string> = {
@@ -78,12 +79,13 @@ export const SettingsProfile: React.FC<Props> = ({
     const t = (key: string) => getTranslation(key, language || 'nl');
     
     // Local state for immediate feedback
-    const [localProfile, setLocalProfile] = useState<AIProfile>(DEFAULT_PROFILE);
+    const [localProfile, setLocalProfile] = useState<BaroProfile>(DEFAULT_PROFILE);
     
     // Location Search State
     const [searchResults, setSearchResults] = useState<Location[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [loadingCity, setLoadingCity] = useState(false);
+    const timerRef = useRef<any>(null);
 
     // Sync local state when prop changes (e.g. switching profiles)
     useEffect(() => {
@@ -108,12 +110,32 @@ export const SettingsProfile: React.FC<Props> = ({
     }, [profile, user?.email]); 
 
     // Handle change with optional immediate save
-    const handleChange = (field: keyof AIProfile, value: any, immediate = false) => {
+    const handleChange = (field: keyof BaroProfile, value: any, immediate = false) => {
+        // Max length validation
+        if (field === 'name' && typeof value === 'string' && value.length > 40) {
+            value = value.substring(0, 40);
+        }
+        if (field === 'location' && typeof value === 'string' && value.length > 60) {
+            value = value.substring(0, 60);
+        }
+        if (field === 'hobbies' && typeof value === 'string' && value.length > 200) {
+            value = value.substring(0, 200);
+        }
+        if (field === 'otherInstructions' && typeof value === 'string' && value.length > 500) {
+            value = value.substring(0, 500);
+        }
+
         const updated = { ...localProfile, [field]: value };
         setLocalProfile(updated);
         
+        // Use debounce for text fields unless immediate
         if (immediate) {
             onUpdate(updated);
+        } else {
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+                onUpdate(updated);
+            }, 1000);
         }
     };
 
@@ -150,7 +172,7 @@ export const SettingsProfile: React.FC<Props> = ({
         setShowDropdown(false);
     };
 
-    const toggleArrayItem = (field: keyof AIProfile, item: string) => {
+    const toggleArrayItem = (field: keyof BaroProfile, item: string) => {
         const current = (localProfile[field] as string[]) || [];
         let newValue;
         
@@ -227,14 +249,13 @@ export const SettingsProfile: React.FC<Props> = ({
         handleChange('emailSchedule', { ...schedule, days: newDays }, true);
     };
     
-    const isEdwin = user?.email === 'edwin@editsolutions.nl';
-    const canCreateProfile = isEdwin && (profiles?.length || 0) < 3;
+    const canCreateProfile = (profiles?.length || 0) < 3;
 
     return (
         <section className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
-                    Persoonlijk AI Profiel
+                    Persoonlijk Baro Profiel
                 </h2>
                 {profiles && profiles.length > 0 && (
                      <div className="flex gap-2">
@@ -367,7 +388,9 @@ export const SettingsProfile: React.FC<Props> = ({
                                 Belangrijke Activiteiten
                             </label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                {(Object.keys(activityIcons) as ActivityType[]).map((activity) => (
+                                {(Object.keys(activityIcons) as ActivityType[])
+                                    .filter(activity => activity !== 'home' && activity !== 'work')
+                                    .map((activity) => (
                                     <button
                                         key={activity}
                                         onClick={() => toggleActivity(activity)}
@@ -450,7 +473,27 @@ export const SettingsProfile: React.FC<Props> = ({
                             </div>
                         </div>
 
-                         {/* Other Instructions */}
+                        {/* Health */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                                Gezondheid
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => handleChange('hayFever', !localProfile.hayFever, true)}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                                        localProfile.hayFever
+                                            ? 'bg-primary text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    <Icon name="grain" className="text-lg" />
+                                    Hooikoorts
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Other Instructions */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
                                 Andere Instructies (Optioneel)

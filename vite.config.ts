@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        port: 3000,
+        port: 3001,
         strictPort: true,
         host: '0.0.0.0',
         watch: {
@@ -32,22 +32,28 @@ export default defineConfig(({ mode }) => {
         react(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+          includeAssets: ['icons/baro.ico', 'icons/baro-icon-192.png'],
           manifest: {
-            name: 'Weer App',
-            short_name: 'Weer',
-            description: 'Uitgebreide weer applicatie',
-            theme_color: '#ffffff',
+            name: 'Baro Weer',
+            short_name: 'Baro',
+            description: 'Jouw Persoonlijke Weerman',
+            theme_color: '#13b6ec',
             icons: [
               {
-                src: 'pwa-192x192.png',
+                src: 'icons/baro-icon-192.png',
                 sizes: '192x192',
                 type: 'image/png'
               },
               {
-                src: 'pwa-512x512.png',
+                src: 'icons/baro-icon-512.png',
                 sizes: '512x512',
                 type: 'image/png'
+              },
+              {
+                src: 'icons/baro-icon-512.png',
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'any maskable'
               }
             ]
           }

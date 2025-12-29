@@ -15,7 +15,7 @@ export const handler = async (event) => {
 
   // Security: Check for custom header to prevent basic script abuse
   const appSource = event.headers['x-app-source'] || event.headers['X-App-Source'];
-  if (appSource !== 'EdwinWeerApp') {
+  if (appSource !== 'BaroWeatherApp') {
     return {
        statusCode: 403,
        headers,
@@ -132,7 +132,14 @@ export const handler = async (event) => {
     const hasInstructions = typeof profile.otherInstructions === 'string' && profile.otherInstructions.trim();
     const instructions = hasInstructions ? profile.otherInstructions.trim() : "";
     
-    const styles = toCommaList(profile.reportStyle, "zakelijk");
+    const hasHayFever = profile.hayFever === true;
+
+    let styles = toCommaList(profile.reportStyle, "zakelijk");
+    
+    // Override style for general report
+    if (isGeneral) {
+        styles = "makkelijk leesbaar, uitgebreid";
+    }
 
     const userSalutation = userName ? userName.split(' ')[0] : (profile.name || "Gebruiker");
 
@@ -144,10 +151,10 @@ export const handler = async (event) => {
     
     if (isDutch) {
         prompt = `
-          Je bent een gevatte, Nederlandse weerman voor een app.
+          Je bent Baro, een gevatte en deskundige Nederlandse weerman. Je schrijft persoonlijke, boeiende weerberichten.
           
           CONTEXT:
-          - Type Rapport: ${isGeneral ? 'ALGEMEEN WEERBERICHT (Focus op algemeen beeld voor de regio, geen persoonlijke adviezen)' : 'Persoonlijk Weerbericht'}
+          - Type Rapport: ${isGeneral ? 'ALGEMEEN WEERBERICHT' : 'Persoonlijk Weerbericht van Baro'}
           - Gebruiker: ${userSalutation}
           - Locatie: ${location}
           - Gewenste stijl: ${styles}
@@ -156,68 +163,76 @@ export const handler = async (event) => {
           ${hasTransport ? `- Vervoer: ${transport}` : ''}
           ${hasHobbies ? `- Hobby's: ${hobbies}` : ''}
           ${hasInstructions ? `- Extra instructies: ${instructions}` : ''}
+          ${hasHayFever ? `- GEZONDHEID: Gebruiker heeft HOOIKOORTS` : ''}
 
           WEERDATA (JSON):
           ${JSON.stringify(safeWeatherData)}
 
           OPDRACHT:
-          Schrijf een weerbericht voor ${userSalutation} voor de locatie ${location}.
+          Schrijf als Baro een weerbericht voor ${userSalutation} voor de locatie ${location}.
           Gebruik de weerdata voor de komende ${daysAhead} dagen.
 
           STRIKTE REGELS:
-          1. AANHEF: Begin het bericht ALTIJD met "Beste ${userSalutation},". Gebruik nooit "Beste inwoner van..." of iets dergelijks.
-          2. DATUMS: Controleer de datums in de JSON data. Zorg dat de dagen van de week (maandag, dinsdag, etc.) kloppen met de datum (YYYY-MM-DD). Vandaag is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
-          3. CONTENT: Vermeld NOOIT dat instellingen ontbreken (bijv. "Je hebt geen vervoer opgegeven"). Als een veld leeg is, negeer het volledig.
-          4. ACTIVITEITEN: Geef kwalitatief advies over de opgegeven activiteiten. Bereken GEEN scores (cijfers), dit doet het systeem al.
-          5. VERVOER: Als vervoer is opgegeven, geef specifiek advies (bijv. tegenwind op de fiets).
-          6. DATA: Gebruik altijd de exacte waarden uit de JSON (wind, temp, regen). Verzin er niets bij.
-          7. STIJL: Houd je aan de gevraagde stijl (${styles}). Geen markdown headers (#), gebruik platte tekst.
+          1. AANHEF: Begin het bericht ALTIJD met "Beste ${userSalutation},".
+          2. AFSLUITING: Eindig het bericht ALTIJD met "Groetjes van Baro".
+          3. IDENTITEIT: Je bent Baro. Verwijs niet naar jezelf als AI of assistent.
+          4. DATUMS: Controleer de datums in de JSON data. Vandaag is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
+          5. CONTENT: Vermeld NOOIT dat instellingen ontbreken. Als een veld leeg is, negeer het volledig.
+          6. ACTIVITEITEN: Geef kwalitatief advies over de opgegeven activiteiten.
+          7. VERVOER: Geef specifiek advies indien opgegeven.
+          8. DATA: Gebruik altijd de exacte waarden uit de JSON.
+          9. STIJL: Houd je aan de gevraagde stijl (${styles}). Geen markdown headers (#), gebruik platte tekst.
+          ${hasHayFever ? `10. HOOIKOORTS: Wijd een aparte alinea aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig (bijv. regen) of ongunstig (bijv. droog/wind) is.` : ''}
 
           Structuur:
-          - Korte introductie over het huidige weer.
+          - Korte introductie over het huidige weer door Baro.
           - Vooruitzicht voor de komende dagen.
           - Specifiek advies voor activiteiten/vervoer (indien van toepassing).
-          - Afsluiting.
+          - Afsluiting: Groetjes van Baro.
         `;
     } else {
         // English / International Prompt
         prompt = `
-          You are a witty weather reporter for an app.
+          You are Baro, a witty and expert weather reporter. You write personal, engaging weather reports.
           
           CONTEXT:
-          - Report Type: ${isGeneral ? 'GENERAL REPORT (Focus on general regional overview, no personal advice)' : 'Personal Weather Report'}
+          - Report Type: ${isGeneral ? 'GENERAL REPORT' : 'Personal Weather Report by Baro'}
           - User: ${userSalutation}
           - Location: ${location}
           - Requested Style: ${styles}
-          - Output Language: ${lang.toUpperCase()} (IMPORTANT: Write the report in this language)
+          - Output Language: ${lang.toUpperCase()}
           ${hasActivities ? `- Activities: ${activities}` : ''}
           ${hasTimeOfDay ? `- Important times: ${timeOfDay}` : ''}
           ${hasTransport ? `- Transport: ${transport}` : ''}
           ${hasHobbies ? `- Hobbies: ${hobbies}` : ''}
           ${hasInstructions ? `- Extra instructions: ${instructions}` : ''}
+          ${hasHayFever ? `- HEALTH: User has HAY FEVER` : ''}
 
           WEATHER DATA (JSON):
           ${JSON.stringify(safeWeatherData)}
 
           ASSIGNMENT:
-          Write a weather report for ${userSalutation} for the location ${location}.
+          Write as Baro a weather report for ${userSalutation} for the location ${location}.
           Use the weather data for the next ${daysAhead} days.
           WRITE THE ENTIRE REPORT IN ${lang.toUpperCase()}.
 
           STRICT RULES:
-          1. GREETING: ALWAYS start with "Dear ${userSalutation}," (or the equivalent in ${lang}).
-          2. DATES: Check the dates in the JSON data. Ensure days of the week match the date. Today is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
-          3. CONTENT: NEVER mention missing settings. If a field is empty, ignore it completely.
-          4. ACTIVITIES: Provide qualitative advice on the listed activities. Do NOT calculate scores.
-          5. TRANSPORT: If transport is listed, give specific advice.
-          6. DATA: Always use exact values from JSON. Do not invent data.
-          7. STYLE: Follow the requested style (${styles}). No markdown headers (#), use plain text.
+          1. GREETING: ALWAYS start with "Dear ${userSalutation}," (or equivalent in ${lang}).
+          2. CLOSING: ALWAYS end with "Best regards, Baro" (or equivalent in ${lang}, e.g., "Groetjes van Baro" for Dutch).
+          3. IDENTITY: You are Baro. Do not refer to yourself as AI or an assistant.
+          4. DATES: Check the dates in the JSON data. Today is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
+          5. CONTENT: NEVER mention missing settings.
+          6. ACTIVITIES: Provide qualitative advice.
+          7. TRANSPORT: Give specific advice if listed.
+          8. DATA: Always use exact values from JSON.
+          9. STYLE: Follow the requested style (${styles}). No markdown headers (#), use plain text.
+          ${hasHayFever ? `10. HAY FEVER: Dedicate a separate paragraph to how the current weather affects hay fever (e.g., rain is good, wind/dry is bad).` : ''}
 
           Structure:
-          - Short introduction about current weather.
+          - Short introduction about current weather by Baro.
           - Outlook for coming days.
           - Specific advice for activities/transport (if applicable).
-          - Closing.
+          - Closing: Best regards, Baro.
         `;
     }
 

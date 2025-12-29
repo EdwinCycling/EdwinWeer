@@ -193,11 +193,11 @@ export interface AppSettings {
     timezone?: string;
     calendar?: CalendarSettings;
     climatePeriodType?: '30year' | 'decade';
-    aiProfile?: AIProfile;
-    aiProfiles?: AIProfile[]; // Saved profiles
+    baroProfile?: BaroProfile;
+    baroProfiles?: BaroProfile[]; // Saved profiles
 }
 
-export interface AIProfile {
+export interface BaroProfile {
     id?: string;
     name?: string;
     activities: string | ActivityType[]; // comma separated or free text OR array of types
@@ -209,6 +209,7 @@ export interface AIProfile {
     daysAhead: number; // 1, 2, 3, 7, 14
     reportStyle: string[]; // ['business', 'readable', 'humor', etc]
     isGeneralReport?: boolean;
+    hayFever?: boolean;
     emailSchedule?: EmailSchedule;
 }
 
@@ -242,6 +243,7 @@ export enum ViewState {
   FORECAST = 'FORECAST',
   COUNTRY_MAP = 'COUNTRY_MAP',
   USER_ACCOUNT = 'USER_ACCOUNT',
+  FAQ = 'FAQ',
   SHARE = 'SHARE',
   BAROMETER = 'BAROMETER',
   CLIMATE_CHANGE = 'CLIMATE_CHANGE',

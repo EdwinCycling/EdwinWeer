@@ -5,7 +5,7 @@ export const handler = async (event) => {
 
   // Security: Check for custom header to prevent basic script abuse
   const appSource = event.headers['x-app-source'] || event.headers['X-App-Source'];
-  if (appSource !== 'EdwinWeerApp') {
+  if (appSource !== 'BaroWeatherApp') {
     return {
        statusCode: 403,
        headers: { 'Content-Type': 'application/json' },

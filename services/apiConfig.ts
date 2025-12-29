@@ -2,8 +2,14 @@
 export const API_LIMITS = {
     MINUTE: 50,
     HOUR: 500,
-    DAY: 200, // Reduced from 1500 for free tier
-    MONTH: 5000
+    FREE: {
+        DAY: 10,
+        MONTH: 250
+    },
+    PRO: {
+        DAY: 250,
+        MONTH: 2500
+    }
 };
 
-export const STORAGE_KEY = 'weather_app_usage_v2'; // Bump version to force reset/migration if needed
+export const STORAGE_KEY = 'weather_app_usage_v3'; // Bump version

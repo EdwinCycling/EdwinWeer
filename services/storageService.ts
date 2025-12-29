@@ -256,28 +256,21 @@ export const loadComparisonType = (): ComparisonType => {
     return (localStorage.getItem(KEY_COMPARISON_TYPE) as ComparisonType) || ComparisonType.YESTERDAY;
 };
 
-const KEY_AI_PROFILE = "weather_app_ai_profile";
+const KEY_BARO_PROFILE = "weather_app_baro_profile";
 
-export const saveAIProfile = (profile: any) => {
-    if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_AI_PROFILE, JSON.stringify(profile));
-    }
-    // Sync to firestore if logged in
+export const saveBaroProfile = (profile: any) => {
+    const settings = loadSettings();
+    saveSettings({ ...settings, baroProfile: profile });
+
     if (currentUserId && db) {
         const userRef = doc(db, 'users', currentUserId);
-        setDoc(userRef, { aiProfile: profile }, { merge: true }).catch(e => console.error("Error syncing AI profile:", e));
+        setDoc(userRef, { baroProfile: profile }, { merge: true }).catch(e => console.error("Error syncing Baro profile:", e));
     }
 };
 
-export const loadAIProfile = (): any | null => {
-    if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(KEY_AI_PROFILE);
-    if (!stored) return null;
-    try {
-        return JSON.parse(stored);
-    } catch {
-        return null;
-    }
+export const loadBaroProfile = (): any | null => {
+    const settings = loadSettings();
+    return settings.baroProfile || null;
 };
 
 export const saveSettings = (settings: AppSettings) => {
@@ -295,6 +288,26 @@ export const loadSettings = (): AppSettings => {
     
     // Merge with default to ensure new fields (theme, language) exist if old storage
     const parsed = JSON.parse(stored);
+    
+    // Migration: aiProfile -> caelixProfile -> baroProfile
+    if (parsed.aiProfile && !parsed.baroProfile) {
+        parsed.baroProfile = parsed.aiProfile;
+        delete parsed.aiProfile;
+    }
+    if (parsed.caelixProfile && !parsed.baroProfile) {
+        parsed.baroProfile = parsed.caelixProfile;
+        delete parsed.caelixProfile;
+    }
+
+    if (parsed.aiProfiles && !parsed.baroProfiles) {
+        parsed.baroProfiles = parsed.aiProfiles;
+        delete parsed.aiProfiles;
+    }
+    if (parsed.caelixProfiles && !parsed.baroProfiles) {
+        parsed.baroProfiles = parsed.caelixProfiles;
+        delete parsed.caelixProfiles;
+    }
+
     return { 
         ...DEFAULT_SETTINGS, 
         ...parsed,

@@ -1,0 +1,78 @@
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2025-02-24.acacia', // Use latest or appropriate version
+});
+
+export const handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
+  }
+
+  try {
+    const { priceId, userId, returnUrl } = JSON.parse(event.body || '{}');
+
+    if (!priceId || !userId) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Missing priceId or userId' })
+      };
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+        console.error("Missing STRIPE_SECRET_KEY");
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: 'Server configuration error' })
+        };
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'ideal', 'bancontact'], // Common in NL/EU
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${returnUrl}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${returnUrl}?canceled=true`,
+      metadata: {
+        userId: userId,
+        type: 'credits_purchase'
+      },
+      // Optional: Customer creation if you want to track customers in Stripe
+      // customer_email: userEmail, 
+    });
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ 
+        sessionId: session.id,
+        url: session.url 
+      })
+    };
+
+  } catch (error) {
+    console.error('Stripe Checkout Error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};

@@ -47,7 +47,7 @@ const ENSEMBLE_MODELS: {id: EnsembleModel, name: string}[] = [
     { id: 'gfs025', name: 'GFS Ensemble 0.25' },
     { id: 'gfs05', name: 'GFS Ensemble 0.5' },
     { id: 'ecmwf_ifs025', name: 'ECMWF IFS 0.25° Ensemble' },
-    { id: 'ecmwf_aifs025', name: 'ECMWF AIFS 0.25° Ensemble' },
+    { id: 'ecmwf_aifs025', name: 'Baro AIFS 0.25° Ensemble' },
     { id: 'gem_global', name: 'GEM Global Ensemble' },
     { id: 'bom_access_global', name: 'BOM ACCESS Global' },
     { id: 'metoffice_global', name: 'UK MetOffice Global 20km' },
@@ -917,7 +917,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         <Icon name="show_chart" className="text-primary" />
                         {availableVariables.find(v => v.key === selectedVariable)?.label}
                     </h3>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={processChartData.data}>
                             <defs>
                                 <linearGradient id="gradientGrid" x1="0" y1="0" x2="0" y2="1">

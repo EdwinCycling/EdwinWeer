@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, Location, AppTheme, AppLanguage, ActivityType } from '../types';
+import { ViewState, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, Location, AppTheme, AppLanguage, ActivityType, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { getUsage, UsageStats, getLimit } from '../services/usageService';
 import { SettingsProfile } from '../components/SettingsProfile';
-import { AIProfile } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
@@ -245,7 +244,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     const tabs = [
         { id: 'cities', label: t('settings.favorites'), icon: 'location_city' },
         { id: 'activities', label: t('settings.activities_title'), icon: 'directions_bike' },
-        { id: 'profile', label: t('settings.ai_profile'), icon: 'person' },
+        { id: 'profile', label: t('settings.baro_profile'), icon: 'person' },
         { id: 'general', label: t('settings.general'), icon: 'tune' },
         { id: 'records', label: t('nav.records'), icon: 'equalizer' },
     ] as const;
@@ -365,7 +364,9 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                         <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">{t('settings.activities_title')}</h2>
                         <p className="text-xs text-slate-600 dark:text-white/40 mb-3">{t('settings.activities_desc')}</p>
                         <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
-                            {settings.enabledActivities && Object.entries(settings.enabledActivities).map(([key, enabled], index) => {
+                            {settings.enabledActivities && Object.entries(settings.enabledActivities)
+                                .filter(([key]) => key !== 'home' && key !== 'work')
+                                .map(([key, enabled], index) => {
                                  const activityKey = key as ActivityType;
                                  const isLocked = activityKey === 'cycling' || activityKey === 'walking';
                                  return (
@@ -795,10 +796,10 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                 {/* Profile Tab */}
                 {activeTab === 'profile' && (
                     <SettingsProfile 
-                        profile={settings.aiProfile} 
-                        profiles={settings.aiProfiles || (settings.aiProfile ? [settings.aiProfile] : [])}
-                        onUpdate={(updatedProfile) => {
-                            const currentList = settings.aiProfiles || [];
+                            profile={settings.baroProfile} 
+                            profiles={settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : [])}
+                            onUpdate={(updatedProfile) => {
+                                const currentList = settings.baroProfiles || [];
                             const index = currentList.findIndex(p => p.id === updatedProfile.id);
                             
                             let newList;
@@ -816,25 +817,25 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 }
                             }
 
-                            onUpdateSettings({
-                                ...settings,
-                                aiProfile: updatedProfile,
-                                aiProfiles: newList
-                            });
-                        }}
-                        onSelectProfile={(profile) => {
-                            onUpdateSettings({ ...settings, aiProfile: profile });
-                        }}
+                            onUpdateSettings({ 
+                                    ...settings, 
+                                    baroProfile: updatedProfile,
+                                    baroProfiles: newList
+                                });
+                            }}
+                            onSelectProfile={(profile) => {
+                                onUpdateSettings({ ...settings, baroProfile: profile });
+                            }}
                         onCreateProfile={() => {
-                            let defaultName = `Nieuw Profiel ${settings.aiProfiles ? settings.aiProfiles.length + 1 : 1}`;
+                            let defaultName = `Nieuw Profiel ${settings.baroProfiles ? settings.baroProfiles.length + 1 : 1}`;
                             if (user?.email) {
                                 const nameFromEmail = user.email.split('@')[0];
                                 const capitalized = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-                                const count = (settings.aiProfiles || []).filter(p => p.name && p.name.startsWith(capitalized)).length;
+                                const count = (settings.baroProfiles || []).filter(p => p.name && p.name.startsWith(capitalized)).length;
                                 defaultName = count === 0 ? capitalized : `${capitalized} ${count + 1}`;
                             }
 
-                            const newProfile: AIProfile = {
+                            const newProfile: BaroProfile = {
                                 id: Date.now().toString(),
                                 name: defaultName,
                                 activities: [],
@@ -842,31 +843,31 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 timeOfDay: [],
                                 transport: [],
                                 daysAhead: 3,
-                                reportStyle: ['enthousiast']
+                                reportStyle: ['enthousiast'],
+                                hayFever: false
                             };
-                            
-                            const currentList = settings.aiProfiles || [];
-                            // Limit to 3 profiles
-                            if (currentList.length >= 3) return;
+                                const currentList = settings.baroProfiles || [];
+                                // Limit to 3 profiles
+                                if (currentList.length >= 3) return;
 
-                            const newList = [...currentList, newProfile];
-                            onUpdateSettings({
-                                ...settings,
-                                aiProfiles: newList,
-                                aiProfile: newProfile
-                            });
-                        }}
-                        onDeleteProfile={(id) => {
-                            const currentList = settings.aiProfiles || [];
-                            const newList = currentList.filter(p => p.id !== id);
-                            const nextActive = settings.aiProfile?.id === id ? (newList.length > 0 ? newList[0] : undefined) : settings.aiProfile;
+                                const newList = [...currentList, newProfile];
+                                onUpdateSettings({
+                                    ...settings,
+                                    baroProfiles: newList,
+                                    baroProfile: newProfile
+                                });
+                            }}
+                            onDeleteProfile={(id) => {
+                                const currentList = settings.baroProfiles || [];
+                                const newList = currentList.filter(p => p.id !== id);
+                                const nextActive = settings.baroProfile?.id === id ? (newList.length > 0 ? newList[0] : undefined) : settings.baroProfile;
 
-                            onUpdateSettings({
-                                ...settings,
-                                aiProfiles: newList,
-                                aiProfile: nextActive
-                            });
-                        }}
+                                onUpdateSettings({
+                                    ...settings,
+                                    baroProfiles: newList,
+                                    baroProfile: nextActive
+                                });
+                            }}
                         currentLocationName={settings.favorites.find(f => f.isCurrentLocation)?.name || settings.favorites[0]?.name}
                         language={settings.language}
                     />

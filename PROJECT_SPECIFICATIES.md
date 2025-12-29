@@ -1,6 +1,6 @@
 # Functionele Specificaties & Documentatie Bron - Weer Applicatie
 
-Dit document dient als de definitieve bron voor de functionaliteiten, technische architectuur, weergaven, filters en logica van de "Edwin Weer" applicatie.
+Dit document dient als de definitieve bron voor de functionaliteiten, technische architectuur, weergaven, filters en logica van de "Baro" applicatie.
 
 ---
 

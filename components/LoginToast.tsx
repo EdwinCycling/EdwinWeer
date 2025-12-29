@@ -20,45 +20,35 @@ export const LoginToast: React.FC<Props> = ({ userEmail, onClose }) => {
     if (!stats) return null;
 
     const isEdwin = userEmail === 'edwin@editsolutions.nl';
-    const status = isEdwin ? 'AI Weerman' : 'Free Plan'; // Logic can be expanded for Pro
+    const status = isEdwin ? 'Baro Weerman' : 'Free Plan'; // Logic can be expanded for Pro
     
     // Credits
     const weatherLimit = getLimit();
     const weatherUsed = stats.dayCount || 0;
     const weatherRemaining = Math.max(0, weatherLimit - weatherUsed);
 
-    const aiLimit = 5; // Hardcoded for now, or move to config
+    const aiLimit = 25; // Matching usageService limit
     const aiUsed = stats.aiCalls || 0;
     const aiRemaining = Math.max(0, aiLimit - aiUsed);
 
     return (
-        <div className="fixed top-24 right-4 z-[3000] animate-in slide-in-from-right fade-in duration-500">
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-4 flex items-start gap-4 max-w-sm">
-                <div className={`p-3 rounded-xl ${isEdwin ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                    <Icon name={isEdwin ? "smart_toy" : "person"} className="text-xl" />
+        <div className="fixed bottom-24 right-6 left-6 md:left-auto md:w-80 z-[100] animate-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-4 shadow-2xl flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
+                    <Icon name="person" className="text-2xl" />
                 </div>
-                <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white">Welkom terug!</h4>
-                    <p className="text-xs text-slate-500 dark:text-white/60 mb-2">
-                        Status: <span className="font-medium text-slate-700 dark:text-white">{status}</span>
-                    </p>
-                    
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs">
-                            <Icon name="cloud" className="text-slate-400 text-[10px]" />
-                            <span>Weather Credits: <b>{weatherRemaining}</b> / {weatherLimit}</span>
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">{status}</p>
+                    <h4 className="font-bold text-slate-800 dark:text-white truncate leading-tight">
+                        Welkom terug!
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                        <div className="flex items-center gap-1">
+                            <Icon name="auto_awesome" className="text-[10px] text-yellow-500" />
+                            <span>Baro Credits: <b>{aiRemaining}</b> / {aiLimit}</span>
                         </div>
-                        {isEdwin && (
-                            <div className="flex items-center gap-2 text-xs">
-                                <Icon name="bolt" className="text-purple-400 text-[10px]" />
-                                <span>AI Credits: <b>{aiRemaining}</b> / {aiLimit}</span>
-                            </div>
-                        )}
                     </div>
                 </div>
-                <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                    <Icon name="close" className="text-sm" />
-                </button>
             </div>
         </div>
     );

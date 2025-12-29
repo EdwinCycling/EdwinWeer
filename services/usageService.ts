@@ -1,12 +1,20 @@
-
 import { API_LIMITS, STORAGE_KEY } from './apiConfig';
 import { db } from "./firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
+export interface DailyUsage {
+    date: string;
+    count: number;
+}
+
 export interface UsageStats {
     totalCalls: number;
     aiCalls: number;
+    aiCallsDayStart?: string; // Track which day aiCalls refers to
     
+    weatherCredits: number; // Pro Bundle
+    baroCredits: number;    // Baro Bundle
+
     // Minute
     minuteCount: number;
     minuteStart: number; // timestamp
@@ -22,12 +30,25 @@ export interface UsageStats {
     // Month
     monthCount: number;
     monthStart: string; // YYYY-MM
+
+    // Alerts state
+    alerts: {
+        day80: boolean;
+        day100: boolean;
+        month80: boolean;
+        month100: boolean;
+        creditsLow: boolean;
+    };
 }
 
 const DEFAULT_STATS: UsageStats = {
     totalCalls: 0,
     aiCalls: 0,
+    aiCallsDayStart: new Date().toISOString().split('T')[0],
     
+    weatherCredits: 0,
+    baroCredits: 0,
+
     minuteCount: 0,
     minuteStart: Date.now(),
     
@@ -38,7 +59,15 @@ const DEFAULT_STATS: UsageStats = {
     dayStart: new Date().toISOString().split('T')[0],
     
     monthCount: 0,
-    monthStart: new Date().toISOString().slice(0, 7)
+    monthStart: new Date().toISOString().slice(0, 7),
+
+    alerts: {
+        day80: false,
+        day100: false,
+        month80: false,
+        month100: false,
+        creditsLow: false
+    }
 };
 
 let currentUserId: string | null = null;
@@ -47,6 +76,12 @@ let currentUserEmail: string | null = null;
 export const setUsageUserId = (uid: string | null, email: string | null = null) => {
     currentUserId = uid;
     currentUserEmail = email;
+};
+
+// Internal: Send alert email via Netlify Function
+// Removed as per user request (only in-app alerts)
+const sendAlert = async (type: string, current: number, limit: number) => {
+    // Disabled
 };
 
 export const loadRemoteUsage = async (uid: string) => {
@@ -60,50 +95,67 @@ export const loadRemoteUsage = async (uid: string) => {
             if (data.usage) {
                 const remoteUsage = data.usage as UsageStats;
                 const localUsage = getUsage();
-
-                // Logic to merge Remote into Local intelligently
-                // We want to enforce limits, so we take the "worst case" (highest usage) 
-                // if the time windows match.
-                
                 const mergedUsage = { ...DEFAULT_STATS, ...localUsage };
 
-                // 1. Total Calls & AI Calls: Always take max
+                // 1. Total Calls & AI Calls
                 mergedUsage.totalCalls = Math.max(localUsage.totalCalls, remoteUsage.totalCalls || 0);
-                mergedUsage.aiCalls = Math.max(localUsage.aiCalls || 0, remoteUsage.aiCalls || 0);
+                
+                if (remoteUsage.aiCallsDayStart === localUsage.aiCallsDayStart) {
+                    // Trust remote if it's explicitly set (allows admin reset)
+                    // If remote is significantly lower, assume reset. Otherwise max.
+                    if (remoteUsage.aiCalls !== undefined) {
+                         mergedUsage.aiCalls = remoteUsage.aiCalls;
+                    } else {
+                         mergedUsage.aiCalls = Math.max(localUsage.aiCalls || 0, remoteUsage.aiCalls || 0);
+                    }
+                } else if ((remoteUsage.aiCallsDayStart || '') > (localUsage.aiCallsDayStart || '')) {
+                    mergedUsage.aiCallsDayStart = remoteUsage.aiCallsDayStart;
+                    mergedUsage.aiCalls = remoteUsage.aiCalls;
+                }
 
-                // 2. Month: If same month, take max
+                // Credits
+                if (remoteUsage.weatherCredits !== undefined) mergedUsage.weatherCredits = remoteUsage.weatherCredits;
+                if (remoteUsage.baroCredits !== undefined) mergedUsage.baroCredits = remoteUsage.baroCredits;
+
+                // 2. Month
                 if (remoteUsage.monthStart === localUsage.monthStart) {
-                    mergedUsage.monthCount = Math.max(localUsage.monthCount, remoteUsage.monthCount);
+                    // Trust remote if defined (allows admin reset)
+                    if (remoteUsage.monthCount !== undefined) {
+                        mergedUsage.monthCount = remoteUsage.monthCount;
+                    } else {
+                        mergedUsage.monthCount = Math.max(localUsage.monthCount, remoteUsage.monthCount);
+                    }
                 } else if (remoteUsage.monthStart > localUsage.monthStart) {
-                    // Remote is newer (we might have stale local time?)
                     mergedUsage.monthStart = remoteUsage.monthStart;
                     mergedUsage.monthCount = remoteUsage.monthCount;
                 }
 
-                // 3. Day: If same day, take max
+                // 3. Day
                 if (remoteUsage.dayStart === localUsage.dayStart) {
-                    mergedUsage.dayCount = Math.max(localUsage.dayCount, remoteUsage.dayCount);
+                    // Trust remote if defined (allows admin reset)
+                    if (remoteUsage.dayCount !== undefined) {
+                        mergedUsage.dayCount = remoteUsage.dayCount;
+                    } else {
+                        mergedUsage.dayCount = Math.max(localUsage.dayCount, remoteUsage.dayCount);
+                    }
                 } else if (remoteUsage.dayStart > localUsage.dayStart) {
                     mergedUsage.dayStart = remoteUsage.dayStart;
                     mergedUsage.dayCount = remoteUsage.dayCount;
                 }
 
-                // 4. Hour: Check timestamp diff (roughly same hour window)
-                // Hour start is a timestamp. 
-                const isSameHour = Math.abs(remoteUsage.hourStart - localUsage.hourStart) < 1000 * 60; // tolerance
-                // Actually, just check if remote is "fresher" or "same block"
-                // If remote hourStart is within the last hour relative to NOW, it's relevant.
-                
-                // Simpler: If remote.hourStart > local.hourStart, take remote.
+                // 4. Hour
                 if (remoteUsage.hourStart > localUsage.hourStart) {
                     mergedUsage.hourStart = remoteUsage.hourStart;
                     mergedUsage.hourCount = remoteUsage.hourCount;
                 } else if (Math.abs(remoteUsage.hourStart - localUsage.hourStart) < 60000) {
-                    // Same hour block
                     mergedUsage.hourCount = Math.max(localUsage.hourCount, remoteUsage.hourCount);
                 }
 
-                // Update local storage
+                // 5. Alerts
+                if (remoteUsage.alerts) {
+                    mergedUsage.alerts = { ...mergedUsage.alerts, ...remoteUsage.alerts };
+                }
+
                 if (typeof window !== "undefined") {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedUsage));
                 }
@@ -129,8 +181,8 @@ export const getUsage = (): UsageStats => {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return DEFAULT_STATS;
         const parsed = JSON.parse(stored);
-        
-        // Merge with defaults to ensure all fields exist (migration)
+        // Ensure alerts object exists if loading old data
+        if (!parsed.alerts) parsed.alerts = { ...DEFAULT_STATS.alerts };
         return { ...DEFAULT_STATS, ...parsed };
     } catch (e) {
         return DEFAULT_STATS;
@@ -148,10 +200,9 @@ const saveUsage = (stats: UsageStats) => {
 
 type UsageScope = 'minute' | 'hour' | 'day' | 'month';
 
+// Transient warnings for UI toast (not persisted)
 let warnedMinute = false;
 let warnedHour = false;
-let warnedDay = false;
-let warnedMonth = false;
 
 const emitUsageWarning = (scope: UsageScope, stats: UsageStats) => {
     if (typeof window === 'undefined') return;
@@ -168,17 +219,14 @@ const emitLimitReached = (scope: UsageScope, limit: number) => {
 };
 
 export const checkLimit = (): void => {
-    // VIP Bypass
-    if (currentUserEmail === 'edwin@editsolutions.nl' || currentUserEmail === 'edwin@editsolutions') {
-        return;
-    }
-
     const stats = getUsage();
     const now = Date.now();
     const today = new Date().toISOString().split('T')[0];
     const thisMonth = new Date().toISOString().slice(0, 7);
 
-    // Check Minute Limit
+    const isPro = stats.weatherCredits > 0;
+    const limits = isPro ? API_LIMITS.PRO : API_LIMITS.FREE;
+
     if (now - stats.minuteStart < 60000) {
         if (stats.minuteCount >= API_LIMITS.MINUTE) {
             emitLimitReached('minute', API_LIMITS.MINUTE);
@@ -186,7 +234,6 @@ export const checkLimit = (): void => {
         }
     }
 
-    // Check Hour Limit
     if (now - stats.hourStart < 3600000) {
         if (stats.hourCount >= API_LIMITS.HOUR) {
              emitLimitReached('hour', API_LIMITS.HOUR);
@@ -194,19 +241,17 @@ export const checkLimit = (): void => {
         }
     }
 
-    // Check Day Limit
     if (stats.dayStart === today) {
-        if (stats.dayCount >= API_LIMITS.DAY) {
-            emitLimitReached('day', API_LIMITS.DAY);
-            throw new Error(`Daily API limit exceeded (${API_LIMITS.DAY} calls). Please try again tomorrow.`);
+        if (stats.dayCount >= limits.DAY) {
+            emitLimitReached('day', limits.DAY);
+            throw new Error(`Daily API limit exceeded (${limits.DAY} calls). ${!isPro ? 'Upgrade to Pro for more.' : ''}`);
         }
     }
 
-    // Check Month Limit
     if (stats.monthStart === thisMonth) {
-        if (stats.monthCount >= API_LIMITS.MONTH) {
-            emitLimitReached('month', API_LIMITS.MONTH);
-            throw new Error(`Monthly API limit exceeded (${API_LIMITS.MONTH} calls).`);
+        if (stats.monthCount >= limits.MONTH) {
+            emitLimitReached('month', limits.MONTH);
+            throw new Error(`Monthly API limit exceeded (${limits.MONTH} calls).`);
         }
     }
 };
@@ -215,8 +260,20 @@ export const trackCall = () => {
     const stats = getUsage();
     const now = Date.now();
 
-    // Update counters
+    const isPro = stats.weatherCredits > 0;
+    const limits = isPro ? API_LIMITS.PRO : API_LIMITS.FREE;
+
     stats.totalCalls++;
+
+    // Low credits check (e.g. < 50)
+    if (isPro && stats.weatherCredits < 50 && !stats.alerts.creditsLow) {
+        stats.alerts.creditsLow = true;
+        // sendAlert('credits_low', stats.weatherCredits, 0);
+    }
+    
+    if (isPro) {
+        stats.weatherCredits--;
+    }
 
     // Minute
     if (now - stats.minuteStart < 60000) {
@@ -224,6 +281,7 @@ export const trackCall = () => {
     } else {
         stats.minuteCount = 1;
         stats.minuteStart = now;
+        warnedMinute = false; // Reset transient warning
     }
 
     // Hour
@@ -232,6 +290,7 @@ export const trackCall = () => {
     } else {
         stats.hourCount = 1;
         stats.hourStart = now;
+        warnedHour = false; // Reset transient warning
     }
 
     // Day
@@ -241,6 +300,9 @@ export const trackCall = () => {
     } else {
         stats.dayCount = 1;
         stats.dayStart = today;
+        // Reset daily alerts
+        stats.alerts.day80 = false;
+        stats.alerts.day100 = false;
     }
 
     // Month
@@ -250,8 +312,14 @@ export const trackCall = () => {
     } else {
         stats.monthCount = 1;
         stats.monthStart = thisMonth;
+        // Reset monthly alerts
+        stats.alerts.month80 = false;
+        stats.alerts.month100 = false;
     }
 
+    // --- WARNINGS & ALERTS ---
+
+    // 1. Minute (Transient)
     if (now - stats.minuteStart < 60000) {
         const minuteRatio = stats.minuteCount / API_LIMITS.MINUTE;
         if (!warnedMinute && minuteRatio >= 0.8) {
@@ -260,6 +328,7 @@ export const trackCall = () => {
         }
     }
 
+    // 2. Hour (Transient)
     if (now - stats.hourStart < 3600000) {
         const hourRatio = stats.hourCount / API_LIMITS.HOUR;
         if (!warnedHour && hourRatio >= 0.8) {
@@ -268,40 +337,82 @@ export const trackCall = () => {
         }
     }
 
+    // 3. Day (Persistent Alert)
     if (stats.dayStart === today) {
-        const dayRatio = stats.dayCount / API_LIMITS.DAY;
-        if (!warnedDay && dayRatio >= 0.8) {
-            warnedDay = true;
+        const dayRatio = stats.dayCount / limits.DAY;
+        
+        // 80% Alert
+        if (dayRatio >= 0.8 && dayRatio < 1.0 && !stats.alerts.day80) {
+            stats.alerts.day80 = true;
             emitUsageWarning('day', stats);
+            sendAlert('day_80', stats.dayCount, limits.DAY);
+        }
+
+        // 100% Alert
+        if (dayRatio >= 1.0 && !stats.alerts.day100) {
+            stats.alerts.day100 = true;
+            emitUsageWarning('day', stats); // or emitLimitReached? checkLimit throws error, here we just warn
+            sendAlert('day_100', stats.dayCount, limits.DAY);
         }
     }
 
+    // 4. Month (Persistent Alert)
     if (stats.monthStart === thisMonth) {
-        const monthRatio = stats.monthCount / API_LIMITS.MONTH;
-        if (!warnedMonth && monthRatio >= 0.8) {
-            warnedMonth = true;
+        const monthRatio = stats.monthCount / limits.MONTH;
+
+        // 80% Alert
+        if (monthRatio >= 0.8 && monthRatio < 1.0 && !stats.alerts.month80) {
+            stats.alerts.month80 = true;
             emitUsageWarning('month', stats);
+            sendAlert('month_80', stats.monthCount, limits.MONTH);
+        }
+
+        // 100% Alert
+        if (monthRatio >= 1.0 && !stats.alerts.month100) {
+            stats.alerts.month100 = true;
+            emitUsageWarning('month', stats);
+            sendAlert('month_100', stats.monthCount, limits.MONTH);
         }
     }
 
     saveUsage(stats);
+};
+
+export const trackBaroCall = (): boolean => {
+    const stats = getUsage();
+    if (stats.baroCredits > 0) {
+        // Low credits check (e.g. < 10)
+        if (stats.baroCredits < 10 && !stats.alerts.creditsLow) {
+            stats.alerts.creditsLow = true;
+            // sendAlert('credits_low', stats.baroCredits, 0);
+        }
+
+        stats.baroCredits--;
+        saveUsage(stats);
+        return true;
+    }
+    return false;
 };
 
 export const trackAiCall = () => {
-    const stats = getUsage();
-    stats.aiCalls = (stats.aiCalls || 0) + 1;
-    saveUsage(stats);
+    trackCall();
 };
 
-export const getLimit = () => API_LIMITS.DAY;
+export const getLimit = () => {
+    const stats = getUsage();
+    return stats.weatherCredits > 0 ? API_LIMITS.PRO.DAY : API_LIMITS.FREE.DAY;
+};
 
 export const resetDailyUsage = async (uid: string) => {
     const stats = getUsage();
     stats.dayCount = 0;
-    // Reset others if needed, but user specifically asked for day count. 
-    // We'll reset minute/hour too to be clean.
+    stats.aiCalls = 0;
+    stats.aiCallsDayStart = new Date().toISOString().split('T')[0];
     stats.minuteCount = 0;
     stats.hourCount = 0;
+    // Reset daily alerts
+    stats.alerts.day80 = false;
+    stats.alerts.day100 = false;
     
     saveUsage(stats);
     
