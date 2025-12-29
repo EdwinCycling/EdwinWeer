@@ -1,8 +1,6 @@
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia', // Use latest or appropriate version
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 export const handler = async (event) => {
   const headers = {
@@ -20,7 +18,7 @@ export const handler = async (event) => {
   }
 
   try {
-    const { priceId, userId, returnUrl } = JSON.parse(event.body || '{}');
+    const { priceId, userId, returnUrl, locale } = JSON.parse(event.body || '{}');
 
     if (!priceId || !userId) {
       return {
@@ -50,8 +48,10 @@ export const handler = async (event) => {
       mode: 'payment',
       success_url: `${returnUrl}?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${returnUrl}?canceled=true`,
+      locale: locale as Stripe.Checkout.SessionCreateParams.Locale || 'auto',
       metadata: {
         userId: userId,
+        locale: locale || 'nl',
         type: 'credits_purchase'
       },
       // Optional: Customer creation if you want to track customers in Stripe

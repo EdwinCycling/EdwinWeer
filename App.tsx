@@ -32,6 +32,7 @@ import { useAuth } from './contexts/AuthContext';
 import { LimitReachedModal } from './components/LimitReachedModal';
 import { useScrollLock } from './hooks/useScrollLock';
 import { LoginToast } from './components/LoginToast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
   const { user, loading, logout, sessionExpiry } = useAuth();
@@ -59,6 +60,14 @@ const App: React.FC = () => {
       setCurrentView(view);
       setViewParams(params || null);
   };
+
+  // Check for Stripe return
+  useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') === 'true') {
+          setCurrentView(ViewState.PRICING);
+      }
+  }, []);
 
   useEffect(() => {
       saveSettings(settings);
@@ -246,7 +255,9 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white relative flex flex-col transition-colors duration-300">
         <div className="flex-grow pb-4 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            {renderView()}
+            <ErrorBoundary settings={settings} onNavigate={navigate}>
+                {renderView()}
+            </ErrorBoundary>
         </div>
 
         {showLoginToast && user && (

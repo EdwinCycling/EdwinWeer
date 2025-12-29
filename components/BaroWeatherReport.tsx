@@ -4,7 +4,7 @@ import { OpenMeteoResponse, BaroProfile, ViewState, ActivityType, AppLanguage } 
 import { generateBaroWeatherReport } from '../services/geminiService';
 import { Icon } from './Icon';
 import { useAuth } from '../contexts/AuthContext';
-import { trackAiCall, getUsage, getLimit } from '../services/usageService';
+import { trackAiCall, trackBaroCall, getUsage, getLimit } from '../services/usageService';
 import { searchCityByName } from '../services/geoService';
 import { fetchForecast, getActivityIcon, getScoreColor } from '../services/weatherService';
 import { calculateActivityScore, ActivityScore, ActivityWeatherData } from '../services/activityService';
@@ -189,7 +189,12 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
             setReport(text);
             setReportDate(new Date());
             setShowModal(true); // Open modal on success
-            trackAiCall();
+            
+            // Deduct credits
+            const usedBaroCredit = trackBaroCall();
+            if (!usedBaroCredit) {
+                trackAiCall();
+            }
 
         } catch (e: any) {
             console.error("Baro Generation Error:", e);

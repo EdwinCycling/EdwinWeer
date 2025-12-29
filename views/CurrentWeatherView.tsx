@@ -18,6 +18,7 @@ import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { FlagIcon } from '../components/FlagIcon';
 import { AppLanguage } from '../types';
+import { CreditFloatingButton } from '../components/CreditFloatingButton';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -508,6 +509,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             />
         </div>
       )}
+
+      <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
 
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
       

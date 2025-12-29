@@ -68,6 +68,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
             body: JSON.stringify({
                 priceId: priceId,
                 userId: user.uid,
+                locale: settings.language,
                 returnUrl: window.location.origin + window.location.pathname
             }),
         });
@@ -265,10 +266,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </div>
                 
                 <h3 className="text-2xl font-bold mb-2">Baro Weerman</h3>
-                <p className="text-purple-200 mb-2">Het meest gepersonaliseerde weerbericht ter wereld.</p>
-                <p className="text-[11px] font-medium text-purple-300 mb-4 uppercase tracking-wide">
-                    + 500 Credits
-                </p>
+                <p className="text-purple-200 mb-6">Het meest gepersonaliseerde weerbericht ter wereld.</p>
                 <div className="text-4xl font-bold mb-8">
                     $ 2,50 <span className="text-sm font-normal text-purple-200">eenmalig</span>
                 </div>
