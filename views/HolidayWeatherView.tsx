@@ -261,49 +261,33 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                  const chunkMax = getMemberData('temperature_2m_max').slice(startIndex, startIndex + 7);
                  const chunkMin = getMemberData('temperature_2m_min').slice(startIndex, startIndex + 7);
                  const chunkPrecip = getMemberData('precipitation_sum').slice(startIndex, startIndex + 7);
-                 const chunkSunshine = getMemberData('sunshine_duration').slice(startIndex, startIndex + 7);
                  const chunkWind = getMemberData('wind_speed_10m_max').slice(startIndex, startIndex + 7);
                  const chunkTime = daily.time.slice(startIndex, startIndex + 7);
 
                  const validMax = chunkMax.filter((x: any) => x !== null);
                  const validMin = chunkMin.filter((x: any) => x !== null);
-                 const validSunshine = chunkSunshine.filter((x: any) => x !== null);
                  const validWind = chunkWind.filter((x: any) => x !== null);
                  
                  const avgMax = validMax.length ? Math.max(...validMax) : 0; // Absolute Max
                  const avgMin = validMin.length ? Math.min(...validMin) : 0; // Absolute Min
                  const totalRain = chunkPrecip.reduce((a: number, b: number) => a + (b || 0), 0);
                  
-                 const avgDailySunshine = chunkTime.reduce((acc: number, _, idx: number) => {
-                     const sun = chunkSunshine[idx] ?? 0;
-                     const daylight = daily.daylight_duration ? daily.daylight_duration[startIndex + idx] : 43200;
-                     const perc = daylight > 0 ? (sun / daylight) * 100 : 0;
-                     return acc + perc;
-                 }, 0) / 7;
-
                  const avgWind = validWind.length ? validWind.reduce((a: number, b: number) => a + b, 0) / validWind.length : 0;
 
                  summary = {
                      avgMax: convertTemp(avgMax, settings.tempUnit),
                      avgMin: convertTemp(avgMin, settings.tempUnit),
                      totalRain: convertPrecip(totalRain, settings.precipUnit),
-                     avgDailySunshine: avgDailySunshine, // Now Percentage
                      avgWind: convertWind(avgWind, settings.windUnit)
                  };
 
                  forecastData = chunkTime.map((time: string, idx: number) => {
-                    const sunSeconds = chunkSunshine[idx] ?? 0;
-                    const daylightSeconds = daily.daylight_duration ? daily.daylight_duration[startIndex + idx] : 43200; // fallback 12h
-                    const sunPercentage = daylightSeconds > 0 ? (sunSeconds / daylightSeconds) * 100 : 0;
-
                     return {
                         time,
                         date: new Date(time).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric' }),
                         max: convertTemp(chunkMax[idx] ?? 0, settings.tempUnit),
                         min: convertTemp(chunkMin[idx] ?? 0, settings.tempUnit),
                         precip: convertPrecip(chunkPrecip[idx], settings.precipUnit),
-                        sunshine: sunPercentage, // Store as percentage
-                        sunshineHours: parseFloat((sunSeconds / 3600).toFixed(1)), // Keep hours for display if needed
                         wind: chunkWind[idx] !== null ? convertWind(chunkWind[idx], settings.windUnit) : null
                     };
                  });
@@ -375,9 +359,8 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
           const d = new Date(week.startDate);
           d.setDate(d.getDate() + i);
           
-          let sumMax = 0, sumMin = 0, sumPrecip = 0, sumSunshineSeconds = 0, sumDaylightSeconds = 0, sumWind = 0;
+          let sumMax = 0, sumMin = 0, sumPrecip = 0, sumWind = 0;
           let count = 0;
-          let sunCount = 0;
 
           const yearValues: any = {};
 
@@ -386,20 +369,12 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                   const max = hYear.daily.temperature_2m_max[i];
                   const min = hYear.daily.temperature_2m_min[i];
                   const precip = hYear.daily.precipitation_sum[i];
-                  const sun = hYear.daily.sunshine_duration[i];
-                  const daylight = hYear.daily.daylight_duration ? hYear.daily.daylight_duration[i] : 43200; // fallback
                   const wind = hYear.daily.wind_speed_10m_max[i];
                   
                   if (max !== null && min !== null) {
                       sumMax += max;
                       sumMin += min;
                       sumPrecip += (precip || 0);
-                      
-                      if (sun !== null) {
-                          sumSunshineSeconds += sun;
-                          sumDaylightSeconds += daylight;
-                          sunCount++;
-                      }
                       
                       sumWind += (wind || 0);
                       count++;
@@ -408,9 +383,6 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                           yearValues[`max_${yIdx}`] = convertTemp(max, settings.tempUnit);
                           yearValues[`min_${yIdx}`] = convertTemp(min, settings.tempUnit);
                           
-                          const ySunPerc = daylight > 0 ? (sun / daylight) * 100 : 0;
-                          yearValues[`sunshine_${yIdx}`] = sun !== null ? Math.round(ySunPerc) : null;
-                          
                           yearValues[`wind_${yIdx}`] = wind !== null ? convertWind(wind, settings.windUnit) : null;
                       }
                   }
@@ -418,17 +390,11 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
           });
 
           if (count > 0) {
-              const avgSunSeconds = sunCount > 0 ? sumSunshineSeconds / sunCount : 0;
-              const avgDaylightSeconds = sunCount > 0 ? sumDaylightSeconds / sunCount : 43200;
-              const avgSunPercentage = avgDaylightSeconds > 0 ? (avgSunSeconds / avgDaylightSeconds) * 100 : 0;
-
               days.push({
                   date: d.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric' }),
                   max: convertTemp(sumMax / count, settings.tempUnit),
                   min: convertTemp(sumMin / count, settings.tempUnit),
                   precip: convertPrecip(sumPrecip / count, settings.precipUnit),
-                  sunshine: parseFloat(avgSunPercentage.toFixed(1)), // Percentage
-                  sunshineHours: parseFloat((avgSunSeconds / 3600).toFixed(1)),
                   wind: convertWind(sumWind / count, settings.windUnit),
                   ...yearValues
               });

@@ -36,7 +36,14 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
   const { user, loading, logout, sessionExpiry } = useAuth();
-  const [currentView, setCurrentView] = useState<ViewState>(ViewState.CURRENT);
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+      // Check if returning from Stripe payment
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') === 'true') {
+          return ViewState.PRICING;
+      }
+      return ViewState.CURRENT;
+  });
   const [previousView, setPreviousView] = useState<ViewState | null>(null);
   const [viewParams, setViewParams] = useState<any>(null);
 
@@ -60,14 +67,6 @@ const App: React.FC = () => {
       setCurrentView(view);
       setViewParams(params || null);
   };
-
-  // Check for Stripe return
-  useEffect(() => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('success') === 'true') {
-          setCurrentView(ViewState.PRICING);
-      }
-  }, []);
 
   useEffect(() => {
       saveSettings(settings);

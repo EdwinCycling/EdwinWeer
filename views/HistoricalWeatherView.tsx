@@ -59,8 +59,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     rainSum2: 0,
     windMax1: 0,
     windMax2: 0,
-    sunTotal1: 0,
-    sunTotal2: 0,
     windDirAvg1: 0,
     windDirAvg2: 0,
     code1: 0,
@@ -278,7 +276,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
               wind1: convertWind((data1.hourly.wind_speed_10m?.[h] || 0), settings.windUnit),
               rain1: convertPrecip((data1.hourly.precipitation?.[h] || 0), settings.precipUnit),
               windDir1: data1.hourly.wind_direction_10m?.[h] || 0,
-              sun1: (data1.hourly.sunshine_duration?.[h] || 0) / 60,
             };
           });
 
@@ -296,7 +293,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
           setStats({ diff: 0, currentAvg: tMax1, pastAvg: 0 });
 
-          const sunSec1 = data1.daily?.sunshine_duration?.[0] ?? processed.slice(0, 24).reduce((a, c) => a + ((c.sun1 || 0) * 60), 0);
           const rainRaw1 = data1.daily?.precipitation_sum?.[0] ?? data1.hourly.precipitation.reduce((a: any, b: any) => a + (b || 0), 0);
           const windRaw1 = data1.daily?.wind_speed_10m_max?.[0] ?? Math.max(...(data1.hourly.wind_speed_10m || []));
 
@@ -323,8 +319,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             rainSum2: 0,
             windMax1: convertWind(windRaw1, settings.windUnit),
             windMax2: 0,
-            sunTotal1: sunSec1,
-            sunTotal2: 0,
             windDirAvg1,
             windDirAvg2: 0,
             code1: data1.daily?.weather_code?.[0] || 0,
@@ -401,8 +395,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 rain2: convertPrecip((data2.hourly.precipitation?.[h] || 0), settings.precipUnit),
                 windDir1: data1.hourly.wind_direction_10m?.[h] || 0,
                 windDir2: data2.hourly.wind_direction_10m?.[h] || 0,
-                sun1: (data1.hourly.sunshine_duration?.[h] || 0) / 60,
-                sun2: (data2.hourly.sunshine_duration?.[h] || 0) / 60,
             };
         });
         
@@ -441,10 +433,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             diff: parseFloat((tMax1 - tMax2).toFixed(1))
         });
 
-        // Sunshine (seconds)
-        const sunSec1 = data1.daily?.sunshine_duration?.[0] ?? processed.reduce((a,c)=> a + ((c.sun1||0)*60), 0);
-        const sunSec2 = data2.daily?.sunshine_duration?.[0] ?? processed.reduce((a,c)=> a + ((c.sun2||0)*60), 0);
-        
         // Rain (mm raw) -> convert
         const rainRaw1 = data1.daily?.precipitation_sum?.[0] ?? data1.hourly.precipitation.reduce((a:any, b:any) => a + (b||0), 0);
         const rainRaw2 = data2.daily?.precipitation_sum?.[0] ?? data2.hourly.precipitation.reduce((a:any, b:any) => a + (b||0), 0);
@@ -473,8 +461,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
           rainSum2: convertPrecip(rainRaw2, settings.precipUnit),
           windMax1: convertWind(windRaw1, settings.windUnit),
           windMax2: convertWind(windRaw2, settings.windUnit),
-          sunTotal1: sunSec1,
-          sunTotal2: sunSec2,
           windDirAvg1,
           windDirAvg2,
           code1: data1.daily?.weather_code?.[0] || 0,
@@ -635,25 +621,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             });
         }
 
-        // 3. Sunshine / Solar
-        const sunDiffHours = (detail.sunTotal1 - detail.sunTotal2) / 3600;
-        if (Math.abs(sunDiffHours) > 1) {
-            insights.push({
-                icon: 'wb_sunny',
-                title: isNL ? 'Zonneschijn' : 'Sunshine',
-                desc: isNL 
-                    ? `${Math.abs(sunDiffHours).toFixed(1)} uur ${sunDiffHours > 0 ? 'meer' : 'minder'} zon op ${d1Name}.`
-                    : `${Math.abs(sunDiffHours).toFixed(1)} hours ${sunDiffHours > 0 ? 'more' : 'less'} sun.`,
-                color: 'text-amber-500'
-            });
-        } else {
-             insights.push({
-                icon: 'wb_sunny',
-                title: isNL ? 'Zonneschijn' : 'Sunshine',
-                desc: isNL ? 'De hoeveelheid zon is vergelijkbaar.' : 'Sunshine duration is similar.',
-                color: 'text-amber-400'
-            });
-        }
+        // 3. Sunshine / Solar - REMOVED
 
         // 4. Wind
         const windDiff = detail.windMax1 - detail.windMax2;
@@ -716,25 +684,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             color: score1 >= 7 ? 'text-green-600' : 'text-orange-600'
         });
 
-        // 7. Solar Panels
-        const sunDiffPct = detail.sunTotal2 > 0 ? ((detail.sunTotal1 - detail.sunTotal2) / detail.sunTotal2) * 100 : 0;
-        if (Math.abs(sunDiffPct) > 20 && detail.sunTotal1 > 3600) {
-             insights.push({
-                icon: 'solar_power',
-                title: isNL ? 'Zonne-energie' : 'Solar Energy',
-                desc: isNL 
-                    ? `Zonnepanelen leverden ca. ${Math.abs(sunDiffPct).toFixed(0)}% ${sunDiffPct > 0 ? 'meer' : 'minder'} op tijdens ${d1Name}.`
-                    : `Solar yield was approx ${Math.abs(sunDiffPct).toFixed(0)}% ${sunDiffPct > 0 ? 'higher' : 'lower'} on ${d1Name}.`,
-                color: 'text-yellow-600'
-            });
-        } else {
-             insights.push({
-                icon: 'solar_power',
-                title: isNL ? 'Zonne-energie' : 'Solar Energy',
-                desc: isNL ? 'Vergelijkbare opbrengst voor zonnepanelen.' : 'Similar solar yield.',
-                color: 'text-yellow-600'
-            });
-        }
+        // 7. Solar Panels - REMOVED
 
         // 8. Temp Variation
         const range1 = detail.tempMax1 - detail.tempMin1;
@@ -779,11 +729,11 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
         }
 
         // 10. The Verdict (Winner)
-        const scoreDay = (sun: number, t: number, r: number, w: number) => {
-            return (sun/3600) + (t/3) - (r*1.5) - (w/10);
+        const scoreDay = (t: number, r: number, w: number) => {
+            return (t/3) - (r*1.5) - (w/10);
         };
-        const s1 = scoreDay(detail.sunTotal1, detail.tempMax1, detail.rainSum1, detail.windMax1);
-        const s2 = scoreDay(detail.sunTotal2, detail.tempMax2, detail.rainSum2, detail.windMax2);
+        const s1 = scoreDay(detail.tempMax1, detail.rainSum1, detail.windMax1);
+        const s2 = scoreDay(detail.tempMax2, detail.rainSum2, detail.windMax2);
         
         insights.push({
             icon: 'emoji_events',
@@ -804,7 +754,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
              
              const getPrecip = (ctx: any, idx: number) => ctx?.daily?.precipitation_sum?.[idx] || 0;
              const getTMax = (ctx: any, idx: number) => convertTemp(ctx?.daily?.temperature_2m_max?.[idx] || 0, settings.tempUnit);
-             const getSun = (ctx: any, idx: number) => (ctx?.daily?.sunshine_duration?.[idx] || 0) / 3600;
 
              // Index 6 is the target date (date1/date2). 0-5 are previous days. 7 is next day.
              // Verify dates? Assuming API is consistent.
@@ -920,23 +869,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   });
              }
 
-             // 16. Sun Streak
-             const sunny1 = getSun(context1, targetIdx) > 5 && getSun(context1, targetIdx-1) > 5 && getSun(context1, targetIdx-2) > 5;
-             if (sunny1) {
-                 insights.push({
-                      icon: 'light_mode',
-                      title: isNL ? 'Zonnige Reeks' : 'Sun Streak',
-                      desc: isNL ? `Een reeks zonnige dagen rond ${d1Name}.` : `A streak of sunny days around ${d1Name}.`,
-                      color: 'text-yellow-500'
-                  });
-             } else {
-                 insights.push({
-                      icon: 'cloud',
-                      title: isNL ? 'Zon Afwisseling' : 'Mixed Sun',
-                      desc: isNL ? `Afwisselend zon en bewolking rond ${d1Name}.` : `Mixed sun and clouds around ${d1Name}.`,
-                      color: 'text-slate-400'
-                  });
-             }
+             // 16. Sun Streak - REMOVED
 
              // 17. Stability
              // check variance of max temp

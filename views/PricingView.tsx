@@ -28,12 +28,32 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
     const init = async () => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('success') === 'true') {
-            if (user?.uid) {
-                // Force sync with remote to get updated credits
-                await loadRemoteUsage(user.uid);
-                setUsageStats(getUsage());
-            }
+            // Only proceed if user is loaded
+            if (!user?.uid) return;
+
             setShowSuccess(true);
+            
+            // Poll for credit updates (webhook latency)
+            const checkCredits = async () => {
+                try {
+                    await loadRemoteUsage(user.uid);
+                    setUsageStats(getUsage());
+                } catch (e) {
+                    console.error("Error refreshing credits:", e);
+                }
+            };
+
+            // Initial check
+            await checkCredits();
+
+            // Retry a few times
+            let retries = 0;
+            const interval = setInterval(async () => {
+                retries++;
+                await checkCredits();
+                if (retries >= 5) clearInterval(interval);
+            }, 2000);
+
             // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
         }
@@ -187,17 +207,22 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
             <div className="bg-white dark:bg-card-dark rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden flex flex-col">
                 <h3 className="text-2xl font-bold mb-2">{t('pricing.free_name')}</h3>
                 <p className="text-slate-500 dark:text-white/60 mb-2">{t('pricing.free_description')}</p>
-                <p className="text-[11px] font-medium text-slate-400 dark:text-white/40 mb-6 uppercase tracking-wide">
-                    Tot {API_LIMITS.FREE.DAY} calls/dag • {API_LIMITS.FREE.MONTH} calls/maand
-                </p>
                 <div className="text-4xl font-bold mb-8">
                     $0
                     <span className="text-lg font-normal text-slate-400">{t('pricing.per_month')}</span>
                 </div>
 
                 <ul className="space-y-4 mb-8">
-                    <li className="flex items-center gap-3">
-                        <Icon name="check_circle" className="text-green-500" />
+                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <Icon name="check" className="text-green-500" />
+                        <span>Tot {API_LIMITS.FREE.DAY} calls per dag</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <Icon name="calendar_month" className="text-green-500" />
+                        <span>{API_LIMITS.FREE.MONTH} calls per maand</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                        <Icon name="check" className="text-green-500" />
                         <span>{t('pricing.free_feature_traffic')}</span>
                     </li>
                 </ul>
@@ -217,9 +242,6 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 
                 <h3 className="text-2xl font-bold mb-2">{t('pricing.pro_name')}</h3>
                 <p className="text-slate-300 mb-2">{t('pricing.pro_description')}</p>
-                <p className="text-[11px] font-medium text-slate-400 mb-4 uppercase tracking-wide">
-                    Tot {API_LIMITS.PRO.DAY} calls/dag • {API_LIMITS.PRO.MONTH} calls/maand
-                </p>
                 <div className="text-4xl font-bold mb-8">
                     {t('pricing.pro_price')}
                     <span className="text-sm font-normal text-slate-400"> eenmalig</span>

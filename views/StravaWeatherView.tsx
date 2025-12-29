@@ -29,7 +29,6 @@ interface ChartDataPoint {
     wind: number; // variable unit
     windKmh: number;
     windDir: number; // degrees
-    sun: number; // minutes
     lat?: number;
     lon?: number;
 }
@@ -39,7 +38,6 @@ interface ExtendedRideData extends RideData {
     endTimeStr?: string;
     avgWindDir?: number; 
     avgWindText?: string; 
-    sunPercentage?: number;
     startTemp?: number;
     endTemp?: number;
 }
@@ -421,7 +419,6 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     const windKmh = convertWind(data.hourly.wind_speed_10m[hour], WindUnit.KMH);
                     const rain = convertPrecip(data.hourly.precipitation[hour], settings.precipUnit);
                     const windDir = data.hourly.wind_direction_10m[hour] || 0;
-                    const sun = data.hourly.sunshine_duration ? (data.hourly.sunshine_duration[hour] / 60) : 0; // minutes
 
                     windDirs.push(windDir);
 
@@ -434,7 +431,6 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                         wind,
                         windKmh,
                         windDir,
-                        sun,
                         lat: pt.lat,
                         lon: pt.lon
                     });
@@ -670,14 +666,6 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                         <div>
                             <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('end_temp')}</p>
                             <p className="text-xl font-bold">{rideData.endTemp}°</p>
-                        </div>
-                    </div>
-
-                    <div className="bg-orange-50 dark:bg-orange-500/10 p-3 rounded-2xl border border-orange-100 dark:border-orange-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-orange-500"><Icon name="wb_sunny" /></div>
-                        <div>
-                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('sun_percent')}</p>
-                            <p className="text-xl font-bold text-orange-600 dark:text-orange-100">{rideData.sunPercentage}%</p>
                         </div>
                     </div>
 
