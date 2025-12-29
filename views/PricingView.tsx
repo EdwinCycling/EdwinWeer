@@ -4,6 +4,8 @@ import { Icon } from '../components/Icon';
 import { ViewState, AppSettings } from '../types';
 import { getTranslation } from '../services/translations';
 import { useAuth } from '../contexts/AuthContext';
+import { API_LIMITS } from '../services/apiConfig';
+import { getUsage, UsageStats } from '../services/usageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -15,8 +17,12 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
 
   useEffect(() => {
+    // Load usage stats
+    setUsageStats(getUsage());
+
     // Check for success query param
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'true') {
@@ -25,6 +31,10 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
         window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
+
+  const hasProCredits = (usageStats?.weatherCredits || 0) > 0;
+  const hasBaroCredits = (usageStats?.baroCredits || 0) > 0;
+  const hasAnyCredits = hasProCredits || hasBaroCredits;
 
   const handleBuy = async (priceId: string) => {
     if (!user) {
@@ -108,19 +118,18 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
 
         <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">{t('pricing.subtitle')}</h2>
-            <p className="text-slate-500 dark:text-white/60">{t('pricing.subtitle_desc')}</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Tier */}
-            <div className="bg-white dark:bg-card-dark rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden">
+            <div className="bg-white dark:bg-card-dark rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden flex flex-col">
                 <h3 className="text-2xl font-bold mb-2">{t('pricing.free_name')}</h3>
                 <p className="text-slate-500 dark:text-white/60 mb-2">{t('pricing.free_description')}</p>
                 <p className="text-[11px] font-medium text-slate-400 dark:text-white/40 mb-6 uppercase tracking-wide">
-                    {t('pricing.free_limits')}
+                    Tot {API_LIMITS.FREE.DAY} calls/dag • {API_LIMITS.FREE.MONTH} calls/maand
                 </p>
                 <div className="text-4xl font-bold mb-8">
-                    €0
+                    $0
                     <span className="text-lg font-normal text-slate-400">{t('pricing.per_month')}</span>
                 </div>
 
@@ -131,9 +140,11 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </li>
                 </ul>
 
-                <button className="w-full py-3 rounded-xl bg-slate-100 dark:bg-white/10 font-bold text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors mt-auto">
-                    {t('pricing.free_button')}
-                </button>
+                {!hasProCredits && (
+                    <button className="w-full py-3 rounded-xl bg-slate-100 dark:bg-white/10 font-bold text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors mt-auto">
+                        {t('pricing.free_button')}
+                    </button>
+                )}
             </div>
 
             {/* Pro Tier */}
@@ -145,10 +156,10 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <h3 className="text-2xl font-bold mb-2">{t('pricing.pro_name')}</h3>
                 <p className="text-slate-300 mb-2">{t('pricing.pro_description')}</p>
                 <p className="text-[11px] font-medium text-slate-400 mb-4 uppercase tracking-wide">
-                    {t('pricing.pro_limits')}
+                    Tot {API_LIMITS.PRO.DAY} calls/dag • {API_LIMITS.PRO.MONTH} calls/maand
                 </p>
                 <div className="text-2xl font-bold mb-8">
-                    € 4,99
+                    {t('pricing.pro_price')}
                     <span className="text-lg font-normal text-slate-400"> / 100 Credits</span>
                 </div>
 
@@ -159,12 +170,18 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </li>
                 </ul>
 
+                {hasProCredits && (
+                    <div className="mb-4 p-3 bg-white/10 rounded-xl text-center">
+                        <p className="text-sm text-slate-300">Je hebt nog <strong className="text-white">{usageStats?.weatherCredits}</strong> credits</p>
+                    </div>
+                )}
+
                 <button 
                     onClick={() => handleBuy(import.meta.env.VITE_STRIPE_PRICE_WEATHER)}
                     disabled={loading}
                     className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-colors mt-auto flex items-center justify-center gap-2"
                 >
-                    {loading ? 'Laden...' : 'Koop Bundel'}
+                    {loading ? 'Laden...' : t('pricing.pro_button')}
                 </button>
             </div>
 
@@ -180,7 +197,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     + 500 Credits
                 </p>
                 <div className="text-2xl font-bold mb-8">
-                    € 14,99 <span className="text-sm font-normal text-purple-200">eenmalig</span>
+                    $ 2,50 <span className="text-sm font-normal text-purple-200">eenmalig</span>
                 </div>
 
                 <ul className="space-y-2 mb-8">
@@ -192,9 +209,13 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         <Icon name="person" className="text-pink-400" />
                         <span>Profiel voorkeuren</span>
                     </li>
+                    <li className="flex items-center gap-3 text-sm text-purple-100">
+                        <Icon name="mail" className="text-pink-400" />
+                        <span>Mail mogelijkheden + Schedules</span>
+                    </li>
                      <li className="flex items-center gap-3 text-sm text-purple-100">
                         <Icon name="bolt" className="text-pink-400" />
-                        <span>500 Baro Credits</span>
+                        <span>500 Baro Credits (500 persoonlijke weerberichten)</span>
                     </li>
                 </ul>
 
@@ -206,6 +227,13 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     {loading ? 'Laden...' : 'Koop Baro Pro'}
                 </button>
             </div>
+        </div>
+
+        <div className="mt-12 text-center border-t border-slate-200 dark:border-white/10 pt-8">
+            <p className="text-slate-500 dark:text-white/40 text-sm flex items-center justify-center gap-2">
+                <Icon name="lock" className="text-base" />
+                Alle betalingen verlopen veilig via Stripe.com, het meest betrouwbare betaalplatform ter wereld.
+            </p>
         </div>
       </div>
     </div>
