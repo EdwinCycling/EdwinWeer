@@ -178,26 +178,19 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
 }
 
 export const handler = async (event, context) => {
-    // FORCE TEST EMAIL (User Request)
-    console.log("Attempting to send force test email...");
-    try {
-        const testSent = await sendEmail("edwin@editsolutions.nl", "Edwin Test", "test", "test mail");
-        console.log("Force test email result:", testSent);
-    } catch (testError) {
-        console.error("Force test email failed:", testError);
-    }
-
     if (!db) {
         return { statusCode: 500, body: "Database error" };
     }
 
     const now = new Date();
+    console.log(`Scheduler run at (server time): ${now.toISOString()}`);
 
     try {
         // 1. Fetch all users
         const usersSnapshot = await db.collection('users').get();
         const usersToProcess = usersSnapshot.docs;
         
+        console.log(`Found ${usersToProcess.length} users to check.`);
         const results = [];
 
         for (const doc of usersToProcess) {
@@ -210,6 +203,7 @@ export const handler = async (event, context) => {
             
             // Check if email schedule is enabled
             if (!baroProfile || !baroProfile.emailSchedule || !baroProfile.emailSchedule.enabled) {
+                // console.log(`User ${userId}: Schedule disabled or no profile.`);
                 continue;
             }
 
@@ -230,14 +224,23 @@ export const handler = async (event, context) => {
             else if (userHour === SLOTS.dinner) matchedSlot = 'dinner';
 
             if (!matchedSlot) {
+                console.log(`User ${userId}: Current hour ${userHour} (in ${timezone}) does not match any slot (7, 12, 17).`);
                 continue; 
             }
 
             // Check if this day matches the schedule
             const scheduleDays = baroProfile.emailSchedule.days || [];
-            const dayConfig = scheduleDays.find(d => d.day.toLowerCase() === userDayName);
+            // Normalise day names from DB to ensure they match English keys if stored differently, 
+            // though assuming front-end stores English keys like 'monday', 'tuesday' or objects with 'day': 'Monday'
+            const dayConfig = scheduleDays.find(d => d.day && d.day.toLowerCase() === userDayName);
 
-            if (!dayConfig || !dayConfig[matchedSlot]) {
+            if (!dayConfig) {
+                console.log(`User ${userId}: Day '${userDayName}' not found in schedule: ${JSON.stringify(scheduleDays)}`);
+                continue;
+            }
+
+            if (!dayConfig[matchedSlot]) {
+                console.log(`User ${userId}: Slot '${matchedSlot}' not enabled for ${userDayName}.`);
                 continue;
             }
 
@@ -252,6 +255,7 @@ export const handler = async (event, context) => {
             const auditDoc = await auditRef.get();
 
             if (auditDoc.exists) {
+                console.log(`User ${userId}: Already sent for ${auditKey}.`);
                 continue;
             }
 
@@ -300,6 +304,9 @@ export const handler = async (event, context) => {
                 continue;
             }
 
+            // Check for force flag in user settings
+            const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
+
             const sent = await sendEmail(userEmail, baroProfile.name || "User", `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, emailContent);
 
             if (sent) {
@@ -314,7 +321,7 @@ export const handler = async (event, context) => {
                         // Ignore update errors (e.g. if field missing)
                         console.log("Could not reset force flag", e);
                     }
-                } else if (auditRef) {
+                } else {
                     // 5. Audit Log
                     await auditRef.set({
                         userId,
