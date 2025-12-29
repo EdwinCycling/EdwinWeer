@@ -147,7 +147,7 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
                                 <span className="font-medium">{t('usage.this_month')}</span>
                             </div>
                             <div className="font-bold text-slate-800 dark:text-white">
-                                {usageStats.monthCount} / {API_LIMITS.MONTH}
+                                {usageStats.monthCount} / {(usageStats.weatherCredits > 0 ? API_LIMITS.PRO.MONTH : API_LIMITS.FREE.MONTH)}
                             </div>
                         </div>
                         <div className="p-4 flex items-center justify-between">

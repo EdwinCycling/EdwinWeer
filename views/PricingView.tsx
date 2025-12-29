@@ -5,7 +5,7 @@ import { ViewState, AppSettings } from '../types';
 import { getTranslation } from '../services/translations';
 import { useAuth } from '../contexts/AuthContext';
 import { API_LIMITS } from '../services/apiConfig';
-import { getUsage, UsageStats } from '../services/usageService';
+import { getUsage, UsageStats, loadRemoteUsage } from '../services/usageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -13,40 +13,50 @@ interface Props {
 }
 
 export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
-  const t = (key: string) => getTranslation(key, settings.language);
+  const t = (key: string, params?: Record<string, any>) => getTranslation(key, settings.language, params);
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ show: boolean, priceId: string | null }>({ show: false, priceId: null });
 
   useEffect(() => {
     // Load usage stats
     setUsageStats(getUsage());
 
     // Check for success query param
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('success') === 'true') {
-        setShowSuccess(true);
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, []);
+    const init = async () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('success') === 'true') {
+            if (user?.uid) {
+                // Force sync with remote to get updated credits
+                await loadRemoteUsage(user.uid);
+                setUsageStats(getUsage());
+            }
+            setShowSuccess(true);
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    };
+    
+    init();
+  }, [user]);
 
   const hasProCredits = (usageStats?.weatherCredits || 0) > 0;
   const hasBaroCredits = (usageStats?.baroCredits || 0) > 0;
   const hasAnyCredits = hasProCredits || hasBaroCredits;
 
-  const handleBuy = async (priceId: string) => {
+  const handleBuy = (priceId: string) => {
     if (!user) {
-        // Redirect to login or show warning
         alert('Log eerst in om credits te kopen.');
         return;
     }
+    setConfirmModal({ show: true, priceId });
+  };
 
-    if (!priceId) {
-        alert('Configuratiefout: Geen prijs ingesteld.');
-        return;
-    }
+  const startCheckout = async () => {
+    const priceId = confirmModal.priceId;
+    if (!user || !priceId) return;
 
     setLoading(true);
     try {
@@ -75,6 +85,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
         alert('Kan geen verbinding maken met het betalingssysteem.');
     } finally {
         setLoading(false);
+        setConfirmModal({ show: false, priceId: null });
     }
   };
 
@@ -103,6 +114,56 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         >
                             Sluiten & Verversen
                         </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {confirmModal.show && confirmModal.priceId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
+                    <div className="p-6">
+                        <h3 className="text-xl font-bold mb-4">
+                            {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER 
+                                ? t('pricing.confirm.title_weather') 
+                                : t('pricing.confirm.title_baro')}
+                        </h3>
+                        
+                        <p className="text-slate-600 dark:text-slate-300 mb-4">
+                            {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER 
+                                ? t('pricing.confirm.desc_weather', { amount: '10.000' })
+                                : t('pricing.confirm.desc_baro', { amount: '500' })}
+                        </p>
+
+                        {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-4 text-sm">
+                                <p className="font-bold text-blue-800 dark:text-blue-200 whitespace-pre-line">
+                                    {t('pricing.confirm.limits')}
+                                </p>
+                            </div>
+                        )}
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 flex items-start gap-2">
+                             <Icon name="lock" className="text-sm shrink-0 mt-0.5" />
+                             {t('pricing.confirm.stripe_info')}
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmModal({ show: false, priceId: null })}
+                                className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                {t('pricing.confirm.cancel')}
+                            </button>
+                            <button
+                                onClick={startCheckout}
+                                disabled={loading}
+                                className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
+                            >
+                                {loading ? '...' : t('pricing.confirm.continue')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -158,15 +219,27 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <p className="text-[11px] font-medium text-slate-400 mb-4 uppercase tracking-wide">
                     Tot {API_LIMITS.PRO.DAY} calls/dag • {API_LIMITS.PRO.MONTH} calls/maand
                 </p>
-                <div className="text-2xl font-bold mb-8">
+                <div className="text-4xl font-bold mb-8">
                     {t('pricing.pro_price')}
-                    <span className="text-lg font-normal text-slate-400"> / 100 Credits</span>
+                    <span className="text-sm font-normal text-slate-400"> eenmalig</span>
                 </div>
 
                 <ul className="space-y-2 mb-8">
                     <li className="flex items-center gap-3 text-sm text-slate-200">
-                        <Icon name="network_check" className="text-blue-400" />
-                        <span>{t('pricing.pro_feature_traffic')}</span>
+                        <Icon name="speed" className="text-blue-400" />
+                        <span>250 calls per dag</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-200">
+                        <Icon name="calendar_month" className="text-blue-400" />
+                        <span>2500 calls per maand</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-200">
+                        <Icon name="stars" className="text-blue-400" />
+                        <span>10.000 Weather Credits</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm text-slate-200">
+                        <Icon name="history" className="text-blue-400" />
+                        <span>Credits blijven onbeperkt geldig</span>
                     </li>
                 </ul>
 
@@ -196,7 +269,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <p className="text-[11px] font-medium text-purple-300 mb-4 uppercase tracking-wide">
                     + 500 Credits
                 </p>
-                <div className="text-2xl font-bold mb-8">
+                <div className="text-4xl font-bold mb-8">
                     $ 2,50 <span className="text-sm font-normal text-purple-200">eenmalig</span>
                 </div>
 
@@ -218,6 +291,12 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         <span>500 Baro Credits (500 persoonlijke weerberichten)</span>
                     </li>
                 </ul>
+
+                {hasBaroCredits && (
+                    <div className="mb-4 p-3 bg-white/10 rounded-xl text-center">
+                        <p className="text-sm text-purple-100">Je hebt nog <strong className="text-white">{usageStats?.baroCredits}</strong> Baro credits</p>
+                    </div>
+                )}
 
                 <button 
                     onClick={() => handleBuy(import.meta.env.VITE_STRIPE_PRICE_BARO)}

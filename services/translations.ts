@@ -13,7 +13,15 @@ const dictionaries = {
     es
 };
 
-export const getTranslation = (key: string, lang: AppLanguage): string => {
+export const getTranslation = (key: string, lang: AppLanguage, params?: Record<string, string | number>): string => {
     const dict = dictionaries[lang] || en;
-    return dict[key] || en[key] || key;
+    let text = dict[key] || en[key] || key;
+
+    if (params) {
+        Object.entries(params).forEach(([paramKey, value]) => {
+            text = text.replace(`{${paramKey}}`, String(value));
+        });
+    }
+
+    return text;
 };

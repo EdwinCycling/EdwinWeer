@@ -37,7 +37,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 // Mapping of Price IDs to Credit Amounts
 // REPLACE THESE WITH YOUR ACTUAL STRIPE PRICE IDs
 const CREDIT_PACKAGES = {
-    [process.env.STRIPE_PRICE_WEATHER]: { type: 'weatherCredits', amount: 100 },
+    [process.env.STRIPE_PRICE_WEATHER]: { type: 'weatherCredits', amount: 10000 },
     [process.env.STRIPE_PRICE_BARO]: { type: 'baroCredits', amount: 500 },
 };
 
