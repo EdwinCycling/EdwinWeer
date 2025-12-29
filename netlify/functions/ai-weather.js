@@ -99,7 +99,16 @@ export const handler = async (event) => {
           }
         : undefined,
       daily: {
-        time: safeSliceArray(daily.time, daysAhead),
+        time: safeSliceArray(daily.time, daysAhead).map(dateStr => {
+            // Add weekday name to date string for AI context
+            try {
+                const d = new Date(dateStr);
+                const dayName = d.toLocaleDateString(isDutch ? 'nl-NL' : 'en-GB', { weekday: 'long' });
+                return `${dateStr} (${dayName})`;
+            } catch (e) {
+                return dateStr;
+            }
+        }),
         weather_code: safeSliceArray(daily.weather_code, daysAhead),
         temperature_2m_max: safeSliceArray(daily.temperature_2m_max, daysAhead),
         temperature_2m_min: safeSliceArray(daily.temperature_2m_min, daysAhead),
@@ -147,6 +156,23 @@ export const handler = async (event) => {
     const lang = (language || 'nl').toLowerCase();
     const isDutch = lang === 'nl';
 
+    // Helper for explicit date formatting
+    const getFormattedDate = (dateStr) => {
+        try {
+            const d = dateStr ? new Date(dateStr) : new Date();
+            return d.toLocaleDateString(isDutch ? 'nl-NL' : 'en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
+    const todayFull = getFormattedDate(safeWeatherData.current?.time);
+
     let prompt = '';
     
     if (isDutch) {
@@ -157,6 +183,7 @@ export const handler = async (event) => {
           - Type Rapport: ${isGeneral ? 'ALGEMEEN WEERBERICHT' : 'Persoonlijk Weerbericht van Baro'}
           - Gebruiker: ${userSalutation}
           - Locatie: ${location}
+          - Datum Vandaag: ${todayFull} (Let op het jaartal!)
           - Gewenste stijl: ${styles}
           ${hasActivities ? `- Activiteiten: ${activities}` : ''}
           ${hasTimeOfDay ? `- Belangrijke dagdelen: ${timeOfDay}` : ''}
@@ -176,7 +203,7 @@ export const handler = async (event) => {
           1. AANHEF: Begin het bericht ALTIJD met "Beste ${userSalutation},".
           2. AFSLUITING: Eindig het bericht ALTIJD met "Groetjes van Baro".
           3. IDENTITEIT: Je bent Baro. Verwijs niet naar jezelf als AI of assistent.
-          4. DATUMS: Controleer de datums in de JSON data. Vandaag is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
+          4. DATUMS: HET IS VANDAAG: ${todayFull}. Gebruik dit als referentie. Controleer ALTIJD welke dag van de week bij een datum hoort in het huidige jaar.
           5. CONTENT: Vermeld NOOIT dat instellingen ontbreken. Als een veld leeg is, negeer het volledig.
           6. ACTIVITEITEN: Geef kwalitatief advies over de opgegeven activiteiten.
           7. VERVOER: Geef specifiek advies indien opgegeven.
@@ -185,7 +212,7 @@ export const handler = async (event) => {
           ${hasHayFever ? `10. HOOIKOORTS: Wijd een aparte alinea aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig (bijv. regen) of ongunstig (bijv. droog/wind) is.` : ''}
 
           Structuur:
-          - Korte introductie over het huidige weer door Baro.
+          - Korte introductie over het huidige weer (${todayFull}) door Baro.
           - Vooruitzicht voor de komende dagen.
           - Specifiek advies voor activiteiten/vervoer (indien van toepassing).
           - Afsluiting: Groetjes van Baro.
@@ -199,6 +226,7 @@ export const handler = async (event) => {
           - Report Type: ${isGeneral ? 'GENERAL REPORT' : 'Personal Weather Report by Baro'}
           - User: ${userSalutation}
           - Location: ${location}
+          - Today's Date: ${todayFull} (Check the year!)
           - Requested Style: ${styles}
           - Output Language: ${lang.toUpperCase()}
           ${hasActivities ? `- Activities: ${activities}` : ''}
@@ -220,7 +248,7 @@ export const handler = async (event) => {
           1. GREETING: ALWAYS start with "Dear ${userSalutation}," (or equivalent in ${lang}).
           2. CLOSING: ALWAYS end with "Best regards, Baro" (or equivalent in ${lang}, e.g., "Groetjes van Baro" for Dutch).
           3. IDENTITY: You are Baro. Do not refer to yourself as AI or an assistant.
-          4. DATES: Check the dates in the JSON data. Today is ${safeWeatherData.current?.time || new Date().toISOString().split('T')[0]}.
+          4. DATES: TODAY IS: ${todayFull}. Use this as reference. ALWAYS check the day of the week correctly for the current year.
           5. CONTENT: NEVER mention missing settings.
           6. ACTIVITIES: Provide qualitative advice.
           7. TRANSPORT: Give specific advice if listed.
@@ -229,7 +257,7 @@ export const handler = async (event) => {
           ${hasHayFever ? `10. HAY FEVER: Dedicate a separate paragraph to how the current weather affects hay fever (e.g., rain is good, wind/dry is bad).` : ''}
 
           Structure:
-          - Short introduction about current weather by Baro.
+          - Short introduction about current weather (${todayFull}) by Baro.
           - Outlook for coming days.
           - Specific advice for activities/transport (if applicable).
           - Closing: Best regards, Baro.

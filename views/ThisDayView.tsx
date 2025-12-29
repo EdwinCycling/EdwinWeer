@@ -516,9 +516,9 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
     };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       {/* Header - Copied from ClimateChangeView */}
-      <div className="flex-none p-4 space-y-4 sticky top-20 z-30 bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      <div className="flex-none p-4 space-y-4 relative z-40 bg-slate-50 dark:bg-slate-900 transition-colors duration-300 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
               <button onClick={() => onNavigate('CURRENT')} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full">
                   <Icon name="arrow_back" />

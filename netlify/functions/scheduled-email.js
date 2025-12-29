@@ -172,6 +172,15 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
 }
 
 export const handler = async (event, context) => {
+    // FORCE TEST EMAIL (User Request)
+    console.log("Attempting to send force test email...");
+    try {
+        const testSent = await sendEmail("edwin@editsolutions.nl", "Edwin Test", "test", "test mail");
+        console.log("Force test email result:", testSent);
+    } catch (testError) {
+        console.error("Force test email failed:", testError);
+    }
+
     if (!db) {
         return { statusCode: 500, body: "Database error" };
     }
