@@ -139,6 +139,7 @@ async function generateReport(weatherData, profile, userName) {
 // Helper: Send Email
 async function sendEmail(toEmail, toName, subject, htmlContent) {
     if (!process.env.BREVO_API_KEY) {
+        console.error("CRITICAL ERROR: BREVO_API_KEY is missing in environment variables. Cannot send email.");
         return false;
     }
 
@@ -163,10 +164,15 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
     sendSmtpEmail.to = [{ "email": toEmail, "name": toName }];
 
     try {
-        await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log(`Sending email to ${toEmail} via Brevo...`);
+        const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+        console.log("Brevo API Success:", JSON.stringify(data));
         return true;
     } catch (error) {
-        console.error("Error sending email:", error);
+        console.error("Error sending email via Brevo:", error);
+        if (error.body) {
+            console.error("Brevo Error Body:", JSON.stringify(error.body));
+        }
         return false;
     }
 }
