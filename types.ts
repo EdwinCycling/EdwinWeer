@@ -257,6 +257,7 @@ export interface CustomEvent {
     name: string;
     date: string; // MM-DD
     endDate?: string; // MM-DD
+    duration?: number; // 1-14 days
     profileId: string;
     location: Location;
     active: boolean;

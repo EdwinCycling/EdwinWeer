@@ -113,6 +113,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
             id: crypto.randomUUID(),
             active: true,
             date: '',
+            duration: 1,
             location: settings.baroProfiles?.[0] ? { 
                 name: settings.baroProfiles[0].location,
                 country: '', 
@@ -124,7 +125,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     };
 
     const handleEdit = (event: CustomEvent) => {
-        setCurrentEvent({ ...event });
+        setCurrentEvent({ ...event, duration: event.duration || 1 });
         setIsEditing(true);
     };
 
@@ -142,6 +143,10 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
         }
 
         const newEvent = currentEvent as CustomEvent;
+        // Ensure duration is set
+        if (!newEvent.duration) newEvent.duration = 1;
+        // Clear endDate if we use duration
+        delete newEvent.endDate;
         
         let newEvents = [...events];
         const index = newEvents.findIndex(e => e.id === newEvent.id);
@@ -238,7 +243,12 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                     <Icon name="diamond" className="text-primary" />
                     <span>Baro Credits: {baroCredits}</span>
                     {baroCredits <= 0 && (
-                        <a href="#" className="text-primary underline ml-2">Koop credits</a>
+                        <button 
+                            onClick={() => onNavigate(ViewState.PRICING)}
+                            className="text-primary underline ml-2 hover:text-primary/80"
+                        >
+                            Koop credits
+                        </button>
                     )}
                 </div>
             </div>
@@ -284,12 +294,25 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     value={currentEvent.date || ''} 
                                     onChange={val => setCurrentEvent({ ...currentEvent, date: val })} 
                                 />
-                                <DateSelector 
-                                    label="Periode t/m (Optioneel)" 
-                                    value={currentEvent.endDate || ''} 
-                                    onChange={val => setCurrentEvent({ ...currentEvent, endDate: val })} 
-                                    optional
-                                />
+                                
+                                {/* Duration Slider */}
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">
+                                        Duur: {currentEvent.duration || 1} {currentEvent.duration === 1 ? 'dag' : 'dagen'}
+                                    </label>
+                                    <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 h-[48px]">
+                                        <span className="text-xs text-slate-400">1</span>
+                                        <input 
+                                            type="range"
+                                            min="1"
+                                            max="14"
+                                            value={currentEvent.duration || 1}
+                                            onChange={(e) => setCurrentEvent({ ...currentEvent, duration: parseInt(e.target.value) })}
+                                            className="w-full accent-primary"
+                                        />
+                                        <span className="text-xs text-slate-400">14</span>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Profile */}
@@ -379,7 +402,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     <div>
                                         <h3 className="font-bold text-lg">{event.name}</h3>
                                         <p className="text-sm text-slate-500 dark:text-white/60">
-                                            {event.date} {event.endDate ? `- ${event.endDate}` : ''} • {event.location.name}
+                                            {event.date} • {event.duration || 1} {event.duration === 1 ? 'dag' : 'dagen'} • {event.location.name}
                                         </p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className={`text-xs px-2 py-0.5 rounded-md ${event.active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500'}`}>
@@ -438,6 +461,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                         <h4 className="font-bold mb-1">Hoe het werkt:</h4>
                         <ul className="list-disc list-inside text-sm space-y-1 text-slate-600 dark:text-slate-300">
                             <li>Kies een datum en locatie.</li>
+                            <li>Kies de duur van het evenement (1-14 dagen).</li>
                             <li>Selecteer een Baro profiel.</li>
                             <li>Je ontvangt emails op specifieke momenten voor de dag.</li>
                         </ul>

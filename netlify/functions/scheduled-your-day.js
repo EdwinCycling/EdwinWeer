@@ -65,8 +65,9 @@ async function generateReport(weatherData, event, diff, profileName, userName) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
 
-        const isPeriod = !!event.endDate;
-        const periodText = isPeriod ? ` en de periode tot ${event.endDate}` : '';
+        const duration = event.duration || 1;
+        const isPeriod = duration > 1 || !!event.endDate;
+        const periodText = isPeriod ? ` en de komende ${duration - 1} dagen` : '';
         
         // Determine instructions based on days left (diff)
         let scheduleInstruction = "";
@@ -82,7 +83,7 @@ async function generateReport(weatherData, event, diff, profileName, userName) {
           CONTEXT:
           - Gebruiker: ${userName}
           - Speciale Dag: "${event.name}"
-          - Datum van event: ${event.date} ${periodText}
+          - Datum van event: ${event.date} ${periodText} (Duur: ${duration} dagen)
           - Dagen tot event: ${diff}
           - Locatie: ${event.location.name}
           - Gekozen Profiel Naam: ${profileName}
