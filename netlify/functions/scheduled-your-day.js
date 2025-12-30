@@ -234,7 +234,14 @@ export const handler = async (event, context) => {
                 if (!userEmail) continue;
 
                 const emailHtml = await generateReport(weatherData, ev, diffDays, profile.name || 'Standaard', userName);
-                const sent = await sendEmail(userEmail, userName, `Weerbericht voor ${ev.name} (nog ${diffDays === 0 ? 'VANDAAG' : diffDays + ' dagen'})`, emailHtml);
+
+                // Prepare credits info for footer
+                const creditsInfo = {
+                    baroCredits: Math.max(0, baroCredits - 1),
+                    weatherCredits: usage.weatherCredits // if exists
+                };
+
+                const sent = await sendEmail(userEmail, userName, `Weerbericht voor ${ev.name} (nog ${diffDays === 0 ? 'VANDAAG' : diffDays + ' dagen'})`, emailHtml, creditsInfo);
 
                 if (sent) {
                     await auditRef.set({

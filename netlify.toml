@@ -23,6 +23,6 @@
   schedule = "@hourly"
 
 [functions."scheduled-your-day"]
-  schedule = "0 11 * * *"
+  schedule = "@hourly"
 
 
