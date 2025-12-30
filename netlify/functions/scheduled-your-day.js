@@ -201,6 +201,10 @@ export const handler = async (event, context) => {
                     continue;
                 }
 
+                // LOAD BALANCING: Add a small random delay (0-15s) to prevent hammering APIs
+                const delay = Math.floor(Math.random() * 15000);
+                await new Promise(resolve => setTimeout(resolve, delay));
+
                 // Check Credits
                 const usage = userData.usage || {};
                 const baroCredits = usage.baroCredits || 0;
