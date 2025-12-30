@@ -245,7 +245,20 @@ export const SettingsProfile: React.FC<Props> = ({
         // Check limit if turning ON
         if (!currentVal && isLimitReached) return;
 
-        newDays[dayIndex] = { ...newDays[dayIndex], [slot]: !currentVal };
+        // If turning ON, disable other slots for this day (Exclusive Selection)
+        if (!currentVal) {
+            newDays[dayIndex] = {
+                ...newDays[dayIndex],
+                breakfast: false,
+                lunch: false,
+                dinner: false,
+                [slot]: true
+            };
+        } else {
+            // If turning OFF, just toggle
+            newDays[dayIndex] = { ...newDays[dayIndex], [slot]: false };
+        }
+
         handleChange('emailSchedule', { ...schedule, days: newDays }, true);
     };
     

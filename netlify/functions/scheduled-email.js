@@ -251,12 +251,18 @@ export const handler = async (event, context) => {
             // Check match for slots
             let matchedSlot = null;
             
+            // Intelligent Load Balancing:
+            // For 'Breakfast', 'Lunch', 'Dinner', we target specific hours.
+            // We cannot spread them randomly over the day like the generic report, 
+            // because a Dinner email at 08:00 is weird.
+            // However, we strictly enforce the time match.
+            
             if (userHour === SLOTS.breakfast) matchedSlot = 'breakfast';
             else if (userHour === SLOTS.lunch) matchedSlot = 'lunch';
             else if (userHour === SLOTS.dinner) matchedSlot = 'dinner';
 
             if (!matchedSlot) {
-                console.log(`User ${userId}: Current hour ${userHour} (in ${timezone}) does not match any slot (7, 12, 17).`);
+                // console.log(`User ${userId}: Current hour ${userHour} (in ${timezone}) does not match any slot (7, 12, 17).`);
                 continue; 
             }
 
@@ -292,6 +298,11 @@ export const handler = async (event, context) => {
             }
 
             // --- PROCEED TO SEND ---
+            
+            // LOAD BALANCING: Add a small random delay (0-15s) to prevent hammering APIs
+            // This spreads the load within the function execution time (up to limit)
+            const delay = Math.floor(Math.random() * 15000);
+            await new Promise(resolve => setTimeout(resolve, delay));
 
             // 1. Get Location
             let lat = 52.3676; // Amsterdam default
