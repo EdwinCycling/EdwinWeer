@@ -1,6 +1,6 @@
 import { API_LIMITS, STORAGE_KEY } from './apiConfig';
 import { db } from "./firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 
 export interface DailyUsage {
     date: string;
@@ -263,6 +263,7 @@ export const deductBaroCredit = (): boolean => {
     if (stats.baroCredits > 0) {
         stats.baroCredits--;
         saveUsage(stats);
+        consumeCredit('baro', 1);
         return true;
     }
     return false;
@@ -406,6 +407,7 @@ export const trackBaroCall = (): boolean => {
 
         stats.baroCredits--;
         saveUsage(stats);
+        consumeCredit('baro', 1);
         return true;
     }
     return false;
@@ -431,12 +433,26 @@ export const resetDailyUsage = async (uid: string) => {
     stats.alerts.day80 = false;
     stats.alerts.day100 = false;
     
-    saveUsage(stats);
+    // Save locally without triggering full sync (which might overwrite credits)
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    } catch (e) {
+        console.error('Failed to save usage stats locally', e);
+    }
     
     if (db && uid) {
         try {
             const userRef = doc(db, 'users', uid);
-            await setDoc(userRef, { usage: stats }, { merge: true });
+            // Only update counters, DO NOT overwrite usage object (preserves credits)
+            await updateDoc(userRef, {
+                'usage.dayCount': 0,
+                'usage.aiCalls': 0,
+                'usage.aiCallsDayStart': stats.aiCallsDayStart,
+                'usage.minuteCount': 0,
+                'usage.hourCount': 0,
+                'usage.alerts.day80': false,
+                'usage.alerts.day100': false
+            });
         } catch (e) {
             console.error("Failed to reset remote usage", e);
         }

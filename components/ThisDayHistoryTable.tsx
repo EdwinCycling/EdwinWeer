@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Icon } from './Icon';
 import { AppSettings, WindUnit } from '../types';
 import { convertWind, convertTempPrecise, convertPrecip } from '../services/weatherService';
+import { getTranslation } from '../services/translations';
 
 interface YearStats {
     year: number;
@@ -30,6 +31,7 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
     title,
     subTitle
 }) => {
+    const t = (key: string) => getTranslation(key, settings.language);
     const [sortField, setSortField] = useState<SortField>('year');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -72,7 +74,14 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
     };
 
     const exportToCSV = () => {
-        const headers = ['Datum', 'Max Temp (°C)', 'Min Temp (°C)', 'Neerslag (mm)', 'Max Windstoot (Bft)', 'Max Windstoot (km/h)'];
+        const headers = [
+            t('history.table_date'), 
+            `${t('history.table_max_temp')} (°C)`, 
+            `${t('history.table_min_temp')} (°C)`, 
+            `${t('history.table_precip')} (mm)`, 
+            `${t('history.table_wind')} (Bft)`, 
+            `${t('history.table_wind')} (km/h)`
+        ];
         
         const rows = sortedData.map(row => {
             const bft = convertWind(row.gust, WindUnit.BFT);
@@ -89,7 +98,7 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
         });
 
         if (rows.length === 0) {
-             alert("Geen data om te exporteren.");
+             alert(t('history.no_data_export'));
              return;
         }
 
@@ -98,7 +107,7 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `weer_historie_${title.replace(/\s+/g, '_')}.csv`);
+        link.setAttribute('download', `${t('history.export_filename')}_${title.replace(/\s+/g, '_')}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -118,7 +127,7 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
                     >
                         <Icon name="download" />
-                        <span className="hidden sm:inline">Excel (CSV)</span>
+                        <span className="hidden sm:inline">{t('history.export_csv')}</span>
                     </button>
                     <button 
                         onClick={onClose}
@@ -136,19 +145,19 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
                         <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-white/5 sticky top-0 z-10">
                             <tr>
                                 <th onClick={() => handleSort('year')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
-                                    <div className="flex items-center gap-1">Datum {getSortIcon('year')}</div>
+                                    <div className="flex items-center gap-1">{t('history.table_date')} {getSortIcon('year')}</div>
                                 </th>
                                 <th onClick={() => handleSort('max')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
-                                    <div className="flex items-center gap-1">Max Temp {getSortIcon('max')}</div>
+                                    <div className="flex items-center gap-1">{t('history.table_max_temp')} {getSortIcon('max')}</div>
                                 </th>
                                 <th onClick={() => handleSort('min')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
-                                    <div className="flex items-center gap-1">Min Temp {getSortIcon('min')}</div>
+                                    <div className="flex items-center gap-1">{t('history.table_min_temp')} {getSortIcon('min')}</div>
                                 </th>
                                 <th onClick={() => handleSort('rain')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
-                                    <div className="flex items-center gap-1">Neerslag {getSortIcon('rain')}</div>
+                                    <div className="flex items-center gap-1">{t('history.table_precip')} {getSortIcon('rain')}</div>
                                 </th>
                                 <th onClick={() => handleSort('gust')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
-                                    <div className="flex items-center gap-1">Max Windstoot {getSortIcon('gust')}</div>
+                                    <div className="flex items-center gap-1">{t('history.table_wind')} {getSortIcon('gust')}</div>
                                 </th>
                             </tr>
                         </thead>

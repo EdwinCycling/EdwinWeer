@@ -8,15 +8,25 @@ service cloud.firestore {
 
     // Match the user document
     match /users/{userId} {
-      // Allow read/write only if the user is the owner
-      allow read, write: if isOwner(userId);
+      // Allow create/read if owner
+      allow create, read: if isOwner(userId);
+      
+      // Allow update if owner AND credits are not increased (prevents client-side hacking)
+      // Webhook uses Admin SDK which bypasses these rules
+      allow update: if isOwner(userId) && 
+        request.resource.data.usage.weatherCredits <= resource.data.usage.weatherCredits &&
+        request.resource.data.usage.baroCredits <= resource.data.usage.baroCredits;
       
       // Match the subcollection audit_logs
       match /audit_logs/{logId} {
-        // Allow read/write only if the user is the owner
-        // Typically logs are write-only or read-only for the user, but for now we allow both
         allow read, write: if isOwner(userId);
       }
+    }
+    
+    // Purchases collection (Transaction Log)
+    match /purchases/{purchaseId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false; // Only Admin SDK (webhook) can write
     }
     
     // Deny access to everything else by default

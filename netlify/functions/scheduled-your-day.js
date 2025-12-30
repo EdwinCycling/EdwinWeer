@@ -57,7 +57,7 @@ async function fetchWeatherData(lat, lon, days) {
     }
 }
 
-async function generateReport(weatherData, event, diff, profileName, userName) {
+async function generateReport(weatherData, event, diff, profileName, userName, language = 'nl') {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
@@ -67,17 +67,30 @@ async function generateReport(weatherData, event, diff, profileName, userName) {
 
         const duration = event.duration || 1;
         const isPeriod = duration > 1 || !!event.endDate;
-        const periodText = isPeriod ? ` en de komende ${duration - 1} dagen` : '';
+        const isNL = language === 'nl';
+
+        const periodText = isNL 
+            ? (isPeriod ? ` en de komende ${duration - 1} dagen` : '')
+            : (isPeriod ? ` and the coming ${duration - 1} days` : '');
         
         // Determine instructions based on days left (diff)
         let scheduleInstruction = "";
-        if (diff === 10) scheduleInstruction = "Het is nog 10 dagen weg. Hou het vaag en algemeen. Geef aan dat het nog ver weg is.";
-        else if (diff === 7) scheduleInstruction = "Nog een week te gaan. Geef een voorzichtige trend.";
-        else if (diff === 6) scheduleInstruction = "Nog 6 dagen. Iets meer detail, maar blijf voorzichtig.";
-        else if (diff <= 5 && diff > 0) scheduleInstruction = `Nog ${diff} dagen. Geef een concretere verwachting. ${isPeriod ? 'Neem nu ook de periode (vervolgdagen) mee in je verwachting.' : ''}`;
-        else if (diff === 0) scheduleInstruction = `VANDAAG is de dag! Geef een gedetailleerd weerbericht voor vandaag. ${isPeriod ? 'Neem ook de komende periode mee.' : ''}`;
+        
+        if (isNL) {
+            if (diff === 10) scheduleInstruction = "Het is nog 10 dagen weg. Hou het vaag en algemeen. Geef aan dat het nog ver weg is.";
+            else if (diff === 7) scheduleInstruction = "Nog een week te gaan. Geef een voorzichtige trend.";
+            else if (diff === 6) scheduleInstruction = "Nog 6 dagen. Iets meer detail, maar blijf voorzichtig.";
+            else if (diff <= 5 && diff > 0) scheduleInstruction = `Nog ${diff} dagen. Geef een concretere verwachting. ${isPeriod ? 'Neem nu ook de periode (vervolgdagen) mee in je verwachting.' : ''}`;
+            else if (diff === 0) scheduleInstruction = `VANDAAG is de dag! Geef een gedetailleerd weerbericht voor vandaag. ${isPeriod ? 'Neem ook de komende periode mee.' : ''}`;
+        } else {
+            if (diff === 10) scheduleInstruction = "It is still 10 days away. Keep it vague and general. Indicate that it is still far off.";
+            else if (diff === 7) scheduleInstruction = "One week to go. Give a cautious trend.";
+            else if (diff === 6) scheduleInstruction = "6 days left. A bit more detail, but remain cautious.";
+            else if (diff <= 5 && diff > 0) scheduleInstruction = `${diff} days left. Give a more concrete forecast. ${isPeriod ? 'Now also include the period (subsequent days) in your forecast.' : ''}`;
+            else if (diff === 0) scheduleInstruction = `TODAY is the day! Give a detailed weather report for today. ${isPeriod ? 'Also include the coming period.' : ''}`;
+        }
 
-        const prompt = `
+        const promptNL = `
           Je bent Baro, de persoonlijke weerman.
           
           CONTEXT:
@@ -103,18 +116,47 @@ async function generateReport(weatherData, event, diff, profileName, userName) {
           Maak het enthousiast!
         `;
 
-        const result = await model.generateContent(prompt);
+        const promptEN = `
+          You are Baro, the personal weatherman.
+          
+          CONTEXT:
+          - User: ${userName}
+          - Special Day: "${event.name}"
+          - Event Date: ${event.date} ${periodText} (Duration: ${duration} days)
+          - Days until event: ${diff}
+          - Location: ${event.location.name}
+          - Chosen Profile Name: ${profileName}
+          
+          INSTRUCTION FOR THIS MOMENT (Schedule):
+          ${scheduleInstruction}
+          
+          WEATHER DATA (JSON):
+          ${JSON.stringify(weatherData.daily)}
+          
+          ASSIGNMENT:
+          Write a fun, personal email for ${userName} about the outlook for "${event.name}".
+          Start with "Hi ${userName}," or a variation.
+          Refer to the name of the day ("${event.name}").
+          
+          Use HTML formatting (only body tags like <b>, <br>, <p>).
+          Make it enthusiastic!
+        `;
+
+        const result = await model.generateContent(isNL ? promptNL : promptEN);
         const response = await result.response;
         return response.text();
 
     } catch (e) {
         console.error("Error generating report:", e);
-        return "Kon geen weerbericht genereren.";
+        return language === 'nl' ? "Kon geen weerbericht genereren." : "Could not generate weather report.";
     }
 }
 
-async function sendEmail(toEmail, toName, subject, htmlContent) {
+async function sendEmail(toEmail, toName, subject, htmlContent, creditsInfo, language = 'nl') {
     if (!process.env.BREVO_API_KEY) return false;
+
+    const title = language === 'nl' ? 'Weerbericht Jouw Dag' : 'Weather Your Day';
+    const footer = language === 'nl' ? 'Verzonden door Baro' : 'Sent by Baro';
 
     const sendSmtpEmail = new Brevo.SendSmtpEmail();
     sendSmtpEmail.subject = subject;
@@ -122,12 +164,12 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
         <html>
             <body style="font-family: sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #ec4899;">Weerbericht Jouw Dag</h2>
+                    <h2 style="color: #ec4899;">${title}</h2>
                     <div style="background: #fff1f2; padding: 20px; border-radius: 12px; border: 1px solid #fda4af;">
                         ${htmlContent}
                     </div>
                     <p style="font-size: 12px; color: #64748b; margin-top: 20px; text-align: center;">
-                        Verzonden door Baro
+                        ${footer}
                     </p>
                 </div>
             </body>
@@ -243,7 +285,11 @@ export const handler = async (event, context) => {
 
                 if (!userEmail) continue;
 
-                const emailHtml = await generateReport(weatherData, ev, diffDays, profile.name || 'Standaard', userName);
+                // Determine Language
+                const language = userData.settings?.language || 'nl';
+                const isNL = language === 'nl';
+
+                const emailHtml = await generateReport(weatherData, ev, diffDays, profile.name || 'Standaard', userName, language);
 
                 // Prepare credits info for footer
                 const creditsInfo = {
@@ -251,7 +297,11 @@ export const handler = async (event, context) => {
                     weatherCredits: usage.weatherCredits // if exists
                 };
 
-                const sent = await sendEmail(userEmail, userName, `Weerbericht voor ${ev.name} (nog ${diffDays === 0 ? 'VANDAAG' : diffDays + ' dagen'})`, emailHtml, creditsInfo);
+                const subject = isNL 
+                    ? `Weerbericht voor ${ev.name} (nog ${diffDays === 0 ? 'VANDAAG' : diffDays + ' dagen'})`
+                    : `Weather report for ${ev.name} (${diffDays === 0 ? 'TODAY' : diffDays + ' days left'})`;
+
+                const sent = await sendEmail(userEmail, userName, subject, emailHtml, creditsInfo, language);
 
                 if (sent) {
                     await auditRef.set({

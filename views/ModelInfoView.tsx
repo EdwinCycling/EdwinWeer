@@ -87,14 +87,14 @@ export const ModelInfoView: React.FC<Props> = ({ onNavigate, settings, previousV
                 <div className="bg-green-50 dark:bg-green-500/10 p-4 rounded-xl border border-green-100 dark:border-green-500/20">
                   <div className="flex items-center gap-2 mb-2 text-green-700 dark:text-green-400 font-bold">
                     <Icon name="check_circle" />
-                    <span>Voordeel / Pro</span>
+                    <span>{t('model_info.pro')}</span>
                   </div>
                   <p className="text-sm">{t('model_info.ens_pro')}</p>
                 </div>
                 <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-100 dark:border-red-500/20">
                   <div className="flex items-center gap-2 mb-2 text-red-700 dark:text-red-400 font-bold">
                     <Icon name="warning" />
-                    <span>Nadeel / Con</span>
+                    <span>{t('model_info.con')}</span>
                   </div>
                   <p className="text-sm">{t('model_info.ens_con')}</p>
                 </div>

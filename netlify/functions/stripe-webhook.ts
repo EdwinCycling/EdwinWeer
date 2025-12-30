@@ -235,6 +235,31 @@ export const handler = async (event: any) => {
           await userRef.update(updateData);
           console.log(`[Stripe Webhook] Successfully updated credits for user ${userId}`);
 
+          // Transaction Log
+          try {
+              await db.collection('purchases').add({
+                  userId,
+                  email: session.customer_details?.email,
+                  name: session.customer_details?.name,
+                  sessionId: session.id,
+                  amountTotal: session.amount_total,
+                  currency: session.currency,
+                  items: lineItems.data.map(item => ({
+                      description: item.description,
+                      quantity: item.quantity,
+                      amount_total: item.amount_total,
+                      priceId: item.price?.id
+                  })),
+                  updates, // The credits added
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  date: new Date().toISOString()
+              });
+              console.log(`[Stripe Webhook] Logged purchase for user ${userId}`);
+          } catch (logError) {
+              console.error(`[Stripe Webhook] Failed to log purchase:`, logError);
+              // Don't fail the webhook if logging fails
+          }
+
           // Verify update
           const updatedDoc = await userRef.get();
           console.log(`[Stripe Webhook] User state after update:`, updatedDoc.data()?.usage);

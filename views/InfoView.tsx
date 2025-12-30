@@ -100,6 +100,13 @@ export const InfoView: React.FC<Props> = ({ onNavigate, settings }) => {
                     </div>
                 </div>
             </div>
+
+            <div className="bg-blue-50 dark:bg-blue-500/10 p-6 rounded-3xl border border-blue-100 dark:border-blue-500/20 text-center">
+                 <h3 className="text-xl font-bold mb-2 text-blue-800 dark:text-blue-200">{t('info.contact_title')}</h3>
+                 <p className="text-blue-700 dark:text-blue-200/80">
+                    {t('info.contact_desc')} <a href="mailto:askbaro@gmail.com" className="font-bold underline hover:text-blue-900 dark:hover:text-blue-100">askbaro@gmail.com</a>
+                 </p>
+            </div>
         </div>
       </div>
     </div>

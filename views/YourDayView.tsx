@@ -15,11 +15,16 @@ interface Props {
 }
 
 const MAX_EVENTS = 10;
-const MONTHS = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
 
-const DateSelector = ({ value, onChange, label, optional = false }: { value: string, onChange: (val: string) => void, label: string, optional?: boolean }) => {
+const DateSelector = ({ value, onChange, label, optional = false, t }: { value: string, onChange: (val: string) => void, label: string, optional?: boolean, t: (key: string) => string }) => {
     const [month, setMonth] = useState('');
     const [day, setDay] = useState('');
+
+    const months = [
+        t('month.jan'), t('month.feb'), t('month.mar'), t('month.apr'), 
+        t('month.may'), t('month.jun'), t('month.jul'), t('month.aug'), 
+        t('month.sep'), t('month.oct'), t('month.nov'), t('month.dec')
+    ];
 
     useEffect(() => {
         if (value) {
@@ -52,9 +57,9 @@ const DateSelector = ({ value, onChange, label, optional = false }: { value: str
                     }}
                     className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
                 >
-                    <option value="" disabled={!optional}>Maand</option>
-                    {optional && <option value="">- Geen -</option>}
-                    {MONTHS.map((m, i) => (
+                    <option value="" disabled={!optional}>{t('date.month')}</option>
+                    {optional && <option value="">- {t('none')} -</option>}
+                    {months.map((m, i) => (
                         <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
                     ))}
                 </select>
@@ -66,7 +71,7 @@ const DateSelector = ({ value, onChange, label, optional = false }: { value: str
                     }}
                     className="w-24 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
                 >
-                    <option value="" disabled={!optional}>Dag</option>
+                    <option value="" disabled={!optional}>{t('date.day')}</option>
                     {optional && <option value="">-</option>}
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                         <option key={d} value={String(d).padStart(2, '0')}>{d}</option>
@@ -130,7 +135,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     };
 
     const handleDelete = (id: string) => {
-        if (confirm(t('Are you sure you want to delete this event?'))) {
+        if (confirm(t('yourday.delete_confirm'))) {
             const newEvents = events.filter(e => e.id !== id);
             handleSaveEvents(newEvents);
         }
@@ -138,7 +143,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
 
     const handleSaveCurrent = () => {
         if (!currentEvent.name || !currentEvent.date || !currentEvent.profileId || !currentEvent.location?.name) {
-            alert(t('Please fill in all required fields'));
+            alert(t('yourday.fill_required'));
             return;
         }
 
@@ -222,7 +227,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                         <Icon name="arrow_back" className="text-xl" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Weerbericht Jouw Dag</h1>
+                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t('yourday.title')}</h1>
                     </div>
                 </div>
                 <button 
@@ -236,18 +241,17 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
             {/* Explanation / Credit Status */}
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
                 <p className="text-sm text-slate-700 dark:text-slate-300">
-                    Ontvang persoonlijke weerberichten voor speciale dagen (verjaardag, trouwdag, etc.).
-                    Baro stuurt updates vanaf 10 dagen van tevoren.
+                    {t('yourday.explanation')}
                 </p>
                 <div className="mt-3 flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-white">
                     <Icon name="diamond" className="text-primary" />
-                    <span>Baro Credits: {baroCredits}</span>
+                    <span>{t('yourday.credits')}: {baroCredits}</span>
                     {baroCredits <= 0 && (
                         <button 
                             onClick={() => onNavigate(ViewState.PRICING)}
                             className="text-primary underline ml-2 hover:text-primary/80"
                         >
-                            Koop credits
+                            {t('yourday.buy_credits')}
                         </button>
                     )}
                 </div>
@@ -255,15 +259,15 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
 
             {!hasBaroProfile && (
                 <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-100 dark:border-red-800 text-center">
-                    <h3 className="font-bold text-red-800 dark:text-red-200 mb-2">Baro Profiel Vereist</h3>
+                    <h3 className="font-bold text-red-800 dark:text-red-200 mb-2">{t('yourday.profile_required')}</h3>
                     <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-                        Om deze functie te gebruiken heb je een Baro profiel nodig.
+                        {t('yourday.profile_required_text')}
                     </p>
                     <button
                         onClick={() => onNavigate(ViewState.SETTINGS)}
                         className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 transition-colors"
                     >
-                        Profiel Aanmaken
+                        {t('yourday.create_profile')}
                     </button>
                 </div>
             )}
@@ -272,33 +276,34 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 <>
                     {isEditing ? (
                         <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
-                            <h2 className="text-lg font-bold">{currentEvent.id ? 'Bewerk Dag' : 'Nieuwe Dag'}</h2>
+                            <h2 className="text-lg font-bold">{currentEvent.id ? t('yourday.edit_day') : t('yourday.new_day')}</h2>
                             
                             {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium mb-2">Naam (max 40 karakters) *</label>
+                                <label className="block text-sm font-medium mb-2">{t('yourday.name_label')}</label>
                                 <input
                                     type="text"
                                     maxLength={40}
                                     value={currentEvent.name || ''}
                                     onChange={e => setCurrentEvent({ ...currentEvent, name: e.target.value })}
                                     className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
-                                    placeholder="Bijv. Verjaardag, Trouwdag..."
+                                    placeholder={t('yourday.name_placeholder')}
                                 />
                             </div>
 
                             {/* Date Selector */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <DateSelector 
-                                    label="Datum *" 
+                                    label={t('yourday.date_label')}
                                     value={currentEvent.date || ''} 
-                                    onChange={val => setCurrentEvent({ ...currentEvent, date: val })} 
+                                    onChange={val => setCurrentEvent({ ...currentEvent, date: val })}
+                                    t={t}
                                 />
                                 
                                 {/* Duration Slider */}
                                 <div>
                                     <label className="block text-sm font-medium mb-2">
-                                        Duur: {currentEvent.duration || 1} {currentEvent.duration === 1 ? 'dag' : 'dagen'}
+                                        {t('yourday.duration_label')}: {currentEvent.duration || 1} {t('holiday_report.days')}
                                     </label>
                                     <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 h-[48px]">
                                         <span className="text-xs text-slate-400">1</span>
@@ -317,13 +322,13 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
 
                             {/* Profile */}
                             <div>
-                                <label className="block text-sm font-medium mb-2">Profiel Keuze *</label>
+                                <label className="block text-sm font-medium mb-2">{t('yourday.profile_choice')}</label>
                                 <select
                                     value={currentEvent.profileId || ''}
                                     onChange={e => handleProfileChange(e.target.value)}
                                     className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
                                 >
-                                    <option value="" disabled>Selecteer een profiel</option>
+                                    <option value="" disabled>{t('yourday.select_profile')}</option>
                                     {settings.baroProfiles?.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
                                     ))}
@@ -332,14 +337,14 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
 
                             {/* Location */}
                             <div>
-                                <label className="block text-sm font-medium mb-2">Locatie *</label>
+                                <label className="block text-sm font-medium mb-2">{t('yourday.location_label')}</label>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         value={currentEvent.location?.name || ''}
                                         onChange={e => handleLocationSearch(e.target.value)}
                                         className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
-                                        placeholder="Zoek locatie..."
+                                        placeholder={t('yourday.search_location')}
                                     />
                                     {loadingCity && (
                                         <div className="absolute right-3 top-3">
@@ -365,7 +370,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
 
                             {/* Active */}
                             <div className="flex items-center gap-3">
-                                <label className="text-sm font-medium">Actief</label>
+                                <label className="text-sm font-medium">{t('yourday.active')}</label>
                                 <button
                                     onClick={() => setCurrentEvent({ ...currentEvent, active: !currentEvent.active })}
                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -385,13 +390,13 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     onClick={handleSaveCurrent}
                                     className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors"
                                 >
-                                    Opslaan
+                                    {t('yourday.save')}
                                 </button>
                                 <button
                                     onClick={() => { setIsEditing(false); setCurrentEvent({}); }}
                                     className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors"
                                 >
-                                    Annuleren
+                                    {t('yourday.cancel')}
                                 </button>
                             </div>
                         </div>
@@ -402,48 +407,41 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     <div>
                                         <h3 className="font-bold text-lg">{event.name}</h3>
                                         <p className="text-sm text-slate-500 dark:text-white/60">
-                                            {event.date} • {event.duration || 1} {event.duration === 1 ? 'dag' : 'dagen'} • {event.location.name}
+                                            {event.date} • {event.duration || 1} {t('holiday_report.days')} • {event.location.name}
                                         </p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className={`text-xs px-2 py-0.5 rounded-md ${event.active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-500'}`}>
-                                                {event.active ? 'Actief' : 'Inactief'}
+                                                {event.active ? t('yourday.active') : t('yourday.inactive')}
                                             </span>
                                             <span className="text-xs text-slate-400">
-                                                {settings.baroProfiles?.find(p => p.id === event.profileId)?.name || 'Onbekend profiel'}
+                                                {settings.baroProfiles?.find(p => p.id === event.profileId)?.name || t('yourday.unknown_profile')}
                                             </span>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button
+                                        <button 
                                             onClick={() => handleEdit(event)}
-                                            className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl text-slate-400 hover:text-primary transition-colors"
+                                            className="p-2 bg-slate-100 dark:bg-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-white/20"
                                         >
-                                            <Icon name="edit" />
+                                            <Icon name="edit" className="text-lg" />
                                         </button>
-                                        <button
+                                        <button 
                                             onClick={() => handleDelete(event.id)}
-                                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-400 hover:text-red-500 transition-colors"
+                                            className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30"
                                         >
-                                            <Icon name="delete" />
+                                            <Icon name="delete" className="text-lg" />
                                         </button>
                                     </div>
                                 </div>
                             ))}
-
-                            {events.length === 0 && (
-                                <div className="text-center py-12 text-slate-400">
-                                    <Icon name="event" className="text-4xl mb-2 mx-auto opacity-50" />
-                                    <p>Nog geen dagen ingesteld.</p>
-                                </div>
-                            )}
-
+                            
                             {events.length < MAX_EVENTS && (
                                 <button
                                     onClick={handleAddNew}
-                                    className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/10 text-slate-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2 font-bold"
+                                    className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-white/20 rounded-2xl text-slate-500 dark:text-white/50 font-bold hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Icon name="add" />
-                                    Nieuwe Dag Toevoegen
+                                    <span>{t('yourday.new_day')}</span>
                                 </button>
                             )}
                         </div>
@@ -451,54 +449,13 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 </>
             )}
 
-            <Modal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} title="Over Jouw Dag">
-                <div className="space-y-4">
-                    <p>
-                        Met "Weerbericht Jouw Dag" ontvang je speciale weerberichten voor jouw belangrijke momenten.
-                    </p>
-                    
-                    <div>
-                        <h4 className="font-bold mb-1">Hoe het werkt:</h4>
-                        <ul className="list-disc list-inside text-sm space-y-1 text-slate-600 dark:text-slate-300">
-                            <li>Kies een datum en locatie.</li>
-                            <li>Kies de duur van het evenement (1-14 dagen).</li>
-                            <li>Selecteer een Baro profiel.</li>
-                            <li>Je ontvangt emails op specifieke momenten voor de dag.</li>
-                        </ul>
+            {showInfoModal && (
+                <Modal onClose={() => setShowInfoModal(false)} title={t('yourday.title')}>
+                    <div className="space-y-4">
+                        <p>{t('yourday.explanation')}</p>
                     </div>
-
-                    <div>
-                        <h4 className="font-bold mb-1">Email Schema:</h4>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            Baro stuurt updates op de volgende dagen voor het event:
-                        </p>
-                        <div className="grid grid-cols-5 gap-2 mt-2 text-center text-xs">
-                            {[10, 7, 6, 5, 4, 3, 2, 1, 0].map(d => (
-                                <div key={d} className="bg-slate-100 dark:bg-slate-800 p-2 rounded">
-                                    {d === 0 ? 'Op de dag' : `${d} dagen`}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 className="font-bold mb-1">Credits:</h4>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                            Voor elk verstuurd weerbericht wordt 1 Baro Credit afgeboekt.
-                            Zorg dat je voldoende credits hebt!
-                        </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-100 dark:border-white/10">
-                        <button 
-                            onClick={() => { setShowInfoModal(false); onNavigate(ViewState.PRICING); }}
-                            className="block w-full bg-primary text-white text-center py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors"
-                        >
-                            Bekijk Prijzen & Credits
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                </Modal>
+            )}
         </div>
     );
 };

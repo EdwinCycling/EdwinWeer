@@ -88,8 +88,8 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
                             {t('model_info.ens_intro')}
                         </p>
                         <ul className="space-y-1 list-disc list-inside">
-                            <li><span className="font-bold text-green-600 dark:text-green-400">Voordeel/Pro:</span> {t('model_info.ens_pro')}</li>
-                            <li><span className="font-bold text-red-600 dark:text-red-400">Nadeel/Con:</span> {t('model_info.ens_con')}</li>
+                            <li><span className="font-bold text-green-600 dark:text-green-400">{t('model_info.pro')}:</span> {t('model_info.ens_pro')}</li>
+                            <li><span className="font-bold text-red-600 dark:text-red-400">{t('model_info.con')}:</span> {t('model_info.ens_con')}</li>
                         </ul>
                     </div>
 

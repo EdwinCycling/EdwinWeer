@@ -169,7 +169,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       } catch (err) {
           if (fetchIdRef.current !== currentFetchId) return;
           console.error(err);
-          setError('Kon data niet ophalen. Probeer het later opnieuw.');
+          setError(t('history.fetch_error'));
       } finally {
           if (fetchIdRef.current === currentFetchId) {
               setLoading(false);
@@ -657,16 +657,16 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                               }}
                               className="bg-white dark:bg-slate-800 dark:text-white text-sm border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                              <option value="all" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Alle jaren (1950 - Nu)</option>
+                              <option value="all" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{t('history.range_all')} (1950 - Nu)</option>
                               {Array.from({length: 7}, (_, i) => {
                                   const years = (i + 1) * 10;
                                   return (
-                                      <option key={years} value={years} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Laatste {years} jaar</option>
+                                      <option key={years} value={years} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{t('history.range_last')} {years} {t('history.range_years')}</option>
                                   );
                               }).reverse()}
                               <option disabled className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">──────────</option>
                               {decades.map(d => (
-                                  <option key={d} value={`decade-${d}`} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Jaren {d.toString().slice(2)} ({d}-{d+9})</option>
+                                  <option key={d} value={`decade-${d}`} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{t('history.range_decade')} {d.toString().slice(2)} ({d}-{d+9})</option>
                               ))}
                           </select>
                       </div>
@@ -677,18 +677,18 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       {/* Averages Card */}
                       {averageStats && (
                           <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Gemiddelden & Kans</h3>
+                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('history.averages_chance')}</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Gem. Max Temp</span>
+                                      <span>{t('history.avg_max')}</span>
                                       <span className="font-bold">{convertTempPrecise(averageStats.avgMax, settings.tempUnit).toFixed(1)}°</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Gem. Min Temp</span>
+                                      <span>{t('history.avg_min')}</span>
                                       <span className="font-bold">{convertTempPrecise(averageStats.avgMin, settings.tempUnit).toFixed(1)}°</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Kans op ≥ 2mm</span>
+                                      <span>{t('history.chance_precip')}</span>
                                       <span className="font-bold">{Math.round(averageStats.rainChance)}%</span>
                                   </div>
                               </div>
@@ -698,7 +698,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       {/* Heat Chances Card */}
                       {averageStats && (
                           <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Kans op Warmte</h3>
+                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('history.heat_chance')}</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
                                       <span>Max {'>'} {averageStats.heatThresholds[0]}°</span>
@@ -719,30 +719,30 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       {/* Cold & Wind Chances Card */}
                       {averageStats && (
                           <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Kou & Wind</h3>
+                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('history.cold_wind')}</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Min {'<'} 0°</span>
+                                      <span>{t('history.min_lt_0')}</span>
                                       <span className="font-bold">{Math.round(averageStats.chanceMinLT0)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Max {'<'} 0°</span>
+                                      <span>{t('history.max_lt_0')}</span>
                                       <span className="font-bold">{Math.round(averageStats.chanceMaxLT0)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm p-1">
-                                      <span>Windstoot {'>'} 6 Bft ({'>'} 50 km/hr)</span>
+                                      <span>{t('history.gust_gt_6bft')}</span>
                                       <span className="font-bold">{Math.round(averageStats.chanceGustGT6Bft)}%</span>
                                   </div>
                               </div>
                           </div>
                       )}
 
-                      {renderStatCard('Top 3 Warmste Jaren (Max)', topStats.warmestMax, 'temp', 'max')}
-                      {renderStatCard('Top 3 Koudste Jaren (Max)', topStats.coldestMax, 'temp', 'max')}
-                      {renderStatCard('Top 3 Koudste Nachten (Min)', topStats.coldestMin, 'temp', 'min')}
-                      {renderStatCard('Top 3 Warmste Nachten (Min)', topStats.warmestMin, 'temp', 'min')}
-                      {renderStatCard('Top 3 Natste Jaren', topStats.wettest, 'rain', 'rain')}
-                      {renderStatCard('Top 3 Hardste Windstoten', topStats.windiest, 'wind', 'gust')}
+                      {renderStatCard(t('history.top_warmest_max'), topStats.warmestMax, 'temp', 'max')}
+                      {renderStatCard(t('history.top_coldest_max'), topStats.coldestMax, 'temp', 'max')}
+                      {renderStatCard(t('history.top_coldest_min'), topStats.coldestMin, 'temp', 'min')}
+                      {renderStatCard(t('history.top_warmest_min'), topStats.warmestMin, 'temp', 'min')}
+                      {renderStatCard(t('history.top_wettest'), topStats.wettest, 'rain', 'rain')}
+                      {renderStatCard(t('history.top_windiest'), topStats.windiest, 'wind', 'gust')}
                   </div>
 
                   {/* Day Overview Button */}
@@ -752,7 +752,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                           className="bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-white/10 px-6 py-3 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
                       >
                           <Icon name="list" />
-                          <span>Dag overzicht (Tabel & Export)</span>
+                          <span>{t('history.overview_button')}</span>
                       </button>
                   </div>
 
@@ -790,7 +790,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                               </button>
                               
                               <span className="text-sm font-bold min-w-[100px] text-center">
-                                  {chartView === 'all' ? 'Alle Jaren' : `${currentYear - (pageIndex * 10) - 9} - ${currentYear - (pageIndex * 10)}`}
+                                  {chartView === 'all' ? t('history.chart_all_years') : `${currentYear - (pageIndex * 10) - 9} - ${currentYear - (pageIndex * 10)}`}
                               </span>
 
                               <button 

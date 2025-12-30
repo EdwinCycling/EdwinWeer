@@ -523,7 +523,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                 </button>
                 <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
                     <Icon name="flight" className="text-primary" />
-                    Vakantie Overzicht
+                    {t('holiday_report.label.title')}
                 </h2>
             </div>
         </div>
@@ -534,19 +534,19 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                     <div className="flex flex-col gap-4">
                         {/* Title */}
                         <div>
-                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Titel (optioneel)</label>
+                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.title')}</label>
                             <input 
                                 type="text" 
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Mijn vakantie..."
+                                placeholder={t('holiday_report.placeholder.title')}
                                 className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
                             />
                         </div>
                         
                         {/* Location & Map */}
                         <div className="relative">
-                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Locatie</label>
+                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.location')}</label>
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => setShowSearch(!showSearch)}

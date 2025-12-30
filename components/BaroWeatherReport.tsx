@@ -10,20 +10,6 @@ import { fetchForecast, getActivityIcon, getScoreColor } from '../services/weath
 import { calculateActivityScore, ActivityScore, ActivityWeatherData } from '../services/activityService';
 import { getTranslation } from '../services/translations';
 
-const activityTranslations: Record<string, string> = {
-    bbq: 'BBQ',
-    cycling: 'Fietsen',
-    walking: 'Wandelen',
-    sailing: 'Zeilen',
-    running: 'Hardlopen',
-    beach: 'Strand',
-    gardening: 'Tuinieren',
-    stargazing: 'Sterrenkijken',
-    golf: 'Golf',
-    drone: 'Drone',
-    home: 'Thuis',
-    work: 'Werk'
-};
 
 interface Props {
     weatherData: OpenMeteoResponse; // This is the app-wide weather data, might not be used if profile has specific location
@@ -84,23 +70,23 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
         const currentAiCalls = stats.aiCallsDayStart === today ? (stats.aiCalls || 0) : 0;
         
         if (currentAiCalls >= limit) {
-             setError("Datalimiet overschreden of onvoldoende credits. Je kunt een nieuw pakket aanschaffen bij instellingen of hieronder.");
+             setError(t('baro.error_limit'));
              return;
         }
 
         // 1. Validatie
         if (!selectedProfile) {
-            setError("Kies eerst een profiel.");
+            setError(t('baro.error_no_profile'));
             return;
         }
 
         if (!selectedProfile.name) {
-            setError("Het profiel moet een naam hebben. Pas dit aan in de instellingen.");
+            setError(t('baro.error_profile_name'));
             return;
         }
 
         if (!selectedProfile.location) {
-            setError("Het profiel moet een locatie bevatten. Pas dit aan in de instellingen.");
+            setError(t('baro.error_profile_location'));
             return;
         }
 
@@ -116,14 +102,14 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
             // 2. Locatie ophalen
             const locations = await searchCityByName(selectedProfile.location, 'nl');
             if (!locations || locations.length === 0) {
-                throw new Error(`Locatie '${selectedProfile.location}' niet gevonden.`);
+                throw new Error(t('baro.error_location_not_found').replace('{location}', selectedProfile.location));
             }
             const loc = locations[0];
 
             // 3. Weerdata ophalen voor deze specifieke locatie
             const forecast = await fetchForecast(loc.lat, loc.lon);
             if (!forecast || !forecast.daily) {
-                throw new Error("Kon geen weergegevens ophalen voor deze locatie.");
+                throw new Error(t('baro.error_fetch_weather'));
             }
 
             // 4. Activiteitenscores berekenen (Systeem, niet AI)
@@ -182,7 +168,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
             // 5. Baro Rapport Genereren
             // Get User Name from Auth Context or Profile
-            let userName = user?.email?.split('@')[0] || selectedProfile.name || "Gebruiker";
+            let userName = user?.email?.split('@')[0] || selectedProfile.name || t('baro.user_default');
             // Capitalize
             userName = userName.charAt(0).toUpperCase() + userName.slice(1);
 
@@ -198,7 +184,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
         } catch (e: any) {
             console.error("Baro Generation Error:", e);
-            setError(`Er ging iets mis: ${e.message || 'Onbekende fout'}`);
+            setError(`${t('baro.error_generic')}: ${e.message || t('baro.unknown_error')}`);
         } finally {
             setLoading(false);
         }
@@ -210,10 +196,10 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
         const cleanReport = report.replace(/\*\*/g, '');
         try {
             await navigator.clipboard.writeText(cleanReport);
-            setCopySuccess('Gekopieerd naar klembord!');
+            setCopySuccess(t('baro.copy_success'));
         } catch (err) {
             console.error('Failed to copy:', err);
-            setError('Kon niet kopiëren naar klembord');
+            setError(t('baro.copy_error'));
         }
     };
 
@@ -223,7 +209,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
         const cleanReport = report.replace(/\*\*/g, '');
         
         const shareData = {
-            title: `Baro Weerbericht - ${lastUsedProfile?.location || 'Mijn locatie'}`,
+            title: `${t('baro.report_title')} - ${lastUsedProfile?.location || t('baro.my_profile')}`,
             text: cleanReport,
             url: window.location.origin
         };
@@ -248,7 +234,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
         if (!report) return;
         // Clean markdown (remove **)
         const cleanReport = report.replace(/\*\*/g, '');
-        const subject = `Weerbericht voor ${lastUsedProfile?.location || 'jou'}`;
+        const subject = `${t('baro.email_subject_prefix')} ${lastUsedProfile?.location || 'jou'}`;
         const body = encodeURIComponent(cleanReport);
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
     };
@@ -270,8 +256,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                         <Icon name="auto_awesome" className="text-xl text-yellow-300" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-lg">Baro Weerbericht</h3>
-                        {profile && <p className="text-xs text-purple-100 opacity-90">Jouw persoonlijke weerbericht</p>}
+                        <h3 className="font-bold text-lg">{t('baro.title')}</h3>
+                        {profile && <p className="text-xs text-purple-100 opacity-90">{t('baro.subtitle')}</p>}
                     </div>
                 </div>
                 <Icon name={isCollapsed ? "expand_more" : "expand_less"} />
@@ -284,16 +270,16 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                         <div className="mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm border border-red-100 dark:border-red-900/30">
                             <div className="flex items-center gap-2 font-bold">
                                 <Icon name="warning" />
-                                <span>Let op</span>
+                                <span>{t('baro.warning')}</span>
                             </div>
                             <p className="mt-1">{error}</p>
-                            {(error.includes('limiet') || error.includes('overschreden') || error.includes('credits')) && (
+                            {(error.includes('limiet') || error.includes('overschreden') || error.includes('credits') || error.includes('limit') || error.includes('exceeded')) && (
                                 <div className="flex flex-col gap-2">
                                     <button 
                                         onClick={() => onNavigate(ViewState.PRICING)}
                                         className="mt-3 text-xs font-bold underline hover:no-underline text-left"
                                     >
-                                        Bekijk onze pakketten
+                                        {t('baro.view_packages')}
                                     </button>
                                     <button 
                                         onClick={() => setShowPreviewModal(true)}
@@ -319,11 +305,11 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                             <Icon name="visibility" className="text-xl" />
                                         </div>
                                         <div className="flex flex-col items-start text-left">
-                                            <span className="text-sm opacity-70 font-medium">Laatste weerbericht bekijken</span>
-                                            <span className="text-lg">{lastUsedProfile?.name || 'Mijn Profiel'}</span>
+                                            <span className="text-sm opacity-70 font-medium">{t('baro.view_last_report')}</span>
+                                            <span className="text-lg">{lastUsedProfile?.name || t('baro.my_profile')}</span>
                                             {reportDate && (
                                                 <span className="text-xs font-normal opacity-50 mt-1">
-                                                    Gegenereerd om {reportDate.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                                                    {t('baro.generated_at')} {reportDate.toLocaleTimeString(language === 'en' ? 'en-US' : 'nl-NL', { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             )}
                                         </div>
@@ -331,7 +317,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
                                     <div className="pt-4 border-t border-slate-100 dark:border-white/5">
                                         <p className="text-xs font-bold text-slate-400 dark:text-white/30 uppercase tracking-widest mb-4">
-                                            Nieuw weerbericht genereren
+                                            {t('baro.generate_new')}
                                         </p>
                                         {profiles && profiles.length > 0 ? (
                                             <div className="flex flex-wrap justify-center gap-2">
@@ -350,7 +336,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                 onClick={() => profile && handleGenerate(profile)}
                                                 className="px-6 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl font-bold text-sm hover:bg-purple-200 transition-colors"
                                             >
-                                                Opnieuw genereren
+                                                {t('baro.regenerate')}
                                             </button>
                                         )}
                                     </div>
@@ -358,7 +344,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                             ) : !report && (
                                 <>
                                     <p className="text-slate-500 dark:text-white/60 mb-6 max-w-md mx-auto">
-                                        Genereer een uniek weerbericht op basis van jouw profiel:
+                                        {t('baro.generate_prompt')}
                                     </p>
                                     
                                     {profiles && profiles.length > 1 ? (
@@ -380,7 +366,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                 }}
                                                 className="px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                             >
-                                                + Nieuw
+                                                {t('baro.new_button')}
                                             </button>
                                         </div>
                                     ) : (
@@ -389,7 +375,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/30 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
                                         >
                                             <Icon name="auto_awesome" />
-                                            {profile?.name || 'Genereer Weerbericht'}
+                                            {profile?.name || t('baro.generate_button')}
                                         </button>
                                     )}
                                 </>
@@ -404,7 +390,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 className="mt-4 text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center justify-center gap-1 mx-auto"
                             >
                                 <Icon name="settings" className="text-sm" />
-                                Profielen beheren
+                                {t('baro.manage_profiles')}
                             </button>
                         </div>
                     )}
@@ -413,7 +399,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                         <div className="flex flex-col items-center justify-center py-8 gap-4">
                             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500"></div>
                             <p className="text-sm font-medium text-slate-500 dark:text-white/60 animate-pulse">
-                                Baro stelt jouw bericht op met de laatste gegevens...
+                                {t('baro.generating_message')}
                             </p>
                         </div>
                     )}
@@ -432,7 +418,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h3 className="font-bold text-lg text-slate-800 dark:text-white">Baro Weerbericht</h3>
+                                        <h3 className="font-bold text-lg text-slate-800 dark:text-white">{t('baro.title')}</h3>
                                         <span className="text-purple-600 dark:text-purple-400 font-bold px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-xs uppercase tracking-wider">
                                             {lastUsedProfile?.name}
                                         </span>
@@ -443,7 +429,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         {reportDate && (
                                             <>
                                                 <span>•</span>
-                                                <span>{reportDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                                <span>{reportDate.toLocaleDateString(language === 'en' ? 'en-US' : 'nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                                             </>
                                         )}
                                     </div>
@@ -499,12 +485,12 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 {activityScores.length > 0 && (
                                     <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10"> {/* Reduced margin/padding */}
                                         <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/50 mb-4 tracking-widest">
-                                            Jouw activiteiten score ({lastUsedProfile?.location})
+                                            {t('baro.activity_score_title')} ({lastUsedProfile?.location})
                                         </h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {activityScores.map((day, idx) => {
                                             const date = new Date(day.date);
-                                            const dayName = date.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'short' });
+                                            const dayName = date.toLocaleDateString(language === 'en' ? 'en-US' : 'nl-NL', { weekday: 'long', day: 'numeric', month: 'short' });
                                             
                                             return (
                                                 <div key={day.date} className="bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-100 dark:border-white/5">
@@ -515,7 +501,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                                 <div className="flex items-center gap-3">
                                                                     <Icon name={getActivityIcon(type)} className="text-slate-400" />
                                                                     <span className="text-xs font-bold capitalize">
-                                                                        {activityTranslations[type] || type}
+                                                                        {t(`activity.${type}`) || type}
                                                                     </span>
                                                                 </div>
                                                                 <span className={`text-xs font-black px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/5 ${getScoreColor(score.score10)}`}>
@@ -543,7 +529,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-white rounded-xl font-bold transition-all active:scale-95"
                                     >
                                         <Icon name="close" className="w-5 h-5" />
-                                        <span>Sluiten</span>
+                                        <span>{t('baro.close')}</span>
                                     </button>
                                     
                                     <button
@@ -551,7 +537,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                                     >
                                         <Icon name="mail" className="w-5 h-5" />
-                                        <span>E-mail</span>
+                                        <span>{t('baro.email')}</span>
                                     </button>
 
                                     <button
@@ -559,7 +545,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
                                     >
                                         <Icon name="content_copy" className="w-5 h-5" />
-                                        <span>Kopieer</span>
+                                        <span>{t('baro.copy')}</span>
                                     </button>
 
                                     <button
@@ -567,7 +553,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-purple-500/20"
                                     >
                                         <Icon name="share" className="w-5 h-5" />
-                                        <span>Deel</span>
+                                        <span>{t('baro.share')}</span>
                                     </button>
 
 
@@ -587,7 +573,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                         <div className="p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
                             <div className="flex items-center gap-2">
                                 <Icon name="auto_awesome" />
-                                <span className="font-bold">{t('landing.view_preview') || 'Voorbeeld Weerbericht'}</span>
+                                <span className="font-bold">{t('baro.preview_title')}</span>
                             </div>
                             <button onClick={() => setShowPreviewModal(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
                                 <Icon name="close" />
