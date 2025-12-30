@@ -1177,6 +1177,4 @@ export const en: Dictionary = {
     'holiday_report.vibe.average': 'Average',
 
     // Info
-    'info.contact_title': 'Questions or more info?',
-    'info.contact_desc': 'Mail to',
 };

@@ -258,6 +258,19 @@ export const checkLimit = (): void => {
     }
 };
 
+export const consumeCredit = async (type: 'weather' | 'baro', amount: number = 1) => {
+    if (!currentUserId || !db) return;
+    try {
+        const userRef = doc(db, 'users', currentUserId);
+        const field = type === 'weather' ? 'usage.weatherCredits' : 'usage.baroCredits';
+        await updateDoc(userRef, {
+            [field]: increment(-amount)
+        });
+    } catch (err) {
+        console.error("Error consuming credit:", err);
+    }
+};
+
 export const deductBaroCredit = (): boolean => {
     const stats = getUsage();
     if (stats.baroCredits > 0) {

@@ -1173,6 +1173,4 @@ export const nl: Dictionary = {
     'holiday_report.vibe.average': 'Gemiddeld',
 
     // Info
-    'info.contact_title': 'Vragen of meer info?',
-    'info.contact_desc': 'Mail naar',
 };
