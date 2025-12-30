@@ -176,6 +176,9 @@ export const loadRemoteData = async (uid: string) => {
                     localStorage.setItem(KEY_FAVORITES_COMPACT_MODE, String(data.favoritesView.compactMode));
                 }
             }
+            if (data.customEvents) {
+                if (typeof window !== "undefined") localStorage.setItem(KEY_CUSTOM_EVENTS, JSON.stringify(data.customEvents));
+            }
         }
     } catch (e) {
         console.error("Error loading remote data:", e);
@@ -470,7 +473,39 @@ export const loadClimateData = (locationKey: string): any | null => {
     return null;
 };
 
-// DEPRECATED: Use loadForecastViewMode instead
+// --- Custom Events (Jouw Dag) ---
+const KEY_CUSTOM_EVENTS = "weather_app_custom_events";
+
+export const saveCustomEvents = (events: any[]) => {
+    if (typeof window !== "undefined") {
+        localStorage.setItem(KEY_CUSTOM_EVENTS, JSON.stringify(events));
+    }
+    syncCustomEventsToRemote(events);
+};
+
+export const loadCustomEvents = (): any[] => {
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem(KEY_CUSTOM_EVENTS);
+    if (!stored) return [];
+    try {
+        return JSON.parse(stored);
+    } catch {
+        return [];
+    }
+};
+
+const syncCustomEventsToRemote = async (events: any[]) => {
+    if (!currentUserId || !db) return;
+    try {
+        const userRef = doc(db, 'users', currentUserId);
+        await setDoc(userRef, { customEvents: events }, { merge: true });
+    } catch (e) {
+        console.error("Error syncing custom events:", e);
+    }
+};
+
+// Update loadRemoteData to include customEvents
+// This requires modifying the existing loadRemoteData function.
 export const saveForecastExpandedMode = (expanded: boolean) => {
     saveForecastViewMode(expanded ? 'expanded' : 'compact');
 };

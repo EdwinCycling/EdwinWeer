@@ -61,9 +61,9 @@ const activityLabels: Record<ActivityType, string> = {
 };
 
 const styles = [
-    'zakelijk', 'makkelijk leesbaar', 'humor', 'sarcastisch', 'poëtisch',
-    'enthousiast', 'wetenschappelijk', 'kort', 'uitgebreid', 'emoji-rijk', 'waarschuwend'
-];
+        'zakelijk', 'makkelijk leesbaar', 'humor', 'sarcastisch', 'poëtisch',
+        'enthousiast', 'wetenschappelijk', 'emoji-rijk', 'waarschuwend'
+    ];
 
 export const SettingsProfile: React.FC<Props> = ({ 
     profile, 
@@ -360,6 +360,37 @@ export const SettingsProfile: React.FC<Props> = ({
                             </button>
                         )}
                     </div>
+                </div>
+
+                {/* Length Report */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                        Lengte Bericht
+                    </label>
+                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 w-fit">
+                        {([
+                            { id: 'factual', label: 'Feitelijk' },
+                            { id: 'standard', label: 'Standaard' },
+                            { id: 'extended', label: 'Uitgebreid' }
+                        ]).map(opt => (
+                            <button
+                                key={opt.id}
+                                onClick={() => handleChange('reportLength', opt.id, true)}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+                                    (localProfile.reportLength || 'standard') === opt.id
+                                        ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white'
+                                }`}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-white/40 mt-1">
+                        {(localProfile.reportLength || 'standard') === 'factual' && "Kort en bondig, weinig tekst, vooral data."}
+                        {(localProfile.reportLength || 'standard') === 'standard' && "Een gebalanceerd weerbericht."}
+                        {(localProfile.reportLength || 'standard') === 'extended' && "Een uitgebreid verhaal met veel details."}
+                    </p>
                 </div>
 
                 {/* General Report Checkbox */}

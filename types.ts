@@ -208,6 +208,7 @@ export interface BaroProfile {
     otherInstructions?: string;
     daysAhead: number; // 1, 2, 3, 7, 14
     reportStyle: string[]; // ['business', 'readable', 'humor', etc]
+    reportLength?: 'factual' | 'standard' | 'extended';
     isGeneralReport?: boolean;
     hayFever?: boolean;
     emailSchedule?: EmailSchedule;
@@ -247,7 +248,18 @@ export enum ViewState {
   SHARE = 'SHARE',
   BAROMETER = 'BAROMETER',
   CLIMATE_CHANGE = 'CLIMATE_CHANGE',
-  THIS_DAY = 'THIS_DAY'
+  THIS_DAY = 'THIS_DAY',
+  YOUR_DAY = 'YOUR_DAY'
+}
+
+export interface CustomEvent {
+    id: string;
+    name: string;
+    date: string; // MM-DD
+    endDate?: string; // MM-DD
+    profileId: string;
+    location: Location;
+    active: boolean;
 }
 
 export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone' | 'home' | 'work';

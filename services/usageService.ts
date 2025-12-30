@@ -258,6 +258,16 @@ export const checkLimit = (): void => {
     }
 };
 
+export const deductBaroCredit = (): boolean => {
+    const stats = getUsage();
+    if (stats.baroCredits > 0) {
+        stats.baroCredits--;
+        saveUsage(stats);
+        return true;
+    }
+    return false;
+};
+
 export const trackCall = () => {
     const stats = getUsage();
     const now = Date.now();
@@ -378,6 +388,11 @@ export const trackCall = () => {
     }
 
     saveUsage(stats);
+};
+
+export const hasBaroCredits = (): boolean => {
+    const stats = getUsage();
+    return stats.baroCredits > 0;
 };
 
 export const trackBaroCall = (): boolean => {

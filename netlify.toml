@@ -22,4 +22,7 @@
 [functions."scheduled-email"]
   schedule = "@hourly"
 
+[functions."scheduled-your-day"]
+  schedule = "0 6 * * *"
+
 

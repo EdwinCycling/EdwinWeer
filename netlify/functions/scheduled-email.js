@@ -66,7 +66,7 @@ async function fetchWeatherData(lat, lon) {
     }
 }
 
-// Helper: Generate AI Report (Reusing logic from ai-weather.js mostly)
+// Helper: Generate AI Report (Reusing logic from ai-weather.js)
 async function generateReport(weatherData, profile, userName) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -75,11 +75,9 @@ async function generateReport(weatherData, profile, userName) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
 
-        // Logic from ai-weather.js (simplified for import)
-        // We reconstruct the prompt here
         const daysAhead = Number(profile.daysAhead) || 3;
         const isGeneral = profile.isGeneralReport === true;
-        const language = 'nl'; // Default to NL for now, or fetch from user settings
+        const language = 'nl'; // Default to NL
         
         const toCommaList = (value, fallback) => {
             if (Array.isArray(value)) return value.filter(Boolean).join(", ") || fallback;
@@ -88,11 +86,33 @@ async function generateReport(weatherData, profile, userName) {
         };
 
         const location = profile.location || "onbekend";
-        const styles = toCommaList(profile.reportStyle, "zakelijk");
+        
+        let styles = toCommaList(profile.reportStyle, "zakelijk");
+        // Override style for general report
+        if (isGeneral) {
+            styles = "makkelijk leesbaar, uitgebreid";
+        }
+        
         const userSalutation = userName ? userName.split(' ')[0] : (profile.name || "Gebruiker");
+        
+        const hasActivities = !isGeneral && profile.activities && profile.activities.length > 0;
+        const activities = hasActivities ? toCommaList(profile.activities, "") : "";
+        
+        const hasTimeOfDay = !isGeneral && profile.timeOfDay && profile.timeOfDay.length > 0;
+        const timeOfDay = hasTimeOfDay ? toCommaList(profile.timeOfDay, "") : "";
+        
+        const hasTransport = !isGeneral && profile.transport && profile.transport.length > 0;
+        const transport = hasTransport ? toCommaList(profile.transport, "") : "";
+        
+        const hasHobbies = !isGeneral && typeof profile.hobbies === 'string' && profile.hobbies.trim();
+        const hobbies = hasHobbies ? profile.hobbies.trim() : "";
+        
+        const hasInstructions = typeof profile.otherInstructions === 'string' && profile.otherInstructions.trim();
+        const instructions = hasInstructions ? profile.otherInstructions.trim() : "";
+        
+        const hasHayFever = profile.hayFever === true;
+        const reportLength = profile.reportLength || 'standard';
 
-        // Construct prompt (Dutch only for now as requested context is Dutch mostly)
-        // Ideally we fetch language from settings.
         const prompt = `
           Je bent Baro, een gevatte en deskundige Nederlandse weerman voor een app.
           
@@ -101,7 +121,13 @@ async function generateReport(weatherData, profile, userName) {
           - Gebruiker: ${userSalutation}
           - Locatie: ${location}
           - Gewenste stijl: ${styles}
-          - Activiteiten: ${toCommaList(profile.activities, "")}
+          - Lengte van het bericht: ${reportLength} (BELANGRIJK!)
+          ${hasActivities ? `- Activiteiten: ${activities}` : ''}
+          ${hasTimeOfDay ? `- Belangrijke dagdelen: ${timeOfDay}` : ''}
+          ${hasTransport ? `- Vervoer: ${transport}` : ''}
+          ${hasHobbies ? `- Hobby's: ${hobbies}` : ''}
+          ${hasInstructions ? `- Extra instructies: ${instructions}` : ''}
+          ${hasHayFever ? `- GEZONDHEID: Gebruiker heeft HOOIKOORTS` : ''}
           
           WEERDATA (JSON):
           ${JSON.stringify({
@@ -119,11 +145,17 @@ async function generateReport(weatherData, profile, userName) {
           Schrijf een beknopt weerbericht (email) voor ${userSalutation}.
           Gebruik de weerdata voor de komende ${daysAhead} dagen.
           
+          INSTRUCTIES VOOR LENGTE (${reportLength}):
+          ${reportLength === 'factual' ? '- Schrijf EXTREEM BEKNOPT. Gebruik weinig zinnen. Focus puur op de feiten en data. Geen introductiepraatjes.' : ''}
+          ${reportLength === 'standard' ? '- Schrijf een gebalanceerd bericht. Niet te kort, niet te lang. Gewoon een goed leesbaar weerbericht.' : ''}
+          ${reportLength === 'extended' ? '- Schrijf een UITGEBREID en gedetailleerd verhaal. Neem de ruimte voor nuance, uitleg en context.' : ''}
+          
           REGELS:
           1. Begin met "Beste ${userSalutation},"
           2. Wees creatief maar feitelijk juist.
           3. Gebruik HTML opmaak voor de email (<b>, <br>, <i>, etc), maar GEEN volledige HTML doc (alleen body content).
           4. Maak het leuk om te lezen!
+          ${hasHayFever ? `5. HOOIKOORTS: Wijd een aparte alinea (of zin bij 'feitelijk') aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig of ongunstig is.` : ''}
         `;
 
         const result = await model.generateContent(prompt);
@@ -285,45 +317,141 @@ export const handler = async (event, context) => {
                 continue;
             }
 
-            // 3. Generate Content
-            const emailContent = await generateReport(weatherData, baroProfile, userData.displayName || baroProfile.name);
+        // Helper: Get User Name
+        let userName = userData.displayName || baroProfile.name || "Gebruiker";
+        // Try to get from Google Auth provider if available
+        if (userData.providerData) {
+            const googleProfile = userData.providerData.find(p => p.providerId === 'google.com');
+            if (googleProfile && googleProfile.displayName) {
+                userName = googleProfile.displayName;
+            }
+        }
+        
+        // Helper: Check Credits
+        let usage = userData.usage || {};
+        const baroCredits = usage.baroCredits || 0;
+        
+        if (baroCredits <= 0) {
+            console.log(`User ${userId}: No Baro credits left. Skipping.`);
+            continue;
+        }
 
-            // 4. Send Email
-            let userEmail = userData.email;
-            if (!userEmail) {
-                try {
-                    const userRecord = await admin.auth().getUser(userId);
-                    userEmail = userRecord.email;
-                } catch (e) {
-                    console.error(`User ${userId}: Could not fetch email from Auth`, e);
+        // Helper: Calculate Activity Scores (Simplified for Node)
+        const calculateScores = (weather, activities) => {
+             if (!activities || !Array.isArray(activities)) return [];
+             const scores = [];
+             const today = weather.daily;
+             // Use index 0 for today
+             const i = 0; 
+             
+             // Extract relevant daily metrics
+             const tempMax = today.temperature_2m_max[i];
+             const precipSum = today.precipitation_sum[i];
+             const windMax = today.wind_speed_10m_max[i];
+             const precipProb = today.precipitation_probability_max[i];
+             const sunshine = today.sunshine_duration[i] / 3600; // hours
+
+             activities.forEach(act => {
+                 let score = 10;
+                 let reason = "Top weer!";
+                 
+                 // Generic logic based on activityService.ts principles
+                 if (['bbq', 'cycling', 'walking', 'golf', 'gardening'].includes(act)) {
+                     if (precipSum > 1 || precipProb > 60) { score -= 4; reason = "Kans op regen"; }
+                     if (windMax > 35) { score -= 3; reason = "Veel wind"; }
+                     if (tempMax < 10) { score -= 2; reason = "Fris"; }
+                 }
+                 
+                 if (['beach', 'sailing'].includes(act)) {
+                     if (tempMax < 18) { score -= 5; reason = "Te koud"; }
+                     if (sunshine < 3) { score -= 3; reason = "Weinig zon"; }
+                     if (precipSum > 0) { score -= 4; reason = "Regen"; }
+                 }
+                 
+                 // Normalize
+                 score = Math.max(1, Math.min(10, score));
+                 scores.push({ activity: act, score, reason });
+             });
+             return scores;
+        };
+
+        const activityScores = calculateScores(weatherData, Array.isArray(baroProfile.activities) ? baroProfile.activities : []);
+
+        // 3. Generate Content
+        // Pass actual userName
+        const emailContent = await generateReport(weatherData, baroProfile, userName);
+
+        // ... Send Email ...
+        
+        // 4. Send Email
+        let userEmail = userData.email;
+        if (!userEmail) {
+            try {
+                const userRecord = await admin.auth().getUser(userId);
+                userEmail = userRecord.email;
+            } catch (e) {
+                console.error(`User ${userId}: Could not fetch email from Auth`, e);
+            }
+        }
+
+        if (!userEmail) {
+            console.error(`User ${userId}: No email address found`);
+            continue;
+        }
+
+        // Check for force flag in user settings
+        const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
+
+        // Append Scores and Credits to Footer
+        const scoresHtml = activityScores.length > 0 ? `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                <h3 style="font-size: 16px; margin-bottom: 10px;">Jouw Activiteiten Vandaag</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    ${activityScores.map(s => `
+                        <tr>
+                            <td style="padding: 5px 0; text-transform: capitalize;">${s.activity}</td>
+                            <td style="padding: 5px 0; font-weight: bold; color: ${s.score >= 8 ? '#16a34a' : s.score >= 6 ? '#ca8a04' : '#dc2626'};">${s.score}/10</td>
+                            <td style="padding: 5px 0; font-size: 12px; color: #666;">${s.reason}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            </div>
+        ` : '';
+
+        const fullHtml = `
+            ${emailContent}
+            ${scoresHtml}
+            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px dashed #ddd; font-size: 11px; color: #888; text-align: center;">
+                <p>Credits over: <strong>${baroCredits - 1} Baro Credits</strong> | <strong>${(usage.weatherCredits || 0) > 0 ? (usage.weatherCredits - 1) : 0} Weather Credits</strong></p>
+            </div>
+        `;
+
+        const sent = await sendEmail(userEmail, userName, `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, fullHtml);
+
+        if (sent) {
+            // Deduct Credits & Update Usage
+            try {
+                const updates = {
+                    'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                    'usage.totalCalls': admin.firestore.FieldValue.increment(1),
+                    'usage.aiCalls': admin.firestore.FieldValue.increment(1)
+                };
+                
+                if ((usage.weatherCredits || 0) > 0) {
+                    updates['usage.weatherCredits'] = admin.firestore.FieldValue.increment(-1);
                 }
-            }
-
-            if (!userEmail) {
-                console.error(`User ${userId}: No email address found`);
-                continue;
-            }
-
-            // Check for force flag in user settings
-            const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
-
-            const sent = await sendEmail(userEmail, baroProfile.name || "User", `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, emailContent);
-
-            if (sent) {
+                
+                // Reset force flag if needed
                 if (forceTest) {
-                    // Reset flag
-                    try {
-                        await db.collection('users').doc(userId).update({
-                            forceEmailTest: false,
-                            'settings.forceEmailTest': false
-                        });
-                    } catch (e) {
-                        // Ignore update errors (e.g. if field missing)
-                        console.log("Could not reset force flag", e);
-                    }
-                } else {
-                    // 5. Audit Log
-                    await auditRef.set({
+                    updates.forceEmailTest = false;
+                    updates['settings.forceEmailTest'] = false;
+                }
+
+                await db.collection('users').doc(userId).update(updates);
+                
+                // Audit Log
+                if (!forceTest) {
+                     await auditRef.set({
                         userId,
                         date: dateStr,
                         slot: matchedSlot,
@@ -331,10 +459,15 @@ export const handler = async (event, context) => {
                         status: 'sent'
                     });
                 }
-                results.push({ userId, status: 'sent', slot: matchedSlot });
-            } else {
-                results.push({ userId, status: 'failed', slot: matchedSlot });
+            } catch (e) {
+                console.error(`User ${userId}: Failed to update credits`, e);
             }
+
+            results.push({ userId, status: 'sent', slot: matchedSlot });
+        } else {
+            results.push({ userId, status: 'failed', slot: matchedSlot });
+        }
+
         }
 
         return {

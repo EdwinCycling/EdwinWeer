@@ -23,6 +23,7 @@ import { ShareWeatherView } from './views/ShareWeatherView';
 import { BarometerView } from './views/BarometerView';
 import { ClimateChangeView } from './views/ClimateChangeView';
 import { ThisDayView } from './views/ThisDayView';
+import { YourDayView } from './views/YourDayView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -226,6 +227,8 @@ const App: React.FC = () => {
         return <BarometerView onNavigate={navigate} settings={settings} />;
       case ViewState.CLIMATE_CHANGE:
         return <ClimateChangeView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.YOUR_DAY:
+        return <YourDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.THIS_DAY:
         return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
@@ -399,6 +402,16 @@ const App: React.FC = () => {
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
                     
                     <div className="space-y-3 md:space-y-4">
+                         <button onClick={() => { navigate(ViewState.YOUR_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
+                                <Icon name="event_note" className="text-xl md:text-2xl" />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                                <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht Jouw Dag</span>
+                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Persoonlijke weerberichten voor speciale dagen</span>
+                            </div>
+                         </button>
+
                          <button onClick={() => { navigate(ViewState.CLIMATE_CHANGE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
                             <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
                                 <Icon name="thermostat" className="text-xl md:text-2xl" />

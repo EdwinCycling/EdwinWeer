@@ -142,6 +142,7 @@ export const handler = async (event) => {
     const instructions = hasInstructions ? profile.otherInstructions.trim() : "";
     
     const hasHayFever = profile.hayFever === true;
+    const reportLength = profile.reportLength || 'standard';
 
     let styles = toCommaList(profile.reportStyle, "zakelijk");
     
@@ -185,6 +186,7 @@ export const handler = async (event) => {
           - Locatie: ${location}
           - Datum Vandaag: ${todayFull} (Let op het jaartal!)
           - Gewenste stijl: ${styles}
+          - Lengte van het bericht: ${reportLength} (BELANGRIJK!)
           ${hasActivities ? `- Activiteiten: ${activities}` : ''}
           ${hasTimeOfDay ? `- Belangrijke dagdelen: ${timeOfDay}` : ''}
           ${hasTransport ? `- Vervoer: ${transport}` : ''}
@@ -199,6 +201,11 @@ export const handler = async (event) => {
           Schrijf als Baro een weerbericht voor ${userSalutation} voor de locatie ${location}.
           Gebruik de weerdata voor de komende ${daysAhead} dagen.
 
+          INSTRUCTIES VOOR LENGTE (${reportLength}):
+          ${reportLength === 'factual' ? '- Schrijf EXTREEM BEKNOPT. Gebruik weinig zinnen. Focus puur op de feiten en data. Geen introductiepraatjes.' : ''}
+          ${reportLength === 'standard' ? '- Schrijf een gebalanceerd bericht. Niet te kort, niet te lang. Gewoon een goed leesbaar weerbericht.' : ''}
+          ${reportLength === 'extended' ? '- Schrijf een UITGEBREID en gedetailleerd verhaal. Neem de ruimte voor nuance, uitleg en context.' : ''}
+
           STRIKTE REGELS:
           1. AANHEF: Begin het bericht ALTIJD met "Beste ${userSalutation},".
           2. AFSLUITING: Eindig het bericht ALTIJD met "Groetjes van Baro".
@@ -209,7 +216,7 @@ export const handler = async (event) => {
           7. VERVOER: Geef specifiek advies indien opgegeven.
           8. DATA: Gebruik altijd de exacte waarden uit de JSON.
           9. STIJL: Houd je aan de gevraagde stijl (${styles}). Geen markdown headers (#), gebruik platte tekst.
-          ${hasHayFever ? `10. HOOIKOORTS: Wijd een aparte alinea aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig (bijv. regen) of ongunstig (bijv. droog/wind) is.` : ''}
+          ${hasHayFever ? `10. HOOIKOORTS: Wijd een aparte alinea (of zin bij 'feitelijk') aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig of ongunstig is.` : ''}
 
           Structuur:
           - Korte introductie over het huidige weer (${todayFull}) door Baro.

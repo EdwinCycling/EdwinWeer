@@ -553,7 +553,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
                   {/* Dropdown Results */}
                   {(isSearching || (showFavorites && !searchQuery && settings.favorites.length > 0) || searchResults.length > 0) && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden max-h-60 overflow-y-auto z-50">
                           {searchResults.length > 0 ? (
                               searchResults.map((loc, i) => (
                                   <button

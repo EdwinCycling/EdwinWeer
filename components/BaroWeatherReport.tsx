@@ -190,11 +190,10 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
             setReportDate(new Date());
             setShowModal(true); // Open modal on success
             
-            // Deduct credits
-            const usedBaroCredit = trackBaroCall();
-            if (!usedBaroCredit) {
-                trackAiCall();
-            }
+            // Deduct credits (Strict)
+            trackBaroCall();
+            // Also deduct weather credit as we used data
+            trackAiCall();
 
         } catch (e: any) {
             console.error("Baro Generation Error:", e);
