@@ -257,12 +257,12 @@ export const handler = async (event, context) => {
             // because a Dinner email at 08:00 is weird.
             // However, we strictly enforce the time match.
             
-            if (userHour === SLOTS.breakfast) matchedSlot = 'breakfast';
-            else if (userHour === SLOTS.lunch) matchedSlot = 'lunch';
-            else if (userHour === SLOTS.dinner) matchedSlot = 'dinner';
+            if (SLOTS.breakfast.includes(userHour)) matchedSlot = 'breakfast';
+            else if (SLOTS.lunch.includes(userHour)) matchedSlot = 'lunch';
+            else if (SLOTS.dinner.includes(userHour)) matchedSlot = 'dinner';
 
             if (!matchedSlot) {
-                // console.log(`User ${userId}: Current hour ${userHour} (in ${timezone}) does not match any slot (7, 12, 17).`);
+                // console.log(`User ${userId}: Current hour ${userHour} (in ${timezone}) does not match any slot ranges.`);
                 continue; 
             }
 
