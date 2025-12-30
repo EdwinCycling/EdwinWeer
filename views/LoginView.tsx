@@ -27,6 +27,7 @@ import { twitterProvider, facebookProvider, microsoftProvider } from '../service
   ensemble: '/landing/ensemble-chart.png',  // Screenshot of ensemble chart
   history: '/landing/inzichten.png',    // Screenshot of history view
   activities: '/landing/vakantie-weer-planner.png',    // Collage of biking/running/etc
+  personalized: '/landing/baro weerbericht.jpg',     // Personalized AI report image
   models: {
     ecmwf: '/images/logos/ecmwf.png',
     gfs: '/images/logos/gfs.png',
@@ -344,6 +345,14 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
                 title={t('landing.feature_activities')} 
                 desc={t('landing.feature_activities_desc')}
                 image={IMAGES.activities}
+            />
+
+            <FeatureSection 
+                icon="auto_awesome" 
+                title={t('landing.feature_personalized') || 'Persoonlijke Weerberichten'} 
+                desc={t('landing.feature_personalized_desc') || 'Ontvang unieke, door AI geschreven weerberichten die precies zijn afgestemd op jouw locatie, datum en persoonlijke activiteitenprofiel.'}
+                image={IMAGES.personalized}
+                reversed={true}
             />
           </div>
         </div>

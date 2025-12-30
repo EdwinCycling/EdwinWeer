@@ -50,6 +50,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
     const [reportDate, setReportDate] = useState<Date | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [copySuccess, setCopySuccess] = useState<string | null>(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
 
     // Lock body scroll when modal is open
     useEffect(() => {
@@ -83,7 +84,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
         const currentAiCalls = stats.aiCallsDayStart === today ? (stats.aiCalls || 0) : 0;
         
         if (currentAiCalls >= limit) {
-             setError("Datalimiet overschreden...kom morgen terug etc.");
+             setError("Datalimiet overschreden of onvoldoende credits. Je kunt een nieuw pakket aanschaffen bij instellingen of hieronder.");
              return;
         }
 
@@ -286,13 +287,22 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 <span>Let op</span>
                             </div>
                             <p className="mt-1">{error}</p>
-                            {(error.includes('limiet') || error.includes('overschreden')) && (
-                                <button 
-                                    onClick={() => onNavigate(ViewState.PRICING)}
-                                    className="mt-3 text-xs font-bold underline hover:no-underline"
-                                >
-                                    Bekijk onze pakketten
-                                </button>
+                            {(error.includes('limiet') || error.includes('overschreden') || error.includes('credits')) && (
+                                <div className="flex flex-col gap-2">
+                                    <button 
+                                        onClick={() => onNavigate(ViewState.PRICING)}
+                                        className="mt-3 text-xs font-bold underline hover:no-underline text-left"
+                                    >
+                                        Bekijk onze pakketten
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowPreviewModal(true)}
+                                        className="text-xs font-bold underline hover:no-underline text-left flex items-center gap-1"
+                                    >
+                                        <Icon name="visibility" className="text-sm" />
+                                        {t('landing.view_preview') || 'Bekijk Voorbeeld'}
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}
@@ -563,6 +573,43 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Preview Modal */}
+            {showPreviewModal && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowPreviewModal(false)}></div>
+                    <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-300">
+                        <div className="p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                            <div className="flex items-center gap-2">
+                                <Icon name="auto_awesome" />
+                                <span className="font-bold">{t('landing.view_preview') || 'Voorbeeld Weerbericht'}</span>
+                            </div>
+                            <button onClick={() => setShowPreviewModal(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                <Icon name="close" />
+                            </button>
+                        </div>
+                        <div className="p-2 overflow-y-auto max-h-[80vh]">
+                            <img 
+                                src="/landing/baro weerbericht.jpg" 
+                                alt="Voorbeeld Baro Weerbericht" 
+                                className="w-full h-auto rounded-xl"
+                            />
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 flex justify-center">
+                            <button 
+                                onClick={() => {
+                                    setShowPreviewModal(false);
+                                    onNavigate(ViewState.PRICING);
+                                }}
+                                className="px-6 py-2 bg-primary text-white rounded-xl font-bold shadow-lg hover:opacity-90 transition-all"
+                            >
+                                {t('credits.upgrade') || 'Opwaarderen'}
+                            </button>
                         </div>
                     </div>
                 </div>,
