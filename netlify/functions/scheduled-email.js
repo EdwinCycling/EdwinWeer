@@ -218,11 +218,15 @@ export const handler = async (event, context) => {
     console.log(`Scheduler run at (server time): ${now.toISOString()}`);
 
     try {
-        // 1. Fetch all users
-        const usersSnapshot = await db.collection('users').get();
+        // 1. Fetch all users with credits > 0
+        // Optimization: Filter at database level
+        const usersSnapshot = await db.collection('users')
+            .where('usage.baroCredits', '>', 0)
+            .get();
+            
         const usersToProcess = usersSnapshot.docs;
         
-        console.log(`Found ${usersToProcess.length} users to check.`);
+        console.log(`Found ${usersToProcess.length} users with credits to check.`);
         const results = [];
 
         for (const doc of usersToProcess) {

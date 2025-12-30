@@ -153,8 +153,14 @@ export const handler = async (event, context) => {
     now.setHours(0, 0, 0, 0);
 
     try {
-        const usersSnapshot = await db.collection('users').get();
+        // Optimization: Filter users with credits > 0 directly
+        const usersSnapshot = await db.collection('users')
+            .where('usage.baroCredits', '>', 0)
+            .get();
+
         const results = [];
+
+        console.log(`Found ${usersSnapshot.size} users with credits to check for Custom Events.`);
 
         for (const doc of usersSnapshot.docs) {
             const userData = doc.data();
