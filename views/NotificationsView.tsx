@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db, messaging } from '../services/firebase';
-import { getToken, deleteToken } from 'firebase/messaging';
+import { getToken, deleteToken, onMessage } from 'firebase/messaging';
 import { ScheduleConfig } from '../components/ScheduleConfig';
 import { getTranslation } from '../services/translations';
 
@@ -61,6 +61,32 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
 
     checkNotificationStatus();
   }, [user]);
+
+  // Handle foreground messages
+  useEffect(() => {
+    if (!fcmToken) return;
+
+    const unsubscribe = onMessage(messaging, (payload) => {
+      console.log('Foreground message received:', payload);
+      const title = payload.notification?.title || 'Nieuw bericht';
+      const body = payload.notification?.body || '';
+      
+      // Show simple alert for now, or use a toast component if available
+      alert(`🔔 ${title}\n\n${body}`);
+      
+      // Alternatively, we could spawn a browser notification if user allowed it, 
+      // but usually the browser blocks this if the tab is focused unless we do it carefully.
+      // But standard practice is to show UI within the app.
+      if (Notification.permission === 'granted') {
+          new Notification(title, {
+            body: body,
+            icon: '/icons/baro-icon-192.png'
+          });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [fcmToken]);
 
   const handleEnableNotifications = async () => {
     if (!user) return;
