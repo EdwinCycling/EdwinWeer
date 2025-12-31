@@ -3,7 +3,8 @@ import { ViewState, AppSettings, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db, messaging } from '../services/firebase';
+import { getToken, deleteToken } from 'firebase/messaging';
 import { ScheduleConfig } from '../components/ScheduleConfig';
 import { getTranslation } from '../services/translations';
 
@@ -13,10 +14,10 @@ interface Props {
   onUpdateSettings?: (newSettings: AppSettings) => void;
 }
 
-export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const { user } = useAuth();
   const t = (key: string) => getTranslation(key, settings?.language || 'nl');
-  const [telegramChatId, setTelegramChatId] = useState<string | null>(null);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
   // Profile handling
@@ -40,7 +41,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
   };
 
   useEffect(() => {
-    const checkTelegramStatus = async () => {
+    const checkNotificationStatus = async () => {
       if (!user) {
         setLoading(false);
         return;
@@ -49,29 +50,62 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          setTelegramChatId(userDoc.data().telegramChatId || null);
+          setFcmToken(userDoc.data().fcmToken || null);
         }
       } catch (error) {
-        console.error('Error fetching telegram status:', error);
+        console.error('Error fetching notification status:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkTelegramStatus();
+    checkNotificationStatus();
   }, [user]);
 
-  const handleDisconnect = async () => {
-    if (!user || !confirm('Weet je zeker dat je Telegram wilt ontkoppelen?')) return;
+  const handleEnableNotifications = async () => {
+    if (!user) return;
 
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        telegramChatId: deleteField()
-      });
-      setTelegramChatId(null);
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Register Service Worker with config params to avoid hardcoding in public/sw.js
+        const swUrl = `/firebase-messaging-sw.js?apiKey=${import.meta.env.VITE_FIREBASE_API_KEY}&authDomain=${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}&projectId=${import.meta.env.VITE_FIREBASE_PROJECT_ID}&storageBucket=${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}&messagingSenderId=${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}&appId=${import.meta.env.VITE_FIREBASE_APP_ID}&measurementId=${import.meta.env.VITE_FIREBASE_MEASUREMENT_ID}`;
+        
+        const registration = await navigator.serviceWorker.register(swUrl);
+        
+        const token = await getToken(messaging, { 
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: registration 
+        });
+        
+        if (token) {
+          await updateDoc(doc(db, 'users', user.uid), {
+            fcmToken: token
+          });
+          setFcmToken(token);
+          alert(t('notifications.success') || '✅ Meldingen staan aan!');
+        }
+      } else {
+        alert(t('notifications.permission_denied') || 'Toestemming geweigerd voor meldingen.');
+      }
     } catch (error) {
-      console.error('Error disconnecting Telegram:', error);
-      alert('Er ging iets mis bij het ontkoppelen.');
+      console.error('Error enabling notifications:', error);
+      alert(t('notifications.error') || 'Er ging iets mis bij het aanzetten van meldingen.');
+    }
+  };
+
+  const handleDisableNotifications = async () => {
+    if (!user || !confirm(t('notifications.confirm_disable') || 'Weet je zeker dat je meldingen wilt uitzetten?')) return;
+
+    try {
+      await deleteToken(messaging);
+      await updateDoc(doc(db, 'users', user.uid), {
+        fcmToken: deleteField()
+      });
+      setFcmToken(null);
+    } catch (error) {
+      console.error('Error disabling notifications:', error);
+      alert(t('notifications.error_disable') || 'Er ging iets mis bij het uitzetten van meldingen.');
     }
   };
 
@@ -86,7 +120,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
           >
             <Icon name="arrow_back_ios_new" />
           </button>
-          <h1 className="text-lg font-bold">Baro Messenger</h1>
+          <h1 className="text-lg font-bold">{t('notifications.title') || 'Web Push Notificaties'}</h1>
         </div>
       </div>
 
@@ -96,57 +130,59 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
         <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
           <div className="flex items-center gap-4 mb-4">
             <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
-              <Icon name="send" className="text-2xl" />
+              <Icon name="notifications" className="text-2xl" />
             </div>
             <div>
-              <h2 className="font-bold text-lg">{t('messenger.intro.title')}</h2>
-              <p className="text-sm text-slate-500 dark:text-white/60">{t('messenger.intro.subtitle')}</p>
+              <h2 className="font-bold text-lg">{t('notifications.intro.title') || 'Mis nooit meer een update!'}</h2>
+              <p className="text-sm text-slate-500 dark:text-white/60">{t('notifications.intro.subtitle') || 'Ontvang dagelijks weerberichten.'}</p>
             </div>
           </div>
           
           <div className="text-sm leading-relaxed mb-6 space-y-4">
             <p>
-                {t('messenger.intro.body1')}
-            </p>
-            <p className="text-slate-500 dark:text-white/60 text-xs bg-slate-50 dark:bg-white/5 p-3 rounded-lg">
-                <strong>{t('messenger.intro.body2_bold')}</strong><br/>
-                {t('messenger.intro.body2_text')}
+                {t('notifications.intro.body1') || 'Activeer pushmeldingen om dagelijks op de hoogte te blijven van het weer.'}
             </p>
           </div>
 
           {!user ? (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/50 text-sm text-yellow-800 dark:text-yellow-200">
-              Je moet ingelogd zijn om Telegram te koppelen.
+              {t('notifications.login_required') || 'Je moet ingelogd zijn om meldingen te ontvangen.'}
             </div>
           ) : loading ? (
             <div className="flex justify-center p-4">
               <Icon name="sync" className="animate-spin text-slate-400" />
             </div>
-          ) : telegramChatId ? (
+          ) : fcmToken ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
                 <Icon name="check_circle" />
-                <span>Telegram is verbonden</span>
+                <span>{t('notifications.active') || 'Meldingen staan aan!'}</span>
               </div>
               
               <button 
-                onClick={handleDisconnect}
+                onClick={handleDisableNotifications}
                 className="w-full py-3 px-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-bold flex items-center justify-center gap-2"
               >
-                <Icon name="link_off" />
-                Ontkoppelen
+                <Icon name="notifications_off" />
+                {t('notifications.disable') || 'Meldingen uitzetten'}
+              </button>
+              
+              <button 
+                onClick={handleTestNotification}
+                className="w-full py-3 px-4 rounded-xl border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm font-bold flex items-center justify-center gap-2"
+              >
+                <Icon name="send" />
+                Stuur test bericht
               </button>
             </div>
           ) : (
-            <a 
-              href={`https://t.me/AskBaroBot?start=${user.uid}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button 
+              onClick={handleEnableNotifications}
               className="w-full py-3 px-4 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 font-bold"
             >
-              <Icon name="send" />
-              Verbind met Telegram
-            </a>
+              <Icon name="notifications_active" />
+              {t('notifications.enable') || '🔔 Zet Meldingen Aan'}
+            </button>
           )}
         </div>
 
@@ -155,21 +191,21 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
            <div className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
              <Icon name="schedule" className="text-slate-400 mt-1" />
              <div>
-               <h3 className="font-bold text-sm">Dagelijkse Update</h3>
-               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">Ontvang elke ochtend een compact weerbericht afgestemd op jouw profiel.</p>
+               <h3 className="font-bold text-sm">{t('notifications.feature.daily') || 'Dagelijkse Update'}</h3>
+               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">{t('notifications.feature.daily_desc') || 'Ontvang meldingen zelfs als de browser gesloten is.'}</p>
              </div>
            </div>
         </div>
 
-        {/* Messenger Schedule Config */}
-        {telegramChatId && settings && onUpdateSettings && profiles.length > 0 && (
+        {/* Schedule Config */}
+        {fcmToken && settings && onUpdateSettings && profiles.length > 0 && (
             <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
-                <h3 className="font-bold text-lg px-1">Messenger Schema</h3>
+                <h3 className="font-bold text-lg px-1">{t('notifications.schedule.title') || 'Melding Schema'}</h3>
                 
                 {/* Profile Selector */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
-                        Selecteer Profiel
+                        {t('notifications.select_profile') || 'Selecteer Profiel'}
                     </label>
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
                         {profiles.map((p, idx) => (
@@ -190,8 +226,8 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
 
                 {selectedProfile && (
                     <ScheduleConfig 
-                        title={`Messenger Schema voor ${selectedProfile.name}`}
-                        schedule={selectedProfile.messengerSchedule}
+                        title={`Schema voor ${selectedProfile.name}`}
+                        schedule={selectedProfile.messengerSchedule} // Reusing messengerSchedule for now as requested
                         onUpdate={(newSchedule) => {
                             updateProfile({ ...selectedProfile, messengerSchedule: newSchedule });
                         }}

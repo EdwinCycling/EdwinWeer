@@ -31,6 +31,16 @@ export const ScheduleConfig: React.FC<Props> = ({
     useEffect(() => {
         if (initialSchedule) {
             setSchedule(initialSchedule);
+        } else {
+             setSchedule({
+                enabled: false,
+                days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(d => ({
+                    day: d,
+                    breakfast: false,
+                    lunch: false,
+                    dinner: false
+                }))
+            });
         }
     }, [initialSchedule]);
 

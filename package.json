@@ -1,11 +1,11 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.9251230.2",
+  "version": "0.9251230.3",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
-    "dev:vite": "vite --port 3001",
+    "dev:vite": "vite --port 3000",
     "dev:netlify": "netlify functions:serve --port 9998",
     "build": "vite build",
     "preview": "vite preview --port 4173 --strictPort"
@@ -30,7 +30,6 @@
     "stripe": "^20.1.0"
   },
   "devDependencies": {
-    "@netlify/functions": "^5.1.2",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",

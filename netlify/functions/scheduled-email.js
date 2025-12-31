@@ -153,7 +153,10 @@ async function generateReport(weatherData, profile, userName) {
           REGELS:
           1. Begin met "Beste ${userSalutation},"
           2. Wees creatief maar feitelijk juist.
-          3. Gebruik HTML opmaak voor de email (<b>, <br>, <i>, etc), maar GEEN volledige HTML doc (alleen body content).
+          3. BELANGRIJK: Gebruik HTML tags voor opmaak:
+             - Gebruik <br><br> voor witregels tussen alinea's.
+             - Gebruik <b> voor dikgedrukte koppen of woorden.
+             - Gebruik GEEN markdown (zoals ## of **).
           4. Maak het leuk om te lezen!
           ${hasHayFever ? `5. HOOIKOORTS: Wijd een aparte alinea (of zin bij 'feitelijk') aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig of ongunstig is.` : ''}
         `;
@@ -184,9 +187,13 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
                     <h2 style="color: #2563eb;">Jouw Weerbericht</h2>
                     <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
                         ${htmlContent}
+                        
+                        <div style="margin-top: 25px; text-align: center;">
+                            <a href="https://askbaro.com" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Open Baro App</a>
+                        </div>
                     </div>
                     <p style="font-size: 12px; color: #64748b; margin-top: 20px; text-align: center;">
-                        Verzonden door Baro | <a href="https://askbaro.com">Open App</a>
+                        Verzonden door Baro | <a href="https://askbaro.com" style="color: #2563eb; text-decoration: none;">Open App</a>
                     </p>
                 </div>
             </body>
@@ -226,6 +233,47 @@ async function sendTelegramNotification(chatId, text) {
         });
     } catch (e) {
         console.error('Error sending Telegram:', e);
+    }
+}
+
+async function sendPushNotification(token, title, body, userId) {
+    if (!token) return false;
+
+    try {
+        await admin.messaging().send({
+            token: token,
+            notification: {
+                title: title,
+                body: body,
+            },
+            webpush: {
+                fcmOptions: {
+                    link: 'https://askbaro.com'
+                },
+                notification: {
+                    icon: 'https://askbaro.com/icons/baro-icon-192.png'
+                }
+            }
+        });
+        console.log(`Push notification sent to user ${userId}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending push notification:', error);
+        if (error.code === 'messaging/registration-token-not-registered' || 
+            error.message.includes('registration-token-not-registered') ||
+            (error.errorInfo && error.errorInfo.code === 'messaging/registration-token-not-registered')) {
+            
+            console.log(`Token invalid for user ${userId}, removing...`);
+            try {
+                await db.collection('users').doc(userId).update({
+                    fcmToken: admin.firestore.FieldValue.delete()
+                });
+                console.log(`Removed invalid FCM token for user ${userId}`);
+            } catch (cleanupError) {
+                console.error(`Failed to remove invalid token for user ${userId}:`, cleanupError);
+            }
+        }
+        return false;
     }
 }
 
@@ -421,6 +469,7 @@ export const handler = async (event, context) => {
                 
                 let emailSent = false;
                 let messengerSent = false;
+                let pushSent = false;
 
                 // --- EMAIL NOTIFICATION ---
                 if (shouldSendEmail) {
@@ -471,14 +520,14 @@ export const handler = async (event, context) => {
                 if (shouldSendMessenger && userData.telegramChatId) {
                     try {
                         const telegramMessage = `
-<b>Jouw Weerbericht (${baroProfile.name}): ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}</b>
+<b>Jouw Weerbericht (${baroProfile.name})</b>
 
 ${emailContent.replace(/<[^>]*>?/gm, '').trim()}
 
 <b>Activiteiten:</b>
 ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('\n')}
 
-<a href="https://baro-app.netlify.app">Open Baro App</a>
+<a href="https://askbaro.com/">Open Baro App</a>
                         `;
 
                         await sendTelegramNotification(userData.telegramChatId, telegramMessage);
@@ -534,7 +583,7 @@ ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('
                         console.error(`User ${userId}: Failed to update credits`, e);
                     }
 
-                    results.push({ userId, profileId, status: 'sent', slot: matchedSlot, channels: { email: emailSent, messenger: messengerSent } });
+                    results.push({ userId, profileId, status: 'sent', slot: matchedSlot, channels: { email: emailSent, messenger: messengerSent, push: pushSent } });
                 } else {
                     results.push({ userId, profileId, status: 'failed', slot: matchedSlot });
                 }

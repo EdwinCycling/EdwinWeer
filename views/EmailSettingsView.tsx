@@ -48,6 +48,29 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
 
             <div className="p-4 max-w-lg mx-auto w-full space-y-6">
                 
+                {/* Intro Card */}
+                <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+                            <Icon name="mail" className="text-2xl" />
+                        </div>
+                        <div>
+                            <h2 className="font-bold text-lg">{t('email.intro.title')}</h2>
+                            <p className="text-sm text-slate-500 dark:text-white/60">{t('email.intro.subtitle')}</p>
+                        </div>
+                    </div>
+
+                    <div className="text-sm leading-relaxed mb-6 space-y-4">
+                        <p>
+                            {t('email.intro.body1')}
+                        </p>
+                        <p className="text-slate-500 dark:text-white/60 text-xs bg-slate-50 dark:bg-white/5 p-3 rounded-lg">
+                            <strong>{t('email.intro.body2_bold')}</strong><br />
+                            {t('email.intro.body2_text')}
+                        </p>
+                    </div>
+                </div>
+
                 {profiles.length === 0 && (
                     <div className="text-center p-8 text-slate-500 dark:text-white/50">
                         <p>Je hebt nog geen profielen aangemaakt.</p>
@@ -68,9 +91,9 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                                 Selecteer Profiel
                             </label>
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                {profiles.map(p => (
+                                {profiles.map((p, idx) => (
                                     <button
-                                        key={p.id}
+                                        key={p.id || `profile-${idx}`}
                                         onClick={() => setSelectedProfileId(p.id)}
                                         className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
                                             selectedProfileId === p.id

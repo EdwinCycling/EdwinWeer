@@ -14,6 +14,43 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 // --- SECURITY: REQUEST THROTTLING ---
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 1000; // 1 seconde delay between requests
+let requestQueue = Promise.resolve();
+
+const throttledFetch = async (url: string) => {
+    const fetchAction = async () => {
+        checkLimit();
+        trackCall();
+
+        const now = Date.now();
+        const timeSinceLast = now - lastRequestTime;
+        
+        if (timeSinceLast < MIN_REQUEST_INTERVAL) {
+            await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLast));
+        }
+        
+        lastRequestTime = Date.now();
+        const response = await fetch(url);
+        if (!response.ok) {
+            // If 429, we might want to throw specific error or wait and retry?
+            // For now just throw, but the queue helps avoid it.
+            if (response.status === 429) {
+                 console.warn("Hit 429 in throttledFetch, slowing down...");
+                 // Penalize next request
+                 lastRequestTime = Date.now() + 2000; 
+            }
+            throw new Error(`Fetch failed: ${response.status}`);
+        }
+        return response.json();
+    };
+
+    // Chain the request to the queue to ensure serial execution
+    const result = requestQueue.then(fetchAction);
+    
+    // Update queue pointer, catching errors so the queue doesn't break
+    requestQueue = result.catch(() => {});
+    
+    return result;
+};
 
 
 // --- UNIT CONVERSION HELPERS ---
@@ -269,21 +306,7 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
       return cached.data;
   }
 
-  checkLimit();
-  trackCall();
-
-  // Throttling mechanism
-  const now = Date.now();
-  if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
-      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - (now - lastRequestTime)));
-  }
-  lastRequestTime = Date.now();
-
-  const response = await fetch(url);
-  if (!response.ok) {
-      throw new Error(`Weather fetch failed: ${response.status}`);
-  }
-  const data = await response.json();
+  const data = await throttledFetch(url);
   forecastCache[cacheKey] = { timestamp: Date.now(), data };
   return data;
 };
@@ -313,21 +336,7 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
       url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
   }
 
-  checkLimit();
-  trackCall();
-
-  // Throttling mechanism
-  const now = Date.now();
-  if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
-      await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - (now - lastRequestTime)));
-  }
-  lastRequestTime = Date.now();
-
-  const response = await fetch(url);
-  if (!response.ok) {
-      throw new Error(`Historical fetch failed: ${response.status}`);
-  }
-  return response.json();
+  return throttledFetch(url);
 };
 
 export const fetchHistoricalFull = async (lat: number, lon: number, date: string) => {
@@ -356,13 +365,7 @@ export const fetchHistoricalFull = async (lat: number, lon: number, date: string
         url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
     }
   
-    checkLimit();
-    trackCall();
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Historical Full fetch failed: ${response.status}`);
-    }
-    return response.json();
+    return throttledFetch(url);
   };
 
 export const ENSEMBLE_VARS_HOURLY_BASIC = [
@@ -464,13 +467,7 @@ export const fetchEnsemble = async (lat: number, lon: number, model: EnsembleMod
         url += `&hourly=${vars}`;
     }
 
-    checkLimit();
-    trackCall();
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Ensemble fetch failed: ${response.status}`);
-    }
-    return response.json();
+    return throttledFetch(url);
 };
 
 export const fetchHistoricalRangePastYears = async (
@@ -520,16 +517,7 @@ export const fetchHistoricalRangePastYears = async (
         const pastEnd = shiftDateStringYear(endDate, i);
 
         const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${pastStart}&end_date=${pastEnd}&daily=${dailyVars}&timezone=auto`;
-        checkLimit();
-        trackCall();
-        requests.push(
-            fetch(url).then(async (r) => {
-                if (!r.ok) {
-                    throw new Error(`Historical range fetch failed: ${r.status}`);
-                }
-                return r.json();
-            })
-        );
+        requests.push(throttledFetch(url));
     }
 
     return Promise.all(requests);
@@ -613,14 +601,7 @@ export const fetchHistoricalRange = async (lat: number, lon: number, startDate: 
     ].join(',');
     
     const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
-    checkLimit();
-    trackCall();
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Historical range fetch failed: ${response.status}`);
-    }
-    return response.json();
+    return throttledFetch(url);
  };
 
 export const calculateHeatIndex = (tempC: number, rh: number): number => {
