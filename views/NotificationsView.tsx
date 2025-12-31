@@ -54,24 +54,18 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
       }
       
       try {
-        addLog('Checking notification status...');
-        
         // Always check Firestore first
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const dbToken = userDoc.data().fcmToken;
           if (dbToken) {
               setFcmToken(dbToken);
-              addLog('Token found in Firestore.');
           }
         }
 
         // If permission is granted, verify local token matches
         if (Notification.permission === 'granted') {
-            addLog('Permission granted, verifying local token...');
-            
             const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-            addLog(`VAPID Check: ${vapidKey ? (vapidKey.startsWith('B') ? 'Valid prefix (B...)' : 'Invalid prefix') : 'MISSING'}`);
 
             const swUrl = `/firebase-messaging-sw.js?apiKey=${import.meta.env.VITE_FIREBASE_API_KEY}&authDomain=${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}&projectId=${import.meta.env.VITE_FIREBASE_PROJECT_ID}&storageBucket=${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}&messagingSenderId=${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}&appId=${import.meta.env.VITE_FIREBASE_APP_ID}&measurementId=${import.meta.env.VITE_FIREBASE_MEASUREMENT_ID}`;
             
@@ -85,23 +79,14 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
 
             if (currentToken) {
                 if (currentToken !== userDoc.data()?.fcmToken) {
-                    addLog('Local token differs from DB. Updating DB...');
                     await updateDoc(doc(db, 'users', user.uid), { fcmToken: currentToken });
                     setFcmToken(currentToken);
-                    addLog('Token synced to DB.');
-                } else {
-                    addLog('Local token matches DB.');
                 }
-            } else {
-                addLog('No local token retrieved.');
             }
-        } else {
-            addLog('Permission not granted: ' + Notification.permission);
         }
 
       } catch (error) {
         console.error('Error fetching notification status:', error);
-        addLog('Error: ' + error);
       } finally {
         setLoading(false);
       }
@@ -114,11 +99,8 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   useEffect(() => {
     if (!fcmToken) return;
     
-    addLog('Setting up foreground listener...');
-
     const unsubscribe = onMessage(messaging, (payload) => {
       console.log('Foreground message received:', payload);
-      addLog(`📩 Message received: ${JSON.stringify(payload)}`);
       
       const title = payload.notification?.title || 'Nieuw bericht';
       const body = payload.notification?.body || '';
@@ -141,14 +123,11 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
     if (!user) return;
 
     try {
-      addLog('Requesting permission...');
       const permission = await Notification.requestPermission();
-      addLog(`Permission result: ${permission}`);
       
       if (permission === 'granted') {
         const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
         if (!vapidKey) {
-            addLog('Error: VAPID key is missing in environment variables!');
             alert('Configuratie fout: VAPID key ontbreekt.');
             return;
         }
@@ -158,7 +137,6 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
             const registrations = await navigator.serviceWorker.getRegistrations();
             for (const registration of registrations) {
                 if (registration.active?.scriptURL.includes('firebase-messaging-sw.js')) {
-                    addLog('Unregistering old SW...');
                     await registration.unregister();
                 }
             }
@@ -167,12 +145,9 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
         // Register Service Worker with config params to avoid hardcoding in public/sw.js
         const swUrl = `/firebase-messaging-sw.js?apiKey=${import.meta.env.VITE_FIREBASE_API_KEY}&authDomain=${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}&projectId=${import.meta.env.VITE_FIREBASE_PROJECT_ID}&storageBucket=${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}&messagingSenderId=${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}&appId=${import.meta.env.VITE_FIREBASE_APP_ID}&measurementId=${import.meta.env.VITE_FIREBASE_MEASUREMENT_ID}`;
         
-        addLog('Registering Service Worker...');
         const registration = await navigator.serviceWorker.register(swUrl);
         
-        addLog('SW Registered. Waiting for ready...');
         await navigator.serviceWorker.ready;
-        addLog('SW Ready. Getting token...');
         
         let token;
         try {
@@ -181,44 +156,36 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
               serviceWorkerRegistration: registration 
             });
         } catch (tokenError: any) {
-            addLog(`Token Error: ${tokenError.message || tokenError}`);
             console.error('Token retrieval failed', tokenError);
             
             if (tokenError.message.includes('push service error')) {
-                 addLog('⚠️ MOGELIJKE OORZAAK: VAPID Key matcht niet met Project ID.');
-                 addLog('Check Firebase Console -> Project Settings -> Cloud Messaging -> Web Configuration');
                  alert('Configuratie fout: Push service weigert de registratie. Controleer of de VAPID key in .env overeenkomt met het Firebase project.');
             } else if (tokenError.code === 'messaging/permission-blocked') {
                 alert('Notificaties zijn geblokkeerd door de browser. Controleer de site-instellingen.');
             } else {
                 // Try fallback: unregister and let browser handle default registration
-                addLog('Retrying without explicit SW registration...');
                 try {
                     token = await getToken(messaging, { vapidKey: vapidKey });
-                    addLog('Fallback success!');
                 } catch (retryError: any) {
-                     addLog(`Fallback failed: ${retryError.message}`);
+                     console.error('Fallback failed', retryError);
                 }
             }
         }
         
         if (token) {
-          addLog('Token received! Saving to DB...');
           await updateDoc(doc(db, 'users', user.uid), {
             fcmToken: token
           });
           setFcmToken(token);
-          addLog('Saved to DB.');
           alert(t('notifications.success') || '✅ Meldingen staan aan!');
         } else {
-            addLog('No token received.');
+            console.warn('No token received.');
         }
       } else {
         alert(t('notifications.permission_denied') || 'Toestemming geweigerd voor meldingen.');
       }
     } catch (error: any) {
       console.error('Error enabling notifications:', error);
-      addLog(`General Error: ${error.message || error}`);
       alert(t('notifications.error') || 'Er ging iets mis bij het aanzetten van meldingen.');
     }
   };
@@ -339,18 +306,6 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
               {t('notifications.enable') || '🔔 Zet Meldingen Aan'}
             </button>
           )}
-
-          {/* Debug Log Area */}
-          <div className="mt-8 w-full bg-slate-100 dark:bg-black/20 p-4 rounded-xl border border-slate-200 dark:border-white/5 font-mono text-xs overflow-hidden">
-            <h4 className="font-bold mb-2 text-slate-500 uppercase tracking-wider">Debug Log</h4>
-            <div className="h-32 overflow-y-auto space-y-1 text-slate-600 dark:text-slate-400">
-                {logs.length === 0 ? (
-                    <span className="italic opacity-50">Wachten op acties...</span>
-                ) : (
-                    logs.map((log, i) => <div key={i}>{log}</div>)
-                )}
-            </div>
-          </div>
         </div>
 
         {/* Feature List */}
