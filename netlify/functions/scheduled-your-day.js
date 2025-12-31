@@ -191,8 +191,7 @@ export const handler = async (event, context) => {
     if (!db) return { statusCode: 500, body: "Database error" };
 
     const now = new Date();
-    // Reset time to midnight for easier date comparison
-    now.setHours(0, 0, 0, 0);
+    console.log(`Your Day Scheduler run at (server time): ${now.toISOString()}`);
 
     try {
         // Optimization: Filter users with credits > 0 directly
@@ -211,23 +210,37 @@ export const handler = async (event, context) => {
             if (!customEvents.length) continue;
 
             const settings = userData.settings || {};
+
+            // Timezone & Schedule Check
+            const timezone = settings.timezone || 'Europe/Amsterdam';
+            const userTimeStr = now.toLocaleString('en-US', { timeZone: timezone });
+            const userTime = new Date(userTimeStr);
+            const userHour = userTime.getHours();
+
+            // Send only between 06:00 and 10:00 (Uitloop 6, 7, 8, 9)
+            if (userHour < 6 || userHour > 9) continue;
+
             const baroProfiles = settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : []);
+
+            // Date comparison based on User Time (midnight)
+            const dateForComparison = new Date(userTime);
+            dateForComparison.setHours(0, 0, 0, 0);
 
             for (const ev of customEvents) {
                 if (!ev.active) continue;
 
                 // Calculate Next Occurrence
                 const [m, d] = ev.date.split('-').map(Number);
-                let nextDate = new Date(now.getFullYear(), m - 1, d);
+                let nextDate = new Date(dateForComparison.getFullYear(), m - 1, d);
                 
                 // If date has passed this year, it's next year
                 // Note: If today is the date, we want it to be today (diff 0)
-                if (nextDate < now) {
-                    nextDate.setFullYear(now.getFullYear() + 1);
+                if (nextDate < dateForComparison) {
+                    nextDate.setFullYear(dateForComparison.getFullYear() + 1);
                 }
 
                 // Calculate Diff in Days
-                const diffTime = nextDate.getTime() - now.getTime();
+                const diffTime = nextDate.getTime() - dateForComparison.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                 // Check Triggers: 10, 7, 6, 5, 4, 3, 2, 1, 0

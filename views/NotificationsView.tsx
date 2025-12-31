@@ -20,29 +20,56 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<string[]>([]);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   const addLog = (msg: string) => {
     console.log(`[NotifView] ${msg}`);
     setLogs(prev => [`${new Date().toLocaleTimeString()} - ${msg}`, ...prev].slice(0, 50));
   };
   
-  // Profile handling
-  const profiles = settings?.baroProfiles || (settings?.baroProfile ? [settings.baroProfile] : []);
-  const [selectedProfileId, setSelectedProfileId] = useState<string>(settings?.baroProfile?.id || (profiles.length > 0 ? profiles[0].id : ''));
-  const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+  // Profile & Location handling
+  const locations = settings?.favorites || [];
+  const currentProfile = settings?.baroProfile || (settings?.baroProfiles && settings.baroProfiles.length > 0 ? settings.baroProfiles[0] : null);
+  const [selectedLocationName, setSelectedLocationName] = useState<string>(currentProfile?.location || (locations.length > 0 ? locations[0].name : ''));
 
-  const updateProfile = (updatedProfile: BaroProfile) => {
-      if (!settings || !onUpdateSettings) return;
-      const index = profiles.findIndex(p => p.id === updatedProfile.id);
-      if (index === -1) return;
+  // Update local state when profile changes
+  useEffect(() => {
+    if (currentProfile?.location) {
+        setSelectedLocationName(currentProfile.location);
+    }
+  }, [currentProfile]);
 
-      const newList = [...profiles];
-      newList[index] = updatedProfile;
+  const updateLocation = (newLocation: string) => {
+      if (!settings || !onUpdateSettings || !currentProfile) return;
+      
+      const updatedProfile = {
+          ...currentProfile,
+          location: newLocation
+      };
+
+      // Update in settings
+      onUpdateSettings({
+          ...settings,
+          baroProfile: updatedProfile,
+          // Also update in the list if it exists there
+          baroProfiles: settings.baroProfiles?.map(p => p.id === updatedProfile.id ? updatedProfile : p) || [updatedProfile]
+      });
+      
+      setSelectedLocationName(newLocation);
+  };
+
+  const updateSchedule = (newSchedule: any) => {
+      if (!settings || !onUpdateSettings || !currentProfile) return;
+      
+      const updatedProfile = {
+          ...currentProfile,
+          messengerSchedule: newSchedule
+      };
 
       onUpdateSettings({
           ...settings,
-          baroProfiles: newList,
-          baroProfile: settings.baroProfile?.id === updatedProfile.id ? updatedProfile : settings.baroProfile
+          baroProfile: updatedProfile,
+          baroProfiles: settings.baroProfiles?.map(p => p.id === updatedProfile.id ? updatedProfile : p) || [updatedProfile]
       });
   };
 
@@ -270,6 +297,14 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/50 text-sm text-yellow-800 dark:text-yellow-200">
               {t('notifications.login_required') || 'Je moet ingelogd zijn om meldingen te ontvangen.'}
             </div>
+          ) : !isMobile ? (
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50 text-sm text-blue-800 dark:text-blue-200">
+                <div className="flex items-center gap-2 mb-2 font-bold">
+                    <Icon name="info" />
+                    <span>{t('notifications.mobile_only') || 'Alleen op mobiel'}</span>
+                </div>
+                <p>{t('notifications.platform_note') || 'Je kunt hieronder wel het schema instellen, maar de meldingen zelf ontvang je op je telefoon.'}</p>
+            </div>
           ) : loading ? (
             <div className="flex justify-center p-4">
               <Icon name="sync" className="animate-spin text-slate-400" />
@@ -320,42 +355,42 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
         </div>
 
         {/* Schedule Config */}
-        {fcmToken && settings && onUpdateSettings && profiles.length > 0 && (
+        {settings && onUpdateSettings && (
             <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
                 <h3 className="font-bold text-lg px-1">{t('notifications.schedule.title') || 'Melding Schema'}</h3>
                 
-                {/* Profile Selector */}
+                {/* Location Selector */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
-                        {t('notifications.select_profile') || 'Selecteer Profiel'}
+                        {t('notifications.select_location') || 'Selecteer Locatie'}
                     </label>
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
-                        {profiles.map((p, idx) => (
+                        {locations.length > 0 ? locations.map((loc, idx) => (
                             <button
-                                key={p.id || `profile-${idx}`}
-                                onClick={() => setSelectedProfileId(p.id)}
+                                key={`loc-${idx}`}
+                                onClick={() => updateLocation(loc.name)}
                                 className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
-                                    selectedProfileId === p.id
+                                    selectedLocationName === loc.name
                                         ? 'bg-primary border-primary text-white shadow-md'
                                         : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
                                 }`}
                             >
-                                {p.name}
+                                {loc.name}
                             </button>
-                        ))}
+                        )) : (
+                            <div className="text-sm text-slate-500 italic px-2">
+                                {t('notifications.no_locations') || 'Geen favoriete locaties gevonden. Voeg deze eerst toe via de zoekfunctie.'}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {selectedProfile && (
-                    <ScheduleConfig 
-                        title={`Schema voor ${selectedProfile.name}`}
-                        schedule={selectedProfile.messengerSchedule} // Reusing messengerSchedule for now as requested
-                        onUpdate={(newSchedule) => {
-                            updateProfile({ ...selectedProfile, messengerSchedule: newSchedule });
-                        }}
-                        language={settings.language}
-                    />
-                )}
+                <ScheduleConfig 
+                    title={`Schema voor ${selectedLocationName}`}
+                    schedule={currentProfile.messengerSchedule} 
+                    onUpdate={updateSchedule}
+                    language={settings.language}
+                />
             </div>
         )}
 

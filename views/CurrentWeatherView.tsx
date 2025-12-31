@@ -16,8 +16,6 @@ import { getTranslation } from '../services/translations';
 import { WelcomeModal } from '../components/WelcomeModal';
 import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
-import { FlagIcon } from '../components/FlagIcon';
-import { AppLanguage } from '../types';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 
 interface Props {
@@ -49,20 +47,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitError, setLimitError] = useState('');
-  const [isLangOpen, setIsLangOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
-
-  const changeLanguage = (lang: AppLanguage) => {
-    if (onUpdateSettings) {
-        onUpdateSettings({
-            ...settings,
-            language: lang
-        });
-    }
-    setIsLangOpen(false);
-  };
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -517,35 +504,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
         <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8 relative pointer-events-auto h-0">
           
-          {/* Language Selector (Top Left) */}
-          <div className="absolute top-6 left-4 sm:left-6 lg:left-8 z-50">
-            <div className="relative">
-                <button 
-                    onClick={() => setIsLangOpen(!isLangOpen)}
-                    className="p-2 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-xl text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10 flex items-center gap-2"
-                >
-                    <FlagIcon countryCode={settings.language} className="w-6 h-4 rounded-sm shadow-sm" />
-                    <span className="text-xs font-bold uppercase hidden sm:inline">{settings.language}</span>
-                    <Icon name="expand_more" className={`text-sm transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
-                </button>
+          {/* Language Selector removed as requested */}
 
-                {isLangOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-32 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        {(['nl', 'en', 'fr', 'de', 'es'] as AppLanguage[]).map((lang) => (
-                            <button
-                                key={lang}
-                                onClick={() => changeLanguage(lang)}
-                                className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${settings.language === lang ? 'bg-primary/10 text-primary font-bold' : 'text-slate-700 dark:text-white/80'}`}
-                            >
-                                <FlagIcon countryCode={lang} className="w-5 h-3.5 rounded-sm shadow-sm" />
-                                <span className="uppercase">{lang}</span>
-                                {settings.language === lang && <Icon name="check" className="ml-auto text-xs" />}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-          </div>
 
           <div className="absolute top-6 right-4 sm:right-6 lg:right-8 flex items-center gap-1 sm:gap-3 flex-row-reverse">
               {/* Refresh Button */}

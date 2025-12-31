@@ -33,7 +33,8 @@ if (config.apiKey && config.projectId) {
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
       body: payload.notification.body,
-      icon: '/icons/baro-icon-192.png'
+      icon: '/icons/baro-icon-192.png',
+      data: payload.data
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
@@ -41,3 +42,25 @@ if (config.apiKey && config.projectId) {
 } else {
   console.warn('[firebase-messaging-sw.js] Missing config parameters in URL.');
 }
+
+self.addEventListener('notificationclick', function(event) {
+  console.log('[firebase-messaging-sw.js] Notification click Received.', event);
+  event.notification.close();
+
+  // Open the app or focus if already open
+  event.waitUntil(
+    clients.matchAll({type: 'window', includeUncontrolled: true}).then(windowClients => {
+      // Check if there is already a window/tab open with the target URL
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
+        if (client.url.indexOf('/') !== -1 && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If not, open a new window
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});

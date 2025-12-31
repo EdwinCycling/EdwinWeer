@@ -1,0 +1,341 @@
+import admin from 'firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import fetch from 'node-fetch';
+
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+    try {
+        let serviceAccount;
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
+            serviceAccount = {
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                // Handle newlines in private key which are often escaped in env vars
+                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            };
+        }
+
+        if (serviceAccount) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+        } else {
+            console.error("Missing Firebase Admin credentials (FIREBASE_SERVICE_ACCOUNT or individual keys)");
+        }
+    } catch (e) {
+        console.error("Error initializing Firebase Admin:", e);
+    }
+}
+
+const db = admin.apps.length ? admin.firestore() : null;
+
+// Constants
+const SLOTS = {
+    breakfast: [6, 7, 8, 9], // 06:00 - 09:59
+    lunch: [11, 12, 13],    // 11:00 - 13:59
+    dinner: [17, 18, 19]    // 17:00 - 19:00 (Uitloop)
+};
+
+// Helper: Get weather data
+async function fetchWeatherData(lat, lon) {
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m,precipitation&daily=weather_code,temperature_2m_max,precipitation_probability_max,wind_speed_10m_max&timezone=auto`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Weather API error: ${response.status}`);
+        return await response.json();
+    } catch (e) {
+        console.error("Error fetching weather:", e);
+        return null;
+    }
+}
+
+// Helper: Generate AI Push Notification Content
+async function generatePushContent(weatherData, profile, userName) {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+
+        const location = profile.location || "onbekend";
+        const userSalutation = userName ? userName.split(' ')[0] : (profile.name || "Gebruiker");
+
+        const prompt = `
+          Je bent Baro, de persoonlijke weerman.
+          
+          CONTEXT:
+          - Gebruiker: ${userSalutation}
+          - Locatie: ${location}
+          
+          WEERDATA (VANDAAG):
+          - Max Temp: ${weatherData.daily.temperature_2m_max[0]}°C
+          - Weer: ${weatherData.daily.weather_code[0]} (WMO code)
+          - Neerslagkans: ${weatherData.daily.precipitation_probability_max[0]}%
+          - Wind: ${weatherData.daily.wind_speed_10m_max[0]} km/h
+          
+          OPDRACHT:
+          Genereer een korte titel en body voor een push notificatie.
+          
+          EISEN:
+          - Titel: MAXIMAAL 30 tekens. Pakkend en relevant.
+          - Body: MAXIMAAL 140 tekens. De essentie van het weerbericht.
+          - Taal: Nederlands.
+          - Stijl: Vlot, persoonlijk.
+          
+          OUTPUT FORMAAT (JSON):
+          {
+            "title": "...",
+            "body": "..."
+          }
+        `;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        // Clean up markdown code blocks if present
+        const jsonStr = text.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+
+    } catch (e) {
+        console.error("Error generating push content:", e);
+        // Fallback
+        return {
+            title: "Het weer vandaag",
+            body: "Bekijk je dagelijkse weerbericht in de app."
+        };
+    }
+}
+
+async function sendPushNotification(token, title, body, userId) {
+    if (!token) return false;
+
+    try {
+        await admin.messaging().send({
+            token: token,
+            notification: {
+                title: title,
+                body: body,
+            },
+            webpush: {
+                fcmOptions: {
+                    link: 'https://askbaro.com'
+                },
+                notification: {
+                    icon: 'https://askbaro.com/icons/baro-icon-192.png'
+                }
+            }
+        });
+        console.log(`Push notification sent to user ${userId}`);
+        return true;
+    } catch (error) {
+        console.error('Error sending push notification:', error);
+        if (error.code === 'messaging/registration-token-not-registered' || 
+            error.message.includes('registration-token-not-registered') ||
+            (error.errorInfo && error.errorInfo.code === 'messaging/registration-token-not-registered')) {
+            
+            console.log(`Token invalid for user ${userId}, removing...`);
+            try {
+                await db.collection('users').doc(userId).update({
+                    fcmToken: admin.firestore.FieldValue.delete()
+                });
+                console.log(`Removed invalid FCM token for user ${userId}`);
+            } catch (cleanupError) {
+                console.error(`Failed to remove invalid token for user ${userId}:`, cleanupError);
+            }
+        }
+        return false;
+    }
+}
+
+export const handler = async (event, context) => {
+    if (!db) {
+        return { statusCode: 500, body: "Database error" };
+    }
+
+    const now = new Date();
+    console.log(`Push Scheduler run at (server time): ${now.toISOString()}`);
+
+    try {
+        // 1. Fetch all users with credits > 0
+        const usersSnapshot = await db.collection('users')
+            .where('usage.baroCredits', '>', 0)
+            .get();
+            
+        const usersToProcess = usersSnapshot.docs;
+        
+        console.log(`Found ${usersToProcess.length} users with credits to check for PUSH.`);
+        const results = [];
+
+        for (const doc of usersToProcess) {
+            const userId = doc.id;
+            const userData = doc.data();
+            
+            // Extract settings
+            const settings = userData.settings || {};
+            // Support multiple profiles
+            const profiles = settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : []) || [];
+            
+            if (profiles.length === 0) continue;
+
+            // Check if user has FCM token, otherwise skip entire user
+            if (!userData.fcmToken) continue;
+
+            // Determine User Timezone
+            const timezone = settings.timezone || 'Europe/Amsterdam';
+            
+            // Get user's local time
+            const userTimeStr = now.toLocaleString('en-US', { timeZone: timezone });
+            const userTime = new Date(userTimeStr);
+            const userHour = userTime.getHours();
+            const userDayName = userTime.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(); // monday, tuesday...
+
+            // Check match for slots
+            let matchedSlot = null;
+            if (SLOTS.breakfast.includes(userHour)) matchedSlot = 'breakfast';
+            else if (SLOTS.lunch.includes(userHour)) matchedSlot = 'lunch';
+            else if (SLOTS.dinner.includes(userHour)) matchedSlot = 'dinner';
+
+            if (!matchedSlot) continue;
+
+            let currentCredits = userData.usage?.baroCredits || 0;
+
+            for (const baroProfile of profiles) {
+                if (currentCredits <= 0) {
+                     console.log(`User ${userId}: No Baro credits left. Skipping profile ${baroProfile.name || 'unnamed'}.`);
+                     break;
+                }
+
+                // --- CHECK SCHEDULES ---
+                const messengerSchedule = baroProfile.messengerSchedule;
+                let shouldSendPush = false;
+
+                // Check Messenger Schedule (Push shares the same schedule as Telegram/Messenger)
+                if (messengerSchedule && messengerSchedule.enabled && messengerSchedule.days) {
+                    const dayConfig = messengerSchedule.days.find(d => d.day && d.day.toLowerCase() === userDayName);
+                    if (dayConfig && dayConfig[matchedSlot]) {
+                         shouldSendPush = true;
+                    }
+                }
+
+                if (!shouldSendPush) continue;
+
+                // Check Audit Log (Idempotency) - DISTINCT KEY FOR PUSH
+                const year = userTime.getFullYear();
+                const month = String(userTime.getMonth() + 1).padStart(2, '0');
+                const day = String(userTime.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                
+                const profileId = baroProfile.id || 'default';
+                const auditKey = `${userId}_${profileId}_${dateStr}_${matchedSlot}_push`; // Suffix _push
+                const auditRef = db.collection('email_audit_logs').doc(auditKey);
+                const auditDoc = await auditRef.get();
+
+                if (auditDoc.exists) {
+                    console.log(`User ${userId}: Already processed PUSH for profile ${profileId} for ${auditKey}.`);
+                    continue;
+                }
+
+                // --- PROCEED TO SEND ---
+                
+                // Random delay to prevent rate limits
+                const delay = Math.floor(Math.random() * 5000); 
+                await new Promise(resolve => setTimeout(resolve, delay));
+
+                // 1. Get Location
+                let lat = 52.3676; // Amsterdam default
+                let lon = 4.9041;
+                
+                // Try to find location coordinates
+                const locName = baroProfile.location;
+                if (locName && settings.favorites) {
+                    const fav = settings.favorites.find(f => f.name.toLowerCase() === locName.toLowerCase());
+                    if (fav) {
+                        lat = fav.lat;
+                        lon = fav.lon;
+                    } else if (settings.favorites.length > 0) {
+                        lat = settings.favorites[0].lat;
+                        lon = settings.favorites[0].lon;
+                    }
+                }
+
+                // 2. Fetch Weather
+                const weatherData = await fetchWeatherData(lat, lon);
+                if (!weatherData) {
+                    console.error(`User ${userId}: Failed to fetch weather for profile ${profileId}`);
+                    continue;
+                }
+
+                // Helper: Get User Name
+                let userName = userData.displayName || baroProfile.name || "Gebruiker";
+                if (userData.providerData) {
+                    const googleProfile = userData.providerData.find(p => p.providerId === 'google.com');
+                    if (googleProfile && googleProfile.displayName) {
+                        userName = googleProfile.displayName;
+                    }
+                }
+                
+                // 3. Generate Content
+                const pushContent = await generatePushContent(weatherData, baroProfile, userName);
+
+                // 4. Send Notification
+                const pushSent = await sendPushNotification(userData.fcmToken, pushContent.title, pushContent.body, userId);
+
+                if (pushSent) {
+                    // Deduct Credits & Update Usage
+                    try {
+                        const updates = {
+                            'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                            'usage.totalCalls': admin.firestore.FieldValue.increment(1),
+                            'usage.aiCalls': admin.firestore.FieldValue.increment(1),
+                            'usage.pushCount': admin.firestore.FieldValue.increment(1)
+                        };
+                        
+                        await db.collection('users').doc(userId).update(updates);
+                        
+                        // Audit Log
+                        await auditRef.set({
+                            userId,
+                            profileId,
+                            date: dateStr,
+                            slot: matchedSlot,
+                            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                            status: 'sent',
+                            type: 'push'
+                        });
+
+                        // Decrement local credits for next profile in loop
+                        currentCredits--;
+
+                    } catch (e) {
+                        console.error(`User ${userId}: Failed to update credits`, e);
+                    }
+
+                    results.push({ userId, profileId, status: 'sent', slot: matchedSlot, type: 'push' });
+                } else {
+                    results.push({ userId, profileId, status: 'failed', slot: matchedSlot, type: 'push' });
+                }
+            } // End Profile Loop
+        }
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ message: "Push check completed", results })
+        };
+
+    } catch (e) {
+        console.error("Function execution error:", e);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: e.message })
+        };
+    }
+};
+
+// Schedule: Run every hour (configured in netlify.toml)
+export const config = {
+    schedule: "@hourly"
+};

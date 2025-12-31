@@ -31,6 +31,39 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
             </div>
 
             <div className="p-4 max-w-lg mx-auto w-full">
+                {/* Intro Card */}
+                <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 mb-6">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+                            <Icon name="person" className="text-2xl" />
+                        </div>
+                        <div>
+                            <h2 className="font-bold text-lg">{t('profile.info.title')}</h2>
+                            <p className="text-sm text-slate-500 dark:text-white/60">{t('profile.info.subtitle')}</p>
+                        </div>
+                    </div>
+                    
+                    <div className="text-sm leading-relaxed mb-6 space-y-4">
+                        <p>
+                            {t('profile.info.body1')}
+                        </p>
+                        <p>
+                            {t('profile.info.body2')}
+                        </p>
+                         <p className="text-slate-500 dark:text-white/60 text-xs bg-slate-50 dark:bg-white/5 p-3 rounded-lg">
+                            <strong>{t('profile.info.credits')}</strong>
+                        </p>
+                    </div>
+
+                    <button 
+                        onClick={() => onNavigate(ViewState.PRICING)}
+                        className="w-full py-3 px-4 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 font-bold"
+                    >
+                        <Icon name="payments" />
+                        {t('profile.info.pricing_link')}
+                    </button>
+                </div>
+
                 <SettingsProfile 
                     profile={settings.baroProfile} 
                     profiles={settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : [])}

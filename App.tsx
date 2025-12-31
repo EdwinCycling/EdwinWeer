@@ -27,6 +27,7 @@ import { YourDayView } from './views/YourDayView';
 import { EmailSettingsView } from './views/EmailSettingsView';
 import { MessengerView } from './views/MessengerView';
 import { NotificationsView } from './views/NotificationsView';
+import { ActivityPlannerView } from './views/ActivityPlannerView';
 import { ProfilesView } from './views/ProfilesView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
@@ -237,6 +238,8 @@ const App: React.FC = () => {
         return <EmailSettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.MESSENGER:
         return <MessengerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.ACTIVITY_PLANNER:
+        return <ActivityPlannerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.NOTIFICATIONS:
         return <NotificationsView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.PROFILES:
@@ -470,6 +473,17 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht Jouw Dag</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Persoonlijke weerberichten voor speciale dagen</span>
+                                    </div>
+                                </button>
+
+                                {/* Activity Planner */}
+                                <button onClick={() => { navigate(ViewState.ACTIVITY_PLANNER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="event_available" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('planner.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('planner.subtitle')}</span>
                                     </div>
                                 </button>
                             </div>

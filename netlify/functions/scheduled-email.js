@@ -48,9 +48,9 @@ if (apiInstance.setApiKey) {
 
 // Constants
 const SLOTS = {
-    breakfast: [7], // 7:00
-    lunch: [12],    // 12:00
-    dinner: [17]    // 17:00
+    breakfast: [6, 7, 8, 9], // 06:00 - 09:59
+    lunch: [11, 12, 13],    // 11:00 - 13:59
+    dinner: [17, 18, 19]    // 17:00 - 19:00 (Uitloop)
 };
 
 // Helper: Get weather data (similar to client side but using node-fetch)
@@ -77,7 +77,6 @@ async function generateReport(weatherData, profile, userName) {
 
         const daysAhead = Number(profile.daysAhead) || 3;
         const isGeneral = profile.isGeneralReport === true;
-        const language = 'nl'; // Default to NL
         
         const toCommaList = (value, fallback) => {
             if (Array.isArray(value)) return value.filter(Boolean).join(", ") || fallback;
@@ -236,54 +235,13 @@ async function sendTelegramNotification(chatId, text) {
     }
 }
 
-async function sendPushNotification(token, title, body, userId) {
-    if (!token) return false;
-
-    try {
-        await admin.messaging().send({
-            token: token,
-            notification: {
-                title: title,
-                body: body,
-            },
-            webpush: {
-                fcmOptions: {
-                    link: 'https://askbaro.com'
-                },
-                notification: {
-                    icon: 'https://askbaro.com/icons/baro-icon-192.png'
-                }
-            }
-        });
-        console.log(`Push notification sent to user ${userId}`);
-        return true;
-    } catch (error) {
-        console.error('Error sending push notification:', error);
-        if (error.code === 'messaging/registration-token-not-registered' || 
-            error.message.includes('registration-token-not-registered') ||
-            (error.errorInfo && error.errorInfo.code === 'messaging/registration-token-not-registered')) {
-            
-            console.log(`Token invalid for user ${userId}, removing...`);
-            try {
-                await db.collection('users').doc(userId).update({
-                    fcmToken: admin.firestore.FieldValue.delete()
-                });
-                console.log(`Removed invalid FCM token for user ${userId}`);
-            } catch (cleanupError) {
-                console.error(`Failed to remove invalid token for user ${userId}:`, cleanupError);
-            }
-        }
-        return false;
-    }
-}
-
 export const handler = async (event, context) => {
     if (!db) {
         return { statusCode: 500, body: "Database error" };
     }
 
     const now = new Date();
-    console.log(`Scheduler run at (server time): ${now.toISOString()}`);
+    console.log(`Email/Telegram Scheduler run at (server time): ${now.toISOString()}`);
 
     try {
         // 1. Fetch all users with credits > 0
@@ -348,11 +306,15 @@ export const handler = async (event, context) => {
                     }
                 }
 
-                // Check Messenger Schedule
-                if (messengerSchedule && messengerSchedule.enabled && messengerSchedule.days && userData.telegramChatId) {
+                // Check Messenger Schedule (Telegram ONLY)
+                // Push is handled in scheduled-push.js
+                if (messengerSchedule && messengerSchedule.enabled && messengerSchedule.days) {
                     const dayConfig = messengerSchedule.days.find(d => d.day && d.day.toLowerCase() === userDayName);
                     if (dayConfig && dayConfig[matchedSlot]) {
-                        shouldSendMessenger = true;
+                        // Check if we can send Telegram
+                        if (userData.telegramChatId) {
+                            shouldSendMessenger = true;
+                        }
                     }
                 }
 
@@ -361,7 +323,6 @@ export const handler = async (event, context) => {
                 }
 
                 // Check Audit Log (Idempotency)
-                // Note: We use one audit log per slot. If one channel fails and the other succeeds, we won't retry the failed one automatically.
                 const year = userTime.getFullYear();
                 const month = String(userTime.getMonth() + 1).padStart(2, '0');
                 const day = String(userTime.getDate()).padStart(2, '0');
@@ -460,16 +421,15 @@ export const handler = async (event, context) => {
                 const activityScores = calculateScores(weatherData, Array.isArray(baroProfile.activities) ? baroProfile.activities : []);
 
                 // 3. Generate Content
-                // Pass actual userName
-                const emailContent = await generateReport(weatherData, baroProfile, userName);
+                let emailContent = '';
+                if (shouldSendEmail || shouldSendMessenger) {
+                    emailContent = await generateReport(weatherData, baroProfile, userName);
+                }
 
-                // ... Send Email ...
-                
                 // 4. Send Notifications
                 
                 let emailSent = false;
                 let messengerSent = false;
-                let pushSent = false;
 
                 // --- EMAIL NOTIFICATION ---
                 if (shouldSendEmail) {
@@ -551,9 +511,6 @@ ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('
                             updates['usage.messengerCount'] = admin.firestore.FieldValue.increment(1);
                         }
 
-                        // Weather credits handling (omitted complex logic for simplicity, assuming BaroCredits is main)
-                        // If you need weather credits logic, add it here similar to baroCredits
-                        
                         // Reset force flag if needed
                         const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
                         if (forceTest) {
@@ -583,7 +540,7 @@ ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('
                         console.error(`User ${userId}: Failed to update credits`, e);
                     }
 
-                    results.push({ userId, profileId, status: 'sent', slot: matchedSlot, channels: { email: emailSent, messenger: messengerSent, push: pushSent } });
+                    results.push({ userId, profileId, status: 'sent', slot: matchedSlot, channels: { email: emailSent, messenger: messengerSent } });
                 } else {
                     results.push({ userId, profileId, status: 'failed', slot: matchedSlot });
                 }
@@ -602,4 +559,9 @@ ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('
             body: JSON.stringify({ error: e.message })
         };
     }
+};
+
+// Schedule: Run every hour
+export const config = {
+    schedule: "0 7,12,17 * * *"
 };

@@ -213,6 +213,19 @@ export interface BaroProfile {
     hayFever?: boolean;
     emailSchedule?: EmailSchedule;
     messengerSchedule?: EmailSchedule; // Reusing EmailSchedule structure for simplicity as it has days/slots
+    activity_settings?: ActivityPlannerSettings;
+}
+
+export interface ActivityPlannerSettings {
+    [key: string]: { // ActivityType as key
+        enabled: boolean;
+        min_score: number;
+        days: number[]; // 0-6
+        channels: {
+            telegram: boolean;
+            email: boolean;
+        };
+    };
 }
 
 export interface EmailSchedule {
@@ -254,7 +267,8 @@ export enum ViewState {
   NOTIFICATIONS = 'NOTIFICATIONS',
   PROFILES = 'PROFILES',
   YOUR_DAY = 'YOUR_DAY',
-  EMAIL_SETTINGS = 'EMAIL_SETTINGS'
+  EMAIL_SETTINGS = 'EMAIL_SETTINGS',
+  ACTIVITY_PLANNER = 'ACTIVITY_PLANNER'
 }
 
 export interface CustomEvent {

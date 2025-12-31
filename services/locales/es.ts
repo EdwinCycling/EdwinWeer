@@ -198,6 +198,28 @@ export const es: Dictionary = {
 
     'time.earlier': '{hours}h antes',
     'time.later': '{hours}h después',
+
+    // Notifications
+    'notifications.title': 'Notificaciones Push Web',
+    'notifications.intro.title': '¡Nunca te pierdas una actualización!',
+    'notifications.intro.subtitle': 'Recibe informes meteorológicos diarios.',
+    'notifications.intro.body1': 'Activa las notificaciones push para mantenerte informado sobre el clima diariamente (iOS/Android).',
+    'notifications.login_required': 'Debes haber iniciado sesión para recibir notificaciones.',
+    'notifications.active': '¡Las notificaciones están activadas!',
+    'notifications.disable': 'Desactivar notificaciones',
+    'notifications.enable': '🔔 Activar notificaciones',
+    'notifications.feature.daily': 'Actualización diaria',
+    'notifications.feature.daily_desc': 'Recibe notificaciones incluso cuando el navegador está cerrado.',
+    'notifications.schedule.title': 'Horario de notificaciones',
+    'notifications.select_location': 'Seleccionar ubicación',
+    'notifications.no_locations': 'No se encontraron ubicaciones favoritas. Añádelas primero a través de la búsqueda.',
+    'notifications.platform_note': 'Puedes configurar el horario a continuación, pero recibirás las notificaciones en tu teléfono.',
+    'notifications.mobile_only': 'Los ajustes para activar/desactivar solo están disponibles en móvil (iOS/Android).',
+    'notifications.success': '✅ ¡Notificaciones activadas!',
+    'notifications.permission_denied': 'Permiso denegado para notificaciones.',
+    'notifications.error': 'Algo salió mal al activar las notificaciones.',
+    'notifications.confirm_disable': '¿Estás seguro de que quieres desactivar las notificaciones?',
+    'notifications.error_disable': 'Algo salió mal al desactivar las notificaciones.',
     'in': 'en',
 
     'temp': 'Temperatura',

@@ -198,6 +198,28 @@ export const fr: Dictionary = {
 
     'time.earlier': '{hours}h plus tôt',
     'time.later': '{hours}h plus tard',
+
+    // Notifications
+    'notifications.title': 'Notifications Push Web',
+    'notifications.intro.title': 'Ne manquez jamais une mise à jour !',
+    'notifications.intro.subtitle': 'Recevez des rapports météo quotidiens.',
+    'notifications.intro.body1': 'Activez les notifications push pour rester informé de la météo quotidiennement (iOS/Android).',
+    'notifications.login_required': 'Vous devez être connecté pour recevoir des notifications.',
+    'notifications.active': 'Les notifications sont activées !',
+    'notifications.disable': 'Désactiver les notifications',
+    'notifications.enable': '🔔 Activer les notifications',
+    'notifications.feature.daily': 'Mise à jour quotidienne',
+    'notifications.feature.daily_desc': 'Recevez des notifications même lorsque le navigateur est fermé.',
+    'notifications.schedule.title': 'Calendrier des notifications',
+    'notifications.select_location': 'Sélectionner l\'emplacement',
+    'notifications.no_locations': 'Aucun lieu favori trouvé. Ajoutez-les d\'abord via la recherche.',
+    'notifications.platform_note': 'Vous pouvez configurer le calendrier ci-dessous, mais vous recevrez les notifications sur votre téléphone.',
+    'notifications.mobile_only': 'Les paramètres d\'activation/désactivation ne sont disponibles que sur mobile (iOS/Android).',
+    'notifications.success': '✅ Notifications activées !',
+    'notifications.permission_denied': 'Permission refusée pour les notifications.',
+    'notifications.error': 'Une erreur s\'est produite lors de l\'activation des notifications.',
+    'notifications.confirm_disable': 'Êtes-vous sûr de vouloir désactiver les notifications ?',
+    'notifications.error_disable': 'Une erreur s\'est produite lors de la désactivation des notifications.',
     'in': 'dans',
 
     'temp': 'Température',

@@ -198,6 +198,28 @@ export const de: Dictionary = {
 
     'time.earlier': '{hours}Std früher',
     'time.later': '{hours}Std später',
+
+    // Notifications
+    'notifications.title': 'Web Push-Benachrichtigungen',
+    'notifications.intro.title': 'Verpassen Sie kein Update!',
+    'notifications.intro.subtitle': 'Erhalten Sie tägliche Wetterberichte.',
+    'notifications.intro.body1': 'Aktivieren Sie Push-Benachrichtigungen, um täglich über das Wetter informiert zu bleiben (iOS/Android).',
+    'notifications.login_required': 'Sie müssen eingeloggt sein, um Benachrichtigungen zu erhalten.',
+    'notifications.active': 'Benachrichtigungen sind an!',
+    'notifications.disable': 'Benachrichtigungen ausschalten',
+    'notifications.enable': '🔔 Benachrichtigungen einschalten',
+    'notifications.feature.daily': 'Tägliches Update',
+    'notifications.feature.daily_desc': 'Erhalten Sie Benachrichtigungen, auch wenn der Browser geschlossen ist.',
+    'notifications.schedule.title': 'Benachrichtigungsplan',
+    'notifications.select_location': 'Standort wählen',
+    'notifications.no_locations': 'Keine favorisierten Orte gefunden. Fügen Sie diese zuerst über die Suche hinzu.',
+    'notifications.platform_note': 'Sie können den Zeitplan unten konfigurieren, aber die Benachrichtigungen erhalten Sie auf Ihrem Telefon.',
+    'notifications.mobile_only': 'Einstellungen zum Ein-/Ausschalten sind nur auf dem Handy verfügbar (iOS/Android).',
+    'notifications.success': '✅ Benachrichtigungen aktiviert!',
+    'notifications.permission_denied': 'Berechtigung für Benachrichtigungen verweigert.',
+    'notifications.error': 'Beim Einschalten der Benachrichtigungen ist ein Fehler aufgetreten.',
+    'notifications.confirm_disable': 'Sind Sie sicher, dass Sie Benachrichtigungen ausschalten möchten?',
+    'notifications.error_disable': 'Beim Ausschalten der Benachrichtigungen ist ein Fehler aufgetreten.',
     'in': 'in',
 
     'temp': 'Temperatur',
