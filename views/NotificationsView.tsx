@@ -109,6 +109,32 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
     }
   };
 
+  const handleTestNotification = async () => {
+    if (!fcmToken) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch('/.netlify/functions/test-push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: fcmToken }),
+      });
+      
+      if (response.ok) {
+        alert('Test bericht verstuurd! Controleer je notificaties.');
+      } else {
+        alert('Kon geen test bericht versturen.');
+      }
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      alert('Er is een fout opgetreden.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
       {/* Header */}
