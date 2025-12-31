@@ -182,12 +182,24 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
             });
         } catch (tokenError: any) {
             addLog(`Token Error: ${tokenError.message || tokenError}`);
-            if (tokenError.code === 'messaging/permission-blocked') {
+            console.error('Token retrieval failed', tokenError);
+            
+            if (tokenError.message.includes('push service error')) {
+                 addLog('⚠️ MOGELIJKE OORZAAK: VAPID Key matcht niet met Project ID.');
+                 addLog('Check Firebase Console -> Project Settings -> Cloud Messaging -> Web Configuration');
+                 alert('Configuratie fout: Push service weigert de registratie. Controleer of de VAPID key in .env overeenkomt met het Firebase project.');
+            } else if (tokenError.code === 'messaging/permission-blocked') {
                 alert('Notificaties zijn geblokkeerd door de browser. Controleer de site-instellingen.');
             } else {
-                throw tokenError;
+                // Try fallback: unregister and let browser handle default registration
+                addLog('Retrying without explicit SW registration...');
+                try {
+                    token = await getToken(messaging, { vapidKey: vapidKey });
+                    addLog('Fallback success!');
+                } catch (retryError: any) {
+                     addLog(`Fallback failed: ${retryError.message}`);
+                }
             }
-            return;
         }
         
         if (token) {
