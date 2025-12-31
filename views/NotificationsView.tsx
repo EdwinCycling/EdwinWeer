@@ -70,11 +70,16 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
         if (Notification.permission === 'granted') {
             addLog('Permission granted, verifying local token...');
             
+            const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+            addLog(`VAPID Check: ${vapidKey ? (vapidKey.startsWith('B') ? 'Valid prefix (B...)' : 'Invalid prefix') : 'MISSING'}`);
+
             const swUrl = `/firebase-messaging-sw.js?apiKey=${import.meta.env.VITE_FIREBASE_API_KEY}&authDomain=${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}&projectId=${import.meta.env.VITE_FIREBASE_PROJECT_ID}&storageBucket=${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}&messagingSenderId=${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}&appId=${import.meta.env.VITE_FIREBASE_APP_ID}&measurementId=${import.meta.env.VITE_FIREBASE_MEASUREMENT_ID}`;
             
             const registration = await navigator.serviceWorker.register(swUrl);
+            await navigator.serviceWorker.ready; // Wait for active SW
+            
             const currentToken = await getToken(messaging, { 
-                vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                vapidKey: vapidKey,
                 serviceWorkerRegistration: registration 
             });
 
@@ -164,7 +169,10 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
         
         addLog('Registering Service Worker...');
         const registration = await navigator.serviceWorker.register(swUrl);
-        addLog('SW Registered. Getting token...');
+        
+        addLog('SW Registered. Waiting for ready...');
+        await navigator.serviceWorker.ready;
+        addLog('SW Ready. Getting token...');
         
         let token;
         try {
