@@ -19,6 +19,12 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   const t = (key: string) => getTranslation(key, settings?.language || 'nl');
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    console.log(`[NotifView] ${msg}`);
+    setLogs(prev => [`${new Date().toLocaleTimeString()} - ${msg}`, ...prev].slice(0, 50));
+  };
   
   // Profile handling
   const profiles = settings?.baroProfiles || (settings?.baroProfile ? [settings.baroProfile] : []);
@@ -48,12 +54,49 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
       }
       
       try {
+        addLog('Checking notification status...');
+        
+        // Always check Firestore first
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
-          setFcmToken(userDoc.data().fcmToken || null);
+          const dbToken = userDoc.data().fcmToken;
+          if (dbToken) {
+              setFcmToken(dbToken);
+              addLog('Token found in Firestore.');
+          }
         }
+
+        // If permission is granted, verify local token matches
+        if (Notification.permission === 'granted') {
+            addLog('Permission granted, verifying local token...');
+            
+            const swUrl = `/firebase-messaging-sw.js?apiKey=${import.meta.env.VITE_FIREBASE_API_KEY}&authDomain=${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}&projectId=${import.meta.env.VITE_FIREBASE_PROJECT_ID}&storageBucket=${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}&messagingSenderId=${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}&appId=${import.meta.env.VITE_FIREBASE_APP_ID}&measurementId=${import.meta.env.VITE_FIREBASE_MEASUREMENT_ID}`;
+            
+            const registration = await navigator.serviceWorker.register(swUrl);
+            const currentToken = await getToken(messaging, { 
+                vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                serviceWorkerRegistration: registration 
+            });
+
+            if (currentToken) {
+                if (currentToken !== userDoc.data()?.fcmToken) {
+                    addLog('Local token differs from DB. Updating DB...');
+                    await updateDoc(doc(db, 'users', user.uid), { fcmToken: currentToken });
+                    setFcmToken(currentToken);
+                    addLog('Token synced to DB.');
+                } else {
+                    addLog('Local token matches DB.');
+                }
+            } else {
+                addLog('No local token retrieved.');
+            }
+        } else {
+            addLog('Permission not granted: ' + Notification.permission);
+        }
+
       } catch (error) {
         console.error('Error fetching notification status:', error);
+        addLog('Error: ' + error);
       } finally {
         setLoading(false);
       }
@@ -65,18 +108,19 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   // Handle foreground messages
   useEffect(() => {
     if (!fcmToken) return;
+    
+    addLog('Setting up foreground listener...');
 
     const unsubscribe = onMessage(messaging, (payload) => {
       console.log('Foreground message received:', payload);
+      addLog(`📩 Message received: ${JSON.stringify(payload)}`);
+      
       const title = payload.notification?.title || 'Nieuw bericht';
       const body = payload.notification?.body || '';
       
-      // Show simple alert for now, or use a toast component if available
+      // Show simple alert for now
       alert(`🔔 ${title}\n\n${body}`);
       
-      // Alternatively, we could spawn a browser notification if user allowed it, 
-      // but usually the browser blocks this if the tab is focused unless we do it carefully.
-      // But standard practice is to show UI within the app.
       if (Notification.permission === 'granted') {
           new Notification(title, {
             body: body,
@@ -236,6 +280,18 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
               {t('notifications.enable') || '🔔 Zet Meldingen Aan'}
             </button>
           )}
+
+          {/* Debug Log Area */}
+          <div className="mt-8 w-full bg-slate-100 dark:bg-black/20 p-4 rounded-xl border border-slate-200 dark:border-white/5 font-mono text-xs overflow-hidden">
+            <h4 className="font-bold mb-2 text-slate-500 uppercase tracking-wider">Debug Log</h4>
+            <div className="h-32 overflow-y-auto space-y-1 text-slate-600 dark:text-slate-400">
+                {logs.length === 0 ? (
+                    <span className="italic opacity-50">Wachten op acties...</span>
+                ) : (
+                    logs.map((log, i) => <div key={i}>{log}</div>)
+                )}
+            </div>
+          </div>
         </div>
 
         {/* Feature List */}
