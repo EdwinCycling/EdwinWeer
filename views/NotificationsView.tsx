@@ -136,30 +136,69 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
     if (!user) return;
 
     try {
+      addLog('Requesting permission...');
       const permission = await Notification.requestPermission();
+      addLog(`Permission result: ${permission}`);
+      
       if (permission === 'granted') {
+        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+        if (!vapidKey) {
+            addLog('Error: VAPID key is missing in environment variables!');
+            alert('Configuratie fout: VAPID key ontbreekt.');
+            return;
+        }
+        
+        // Unregister existing workers to ensure clean state
+        if (navigator.serviceWorker) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                if (registration.active?.scriptURL.includes('firebase-messaging-sw.js')) {
+                    addLog('Unregistering old SW...');
+                    await registration.unregister();
+                }
+            }
+        }
+
         // Register Service Worker with config params to avoid hardcoding in public/sw.js
         const swUrl = `/firebase-messaging-sw.js?apiKey=${import.meta.env.VITE_FIREBASE_API_KEY}&authDomain=${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}&projectId=${import.meta.env.VITE_FIREBASE_PROJECT_ID}&storageBucket=${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}&messagingSenderId=${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}&appId=${import.meta.env.VITE_FIREBASE_APP_ID}&measurementId=${import.meta.env.VITE_FIREBASE_MEASUREMENT_ID}`;
         
+        addLog('Registering Service Worker...');
         const registration = await navigator.serviceWorker.register(swUrl);
+        addLog('SW Registered. Getting token...');
         
-        const token = await getToken(messaging, { 
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-          serviceWorkerRegistration: registration 
-        });
+        let token;
+        try {
+            token = await getToken(messaging, { 
+              vapidKey: vapidKey,
+              serviceWorkerRegistration: registration 
+            });
+        } catch (tokenError: any) {
+            addLog(`Token Error: ${tokenError.message || tokenError}`);
+            if (tokenError.code === 'messaging/permission-blocked') {
+                alert('Notificaties zijn geblokkeerd door de browser. Controleer de site-instellingen.');
+            } else {
+                throw tokenError;
+            }
+            return;
+        }
         
         if (token) {
+          addLog('Token received! Saving to DB...');
           await updateDoc(doc(db, 'users', user.uid), {
             fcmToken: token
           });
           setFcmToken(token);
+          addLog('Saved to DB.');
           alert(t('notifications.success') || '✅ Meldingen staan aan!');
+        } else {
+            addLog('No token received.');
         }
       } else {
         alert(t('notifications.permission_denied') || 'Toestemming geweigerd voor meldingen.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error enabling notifications:', error);
+      addLog(`General Error: ${error.message || error}`);
       alert(t('notifications.error') || 'Er ging iets mis bij het aanzetten van meldingen.');
     }
   };
