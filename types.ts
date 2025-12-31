@@ -212,6 +212,7 @@ export interface BaroProfile {
     isGeneralReport?: boolean;
     hayFever?: boolean;
     emailSchedule?: EmailSchedule;
+    messengerSchedule?: EmailSchedule; // Reusing EmailSchedule structure for simplicity as it has days/slots
 }
 
 export interface EmailSchedule {
@@ -249,7 +250,10 @@ export enum ViewState {
   BAROMETER = 'BAROMETER',
   CLIMATE_CHANGE = 'CLIMATE_CHANGE',
   THIS_DAY = 'THIS_DAY',
-  YOUR_DAY = 'YOUR_DAY'
+  MESSENGER = 'MESSENGER',
+  PROFILES = 'PROFILES',
+  YOUR_DAY = 'YOUR_DAY',
+  EMAIL_SETTINGS = 'EMAIL_SETTINGS'
 }
 
 export interface CustomEvent {

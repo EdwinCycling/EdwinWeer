@@ -1,18 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, Location, AppTheme, AppLanguage, ActivityType, BaroProfile } from '../types';
+import { ViewState, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, Location, AppTheme, AppLanguage, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { getUsage, UsageStats, getLimit } from '../services/usageService';
-import { SettingsProfile } from '../components/SettingsProfile';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
     settings: AppSettings;
     onUpdateSettings: (newSettings: AppSettings) => void;
     onNavigate: (view: ViewState) => void;
-    initialTab?: 'cities' | 'activities' | 'general' | 'records' | 'profile';
+    initialTab?: 'cities' | 'activities' | 'general' | 'records';
 }
 
 const activityIcons: Record<ActivityType, string> = {
@@ -40,7 +39,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
     
     // Tab State
-    const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records' | 'profile'>('general');
+    const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records'>('general');
 
     useEffect(() => {
         if (initialTab) {
@@ -244,7 +243,6 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     const tabs = [
         { id: 'cities', label: t('settings.favorites'), icon: 'location_city' },
         { id: 'activities', label: t('settings.activities_title'), icon: 'directions_bike' },
-        { id: 'profile', label: t('settings.baro_profile'), icon: 'person' },
         { id: 'general', label: t('settings.general'), icon: 'tune' },
         { id: 'records', label: t('nav.records'), icon: 'equalizer' },
     ] as const;
@@ -793,85 +791,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                     </>
                 )}
 
-                {/* Profile Tab */}
-                {activeTab === 'profile' && (
-                    <SettingsProfile 
-                            profile={settings.baroProfile} 
-                            profiles={settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : [])}
-                            onUpdate={(updatedProfile) => {
-                                const currentList = settings.baroProfiles || [];
-                            const index = currentList.findIndex(p => p.id === updatedProfile.id);
-                            
-                            let newList;
-                            if (index >= 0) {
-                                newList = [...currentList];
-                                newList[index] = updatedProfile;
-                            } else {
-                                // If not in list (e.g. migration), add it or replace if we treat it as single source
-                                if (currentList.length === 0) {
-                                    newList = [updatedProfile];
-                                } else {
-                                    // Should match by ID, if ID missing, maybe match by name?
-                                    // For now, if no ID, just set it.
-                                    newList = [...currentList, updatedProfile];
-                                }
-                            }
 
-                            onUpdateSettings({ 
-                                    ...settings, 
-                                    baroProfile: updatedProfile,
-                                    baroProfiles: newList
-                                });
-                            }}
-                            onSelectProfile={(profile) => {
-                                onUpdateSettings({ ...settings, baroProfile: profile });
-                            }}
-                        onCreateProfile={() => {
-                            let defaultName = `Nieuw Profiel ${settings.baroProfiles ? settings.baroProfiles.length + 1 : 1}`;
-                            if (user?.email) {
-                                const nameFromEmail = user.email.split('@')[0];
-                                const capitalized = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-                                const count = (settings.baroProfiles || []).filter(p => p.name && p.name.startsWith(capitalized)).length;
-                                defaultName = count === 0 ? capitalized : `${capitalized} ${count + 1}`;
-                            }
-
-                            const newProfile: BaroProfile = {
-                                id: Date.now().toString(),
-                                name: defaultName,
-                                activities: [],
-                                location: settings.favorites[0]?.name || '',
-                                timeOfDay: [],
-                                transport: [],
-                                daysAhead: 3,
-                                reportStyle: ['enthousiast'],
-                                hayFever: false
-                            };
-                                const currentList = settings.baroProfiles || [];
-                                // Limit to 3 profiles
-                                if (currentList.length >= 3) return;
-
-                                const newList = [...currentList, newProfile];
-                                onUpdateSettings({
-                                    ...settings,
-                                    baroProfiles: newList,
-                                    baroProfile: newProfile
-                                });
-                            }}
-                            onDeleteProfile={(id) => {
-                                const currentList = settings.baroProfiles || [];
-                                const newList = currentList.filter(p => p.id !== id);
-                                const nextActive = settings.baroProfile?.id === id ? (newList.length > 0 ? newList[0] : undefined) : settings.baroProfile;
-
-                                onUpdateSettings({
-                                    ...settings,
-                                    baroProfiles: newList,
-                                    baroProfile: nextActive
-                                });
-                            }}
-                        currentLocationName={settings.favorites.find(f => f.isCurrentLocation)?.name || settings.favorites[0]?.name}
-                        language={settings.language}
-                    />
-                )}
             </div>
         </div>
     );

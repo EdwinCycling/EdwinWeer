@@ -620,7 +620,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="text-center cursor-pointer group relative z-20" onClick={() => setIsSearchOpen(true)}>
+                <div className="text-center relative z-20">
                     {loadingCity ? (
                         <div className="flex items-center gap-2">
                              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />

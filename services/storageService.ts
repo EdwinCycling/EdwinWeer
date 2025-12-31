@@ -157,7 +157,16 @@ export const loadRemoteData = async (uid: string) => {
                 // Update local storage for settings
                 // We don't want to trigger sync back immediately, so we just write to local storage
                 if (typeof window !== "undefined") {
-                    localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(data.settings));
+                    // Merge with existing local settings to preserve local-only fields like 'theme'
+                    const currentLocal = JSON.parse(localStorage.getItem(KEY_APP_SETTINGS) || '{}');
+                    const merged = { ...data.settings };
+                    
+                    // Restore local theme if it exists (since it's not synced)
+                    if (currentLocal.theme) {
+                        merged.theme = currentLocal.theme;
+                    }
+                    
+                    localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(merged));
                 }
             }
             if (data.ensemble) {

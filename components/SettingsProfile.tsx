@@ -14,6 +14,7 @@ interface Props {
     onDeleteProfile?: (id: string) => void;
     currentLocationName?: string;
     language?: AppLanguage;
+    showScheduleConfig?: boolean;
 }
 
 const DEFAULT_PROFILE: BaroProfile = {
@@ -73,7 +74,8 @@ export const SettingsProfile: React.FC<Props> = ({
     onCreateProfile,
     onDeleteProfile,
     currentLocationName,
-    language
+    language,
+    showScheduleConfig = false
 }) => {
     const { user } = useAuth();
     const t = (key: string) => getTranslation(key, language || 'nl');
@@ -576,6 +578,7 @@ export const SettingsProfile: React.FC<Props> = ({
                 </div>
 
                 {/* Email Schedule */}
+                {showScheduleConfig && (
                 <div className="border-t border-slate-200 dark:border-white/5 pt-6 mt-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>
@@ -648,6 +651,7 @@ export const SettingsProfile: React.FC<Props> = ({
                         </div>
                     )}
                 </div>
+                )}
 
             </div>
         </section>

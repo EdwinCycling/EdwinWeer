@@ -24,6 +24,9 @@ import { BarometerView } from './views/BarometerView';
 import { ClimateChangeView } from './views/ClimateChangeView';
 import { ThisDayView } from './views/ThisDayView';
 import { YourDayView } from './views/YourDayView';
+import { EmailSettingsView } from './views/EmailSettingsView';
+import { MessengerView } from './views/MessengerView';
+import { ProfilesView } from './views/ProfilesView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -229,6 +232,12 @@ const App: React.FC = () => {
         return <ClimateChangeView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.YOUR_DAY:
         return <YourDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.EMAIL_SETTINGS:
+        return <EmailSettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
+      case ViewState.MESSENGER:
+        return <MessengerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.PROFILES:
+        return <ProfilesView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.THIS_DAY:
         return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
@@ -401,66 +410,112 @@ const App: React.FC = () => {
                 >
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
                     
-                    <div className="space-y-3 md:space-y-4">
-                         <button onClick={() => { navigate(ViewState.YOUR_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
-                                <Icon name="event_note" className="text-xl md:text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht Jouw Dag</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Persoonlijke weerberichten voor speciale dagen</span>
-                            </div>
-                         </button>
+                    <div className="space-y-6">
+                        {/* Baro Weerman Section */}
+                        <section>
+                            <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">Baro Weerman</h3>
+                            <div className="space-y-3 md:space-y-4">
+                                {/* Profiles */}
+                                <button onClick={() => { navigate(ViewState.PROFILES); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="person" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">Configureer jouw weer profiel</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Beheer jouw persoonlijke voorkeuren</span>
+                                    </div>
+                                </button>
 
-                         <button onClick={() => { navigate(ViewState.CLIMATE_CHANGE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
-                                <Icon name="thermostat" className="text-xl md:text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">{t('climate.title')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('climate.subtitle')}</span>
-                            </div>
-                         </button>
+                                {/* Email Settings */}
+                                <button onClick={() => { navigate(ViewState.EMAIL_SETTINGS); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                        <Icon name="mail" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">Baro weerberichten : mail</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Stel je email schema in</span>
+                                    </div>
+                                </button>
 
-                         <button onClick={() => { navigate(ViewState.BAROMETER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                                <Icon name="speed" className="text-xl md:text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">{t('barometer.title')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('barometer.subtitle')}</span>
-                            </div>
-                         </button>
+                                {/* Messenger */}
+                                <button onClick={() => { navigate(ViewState.MESSENGER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                                        <Icon name="chat" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">Baro Messenger berichten</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Jouw persoonlijke berichten</span>
+                                    </div>
+                                </button>
 
-                         <button onClick={() => { navigate(ViewState.HOLIDAY_REPORT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                                <Icon name="flight_takeoff" className="text-xl md:text-2xl" />
+                                {/* Your Day */}
+                                <button onClick={() => { navigate(ViewState.YOUR_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
+                                        <Icon name="event_note" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht Jouw Dag</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Persoonlijke weerberichten voor speciale dagen</span>
+                                    </div>
+                                </button>
                             </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">{t('holiday_report.title_default')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('holiday_report.menu_subtitle')}</span>
-                            </div>
-                         </button>
+                        </section>
 
-                         <button onClick={() => { navigate(ViewState.STRAVA); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                <Icon name="directions_bike" className="text-xl md:text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">{t('nav.strava')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('share.strava')}</span>
-                            </div>
-                         </button>
+                        {/* Weer Extra's Section */}
+                        <section>
+                             <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">Weer Extra's</h3>
+                             <div className="space-y-3 md:space-y-4">
+                                <button onClick={() => { navigate(ViewState.CLIMATE_CHANGE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                                        <Icon name="thermostat" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('climate.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('climate.subtitle')}</span>
+                                    </div>
+                                </button>
 
-                         <button onClick={() => { navigate(ViewState.SHARE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                            <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                <Icon name="add_a_photo" className="text-xl md:text-2xl" />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                                <span className="font-bold text-base md:text-lg truncate w-full">{t('share.photo_weather')}</span>
-                                <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('share.title')}</span>
-                            </div>
-                         </button>
+                                <button onClick={() => { navigate(ViewState.BAROMETER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                        <Icon name="speed" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('barometer.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('barometer.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.HOLIDAY_REPORT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                        <Icon name="flight_takeoff" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('holiday_report.title_default')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('holiday_report.menu_subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.STRAVA); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                        <Icon name="directions_bike" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('nav.strava')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('share.strava')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.SHARE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                        <Icon name="add_a_photo" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('share.photo_weather')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('share.title')}</span>
+                                    </div>
+                                </button>
+                             </div>
+                        </section>
                     </div>
                 </div>
             </div>

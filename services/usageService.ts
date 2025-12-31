@@ -168,11 +168,17 @@ export const loadRemoteUsage = async (uid: string) => {
     }
 };
 
-const syncUsageToRemote = async (stats: UsageStats) => {
+export const syncUsageToRemote = async (stats: UsageStats) => {
     if (!currentUserId || !db) return;
     try {
         const userRef = doc(db, 'users', currentUserId);
-        await setDoc(userRef, { usage: stats }, { merge: true });
+        
+        // CRITICAL: Never overwrite credits from client side state!
+        // Credits should only be modified via atomic increment/decrement (consumeCredit) or via webhooks.
+        // We create a copy and remove credit fields before syncing.
+        const { weatherCredits, baroCredits, ...safeStats } = stats;
+        
+        await setDoc(userRef, { usage: safeStats }, { merge: true });
     } catch (e) {
         console.error("Error syncing usage:", e);
     }
@@ -299,6 +305,8 @@ export const trackCall = () => {
     
     if (isPro) {
         stats.weatherCredits--;
+        // Atomic decrement on server
+        consumeCredit('weather', 1);
     }
 
     // Minute

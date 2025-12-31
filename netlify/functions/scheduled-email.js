@@ -48,9 +48,9 @@ if (apiInstance.setApiKey) {
 
 // Constants
 const SLOTS = {
-    breakfast: 7, // 7:00
-    lunch: 12,    // 12:00
-    dinner: 17    // 17:00
+    breakfast: [7], // 7:00
+    lunch: [12],    // 12:00
+    dinner: [17]    // 17:00
 };
 
 // Helper: Get weather data (similar to client side but using node-fetch)
@@ -209,6 +209,26 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
     }
 }
 
+async function sendTelegramNotification(chatId, text) {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return;
+
+    try {
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+    } catch (e) {
+        console.error('Error sending Telegram:', e);
+    }
+}
+
 export const handler = async (event, context) => {
     if (!db) {
         return { statusCode: 500, body: "Database error" };
@@ -235,13 +255,10 @@ export const handler = async (event, context) => {
             
             // Extract settings
             const settings = userData.settings || {};
-            const baroProfile = settings.baroProfile || userData.baroProfile || settings.aiProfile || userData.aiProfile; // Check all locations for migration
+            // Support multiple profiles
+            const profiles = settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : []) || [];
             
-            // Check if email schedule is enabled
-            if (!baroProfile || !baroProfile.emailSchedule || !baroProfile.emailSchedule.enabled) {
-                // console.log(`User ${userId}: Schedule disabled or no profile.`);
-                continue;
-            }
+            if (profiles.length === 0) continue;
 
             // Determine User Timezone
             const timezone = settings.timezone || 'Europe/Amsterdam';
@@ -254,235 +271,274 @@ export const handler = async (event, context) => {
 
             // Check match for slots
             let matchedSlot = null;
-            
-            // Intelligent Load Balancing:
-            // For 'Breakfast', 'Lunch', 'Dinner', we target specific hours.
-            // We cannot spread them randomly over the day like the generic report, 
-            // because a Dinner email at 08:00 is weird.
-            // However, we strictly enforce the time match.
-            
             if (SLOTS.breakfast.includes(userHour)) matchedSlot = 'breakfast';
             else if (SLOTS.lunch.includes(userHour)) matchedSlot = 'lunch';
             else if (SLOTS.dinner.includes(userHour)) matchedSlot = 'dinner';
 
-            if (!matchedSlot) {
-                // console.log(`User ${userId}: Current hour ${userHour} (in ${timezone}) does not match any slot ranges.`);
-                continue; 
-            }
+            if (!matchedSlot) continue;
 
-            // Check if this day matches the schedule
-            const scheduleDays = baroProfile.emailSchedule.days || [];
-            // Normalise day names from DB to ensure they match English keys if stored differently, 
-            // though assuming front-end stores English keys like 'monday', 'tuesday' or objects with 'day': 'Monday'
-            const dayConfig = scheduleDays.find(d => d.day && d.day.toLowerCase() === userDayName);
+            let currentCredits = userData.usage?.baroCredits || 0;
 
-            if (!dayConfig) {
-                console.log(`User ${userId}: Day '${userDayName}' not found in schedule: ${JSON.stringify(scheduleDays)}`);
-                continue;
-            }
-
-            if (!dayConfig[matchedSlot]) {
-                console.log(`User ${userId}: Slot '${matchedSlot}' not enabled for ${userDayName}.`);
-                continue;
-            }
-
-            // Check Audit Log (Idempotency)
-            const year = userTime.getFullYear();
-            const month = String(userTime.getMonth() + 1).padStart(2, '0');
-            const day = String(userTime.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
-            
-            const auditKey = `${userId}_${dateStr}_${matchedSlot}`;
-            const auditRef = db.collection('email_audit_logs').doc(auditKey);
-            const auditDoc = await auditRef.get();
-
-            if (auditDoc.exists) {
-                console.log(`User ${userId}: Already sent for ${auditKey}.`);
-                continue;
-            }
-
-            // --- PROCEED TO SEND ---
-            
-            // LOAD BALANCING: Add a small random delay (0-15s) to prevent hammering APIs
-            // This spreads the load within the function execution time (up to limit)
-            const delay = Math.floor(Math.random() * 15000);
-            await new Promise(resolve => setTimeout(resolve, delay));
-
-            // 1. Get Location
-            let lat = 52.3676; // Amsterdam default
-            let lon = 4.9041;
-            
-            // Try to find location coordinates
-            const locName = baroProfile.location;
-            if (locName && settings.favorites) {
-                const fav = settings.favorites.find(f => f.name.toLowerCase() === locName.toLowerCase());
-                if (fav) {
-                    lat = fav.lat;
-                    lon = fav.lon;
-                } else if (settings.favorites.length > 0) {
-                    lat = settings.favorites[0].lat;
-                    lon = settings.favorites[0].lon;
-                }
-            }
-
-            // 2. Fetch Weather
-            const weatherData = await fetchWeatherData(lat, lon);
-            if (!weatherData) {
-                console.error(`User ${userId}: Failed to fetch weather`);
-                continue;
-            }
-
-        // Helper: Get User Name
-        let userName = userData.displayName || baroProfile.name || "Gebruiker";
-        // Try to get from Google Auth provider if available
-        if (userData.providerData) {
-            const googleProfile = userData.providerData.find(p => p.providerId === 'google.com');
-            if (googleProfile && googleProfile.displayName) {
-                userName = googleProfile.displayName;
-            }
-        }
-        
-        // Helper: Check Credits
-        let usage = userData.usage || {};
-        const baroCredits = usage.baroCredits || 0;
-        
-        if (baroCredits <= 0) {
-            console.log(`User ${userId}: No Baro credits left. Skipping.`);
-            continue;
-        }
-
-        // Helper: Calculate Activity Scores (Simplified for Node)
-        const calculateScores = (weather, activities) => {
-             if (!activities || !Array.isArray(activities)) return [];
-             const scores = [];
-             const today = weather.daily;
-             // Use index 0 for today
-             const i = 0; 
-             
-             // Extract relevant daily metrics
-             const tempMax = today.temperature_2m_max[i];
-             const precipSum = today.precipitation_sum[i];
-             const windMax = today.wind_speed_10m_max[i];
-             const precipProb = today.precipitation_probability_max[i];
-             const sunshine = today.sunshine_duration[i] / 3600; // hours
-
-             activities.forEach(act => {
-                 let score = 10;
-                 let reason = "Top weer!";
-                 
-                 // Generic logic based on activityService.ts principles
-                 if (['bbq', 'cycling', 'walking', 'golf', 'gardening'].includes(act)) {
-                     if (precipSum > 1 || precipProb > 60) { score -= 4; reason = "Kans op regen"; }
-                     if (windMax > 35) { score -= 3; reason = "Veel wind"; }
-                     if (tempMax < 10) { score -= 2; reason = "Fris"; }
-                 }
-                 
-                 if (['beach', 'sailing'].includes(act)) {
-                     if (tempMax < 18) { score -= 5; reason = "Te koud"; }
-                     if (sunshine < 3) { score -= 3; reason = "Weinig zon"; }
-                     if (precipSum > 0) { score -= 4; reason = "Regen"; }
-                 }
-                 
-                 // Normalize
-                 score = Math.max(1, Math.min(10, score));
-                 scores.push({ activity: act, score, reason });
-             });
-             return scores;
-        };
-
-        const activityScores = calculateScores(weatherData, Array.isArray(baroProfile.activities) ? baroProfile.activities : []);
-
-        // 3. Generate Content
-        // Pass actual userName
-        const emailContent = await generateReport(weatherData, baroProfile, userName);
-
-        // ... Send Email ...
-        
-        // 4. Send Email
-        let userEmail = userData.email;
-        if (!userEmail) {
-            try {
-                const userRecord = await admin.auth().getUser(userId);
-                userEmail = userRecord.email;
-            } catch (e) {
-                console.error(`User ${userId}: Could not fetch email from Auth`, e);
-            }
-        }
-
-        if (!userEmail) {
-            console.error(`User ${userId}: No email address found`);
-            continue;
-        }
-
-        // Check for force flag in user settings
-        const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
-
-        // Append Scores and Credits to Footer
-        const scoresHtml = activityScores.length > 0 ? `
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                <h3 style="font-size: 16px; margin-bottom: 10px;">Jouw Activiteiten Vandaag</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    ${activityScores.map(s => `
-                        <tr>
-                            <td style="padding: 5px 0; text-transform: capitalize;">${s.activity}</td>
-                            <td style="padding: 5px 0; font-weight: bold; color: ${s.score >= 8 ? '#16a34a' : s.score >= 6 ? '#ca8a04' : '#dc2626'};">${s.score}/10</td>
-                            <td style="padding: 5px 0; font-size: 12px; color: #666;">${s.reason}</td>
-                        </tr>
-                    `).join('')}
-                </table>
-            </div>
-        ` : '';
-
-        const fullHtml = `
-            ${emailContent}
-            ${scoresHtml}
-            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px dashed #ddd; font-size: 11px; color: #888; text-align: center;">
-                <p>Credits over: <strong>${baroCredits - 1} Baro Credits</strong> | <strong>${(usage.weatherCredits || 0) > 0 ? (usage.weatherCredits - 1) : 0} Weather Credits</strong></p>
-            </div>
-        `;
-
-        const sent = await sendEmail(userEmail, userName, `Jouw Weerbericht: ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, fullHtml);
-
-        if (sent) {
-            // Deduct Credits & Update Usage
-            try {
-                const updates = {
-                    'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                    'usage.totalCalls': admin.firestore.FieldValue.increment(1),
-                    'usage.aiCalls': admin.firestore.FieldValue.increment(1)
-                };
-                
-                if ((usage.weatherCredits || 0) > 0) {
-                    updates['usage.weatherCredits'] = admin.firestore.FieldValue.increment(-1);
-                }
-                
-                // Reset force flag if needed
-                if (forceTest) {
-                    updates.forceEmailTest = false;
-                    updates['settings.forceEmailTest'] = false;
+            for (const baroProfile of profiles) {
+                if (currentCredits <= 0) {
+                     console.log(`User ${userId}: No Baro credits left. Skipping profile ${baroProfile.name || 'unnamed'}.`);
+                     break;
                 }
 
-                await db.collection('users').doc(userId).update(updates);
+                // --- CHECK SCHEDULES ---
+                const emailSchedule = baroProfile.emailSchedule;
+                const messengerSchedule = baroProfile.messengerSchedule;
+
+                let shouldSendEmail = false;
+                let shouldSendMessenger = false;
+
+                // Check Email Schedule
+                if (emailSchedule && emailSchedule.enabled && emailSchedule.days) {
+                    const dayConfig = emailSchedule.days.find(d => d.day && d.day.toLowerCase() === userDayName);
+                    if (dayConfig && dayConfig[matchedSlot]) {
+                        shouldSendEmail = true;
+                    }
+                }
+
+                // Check Messenger Schedule
+                if (messengerSchedule && messengerSchedule.enabled && messengerSchedule.days && userData.telegramChatId) {
+                    const dayConfig = messengerSchedule.days.find(d => d.day && d.day.toLowerCase() === userDayName);
+                    if (dayConfig && dayConfig[matchedSlot]) {
+                        shouldSendMessenger = true;
+                    }
+                }
+
+                if (!shouldSendEmail && !shouldSendMessenger) {
+                    continue;
+                }
+
+                // Check Audit Log (Idempotency)
+                // Note: We use one audit log per slot. If one channel fails and the other succeeds, we won't retry the failed one automatically.
+                const year = userTime.getFullYear();
+                const month = String(userTime.getMonth() + 1).padStart(2, '0');
+                const day = String(userTime.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
                 
-                // Audit Log
-                if (!forceTest) {
-                     await auditRef.set({
-                        userId,
-                        date: dateStr,
-                        slot: matchedSlot,
-                        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                        status: 'sent'
+                const profileId = baroProfile.id || 'default';
+                const auditKey = `${userId}_${profileId}_${dateStr}_${matchedSlot}`;
+                const auditRef = db.collection('email_audit_logs').doc(auditKey);
+                const auditDoc = await auditRef.get();
+
+                if (auditDoc.exists) {
+                    console.log(`User ${userId}: Already processed profile ${profileId} for ${auditKey}.`);
+                    continue;
+                }
+
+                // --- PROCEED TO SEND ---
+                
+                // LOAD BALANCING: Add a small random delay (0-15s) to prevent hammering APIs
+                // This spreads the load within the function execution time (up to limit)
+                const delay = Math.floor(Math.random() * 5000); // Reduced delay since we might have multiple profiles
+                await new Promise(resolve => setTimeout(resolve, delay));
+
+                // 1. Get Location
+                let lat = 52.3676; // Amsterdam default
+                let lon = 4.9041;
+                
+                // Try to find location coordinates
+                const locName = baroProfile.location;
+                if (locName && settings.favorites) {
+                    const fav = settings.favorites.find(f => f.name.toLowerCase() === locName.toLowerCase());
+                    if (fav) {
+                        lat = fav.lat;
+                        lon = fav.lon;
+                    } else if (settings.favorites.length > 0) {
+                        lat = settings.favorites[0].lat;
+                        lon = settings.favorites[0].lon;
+                    }
+                }
+
+                // 2. Fetch Weather
+                const weatherData = await fetchWeatherData(lat, lon);
+                if (!weatherData) {
+                    console.error(`User ${userId}: Failed to fetch weather for profile ${profileId}`);
+                    continue;
+                }
+
+                // Helper: Get User Name
+                let userName = userData.displayName || baroProfile.name || "Gebruiker";
+                // Try to get from Google Auth provider if available
+                if (userData.providerData) {
+                    const googleProfile = userData.providerData.find(p => p.providerId === 'google.com');
+                    if (googleProfile && googleProfile.displayName) {
+                        userName = googleProfile.displayName;
+                    }
+                }
+                
+                // Helper: Calculate Activity Scores (Simplified for Node)
+                const calculateScores = (weather, activities) => {
+                    if (!activities || !Array.isArray(activities)) return [];
+                    const scores = [];
+                    const today = weather.daily;
+                    // Use index 0 for today
+                    const i = 0; 
+                    
+                    // Extract relevant daily metrics
+                    const tempMax = today.temperature_2m_max[i];
+                    const precipSum = today.precipitation_sum[i];
+                    const windMax = today.wind_speed_10m_max[i];
+                    const precipProb = today.precipitation_probability_max[i];
+                    const sunshine = today.sunshine_duration[i] / 3600; // hours
+
+                    activities.forEach(act => {
+                        let score = 10;
+                        let reason = "Top weer!";
+                        
+                        // Generic logic based on activityService.ts principles
+                        if (['bbq', 'cycling', 'walking', 'golf', 'gardening'].includes(act)) {
+                            if (precipSum > 1 || precipProb > 60) { score -= 4; reason = "Kans op regen"; }
+                            if (windMax > 35) { score -= 3; reason = "Veel wind"; }
+                            if (tempMax < 10) { score -= 2; reason = "Fris"; }
+                        }
+                        
+                        if (['beach', 'sailing'].includes(act)) {
+                            if (tempMax < 18) { score -= 5; reason = "Te koud"; }
+                            if (sunshine < 3) { score -= 3; reason = "Weinig zon"; }
+                            if (precipSum > 0) { score -= 4; reason = "Regen"; }
+                        }
+                        
+                        // Normalize
+                        score = Math.max(1, Math.min(10, score));
+                        scores.push({ activity: act, score, reason });
                     });
+                    return scores;
+                };
+
+                const activityScores = calculateScores(weatherData, Array.isArray(baroProfile.activities) ? baroProfile.activities : []);
+
+                // 3. Generate Content
+                // Pass actual userName
+                const emailContent = await generateReport(weatherData, baroProfile, userName);
+
+                // ... Send Email ...
+                
+                // 4. Send Notifications
+                
+                let emailSent = false;
+                let messengerSent = false;
+
+                // --- EMAIL NOTIFICATION ---
+                if (shouldSendEmail) {
+                    let userEmail = userData.email;
+                    if (!userEmail) {
+                        try {
+                            const userRecord = await admin.auth().getUser(userId);
+                            userEmail = userRecord.email;
+                        } catch (e) {
+                            console.error(`User ${userId}: Could not fetch email from Auth`, e);
+                        }
+                    }
+
+                    if (userEmail) {
+                        // Check for force flag in user settings
+                        const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
+
+                        // Append Scores and Credits to Footer
+                        const scoresHtml = activityScores.length > 0 ? `
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <h3 style="font-size: 16px; margin-bottom: 10px;">Jouw Activiteiten Vandaag (${baroProfile.name})</h3>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    ${activityScores.map(s => `
+                                        <tr>
+                                            <td style="padding: 5px 0; text-transform: capitalize;">${s.activity}</td>
+                                            <td style="padding: 5px 0; font-weight: bold; color: ${s.score >= 8 ? '#16a34a' : s.score >= 6 ? '#ca8a04' : '#dc2626'};">${s.score}/10</td>
+                                            <td style="padding: 5px 0; font-size: 12px; color: #666;">${s.reason}</td>
+                                        </tr>
+                                    `).join('')}
+                                </table>
+                            </div>
+                        ` : '';
+
+                        const fullHtml = `
+                            <h2>Weerbericht voor ${baroProfile.name}</h2>
+                            ${emailContent}
+                            ${scoresHtml}
+                            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px dashed #ddd; font-size: 11px; color: #888; text-align: center;">
+                                <p>Credits over: <strong>${currentCredits - 1} Baro Credits</strong></p>
+                            </div>
+                        `;
+
+                        emailSent = await sendEmail(userEmail, userName, `Jouw Weerbericht (${baroProfile.name}): ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}`, fullHtml);
+                    }
                 }
-            } catch (e) {
-                console.error(`User ${userId}: Failed to update credits`, e);
-            }
+                
+                // --- TELEGRAM NOTIFICATION ---
+                if (shouldSendMessenger && userData.telegramChatId) {
+                    try {
+                        const telegramMessage = `
+<b>Jouw Weerbericht (${baroProfile.name}): ${matchedSlot.charAt(0).toUpperCase() + matchedSlot.slice(1)}</b>
 
-            results.push({ userId, status: 'sent', slot: matchedSlot });
-        } else {
-            results.push({ userId, status: 'failed', slot: matchedSlot });
-        }
+${emailContent.replace(/<[^>]*>?/gm, '').trim()}
 
+<b>Activiteiten:</b>
+${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('\n')}
+
+<a href="https://baro-app.netlify.app">Open Baro App</a>
+                        `;
+
+                        await sendTelegramNotification(userData.telegramChatId, telegramMessage);
+                        console.log(`User ${userId}: Telegram notification sent.`);
+                        messengerSent = true;
+                    } catch (tgError) {
+                        console.error(`User ${userId}: Failed to send Telegram notification:`, tgError);
+                    }
+                }
+
+                if (emailSent || messengerSent) {
+                    // Deduct Credits & Update Usage
+                    try {
+                        const updates = {
+                            'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                            'usage.totalCalls': admin.firestore.FieldValue.increment(1),
+                            'usage.aiCalls': admin.firestore.FieldValue.increment(1)
+                        };
+                        
+                        if (messengerSent) {
+                            updates['usage.messengerCount'] = admin.firestore.FieldValue.increment(1);
+                        }
+
+                        // Weather credits handling (omitted complex logic for simplicity, assuming BaroCredits is main)
+                        // If you need weather credits logic, add it here similar to baroCredits
+                        
+                        // Reset force flag if needed
+                        const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
+                        if (forceTest) {
+                            updates.forceEmailTest = false;
+                            updates['settings.forceEmailTest'] = false;
+                        }
+
+                        await db.collection('users').doc(userId).update(updates);
+                        
+                        // Audit Log
+                        if (!forceTest) {
+                             await auditRef.set({
+                                userId,
+                                profileId,
+                                date: dateStr,
+                                slot: matchedSlot,
+                                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                                status: 'sent',
+                                channels: { email: emailSent, messenger: messengerSent }
+                            });
+                        }
+
+                        // Decrement local credits for next profile in loop
+                        currentCredits--;
+
+                    } catch (e) {
+                        console.error(`User ${userId}: Failed to update credits`, e);
+                    }
+
+                    results.push({ userId, profileId, status: 'sent', slot: matchedSlot, channels: { email: emailSent, messenger: messengerSent } });
+                } else {
+                    results.push({ userId, profileId, status: 'failed', slot: matchedSlot });
+                }
+            } // End Profile Loop
         }
 
         return {

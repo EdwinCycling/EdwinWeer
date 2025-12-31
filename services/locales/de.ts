@@ -36,7 +36,7 @@ export const de: Dictionary = {
     'welcome.ad_free_desc': 'Wir mögen keine Ablenkungen. Genieße eine saubere Oberfläche ohne nervige Werbung, auch in der kostenlosen Version.',
     'welcome.freemium_title': 'Freemium Modell',
     'welcome.freemium_desc': 'Die Basis ist kostenlos und sehr umfangreich. Für mehr Nutzung bieten wir eine (einmalige) Bezahloption an, um mehr WeatherCredits für intensivere Nutzung zu erwerben.',
-    'welcome.customizable_title': 'Vollständig Anpassbar',
+    'welcome.customizable_title': 'Vollständig anpassbar',
     'welcome.customizable_desc': 'Über die Einstellungen kannst du alles nach Wunsch anpassen: von Einheiten und Wettermodellen bis zur Reihenfolge der Karten auf deinem Dashboard.',
     'welcome.start_button': 'Entdecken starten',
     'loading': 'Laden...',
@@ -116,77 +116,77 @@ export const de: Dictionary = {
 
     // FAQ Questions - General
     'faq.q.what_is_baro': 'Was genau ist Baro?',
-    'faq.a.what_is_baro': 'Baro ist nicht nur eine weitere Wetter-App; es ist Ihr persönlicher Wettermann. Im Gegensatz zu Standard-Apps, die nur ein einziges Symbol zeigen, analysiert Baro mehrere Wettermodelle, historische Daten und Ihre persönlichen Vorlieben, um ein differenziertes Bild zu geben.',
+    'faq.a.what_is_baro': 'Baro ist nicht nur eine weitere Wetter-App; es ist Ihr persönlicher Wettermann. Im Gegensatz zu Standard-Apps, die nur ein einziges Symbol zeigen, analysiert Baro mehrere Wettermodelle, historische Daten und Ihre persönlichen Vorlieben, um ein differenziertes Bild zu geben. Ob Sie wissen müssen, ob Sie einen Regenschirm brauchen, ob es sicher ist zu segeln oder wie das Klima an Ihrem Urlaubsziel ist: Baro liefert die Antwort.',
     
     'faq.q.free': 'Ist Baro kostenlos?',
-    'faq.a.free': 'Ja! Der Kern von Baro ist völlig kostenlos. Sie erhalten Zugang zu aktuellem Wetter, Vorhersagen, Ensemble-Diagrammen, historischen Analysen und dem Urlaubsplaner, ohne zu bezahlen.',
+    'faq.a.free': 'Ja! Der Kern von Baro ist völlig kostenlos. Sie erhalten Zugang zu aktuellem Wetter, Vorhersagen, Ensemble-Diagrammen, historischen Analysen und dem Urlaubsplaner, ohne zu bezahlen. Wir glauben, dass hochwertiges Wetter für jeden zugänglich sein sollte.',
     
     'faq.q.ads': 'Gibt es Werbung in der App?',
-    'faq.a.ads': 'Nein. Absolut nicht. Baro ist als ruhiges, sauberes Erlebnis konzipiert, bei dem die Daten im Mittelpunkt stehen.',
+    'faq.a.ads': 'Nein. Absolut nicht. Baro ist als ruhiges, sauberes Erlebnis konzipiert, bei dem die Daten im Mittelpunkt stehen. Keine Banner, keine Pop-ups, keine Unterbrechungen.',
 
     'faq.q.install': 'Kann ich Baro als App installieren?',
-    'faq.a.install': 'Sicher! Baro ist eine Progressive Web App (PWA). Sie können sie direkt aus Ihrem Browser auf Ihrem Telefon oder Computer installieren.',
+    'faq.a.install': 'Sicher! Baro ist eine Progressive Web App (PWA). Sie können sie direkt aus Ihrem Browser auf Ihrem Telefon oder Computer installieren. Sie verhält sich dann genau wie eine normale App aus dem Store, verbraucht aber weniger Platz.',
 
     'faq.q.offline': 'Funktioniert die App offline?',
-    'faq.a.offline': 'Teilweise. Da Wetterdaten schnell veralten, benötigen Sie Internet für die neuesten Vorhersagen. Die App speichert jedoch die zuletzt abgerufenen Daten.',
+    'faq.a.offline': 'Teilweise. Da Wetterdaten schnell veralten, benötigen Sie Internet für die neuesten Vorhersagen. Die App speichert jedoch die zuletzt abgerufenen Daten, sodass Sie diese auch ohne Verbindung ansehen können.',
 
     // FAQ Questions - Features
     'faq.q.ai': 'Was ist der "Baro Wetterbericht"?',
-    'faq.a.ai': 'Das ist unsere einzigartige Funktion. Statt langweiliger Tabellen schreibt "Baro" (unser virtueller Wettermann) einen Textbericht für Sie. Er schaut auf Ihr eingestelltes Profil und sagt Ihnen in natürlicher Sprache, was Sie erwartet.',
+    'faq.a.ai': 'Das ist unsere einzigartige Funktion. Statt langweiliger Tabellen schreibt "Baro" (unser virtueller Wettermann) einen Textbericht für Sie. Er schaut auf Ihr eingestelltes Profil und sagt Ihnen in natürlicher Sprache, was Sie erwartet. Sie finden diesen Bericht ganz oben auf Ihrem Dashboard.',
 
     'faq.q.barometer': 'Wo ist das Barometer?',
-    'faq.a.barometer': 'Es ist immer noch da! Wir haben es nur modernisiert. Sie finden es direkt auf dem Dashboard bei den Luftdruck-Kacheln. Es zeigt an, ob sich das Wetter bessert (steigender Druck) oder verschlechtert (fallender Druck).',
+    'faq.a.barometer': 'Es ist immer noch da! Wir haben es nur modernisiert. Sie finden es direkt auf dem Dashboard bei den Luftdruck-Kacheln. Es zeigt an, ob sich das Wetter bessert (steigender Druck) oder verschlechtert (fallender Druck) mit einer klassischen analogen Nadel.',
 
     'faq.q.climate': 'Wo finde ich Infos zum Klimawandel?',
-    'faq.a.climate': 'Im Menü finden Sie "Klimawandel". Hier sehen Sie, wie sich die Temperatur an Ihrem Standort in den letzten Jahrzehnten verändert hat.',
+    'faq.a.climate': 'Im Menü finden Sie "Klimawandel". Hier sehen Sie, wie sich die Temperatur an Ihrem Standort in den letzten Jahrzehnten verändert hat, basierend auf realen Messdaten seit 1979.',
 
     'faq.q.holiday': 'Was ist der Urlaubsplaner?',
-    'faq.a.holiday': 'Der Urlaubsplaner (im Menü "Urlaubswetter") hilft Ihnen, den perfekten Reisezeitraum zu wählen. Baro zeigt Ihnen die klimatologischen Chancen für Ihr Reiseziel basierend auf 40 Jahren echter Messdaten.',
+    'faq.a.holiday': 'Der Urlaubsplaner (im Menü "Urlaubswetter") hilft Ihnen, den perfekten Reisezeitraum zu wählen. Baro zeigt Ihnen die klimatologischen Chancen für Ihr Reiseziel basierend auf 40 Jahren echter Messdaten. Suchen Sie nach Sonne im Oktober? Baro findet den besten Ort.',
 
     'faq.q.photo': 'Kann ich ein Foto mit Wetterdaten teilen?',
-    'faq.a.photo': 'Sicher! Klicken Sie auf das "Teilen"-Symbol (oben rechts). Sie können dann ein eigenes Foto hochladen oder einen Hintergrund wählen.',
+    'faq.a.photo': 'Sicher! Klicken Sie auf das "Teilen"-Symbol (oben rechts). Sie können dann ein eigenes Foto hochladen oder einen Hintergrund wählen. Baro legt die aktuellen Wetterdaten stilvoll über Ihr Bild zum Teilen.',
 
     'faq.q.profiles': 'Wie funktionieren die persönlichen Profile?',
-    'faq.a.profiles': 'Unter Einstellungen > Baro Profil können Sie angeben, was Ihnen wichtig ist. Sind Sie Radfahrer? Dann warnen wir früher vor Wind. Hassen Sie Regen? Dann senken wir die Schwelle.',
+    'faq.a.profiles': 'Unter Einstellungen > Baro Profil können Sie angeben, was Ihnen wichtig ist. Sind Sie Radfahrer? Dann warnen wir früher vor Wind. Hassen Sie Regen? Dann senken wir die Schwelle für Regenwarnungen.',
 
     'faq.q.ensemble': 'Was sind "Ensembles"?',
-    'faq.a.ensemble': 'Ensembles zeigen 50+ verschiedene Berechnungen desselben Wettermodells. Liegen alle Linien nah beieinander? Dann ist die Vorhersage sicher.',
+    'faq.a.ensemble': 'Ensembles zeigen 50+ verschiedene Berechnungen desselben Wettermodells. Liegen alle Linien nah beieinander? Dann ist die Vorhersage sicher. Gehen sie weit auseinander? Dann ist die Lage unsicher.',
 
     'faq.q.history': 'Was kann ich mit der "Historie"-Funktion tun?',
-    'faq.a.history': 'Damit reisen Sie in die Zeit zurück. Baro hat Zugriff auf ein Archiv, das Jahrzehnte zurückreicht.',
+    'faq.a.history': 'Damit reisen Sie in die Zeit zurück. Baro hat Zugriff auf ein Archiv, das Jahrzehnte zurückreicht. Vergleichen Sie das heutige Wetter mit dem vor 10, 20 oder 40 Jahren am selben Ort.',
 
     'faq.q.strava': 'Wie funktioniert die Strava-Integration?',
-    'faq.a.strava': 'Laden Sie Ihre Route hoch und Baro berechnet das Wetter an jedem Punkt Ihrer Route zur richtigen Zeit.',
+    'faq.a.strava': 'Laden Sie Ihre Route hoch und Baro berechnet das Wetter an jedem Punkt Ihrer Route zur richtigen Zeit. So wissen Sie genau, wann Sie Gegenwind haben oder wo es regnen könnte.',
 
     'faq.q.alerts': 'Erhalte ich Warnungen bei Unwetter?',
-    'faq.a.alerts': 'Im Dashboard sehen Sie sofort Warnungen für Extreme wie Sturm, starken Regen oder extreme Hitze.',
+    'faq.a.alerts': 'Im Dashboard sehen Sie sofort Warnungen für Extreme wie Sturm, starken Regen oder extreme Hitze. Diese basieren auf den offiziellen Grenzwerten und Ihrem persönlichen Profil.',
 
     // FAQ Questions - Models
     'faq.q.sources': 'Woher kommen die Daten?',
-    'faq.a.sources': 'Wir nutzen Open-Meteo, das Daten der besten meteorologischen Institute der Welt aggregiert, darunter DWD (Deutschland), NOAA (USA) und ECMWF (Europa).',
+    'faq.a.sources': 'Wir nutzen Open-Meteo, das Daten der besten meteorologischen Institute der Welt aggregiert, darunter DWD (Deutschland), NOAA (USA), ECMWF (Europa) und MeteoFrance (Frankreich).',
 
     'faq.q.accuracy': 'Wie genau ist Baro?',
-    'faq.a.accuracy': 'Da wir hochauflösende Modelle verwenden und Daten stündlich aktualisieren, gehören wir zur Spitze in Sachen Präzision.',
+    'faq.a.accuracy': 'Da wir hochauflösende Modelle verwenden und Daten stündlich aktualisieren, gehören wir zur Spitze in Sachen Präzision. Unsere Modelle haben eine Genauigkeit von bis zu 1 km, was viel präziser ist als Standard-Apps.',
 
     'faq.q.updates': 'Wie oft wird das Wetter aktualisiert?',
-    'faq.a.updates': 'Die meisten Modelle werden 4x täglich vollständig erneuert. Baro holt immer den allerletzten verfügbaren Lauf.',
+    'faq.a.updates': 'Die meisten Modelle werden 4x täglich vollständig erneuert. Baro holt immer den allerletzten verfügbaren Lauf, und die aktuellen Messdaten werden sogar stündlich aktualisiert.',
 
     // FAQ Questions - Account
     'faq.q.privacy': 'Was macht ihr mit meinem Standort?',
-    'faq.a.privacy': 'Nichts. Ihr Standort wird nur verwendet, um das Wetter auf Ihrem Telefon abzurufen. Wir speichern keinen Standortverlauf.',
+    'faq.a.privacy': 'Nichts. Ihr Standort wird nur verwendet, um das Wetter auf Ihrem Telefon abzurufen. Wir speichern keinen Standortverlauf auf unseren Servern. Ihre Privatsphäre ist uns heilig.',
 
     'faq.q.data': 'Welche Daten werden gespeichert?',
-    'faq.a.data': 'Wenn Sie sich mit Google anmelden, speichern wir nur Ihre E-Mail-Adresse und Ihren Namen, um Ihre Einstellungen zu synchronisieren.',
+    'faq.a.data': 'Wenn Sie sich mit Google anmelden, speichern wir nur Ihre E-Mail-Adresse und Ihren Namen, um Ihre Einstellungen und Favoriten über verschiedene Geräte hinweg zu synchronisieren.',
 
     'faq.q.delete': 'Kann ich mein Konto löschen?',
     'faq.a.delete': 'Natürlich. Bist du sicher? Es tut uns leid, dass du gehst. In den App-Einstellungen kannst du dein Konto und alle zugehörigen Daten jederzeit vollständig löschen. Wir bewahren keine Backups von gelöschten Konten auf.',
 
     // FAQ Questions - Pricing
     'faq.q.credits': 'Was sind Baro Credits?',
-    'faq.a.credits': 'Für die Baro-Wetterberichte verwenden wir ein Kreditsystem. Das Baro-Paket gibt Ihnen Guthaben für eine große Anzahl personalisierter Wetterberichte.',
+    'faq.a.credits': 'Für die Baro-Wetterberichte verwenden wir ein Kreditsystem. Das Baro-Paket gibt Ihnen Guthaben für eine große Anzahl personalisierter Wetterberichte. Die normale Wettervorhersage bleibt davon unberührt.',
 
     'faq.q.premium': 'Kommt eine kostenpflichtige Version?',
-    'faq.a.premium': 'Die "Baro Pro"-Option für Power-User. Dies gibt Ihnen höhere Limits für die Nutzung von Wetterdaten. Die Basis-App bleibt jedoch immer kostenlos.',
+    'faq.a.premium': 'Die "Baro Pro"-Option für Power-User bietet Ihnen höhere Limits für die Nutzung von Wetterdaten und exklusive Funktionen. Die Basis-App bleibt jedoch immer kostenlos und werbefrei.',
 
     'info.card.privacy_desc': 'Wir verfolgen deinen Standortverlauf nicht. Deine Daten bleiben auf deinem Gerät.',
     'info.unique_title': 'Was macht uns einzigartig?',
@@ -332,7 +332,7 @@ export const de: Dictionary = {
     'wind_dir': 'Windrichtung',
     'prevailing': 'Vorherrschend',
     'total_rain': 'Gesamter Regen',
-    'avg_temp': 'Ø Temp',
+    'avg_temp': 'Ø Temp.',
     'full_screen': 'Vollbild',
     'close_full_screen': 'Vollbild schließen',
     'map_data_msg': 'Lokale Wetterdaten (30 Min)',
@@ -516,7 +516,7 @@ export const de: Dictionary = {
 
     // Ensemble
     'ensemble.main': 'Haupt',
-    'ensemble.model': 'Ensemble Modell',
+    'ensemble.model': 'Ensemble-Modell',
     'ensemble.temp_2m': 'Temperatur (2m)',
     'ensemble.rain': 'Regen',
     'ensemble.wind_speed_10m': 'Windgeschwindigkeit (10m)',
@@ -560,8 +560,8 @@ export const de: Dictionary = {
     'holiday.show_5_years': 'Zeige 5 Jahre',
     'holiday.history_desc': 'Zeigt das durchschnittliche Wetter der letzten 5 Jahre.',
     'holiday.loading_history': 'Lade historische Daten...',
-    'holiday.max_temp': 'Max Temp',
-    'holiday.min_temp': 'Min Temp',
+    'holiday.max_temp': 'Max. Temp.',
+    'holiday.min_temp': 'Min. Temp.',
     'holiday.precip_sunshine': 'Niederschlag & Sonnenschein',
     'holiday.sunshine_h': 'Sonnenschein (h)',
     'holiday.max_wind_speed': 'Max Windgeschwindigkeit',
@@ -602,12 +602,12 @@ export const de: Dictionary = {
     // Model Info
     'model_info.title': 'Welches Wettermodell soll ich wählen?',
     'model_info.intro': 'Wettervorhersagen werden von Supercomputern berechnet. Da das Wetter komplex ist, gibt es verschiedene Rechenmodelle. Das eine Modell ist besser bei kurzfristigem Regen, das andere bei der Temperatur für nächste Woche.',
-    'model_info.eu_title': 'Die Europäischen Spitzenreiter (Empfohlen für NL/BE/DE)',
+    'model_info.eu_title': 'Die europäischen Spitzenreiter (Empfohlen für NL/BE/DE)',
     'model_info.eu_ecmwf': '**ECMWF IFS**: Dies gilt weltweit als das genaueste Modell. Es wird vom europäischen Wetterzentrum betrieben. Im Zweifel wähle dieses.',
     'model_info.eu_dwd': '**DWD ICON (EU / D2)**: Das Modell des Deutschen Wetterdienstes. Da Deutschland unser Nachbar ist, ist dieses Modell extrem gut für Mitteleuropa. Die D2 Version ist sehr detailliert (hohe Auflösung) und perfekt für die kurze Frist (kommende 48 Stunden).',
-    'model_info.baro_title': 'Die Neue Technologie (Baro)',
+    'model_info.baro_title': 'Die neue Technologie (Baro)',
     'model_info.baro_aifs': '**Baro AIFS**: Das ist revolutionär. Dieses Modell nutzt fortschrittliche Baro-Technologie statt klassischer Physik. Es ist rasend schnell und schneidet in aktuellen Tests oft besser ab als die traditionellen Modelle. Einen Versuch wert!',
-    'model_info.us_title': 'Der Amerikanische Standard',
+    'model_info.us_title': 'Der amerikanische Standard',
     'model_info.us_gfs': '**GFS (Global Forecast System)**: Das bekannte US-Modell. Es schaut weit voraus. Manchmal etwas weniger genau für lokale Schauer in Europa als ECMWF oder ICON, aber sehr gut im Erkennen großer Wetteränderungen.',
     'model_info.ens_title': 'Was bedeutet "Ensemble" oder "EPS"?',
     'model_info.ens_intro': 'Du siehst oft Namen wie GFS Ensemble oder ICON EPS. Normale Modelle rechnen 1 Szenario aus. Ensemble-Modelle rechnen 20 bis 50 Szenarien aus und nehmen den Durchschnitt.',
@@ -628,7 +628,7 @@ export const de: Dictionary = {
 
     // Usage
     'settings.usage': 'Nutzung',
-    'usage.total': 'Gesamt API Abrufe',
+    'usage.total': 'Gesamte API-Abrufe',
     'usage.today': 'Abrufe Heute',
     'usage.limit': 'Tageslimit',
     'usage.desc': 'Wir überwachen die Anzahl der API-Abrufe, um Überlastung zu vermeiden und faire Nutzung zu garantieren.',
@@ -659,7 +659,7 @@ export const de: Dictionary = {
     'landing.feature_ensemble_desc': 'Verlasse dich nicht auf eine Vermutung. Sieh die Streuung von 50+ Simulationen, um die Sicherheit der Vorhersage zu kennen.',
     'landing.feature_history': 'Historischer Kontext',
     'landing.feature_history_desc': 'Ist es heute normal? Vergleiche das aktuelle Wetter direkt mit 40 Jahren Klimadaten.',
-    'landing.feature_activities': 'Aktivitäten Planer',
+    'landing.feature_activities': 'Aktivitäten-Planer',
     'landing.feature_activities_desc': 'Egal ob Radfahren, Segeln oder Gärtnern, erhalte spezialisierte Vorhersagen abgestimmt auf deine Leidenschaften.',
     'landing.feature_ai': 'Baro-Power',
     'landing.feature_ai_desc': 'Nutze die neuesten Baro-Wettermodelle neben traditionellen physikalischen Vorhersagen.',
@@ -821,7 +821,7 @@ export const de: Dictionary = {
     'share.size.small': 'Klein',
     'share.size.normal': 'Normal',
     'share.size.large': 'Groß',
-    'share.size.xl': 'Extra Groß',
+    'share.size.xl': 'Extra groß',
     'share.color.white': 'Weiß',
     'share.color.black': 'Schwarz',
     'share.color.red': 'Rot',
@@ -834,7 +834,7 @@ export const de: Dictionary = {
     'share.bubble.talk': 'Sprechen',
     'share.bubble.think': 'Denken',
     'share.bubble.shout': 'Schreien',
-    'share.bubble.settings': 'Sprechblasen Einstellungen',
+    'share.bubble.settings': 'Sprechblasen-Einstellungen',
     'share.bubble.position': 'Position',
     'share.bubble.size_tail': 'Größe & Schwanz',
 
@@ -916,31 +916,31 @@ export const de: Dictionary = {
     'landing.view_preview': 'Beispiel ansehen',
 
     // New additions (fallback to English)
-    'month.jan': 'January',
-    'month.feb': 'February',
-    'month.mar': 'March',
+    'month.jan': 'Januar',
+    'month.feb': 'Februar',
+    'month.mar': 'März',
     'month.apr': 'April',
-    'month.may': 'May',
-    'month.jun': 'June',
-    'month.jul': 'July',
+    'month.may': 'Mai',
+    'month.jun': 'Juni',
+    'month.jul': 'Juli',
     'month.aug': 'August',
     'month.sep': 'September',
-    'month.oct': 'October',
+    'month.oct': 'Oktober',
     'month.nov': 'November',
-    'month.dec': 'December',
+    'month.dec': 'Dezember',
 
 
     // Activities
     'activity.bbq': 'BBQ',
-    'activity.cycling': 'Cycling',
-    'activity.walking': 'Walking',
-    'activity.sailing': 'Sailing',
-    'activity.running': 'Running',
-    'activity.beach': 'Beach',
-    'activity.gardening': 'Gardening',
-    'activity.stargazing': 'Stargazing',
+    'activity.cycling': 'Radfahren',
+    'activity.walking': 'Wandern',
+    'activity.sailing': 'Segeln',
+    'activity.running': 'Laufen',
+    'activity.beach': 'Strand',
+    'activity.gardening': 'Gartenarbeit',
+    'activity.stargazing': 'Sternenbeobachtung',
     'activity.golf': 'Golf',
-    'activity.drone': 'Drone',
+    'activity.drone': 'Drohne',
 
 
 
