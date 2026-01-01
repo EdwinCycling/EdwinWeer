@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { ViewState, AppSettings, ActivityType, ActivityPlannerSettings } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { ViewState, AppSettings, ActivityType, ActivityPlannerSettings, Location, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getTranslation } from '../services/translations';
+import { searchCityByName } from '../services/geoService';
+import { loadCurrentLocation, saveCurrentLocation } from '../services/storageService';
+import { fetchForecast } from '../services/weatherService';
+import { generateBaroWeatherReport } from '../services/geminiService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -32,9 +36,14 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
   const t = (key: string) => getTranslation(key, settings.language);
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [plannerSettings, setPlannerSettings] = useState<ActivityPlannerSettings>({});
+  const [location, setLocation] = useState<Location>(loadCurrentLocation());
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Location[]>([]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,6 +61,9 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
           setTelegramConnected(!!data.telegramChatId);
           if (data.activity_settings) {
             setPlannerSettings(data.activity_settings);
+          }
+          if (data.activity_location) {
+              setLocation(data.activity_location);
           }
         }
       } catch (e) {
@@ -119,29 +131,30 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
     handleUpdate(activity, { days: newDays });
   };
 
-  const saveChanges = async () => {
-    if (!user || !telegramConnected) return;
-    setSaving(true);
-    try {
+  useEffect(() => {
+    const saveAuto = async () => {
+      if (!user || !telegramConnected || loading) return;
+      
+      setSaving(true);
+      try {
         const userDocRef = doc(db, 'users', user.uid);
         await updateDoc(userDocRef, {
-            activity_settings: plannerSettings
+            activity_settings: plannerSettings,
+            activity_location: location
         });
-        // Also update local settings context if needed (though this is user doc specific)
-        // onUpdateSettings could be used if activity_settings was part of AppSettings, 
-        // but here we are treating it as user doc data primarily.
-        // If we added it to AppSettings in types, we should sync it.
         if (onUpdateSettings) {
              onUpdateSettings({ ...settings, activity_settings: plannerSettings });
         }
-        alert(t('planner.saved'));
-    } catch (e) {
+      } catch (e) {
         console.error("Error saving", e);
-        alert(t('planner.save_error'));
-    } finally {
+      } finally {
         setSaving(false);
-    }
-  };
+      }
+    };
+
+    const timeoutId = setTimeout(saveAuto, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [plannerSettings, location, user, telegramConnected, loading]);
 
   // Count enabled activities
   const enabledCount = Object.values(plannerSettings).filter((s: any) => s.enabled).length;
@@ -178,6 +191,86 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
              <Icon name="info" className="inline text-sm mr-1" />
              {t('planner.intro.note')}
           </p>
+        </div>
+
+        {/* Location Selection */}
+        <div className="w-full bg-white dark:bg-card-dark p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 relative z-30">
+             <h3 className="font-bold mb-3 flex items-center gap-2">
+                 <Icon name="location_on" className="text-indigo-500" />
+                 {t('location')} <span className="text-red-500">*</span>
+             </h3>
+             
+             <div className="relative">
+                 <div className="flex items-center bg-slate-100 dark:bg-white/5 rounded-xl px-3 border border-slate-200 dark:border-white/10 focus-within:border-indigo-500 transition-colors">
+                     <Icon name="search" className="text-slate-400" />
+                     <input 
+                         ref={searchInputRef}
+                         type="text" 
+                         value={isSearchOpen ? searchQuery : location.name}
+                         onChange={(e) => {
+                             setSearchQuery(e.target.value);
+                             setIsSearchOpen(true);
+                             if (e.target.value.length > 2) {
+                                 setLoadingSearch(true);
+                                 // Debounce search
+                                 const timer = setTimeout(async () => {
+                                     try {
+                                         const results = await searchCityByName(e.target.value);
+                                         setSearchResults(results);
+                                     } catch (err) {
+                                         console.error(err);
+                                     } finally {
+                                         setLoadingSearch(false);
+                                     }
+                                 }, 500);
+                                 return () => clearTimeout(timer);
+                             } else {
+                                 setSearchResults([]);
+                             }
+                         }}
+                         onFocus={() => {
+                             setIsSearchOpen(true);
+                             setSearchQuery(location.name);
+                             setSearchResults([]);
+                         }}
+                         placeholder={t('search_location')}
+                         className="w-full bg-transparent border-none py-3 px-2 outline-none text-sm font-medium"
+                     />
+                     {loadingSearch && <Icon name="sync" className="animate-spin text-indigo-500" />}
+                 </div>
+
+                 {/* Search Results Dropdown */}
+                 {isSearchOpen && searchResults.length > 0 && (
+                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1e293b] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 max-h-[200px] overflow-y-auto z-50">
+                         {searchResults.map((res, i) => (
+                             <button
+                                 key={i}
+                                 onClick={() => {
+                                     setLocation(res);
+                                     setIsSearchOpen(false);
+                                     setSearchQuery('');
+                                 }}
+                                 className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-100 dark:border-white/5 last:border-0 flex items-center gap-2"
+                             >
+                                 <Icon name="location_on" className="text-slate-400" />
+                                 <div>
+                                     <p className="font-bold text-sm">{res.name}</p>
+                                     <p className="text-xs text-slate-500">{res.country} {res.admin1}</p>
+                                 </div>
+                             </button>
+                         ))}
+                     </div>
+                 )}
+                 {isSearchOpen && (
+                     <div 
+                         className="fixed inset-0 z-40" 
+                         onClick={() => {
+                             setIsSearchOpen(false);
+                             setSearchQuery('');
+                         }} 
+                     />
+                 )}
+             </div>
         </div>
 
         {/* Telegram Warning */}
@@ -322,26 +415,15 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
             })}
         </div>
 
-        {/* Save Button */}
-        <div className="sticky bottom-4 w-full pt-4">
-            <button 
-                onClick={saveChanges}
-                disabled={!telegramConnected || saving}
-                className={`w-full py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-all ${
-                    !telegramConnected 
-                        ? 'bg-slate-300 dark:bg-white/10 text-slate-500 cursor-not-allowed'
-                        : saving
-                            ? 'bg-indigo-400 cursor-wait'
-                            : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-[1.02]'
-                }`}
-            >
-                {saving ? (
-                    <Icon name="sync" className="animate-spin" />
-                ) : (
-                    <Icon name="save" />
-                )}
-                {t('settings.save_changes')}
-            </button>
+        {/* Save Button Removed - Auto Save Implemented */}
+        <div className="sticky bottom-4 w-full pt-4 space-y-2 pointer-events-none">
+             {/* Status Indicator for Saving */}
+             <div className={`transition-all duration-300 flex justify-center ${saving ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                 <div className="bg-white/90 dark:bg-card-dark/90 backdrop-blur shadow-lg border border-indigo-100 dark:border-indigo-500/30 px-4 py-2 rounded-full flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
+                     <Icon name="sync" className="animate-spin text-sm" />
+                     {t('settings.saving') || 'Opslaan...'}
+                 </div>
+             </div>
         </div>
 
       </div>

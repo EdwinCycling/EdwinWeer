@@ -487,13 +487,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       )}
 
       {weatherData && (
-        <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 right-0 h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
              <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day} 
                 cloudCover={weatherData.current.cloud_cover}
                 className="absolute inset-0 w-full h-full"
             />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-50 dark:to-background-dark" />
         </div>
       )}
 
@@ -507,7 +508,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           {/* Language Selector removed as requested */}
 
 
-          <div className="absolute top-6 right-4 sm:right-6 lg:right-8 flex items-center gap-1 sm:gap-3 flex-row-reverse">
+          <div className="absolute top-2 right-2 sm:right-4 flex items-center gap-1 sm:gap-3 flex-row-reverse z-50">
               {/* Refresh Button */}
               <Tooltip content={t('refresh')} position="bottom">
                   <button 
@@ -574,9 +575,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
-        <div className="flex flex-col pt-8 pb-4">
+        <div className="flex flex-col pt-28 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
@@ -589,7 +590,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     ) : (
                         <div className="flex flex-col items-center">
                             <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
-                                <Icon name="location_on" className="text-primary" />
                                 {location.name}, {location.country}
                             </h2>
                             {localTime && (
@@ -603,7 +603,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     )}
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -915,8 +915,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
                                 <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="humidity_percentage" /></div>
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('humidity')}</p>
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('humidity')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.relative_humidity_2m}%</p>
                                 </div>
                             </div>

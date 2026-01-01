@@ -27,6 +27,22 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
   const t = (key: string) => getTranslation(key, settings.language);
 
+  const cycleFavorite = (direction: 'next' | 'prev') => {
+      if (settings.favorites.length === 0) return;
+      const currentIndex = settings.favorites.findIndex(f => f.name === location.name);
+      let nextIndex = 0;
+      if (currentIndex === -1) {
+          nextIndex = 0;
+      } else {
+          if (direction === 'next') {
+              nextIndex = (currentIndex + 1) % settings.favorites.length;
+          } else {
+              nextIndex = (currentIndex - 1 + settings.favorites.length) % settings.favorites.length;
+          }
+      }
+      setLocation(settings.favorites[nextIndex]);
+  };
+
     const currentTemp = weatherData ? Math.round(convertTemp(weatherData.current.temperature_2m, settings.tempUnit)) : 0;
     const feelsLike = weatherData ? convertTemp(weatherData.current.apparent_temperature, settings.tempUnit) : 0;
     const heatIndex = weatherData ? calculateHeatIndex(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
@@ -338,11 +354,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       )}
 
       {weatherData && (
-        <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 right-0 h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
             <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day}
                 cloudCover={weatherData.current.cloud_cover}
+                className="absolute inset-0 w-full h-full"
             />
         </div>
       )}
@@ -352,18 +369,22 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
       
       <div className="relative z-10 flex flex-col h-full w-full">
-        {/* Header (Same as Ensemble) */}
+        {/* Header */}
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => onNavigate(ViewState.CURRENT)} className="absolute left-6 text-white hover:text-white/80 transition-colors p-2 drop-shadow-md">
-                    <Icon name="arrow_back_ios_new" />
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <Icon name="chevron_left" className="text-3xl" />
                 </button>
+
                 <div className="flex flex-col items-center">
                     <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
-                        <Icon name="location_on" className="text-primary" />
                         {location.name}, {location.country}
                     </h2>
                 </div>
+
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <Icon name="chevron_right" className="text-3xl" />
+                </button>
             </div>
 
             {/* Favorite Cities Selector */}
@@ -426,7 +447,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         {/* Current Weather Display (Same as Ensemble) */}
         {weatherData && (
-            <div className="flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
+            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
@@ -530,19 +551,19 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1 overflow-hidden flex-grow sm:flex-grow-0 h-[34px]">
                             <button 
                                 onClick={() => setViewMode('expanded')}
-                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'expanded' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'expanded' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 Uitgebreid
                             </button>
                             <button 
                                 onClick={() => setViewMode('compact')}
-                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'compact' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'compact' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 Compact
                             </button>
                              <button  
                                 onClick={() => setViewMode('graph')}
-                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all truncate ${viewMode === 'graph' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'graph' ? 'bg-white dark:bg-white/20 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
                             >
                                 Grafiek
                             </button>

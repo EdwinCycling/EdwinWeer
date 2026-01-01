@@ -579,6 +579,22 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
     );
   };
 
+  const cycleFavorite = (direction: 'next' | 'prev') => {
+      if (settings.favorites.length === 0) return;
+      const currentIndex = settings.favorites.findIndex(f => f.name === location.name);
+      let nextIndex = 0;
+      if (currentIndex === -1) {
+          nextIndex = 0;
+      } else {
+          if (direction === 'next') {
+              nextIndex = (currentIndex + 1) % settings.favorites.length;
+          } else {
+              nextIndex = (currentIndex - 1 + settings.favorites.length) % settings.favorites.length;
+          }
+      }
+      setLocation(settings.favorites[nextIndex]);
+  };
+
   const currentTemp = currentWeather ? convertTemp(currentWeather.current.temperature_2m, settings.tempUnit) : 0;
   const highTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_min[0], settings.tempUnit) : 0;
@@ -604,17 +620,178 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           })
           .map(d => d.time);
   }, [processChartData.data, timeStep]);
+
+  const chartSection = (() => {
+      if (loading) {
+          return (
+              <div className="flex justify-center py-20">
+                  <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+          );
+      }
+
+      if (ensembleData) {
+          return (
+              <div className="w-full">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Icon name="show_chart" className="text-primary" />
+                      {availableVariables.find(v => v.key === selectedVariable)?.label}
+                  </h3>
+                  <div className="w-full h-[400px]">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                          <ComposedChart data={processChartData.data}>
+                              <defs>
+                                  <linearGradient id="gradientGrid" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#888" stopOpacity={0.1} />
+                                      <stop offset="100%" stopColor="#888" stopOpacity={0} />
+                                  </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke="rgba(128,128,128,0.2)" />
+
+                              {isTemp && (
+                                  <>
+                                      <ReferenceLine y={zeroLine} stroke="#3b82f6" strokeWidth={1} strokeDasharray="3 3" label={{ value: settings.tempUnit === TempUnit.CELSIUS ? '0°C' : '32°F', position: 'insideRight', fill: '#3b82f6', fontSize: 12, fontWeight: 'bold' }} />
+                                      <ReferenceLine y={thirtyLine} stroke="#ef4444" strokeWidth={1} strokeDasharray="3 3" label={{ value: settings.tempUnit === TempUnit.CELSIUS ? '30°C' : '86°F', position: 'insideRight', fill: '#ef4444', fontSize: 12, fontWeight: 'bold' }} />
+                                  </>
+                              )}
+
+                              {timeStep === 'hourly' && dayTicks?.map((tick: any) => (
+                                  <ReferenceLine key={tick} x={tick} stroke="rgba(128,128,128,0.2)" strokeDasharray="3 3" />
+                              ))}
+
+                              {weekendAreas.map((area, index) => (
+                                  <ReferenceArea
+                                      key={`weekend-${index}`}
+                                      x1={area.x1}
+                                      x2={area.x2}
+                                      fill="#fbbf24"
+                                      fillOpacity={0.05}
+                                      ifOverflow="extendDomain"
+                                  />
+                              ))}
+
+                              <XAxis
+                                  dataKey="time"
+                                  ticks={xTicks}
+                                  tickFormatter={(val) => {
+                                      const date = new Date(val);
+                                      if (timeStep === 'daily') {
+                                          return date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' });
+                                      }
+                                      return date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+                                  }}
+                                  minTickGap={10}
+                                  stroke="rgba(128,128,128,0.5)"
+                                  tick={{ fontSize: 10 }}
+                              />
+
+                              {timeStep === 'hourly' && (
+                                  <XAxis
+                                      xAxisId="days"
+                                      dataKey="time"
+                                      ticks={dayTicks}
+                                      tickFormatter={(val) => {
+                                          const date = new Date(val);
+                                          return date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' });
+                                      }}
+                                      orientation="bottom"
+                                      axisLine={false}
+                                      tickLine={false}
+                                      tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 'bold' }}
+                                      height={30}
+                                      stroke="rgba(128,128,128,0)"
+                                  />
+                              )}
+                              <YAxis stroke="rgba(128,128,128,0.5)" tick={{ fontSize: 10 }} unit={getUnitLabel(selectedVariable)} width={40} />
+
+                              {viewMode === 'spread' && !isDirection && (
+                                  <Area type="monotone" dataKey="range" stroke="none" fill={chartColor} fillOpacity={0.2} />
+                              )}
+
+                              {viewMode === 'density' && !isDirection && (
+                                  <>
+                                      <Area type="monotone" dataKey="density1" stroke="none" fill={chartColor} fillOpacity={0.1} isAnimationActive={false} />
+                                      <Area type="monotone" dataKey="density5" stroke="none" fill={chartColor} fillOpacity={0.1} isAnimationActive={false} />
+                                      <Area type="monotone" dataKey="density2" stroke="none" fill={chartColor} fillOpacity={0.3} isAnimationActive={false} />
+                                      <Area type="monotone" dataKey="density4" stroke="none" fill={chartColor} fillOpacity={0.3} isAnimationActive={false} />
+                                      <Area type="monotone" dataKey="density3" stroke="none" fill={chartColor} fillOpacity={0.6} isAnimationActive={false} />
+                                      <Line type="monotone" dataKey="min" stroke={chartColor} strokeWidth={1} dot={false} opacity={0.5} isAnimationActive={false} />
+                                      <Line type="monotone" dataKey="max" stroke={chartColor} strokeWidth={1} dot={false} opacity={0.5} isAnimationActive={false} />
+                                  </>
+                              )}
+
+                              {(viewMode === 'all' || viewMode === 'main' || (isComparisonMode && viewMode === 'avg') || (isDirection && (viewMode === 'density' || viewMode === 'spread'))) &&
+                                  processChartData.memberKeys.map((key: string, index: number) => {
+                                      if (isComparisonMode) {
+                                          if (viewMode !== 'main' && viewMode !== 'avg') return null;
+
+                                          const dataKey = viewMode === 'main' ? `${key}_main` : key;
+
+                                          return (
+                                              <Line
+                                                  key={key}
+                                                  type="monotone"
+                                                  dataKey={dataKey}
+                                                  stroke={MODEL_COLORS[index % MODEL_COLORS.length]}
+                                                  strokeWidth={2}
+                                                  dot={false}
+                                                  isAnimationActive={false}
+                                                  style={{ zIndex: 10 }}
+                                              />
+                                          );
+                                      }
+
+                                      const num = parseInt(key.replace(/[^0-9]/g, ''), 10);
+                                      const isMainMember = key === 'member0' || key === 'member' || (!isNaN(num) && num === 0);
+
+                                      if (viewMode === 'main' && !isMainMember) return null;
+
+                                      return (
+                                          <Line
+                                              key={key}
+                                              type="monotone"
+                                              dataKey={key}
+                                              stroke={isMainMember ? '#ef4444' : chartColor}
+                                              strokeWidth={isMainMember ? 3 : 1}
+                                              dot={false}
+                                              opacity={viewMode === 'main' ? 1 : (isMainMember ? 1 : 0.3)}
+                                              isAnimationActive={false}
+                                              style={{ zIndex: isMainMember ? 100 : 1 }}
+                                          />
+                                      );
+                                  })}
+
+                              {(viewMode === 'avg' || viewMode === 'spread' || viewMode === 'density') && (
+                                  <Line type="monotone" dataKey="avg" stroke="#ef4444" strokeWidth={3} dot={false} isAnimationActive={false} style={{ zIndex: 100 }} />
+                              )}
+
+                              <Legend content={<CustomLegend />} />
+                          </ComposedChart>
+                      </ResponsiveContainer>
+                  </div>
+              </div>
+          );
+      }
+
+      return (
+          <div className="flex flex-col items-center justify-center opacity-60 py-20">
+              <Icon name="cloud_off" className="text-6xl mb-4" />
+              <p>{error || t('loading')}</p>
+          </div>
+      );
+  })();
   
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
       
       {/* Background from Current Weather */}
       {currentWeather && (
-        <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 right-0 h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
             <StaticWeatherBackground 
                 weatherCode={currentWeather.current.weather_code} 
                 isDay={currentWeather.current.is_day}
                 cloudCover={currentWeather.current.cloud_cover}
+                className="absolute inset-0 w-full h-full"
             />
         </div>
       )}
@@ -625,17 +802,23 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         {/* Header */}
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => onNavigate(ViewState.CURRENT)} className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2">
-                    <Icon name="arrow_back_ios_new" />
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <Icon name="chevron_left" className="text-3xl" />
                 </button>
+
                 <div className="flex flex-col items-center">
                     <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
-                        <Icon name="location_on" className="text-primary" />
                         {location.name}, {location.country}
                     </h2>
                 </div>
-                <div className="absolute right-6 size-10" /> 
+
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <Icon name="chevron_right" className="text-3xl" />
+                </button>
             </div>
+            
+            <div className="absolute right-6 size-10" /> 
+
 
             {/* Favorite Cities Selector */}
             <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2">
@@ -697,7 +880,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         {/* Current Weather Display */}
         {currentWeather && (
-            <div className="flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
+            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
@@ -907,179 +1090,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 </div>
             </div>
 
-            {loading ? (
-                <div className="flex justify-center py-20">
-                    <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-            ) : ensembleData ? (
-                <div className="w-full h-[400px]">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <Icon name="show_chart" className="text-primary" />
-                        {availableVariables.find(v => v.key === selectedVariable)?.label}
-                    </h3>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <ComposedChart data={processChartData.data}>
-                            <defs>
-                                <linearGradient id="gradientGrid" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#888" stopOpacity={0.1}/>
-                                    <stop offset="100%" stopColor="#888" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke="rgba(128,128,128,0.2)" />
-                            
-                            {isTemp && (
-                                <>
-                                    <ReferenceLine y={zeroLine} stroke="#3b82f6" strokeWidth={1} strokeDasharray="3 3" label={{ value: settings.tempUnit === TempUnit.CELSIUS ? '0°C' : '32°F', position: 'insideRight', fill: '#3b82f6', fontSize: 12, fontWeight: 'bold' }} />
-                                    <ReferenceLine y={thirtyLine} stroke="#ef4444" strokeWidth={1} strokeDasharray="3 3" label={{ value: settings.tempUnit === TempUnit.CELSIUS ? '30°C' : '86°F', position: 'insideRight', fill: '#ef4444', fontSize: 12, fontWeight: 'bold' }} />
-                                </>
-                            )}
-                            
-                            {/* Vertical lines for each day in hourly mode */}
-                            {timeStep === 'hourly' && dayTicks?.map((tick: any) => (
-                                <ReferenceLine key={tick} x={tick} stroke="rgba(128,128,128,0.2)" strokeDasharray="3 3" />
-                            ))}
-                            
-                            {/* Weekend Highlighting */}
-                            {weekendAreas.map((area, index) => (
-                                <ReferenceArea 
-                                    key={`weekend-${index}`} 
-                                    x1={area.x1} 
-                                    x2={area.x2} 
-                                    fill="#fbbf24" 
-                                    fillOpacity={0.05} 
-                                    ifOverflow="extendDomain"
-                                />
-                            ))}
-
-                            <XAxis 
-                                dataKey="time" 
-                                ticks={xTicks} // Use explicit ticks if calculated
-                                tickFormatter={(val) => {
-                                    const date = new Date(val);
-                                    if (timeStep === 'daily') {
-                                        return date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' });
-                                    }
-                                    return date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
-                                }}
-                                minTickGap={10} // Reduced gap to allow more ticks
-                                stroke="rgba(128,128,128,0.5)"
-                                tick={{ fontSize: 10 }}
-                            />
-                            {/* Additional Day Axis for Hourly View */}
-                            {timeStep === 'hourly' && (
-                                <XAxis 
-                                    xAxisId="days"
-                                    dataKey="time"
-                                    ticks={dayTicks}
-                                    tickFormatter={(val) => {
-                                        const date = new Date(val);
-                                        return date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' });
-                                    }}
-                                    orientation="bottom"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 'bold' }}
-                                    height={30}
-                                    stroke="rgba(128,128,128,0)"
-                                />
-                            )}
-                            <YAxis 
-                                stroke="rgba(128,128,128,0.5)"
-                                tick={{ fontSize: 10 }}
-                                unit={getUnitLabel(selectedVariable)}
-                                width={40}
-                            />
-                            <Tooltip content={<CustomEnsembleTooltip />} />
-                            
-                            {/* Range Area (Spread Mode) - Disable for Direction */}
-                            {viewMode === 'spread' && !isDirection && (
-                               <Area 
-                                  type="monotone"
-                                  dataKey="range"
-                                  stroke="none"
-                                  fill={chartColor}
-                                  fillOpacity={0.2}
-                               />
-                            )}
-
-                            {/* Density Mode Bands - Disable for Direction */}
-                            {viewMode === 'density' && !isDirection && (
-                               <>
-                                  <Area type="monotone" dataKey="density1" stroke="none" fill={chartColor} fillOpacity={0.1} isAnimationActive={false} />
-                                  <Area type="monotone" dataKey="density5" stroke="none" fill={chartColor} fillOpacity={0.1} isAnimationActive={false} />
-                                  <Area type="monotone" dataKey="density2" stroke="none" fill={chartColor} fillOpacity={0.3} isAnimationActive={false} />
-                                  <Area type="monotone" dataKey="density4" stroke="none" fill={chartColor} fillOpacity={0.3} isAnimationActive={false} />
-                                  <Area type="monotone" dataKey="density3" stroke="none" fill={chartColor} fillOpacity={0.6} isAnimationActive={false} />
-                                  <Line type="monotone" dataKey="min" stroke={chartColor} strokeWidth={1} dot={false} opacity={0.5} isAnimationActive={false} />
-                                  <Line type="monotone" dataKey="max" stroke={chartColor} strokeWidth={1} dot={false} opacity={0.5} isAnimationActive={false} />
-                               </>
-                            )}
-
-                            {/* Individual Members - Show all for Density/Spread if Direction */}
-                            {(viewMode === 'all' || viewMode === 'main' || (isComparisonMode && viewMode === 'avg') || (isDirection && (viewMode === 'density' || viewMode === 'spread'))) && processChartData.memberKeys.map((key: string, index: number) => {
-                                if (isComparisonMode) {
-                                    // Only show individual lines if in 'main' or 'avg' view
-                                    if (viewMode !== 'main' && viewMode !== 'avg') return null;
-
-                                    const dataKey = viewMode === 'main' ? `${key}_main` : key;
-                                    
-                                    return (
-                                        <Line 
-                                            key={key}
-                                            type="monotone"
-                                            dataKey={dataKey}
-                                            stroke={MODEL_COLORS[index % MODEL_COLORS.length]}
-                                            strokeWidth={2}
-                                            dot={false}
-                                            isAnimationActive={false}
-                                            style={{ zIndex: 10 }}
-                                        />
-                                    );
-                                }
-
-                                const num = parseInt(key.replace(/[^0-9]/g, ''), 10);
-                                const isMainMember = key === 'member0' || key === 'member' || (!isNaN(num) && num === 0); 
-                                
-                                if (viewMode === 'main' && !isMainMember) return null;
-
-                                return (
-                                    <Line 
-                                      key={key} 
-                                      type="monotone" 
-                                      dataKey={key} 
-                                      stroke={isMainMember ? '#ef4444' : chartColor} 
-                                      strokeWidth={isMainMember ? 3 : 1} 
-                                      dot={false} 
-                                      opacity={viewMode === 'main' ? 1 : (isMainMember ? 1 : 0.3)} 
-                                      isAnimationActive={false}
-                                      style={{ zIndex: isMainMember ? 100 : 1 }}
-                                    />
-                                );
-                            })}
-
-                            {/* Average Line */}
-                            {(viewMode === 'avg' || viewMode === 'spread' || viewMode === 'density') && (
-                                <Line 
-                                  type="monotone" 
-                                  dataKey="avg" 
-                                  stroke="#ef4444" 
-                                  strokeWidth={3} 
-                                  dot={false} 
-                                  isAnimationActive={false}
-                                  style={{ zIndex: 100 }}
-                                />
-                            )}
-                            
-                            <Legend content={<CustomLegend />} />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center justify-center opacity-60 py-20">
-                    <Icon name="cloud_off" className="text-6xl mb-4" />
-                    <p>{error || t('loading')}</p>
-                </div>
-            )}
+            {chartSection}
             
 
         </div>

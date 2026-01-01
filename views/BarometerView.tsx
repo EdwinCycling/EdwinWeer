@@ -230,7 +230,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
        
        {/* --- Top Navigation Buttons (Fixed) --- */}
        <div className="fixed top-4 left-4 z-50 no-print">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-white/50 hover:bg-white/80 dark:bg-slate-800 dark:hover:bg-slate-700 backdrop-blur-md transition-colors shadow-sm text-slate-700 dark:text-white">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm">
                 <Icon name="arrow_back_ios_new" />
             </button>
        </div>
@@ -241,13 +241,16 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
           {/* Location Header */}
           <div className="relative z-10 w-full max-w-md mx-auto mb-6 px-4">
                 <div className="flex items-center justify-center relative">
+                    <button onClick={() => cycleFavorite('prev')} className="absolute left-0 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                        <Icon name="chevron_left" className="text-3xl" />
+                    </button>
+
                     <div className="text-center">
                         {loadingCity ? (
                              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
                         ) : (
                             <div className="flex flex-col items-center">
                                 <h2 className="text-xl font-bold leading-tight flex items-center gap-1 drop-shadow-md text-slate-800 dark:text-white">
-                                    <Icon name="location_on" className="text-primary text-lg" />
                                     {location.name}, {location.country}
                                 </h2>
                                 {localTime && (
@@ -259,6 +262,10 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                             </div>
                         )}
                     </div>
+
+                    <button onClick={() => cycleFavorite('next')} className="absolute right-0 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                        <Icon name="chevron_right" className="text-3xl" />
+                    </button>
                 </div>
           </div>
 

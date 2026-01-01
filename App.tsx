@@ -609,10 +609,10 @@ const App: React.FC = () => {
                          </div>
                     )}
                     
-                    <div className="relative flex justify-center gap-8 text-xs font-medium text-slate-500 dark:text-white/40">
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 relative text-xs font-medium text-slate-500 dark:text-white/40">
                          <button onClick={() => setModal('disclaimer')} className="hover:text-primary transition-colors hover:underline">{t('footer.disclaimer')}</button>
                          <button onClick={() => setModal('cookies')} className="hover:text-primary transition-colors hover:underline">{t('footer.cookies')}</button>
-                         <span className="absolute right-0 top-0">v{pkg.version}</span>
+                         <span className="md:absolute md:right-0 md:top-0">v{pkg.version}</span>
                     </div>
                 </div>
             </div>

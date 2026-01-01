@@ -283,9 +283,19 @@ export const handler = async (event, context) => {
             // Get Location
             let lat = 52.09;
             let lon = 5.12;
-            if (userData.settings?.favorites?.length > 0) {
+            let locationName = "Utrecht";
+
+            // Priority 1: Activity Specific Location
+            if (userData.activity_location) {
+                lat = userData.activity_location.lat;
+                lon = userData.activity_location.lon;
+                locationName = userData.activity_location.name;
+            } 
+            // Priority 2: Favorites
+            else if (userData.settings?.favorites?.length > 0) {
                 lat = userData.settings.favorites[0].lat;
                 lon = userData.settings.favorites[0].lon;
+                locationName = userData.settings.favorites[0].name;
             }
 
             // Fetch Weather

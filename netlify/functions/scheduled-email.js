@@ -351,15 +351,47 @@ export const handler = async (event, context) => {
                 
                 // Try to find location coordinates
                 const locName = baroProfile.location;
-                if (locName && settings.favorites) {
+                let locationFound = false;
+
+                // 1. Check if location is an object (new format)
+                if (typeof locName === 'object' && locName.lat && locName.lon) {
+                    lat = locName.lat;
+                    lon = locName.lon;
+                    locationFound = true;
+                }
+                // 2. Check favorites
+                else if (locName && typeof locName === 'string' && settings.favorites) {
                     const fav = settings.favorites.find(f => f.name.toLowerCase() === locName.toLowerCase());
                     if (fav) {
                         lat = fav.lat;
                         lon = fav.lon;
-                    } else if (settings.favorites.length > 0) {
-                        lat = settings.favorites[0].lat;
-                        lon = settings.favorites[0].lon;
+                        locationFound = true;
                     }
+                }
+
+                // 3. Fallback: Geocoding if specific name provided but not found
+                if (!locationFound && locName && typeof locName === 'string' && locName !== "onbekend") {
+                     try {
+                        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locName)}&count=1&language=nl&format=json`;
+                        const geoRes = await fetch(geoUrl);
+                        if (geoRes.ok) {
+                            const geoData = await geoRes.json();
+                            if (geoData.results && geoData.results.length > 0) {
+                                lat = geoData.results[0].latitude;
+                                lon = geoData.results[0].longitude;
+                                locationFound = true;
+                                console.log(`Geocoded '${locName}' to ${lat},${lon}`);
+                            }
+                        }
+                     } catch(e) {
+                         console.error("Geocoding failed for", locName);
+                     }
+                }
+
+                // 4. Fallback to first favorite
+                if (!locationFound && settings.favorites && settings.favorites.length > 0) {
+                    lat = settings.favorites[0].lat;
+                    lon = settings.favorites[0].lon;
                 }
 
                 // 2. Fetch Weather

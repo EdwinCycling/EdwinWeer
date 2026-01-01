@@ -80,6 +80,26 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     onUpdateSettings({ ...settings, historicalMode: mode });
   };
 
+  const cycleFavorite = (direction: 'next' | 'prev') => {
+      if (settings.favorites.length === 0) return;
+      const currentIndex = settings.favorites.findIndex(f => f.name === location1.name);
+      let nextIndex = 0;
+      if (currentIndex === -1) {
+          nextIndex = 0;
+      } else {
+          if (direction === 'next') {
+              nextIndex = (currentIndex + 1) % settings.favorites.length;
+          } else {
+              nextIndex = (currentIndex - 1 + settings.favorites.length) % settings.favorites.length;
+          }
+      }
+      const newLoc = settings.favorites[nextIndex];
+      setLocation1(newLoc);
+      if (syncLocation) {
+          setLocation2(newLoc);
+      }
+  };
+
   useEffect(() => {
     saveCurrentLocation(location1);
     saveHistoricalLocation(location2);
@@ -1079,14 +1099,21 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
   return (
     <div className="flex flex-col min-h-screen pb-24 bg-slate-50 dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
-      <div className="flex items-center justify-between p-4 pt-8">
-        <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10">
-            <Icon name="arrow_back_ios_new" />
-        </button>
-        <h1 className="text-lg font-bold line-clamp-1 text-center px-2">
-            {historicalMode === 'single' ? t('historical.title.single') : t('historical.title.compare')}
-        </h1>
-        <div className="size-10" />
+      <div className="relative flex items-center justify-center p-4 pt-8 mb-2">
+          {/* Title & Navigation */}
+          <div className="flex items-center gap-4">
+               <button onClick={() => cycleFavorite('prev')} className="p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                  <Icon name="chevron_left" className="text-xl" />
+              </button>
+
+              <h1 className="text-lg font-bold line-clamp-1 text-center px-2 drop-shadow-sm">
+                  {historicalMode === 'single' ? t('historical.title.single') : t('historical.title.compare')}
+              </h1>
+
+               <button onClick={() => cycleFavorite('next')} className="p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                  <Icon name="chevron_right" className="text-xl" />
+              </button>
+          </div>
       </div>
 
       <div className="px-4">

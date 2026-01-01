@@ -385,7 +385,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    onNavigate(ViewState.SETTINGS, { tab: 'profile' });
+                                    onNavigate(ViewState.PROFILES);
                                 }}
                                 className="mt-4 text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center justify-center gap-1 mx-auto"
                             >

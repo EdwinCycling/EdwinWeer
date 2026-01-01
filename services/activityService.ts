@@ -85,14 +85,14 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
         case 'walking':
             // Wandelen (Focus: Droog)
             // 1. Neerslag
-            if (w.precipProb > 40) penalize(4, 'reason.rain_chance');
-            if (w.precipMm > 0.5) penalize(6, 'reason.rainy');
+            if (w.precipProb > 40) penalize(2, 'reason.rain_chance');
+            if (w.precipMm > 0.5) penalize(3, 'reason.rainy');
 
             // 2. Wind
-            if (w.windKmh > 75) penalize(10, 'reason.storm'); // > 9 Bft
-            else if (w.windKmh > 61) penalize(8, 'reason.dangerous_wind'); // > 7 Bft
-            else if (w.windKmh > 49) penalize(5, 'reason.very_strong_wind'); // > 6 Bft
-            else if (w.windKmh > 38) penalize(2, 'reason.strong_wind'); // > 5 Bft
+            if (w.windKmh > 75) penalize(8, 'reason.storm'); // > 9 Bft
+            else if (w.windKmh > 61) penalize(6, 'reason.dangerous_wind'); // > 7 Bft
+            else if (w.windKmh > 49) penalize(3, 'reason.very_strong_wind'); // > 6 Bft
+            else if (w.windKmh > 38) penalize(1, 'reason.strong_wind'); // > 5 Bft
 
             // 3. Temperatuur (Gevoel)
             if (w.tempFeelsLike < 0) penalize(5, 'reason.freezing');

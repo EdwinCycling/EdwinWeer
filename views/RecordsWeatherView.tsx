@@ -18,6 +18,7 @@ import {
   ComposedChart,
   ReferenceLine
 } from 'recharts';
+import { Tooltip as UITooltip } from '../components/Tooltip';
 
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
@@ -1202,16 +1203,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <div className="relative z-10 flex flex-col h-full w-full">
         <div className="sticky top-0 z-40 bg-slate-50 dark:bg-background-dark pt-8 pb-4 shadow-sm transition-colors duration-300">
-            <div className="flex items-center justify-center relative px-4 mb-4">
-            <button
-              onClick={() => onNavigate(ViewState.CURRENT)}
-              className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2"
-            >
-              <Icon name="arrow_back_ios_new" />
-            </button>
+          <div className="flex items-center justify-center relative px-4 mb-4">
             <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
-                <Icon name="location_on" className="text-primary" />
+              <h2 className="text-2xl font-bold leading-tight drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
                 {location.name}, {location.country}
               </h2>
               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
@@ -1282,6 +1276,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
           <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-4 px-4">
             <div className="flex bg-slate-100 dark:bg-white/5 rounded-full p-1">
+                <UITooltip content={t('records.12month')}>
                 <button
                 onClick={() => setRecordType('12month')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
@@ -1293,6 +1288,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <span className="hidden md:inline">{t('records.12month')}</span>
                 <Icon name="date_range" className="md:hidden" />
                 </button>
+                </UITooltip>
+
+                <UITooltip content={t('records.yearly')}>
                 <button
                 onClick={() => setRecordType('yearly')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
@@ -1304,6 +1302,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <span className="hidden md:inline">{t('records.yearly')}</span>
                 <Icon name="calendar_today" className="md:hidden" />
                 </button>
+                </UITooltip>
+
+                <UITooltip content={t('records.monthly')}>
                  <button
                 onClick={() => setRecordType('monthly')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
@@ -1315,6 +1316,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <span className="hidden md:inline">{t('records.monthly')}</span>
                 <Icon name="calendar_month" className="md:hidden" />
                 </button>
+                </UITooltip>
+
+                <UITooltip content={t('records.calendar')}>
                  <button
                 onClick={() => setRecordType('calendar')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
@@ -1326,6 +1330,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <span className="hidden md:inline">{t('records.calendar')}</span>
                 <Icon name="event" className="md:hidden" />
                 </button>
+                </UITooltip>
             </div>
 
             {(recordType === 'yearly' || recordType === 'monthly' || recordType === 'calendar') && (
@@ -1456,9 +1461,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   )}
                   
                   {/* Temp Chart */}
-                  <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-96">
+                  <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-96 flex flex-col">
                       <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">{t('records.temperature_graph')}</h3>
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      <div className="flex-1 w-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={dailyData} margin={{top: 5, right: 20, bottom: 5, left: 0}}>
                              {/* Custom Grid Lines */}
                              {tempDomain.ticks.map((tick) => (
@@ -1546,11 +1552,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </ComposedChart>
                       </ResponsiveContainer>
                   </div>
+                  </div>
 
                    {/* Rain/Sun Chart */}
-                  <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-96">
+                  <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-96 flex flex-col">
                       <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">{t('records.rain_sun_graph')}</h3>
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      <div className="flex-1 w-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={dailyData} margin={{top: 5, right: 20, bottom: 5, left: 0}} barGap={2}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.2)" />
                              {/* Weekend highlights */}
@@ -1570,6 +1578,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </ComposedChart>
                       </ResponsiveContainer>
                   </div>
+              </div>
               </div>
           ) : recordType === 'calendar' ? (
               <div className="w-full max-w-7xl mx-auto px-4 pb-10">
