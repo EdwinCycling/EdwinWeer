@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, TempUnit, PrecipUnit, WindUnit, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
 import { searchCityByName } from '../services/geoService';
-import { fetchForecast, fetchSeasonal, fetchHistoricalPeriods, mapWmoCodeToIcon, mapWmoCodeToText, convertTemp, convertPrecip, convertWind } from '../services/weatherService';
+import { fetchForecast, fetchSeasonal, fetchHistoricalPeriods, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, convertTemp, convertPrecip, convertWind } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Legend, ReferenceLine, ComposedChart, Line } from 'recharts';
@@ -462,7 +462,7 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
           visibility: 10000
       };
 
-      const allActivities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
+      const allActivities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'padel', 'field_sports', 'tennis'];
       
       return allActivities.map(type => ({
           type,
@@ -1024,7 +1024,14 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
                                                                     activity.type === 'cycling' ? 'directions_bike' :
                                                                     activity.type === 'walking' ? 'directions_walk' :
                                                                     activity.type === 'bbq' ? 'outdoor_grill' :
-                                                                    activity.type === 'beach' ? 'beach_access' : 'help'
+                                                                    activity.type === 'beach' ? 'beach_access' :
+                                                                    activity.type === 'sailing' ? 'sailing' :
+                                                                    activity.type === 'gardening' ? 'yard' :
+                                                                    activity.type === 'stargazing' ? 'nights_stay' :
+                                                                    activity.type === 'golf' ? 'sports_golf' :
+                                                                    activity.type === 'padel' ? 'sports_tennis' :
+                                                                    activity.type === 'tennis' ? 'sports_tennis' :
+                                                                    activity.type === 'field_sports' ? 'sports_soccer' : 'help'
                                                                 } className="text-xl" />
                                                             </div>
                                                             <div className={`text-lg font-bold ${

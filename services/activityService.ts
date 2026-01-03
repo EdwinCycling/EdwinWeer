@@ -249,36 +249,95 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
             break;
 
-        case 'drone':
-            // Drone Vliegen
-            // Focus: Apparatuur Veiligheid.
-            // 1. Neerslag
-            if (w.precipMm > 0) {
-                score = 1; // "Instant Kill" roughly translates to lowest score
-                reasons.push(getTranslation('reason.electronics_water', lang));
+        case 'padel':
+            // Padel (Outdoor)
+            // 1. Temperatuur
+            if (w.tempFeelsLike > 30) penalize(5, 'reason.too_hot');
+            else if (w.tempFeelsLike > 25) penalize(2, 'reason.warm');
+
+            if (w.tempFeelsLike < 0) penalize(10, 'reason.frozen_court');
+            else if (w.tempFeelsLike < 5) penalize(5, 'reason.very_cold');
+            else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
+
+            // 2. Neerslag
+            if (w.precipMm === 0 && w.precipProb < 10) {
+                score += 1; // Droog bonus
+            } else if (w.precipMm > 2) {
+                penalize(8, 'reason.wet_court');
+            } else if (w.precipMm > 0 || w.precipProb > 30) {
+                penalize(3, 'reason.damp_court');
             }
 
-            // 2. Windstoten
-            if (w.gustsKmh > 60) penalize(9, 'reason.crash_guarantee');
-            else if (w.gustsKmh > 45) penalize(7, 'reason.fly_away_risk');
-            else if (w.gustsKmh > 30) penalize(3, 'reason.drone_unstable');
+            // 3. Wind
+            if (w.windKmh > 49) penalize(6, 'reason.strong_wind'); // > 6 Bft
+            break;
 
-            // 3. Zicht
-            if (w.visibility < 2000) penalize(6, 'reason.no_los');
+        case 'field_sports':
+            // Veld Sport (Voetbal, Hockey, Rugby)
+            // 1. Temperatuur
+            if (w.tempFeelsLike > 30) penalize(8, 'reason.too_hot_physical');
+            else if (w.tempFeelsLike > 25) penalize(5, 'reason.too_hot');
+            else if (w.tempFeelsLike > 20) penalize(2, 'reason.warm');
 
-            // 4. Temperatuur
-            if (w.tempFeelsLike < 0) penalize(4, 'reason.lipo_drain');
-            else if (w.tempFeelsLike < 5) penalize(2, 'reason.battery_perf');
+            if (w.tempFeelsLike < 0) penalize(8, 'reason.ground_frozen');
+            else if (w.tempFeelsLike < 5) penalize(5, 'reason.very_cold');
+            else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
 
-            // 5. Kp-index
-            if (w.kpIndex && w.kpIndex > 5) penalize(2, 'reason.geomag_storm');
+            // 2. Neerslag
+            if (w.precipMm === 0 && w.precipProb < 10) {
+                score += 1; // Droog bonus
+            } else if (w.precipMm > 5) {
+                penalize(9, 'reason.field_unplayable');
+            } else if (w.precipMm > 2) {
+                penalize(5, 'reason.wet_field');
+            } else if (w.precipMm > 0 || w.precipProb > 30) {
+                penalize(3, 'reason.damp_field');
+            }
+
+            // 3. Wind
+            if (w.windKmh > 49) penalize(8, 'reason.storm_game'); // > 6 Bft
+            else if (w.windKmh > 28) penalize(3, 'reason.ball_control'); // > 4 Bft
+            break;
+
+        case 'tennis':
+            // Tennis
+            // 1. Temperatuur
+            if (w.tempFeelsLike > 30) penalize(5, 'reason.too_hot');
+            else if (w.tempFeelsLike > 25) penalize(2, 'reason.warm');
+
+            if (w.tempFeelsLike < 0) penalize(8, 'reason.frozen_court');
+            else if (w.tempFeelsLike < 5) penalize(5, 'reason.very_cold');
+            else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
+
+            // 2. Neerslag
+            if (w.precipMm === 0 && w.precipProb < 10) {
+                score += 1; // Droog bonus
+            } else if (w.precipMm > 2) {
+                penalize(9, 'reason.court_unplayable');
+            } else if (w.precipMm > 0 || w.precipProb > 30) {
+                penalize(5, 'reason.wet_lines');
+            }
+
+            // 3. Wind
+            if (w.windKmh < 12) score += 1; // Bonus 1-2 Bft
+
+            if (w.windKmh > 38) penalize(8, 'reason.unplayable_wind'); // > 5 Bft
+            else if (w.windKmh > 28) penalize(5, 'reason.ball_drift'); // > 4 Bft
+            else if (w.windKmh >= 12) penalize(2, 'reason.noticeable_wind'); // 3 Bft (approx 12-19)
+            break;
+
+        case 'home':
+        case 'work':
+            // Basic comfort check for indoor/commute
+            if (w.precipMm > 2) penalize(2, 'reason.rain_commute');
+            if (w.windKmh > 50) penalize(2, 'reason.stormy_commute');
             break;
     }
 
     // BONUS: Sunshine during rain (Global Rule)
-    // If rain is expected (precip or prob > 30) AND there is significant sunshine
-    const isRainy = w.precipMm > 0.1 || w.precipProb > 30;
-    if (isRainy && w.sunChance > 10) {
+    // If rain is expected (precip or prob > 40) AND there is significant sunshine
+    const isRainy = w.precipMm > 0.5 || w.precipProb > 40;
+    if (isRainy && w.sunChance > 20) {
         // Bonus depends on sun chance (percentage of sun hours)
         // User request: "hoe meer percetange zonneuren tov max ure zon, hoe meer bonuspunten."
         // We give a significant bonus if there is sun during a rainy day.
@@ -286,16 +345,22 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
         let bonus = 0;
         if (w.sunChance > 75) bonus = 3;      // Mostly sunny despite rain
         else if (w.sunChance > 50) bonus = 2; // Half sunny
-        else if (w.sunChance > 20) bonus = 1; // Some sun
+        else if (w.sunChance > 25) bonus = 1; // Some sun
+
+        // Skip for indoor activities where outside weather matters less for "sunshine bonus"
+        if (['home', 'work', 'gym'].includes(activity)) {
+            bonus = 0;
+        }
 
         if (bonus > 0) {
             score += bonus;
-            reasons.unshift(`${getTranslation('bonus.sunshine', lang)} (+${bonus})`);
+            // Use push instead of unshift to make it secondary to the main penalty reason
+            reasons.push(`${getTranslation('bonus.sunshine', lang)}`);
         }
     }
 
-    // User request: Extra penalty for sub-zero feels-like temperature for all activities except stargazing and drone
-    if (w.tempFeelsLike < 0 && activity !== 'stargazing' && activity !== 'drone') {
+    // User request: Extra penalty for sub-zero feels-like temperature for all activities except stargazing and those with specific low temp logic
+    if (w.tempFeelsLike < 0 && !['stargazing', 'padel', 'field_sports', 'tennis'].includes(activity)) {
         penalize(2, 'reason.feels_like_subzero');
     }
 

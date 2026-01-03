@@ -41,7 +41,9 @@ const activityIcons: Record<ActivityType, string> = {
     gardening: 'yard',
     stargazing: 'auto_awesome',
     golf: 'golf_course',
-    drone: 'flight',
+    padel: 'sports_tennis',
+    field_sports: 'sports_soccer',
+    tennis: 'sports_tennis',
     home: 'home',
     work: 'work'
 };
@@ -56,7 +58,9 @@ const activityLabels: Record<ActivityType, string> = {
     gardening: 'Tuinieren',
     stargazing: 'Sterrenkijken',
     golf: 'Golf',
-    drone: 'Drone Vliegen',
+    padel: 'Padel',
+    field_sports: 'Veldsport',
+    tennis: 'Tennis',
     home: 'Thuis',
     work: 'Werk'
 };

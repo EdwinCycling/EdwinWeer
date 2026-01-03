@@ -839,6 +839,16 @@ export const en: Dictionary = {
     'landing.copyright': '© 2025 Baro. All rights reserved.',
 
     // Activity Reasons
+    'reason.perfect': 'Perfect conditions!',
+    'reason.feels_like_subzero': 'Feels like subzero',
+    'reason.wet_field': 'Wet field',
+    'reason.damp_field': 'Damp field',
+    'reason.storm_game': 'Stormy',
+    'reason.ball_control': 'Tricky ball control',
+    'reason.court_unplayable': 'Court unplayable',
+    'reason.wet_lines': 'Wet lines/court',
+    'reason.unplayable_wind': 'Unplayable wind',
+    'reason.ball_drift': 'High wind influence',
     'reason.rain_prob_high': 'High chance of rain',
     'reason.rain': 'Rain',
     'reason.freezing': 'Freezing cold',
@@ -929,8 +939,7 @@ export const en: Dictionary = {
     'reason.lipo_drain': 'LiPo batteries drain very fast',
     'reason.battery_perf': 'Battery performance reduced',
     'reason.geomag_storm': 'Geomagnetic storm (GPS issues)',
-    'reason.perfect': 'Perfect conditions!',
-    'reason.feels_like_subzero': 'Feels like below zero',
+
 
 
     // Climate Change
@@ -1036,4 +1045,5 @@ export const en: Dictionary = {
     'email.intro.body1': 'Set here when you want to receive your personal weather report. Baro sends you a beautifully formatted message with exactly the info you need.',
     'email.intro.body2_bold': 'Always informed',
     'email.intro.body2_text': 'Whether it\'s your morning commute or your weekend plans, Baro ensures you\'re never caught off guard.',
+
 };

@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { ViewState, AppSettings, Location, WindUnit } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchHistorical, convertTemp, convertWind, convertPrecip } from '../services/weatherService';
+import { fetchHistorical, convertTemp, convertWind, convertPrecip, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, DEFAULT_SETTINGS } from '../services/storageService';
+import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
+import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import {
@@ -158,6 +160,35 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showHeatwaveInfo, setShowHeatwaveInfo] = useState(false);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
+  const [currentWeather, setCurrentWeather] = useState<any>(null);
+
+  useEffect(() => {
+    const loadCurrent = async () => {
+      try {
+        const data = await fetchForecast(location.lat, location.lon);
+        setCurrentWeather(data);
+      } catch (e) {
+        console.error("Failed to load current weather for background", e);
+      }
+    };
+    loadCurrent();
+  }, [location]);
+
+  const cycleFavorite = (direction: 'next' | 'prev') => {
+      if (settings.favorites.length === 0) return;
+      const currentIndex = settings.favorites.findIndex(f => f.name === location.name);
+      let nextIndex = 0;
+      if (currentIndex === -1) {
+          nextIndex = 0;
+      } else {
+          if (direction === 'next') {
+              nextIndex = (currentIndex + 1) % settings.favorites.length;
+          } else {
+              nextIndex = (currentIndex - 1 + settings.favorites.length) % settings.favorites.length;
+          }
+      }
+      setLocation(settings.favorites[nextIndex]);
+  };
 
   useEffect(() => {
     saveCurrentLocation(location);
@@ -341,14 +372,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           
           const dailyDataList: DailyData[] = [];
 
-          const dataMap = new Map<string, { tMax: number, tMin: number, rain: number, sun: number }>();
+          const dataMap = new Map<string, { tMax: number, tMin: number, rain: number, sun: number, daylight: number }>();
           if (times && maxTemps && minTemps) {
               for(let i=0; i<times.length; i++) {
                   dataMap.set(times[i], {
                       tMax: maxTemps[i],
                       tMin: minTemps[i],
                       rain: rainValues ? rainValues[i] : 0,
-                      sun: sunshineValues ? sunshineValues[i] : 0
+                      sun: sunshineValues ? sunshineValues[i] : 0,
+                      daylight: daylightValues ? daylightValues[i] : 0
                   });
               }
           }
@@ -363,7 +395,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               const entry = dataMap.get(dateStr);
               
               if (entry && typeof entry.tMax === 'number' && typeof entry.tMin === 'number') {
-                  const { tMax, tMin, rain, sun } = entry;
+                  const { tMax, tMin, rain, sun, daylight } = entry;
 
                   if (tMax > maxTempHighVal) { maxTempHighVal = tMax; maxTempHighDate = dateStr; }
                   if (tMax < maxTempLowVal) { maxTempLowVal = tMax; maxTempLowDate = dateStr; }
@@ -378,6 +410,12 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   if (tMax >= heatwaveSettings.heatThreshold) tropicalDays++;
                   if ((rain || 0) < 0.2) dryDays++;
                   if ((rain || 0) >= 0.2) rainDays++;
+
+                  let sunPct = 0;
+                  if (daylight > 0) {
+                      sunPct = (sun / daylight) * 100;
+                      if (sunPct > 100) sunPct = 100;
+                  }
                   
                   dailyDataList.push({
                       day: d,
@@ -385,7 +423,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       maxTemp: convertTemp(tMax, settings.tempUnit),
                       minTemp: convertTemp(tMin, settings.tempUnit),
                       rain: convertPrecip(rain || 0, settings.precipUnit),
-                      sun: (sun || 0) / 3600,
+                      sun: sunPct,
                       isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6
                   });
               } else {
@@ -1199,22 +1237,43 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
-      <div className="fixed inset-0 bg-gradient-to-b from-black/20 via-black/10 to-background-dark/90 z-0 pointer-events-none hidden dark:block" />
+      
+      {currentWeather && (
+        <div className="absolute top-0 left-0 right-0 h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
+            <StaticWeatherBackground 
+                weatherCode={currentWeather.current.weather_code} 
+                isDay={currentWeather.current.is_day}
+                className="absolute inset-0 w-full h-full"
+            />
+        </div>
+      )}
+
+      <CreditFloatingButton onNavigate={onNavigate as any} settings={settings} />
+
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col h-full w-full">
-        <div className="sticky top-0 z-40 bg-slate-50 dark:bg-background-dark pt-8 pb-4 shadow-sm transition-colors duration-300">
-          <div className="flex items-center justify-center relative px-4 mb-4">
-            <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold leading-tight drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
-                {location.name}, {location.country}
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-white/60 mt-1">
-                {t('records.title')}
-              </p>
-            </div>
-          </div>
+        <div className="flex flex-col pt-8 pb-4">
+            <div className="flex items-center justify-center relative px-4 mb-2">
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <Icon name="chevron_left" className="text-3xl" />
+                </button>
 
-          <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-4 mb-6">
+                <div className="flex flex-col items-center">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
+                        {location.name}, {location.country}
+                    </h2>
+                     <p className="text-xs text-white/80 mt-1 drop-shadow-md">
+                        {t('records.title')}
+                    </p>
+                </div>
+
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <Icon name="chevron_right" className="text-3xl" />
+                </button>
+            </div>
+
+          <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 transition-colors duration-300">
             <div className="flex gap-3 pr-4">
               <button
                 onClick={() => {
@@ -1273,7 +1332,27 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               ))}
             </div>
           </div>
+        </div>
 
+        {/* Current Weather Display */}
+        {currentWeather && (
+            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
+                <div className="flex items-center gap-4">
+                    <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
+                        {Math.round(convertTemp(currentWeather.current.temperature_2m, settings.tempUnit))}°
+                    </h1>
+                </div>
+                <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
+                        <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
+                    {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
+                </p>
+                <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                    H:{Math.round(convertTemp(currentWeather.daily.temperature_2m_max[0], settings.tempUnit))}° L:{Math.round(convertTemp(currentWeather.daily.temperature_2m_min[0], settings.tempUnit))}°
+                </p>
+            </div>
+        )}
+
+        <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors min-h-[60vh]">
           <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-4 px-4">
             <div className="flex bg-slate-100 dark:bg-white/5 rounded-full p-1">
                 <UITooltip content={t('records.12month')}>
@@ -1569,9 +1648,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             ))}
                             <XAxis dataKey="day" stroke="#888888" tick={{fontSize: 10}} interval={0} />
                             <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" label={{ value: settings.precipUnit, angle: -90, position: 'insideLeft' }} width={40} />
-                            <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" label={{ value: t('hours'), angle: 90, position: 'insideRight' }} width={40} />
+                            <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" label={{ value: '%', angle: 90, position: 'insideRight' }} width={40} domain={[0, 100]} />
                             <Tooltip 
                                 contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
+                                formatter={(value: number, name: string) => {
+                                    if (name === t('sunshine')) return [`${Math.round(value)}%`, name];
+                                    return [value, name];
+                                }}
                             />
                             <Bar yAxisId="left" dataKey="rain" fill="#3b82f6" name={t('precipitation')} barSize={8} radius={[4, 4, 0, 0]} />
                             <Bar yAxisId="right" dataKey="sun" fill="#f59e0b" name={t('sunshine')} barSize={8} radius={[4, 4, 0, 0]} />

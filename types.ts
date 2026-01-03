@@ -195,6 +195,10 @@ export interface AppSettings {
     climatePeriodType?: '30year' | 'decade';
     baroProfile?: BaroProfile;
     baroProfiles?: BaroProfile[]; // Saved profiles
+    cycling_updates?: {
+        enabled: boolean;
+        channel: 'email' | 'telegram';
+    };
 }
 
 export interface BaroProfile {
@@ -268,7 +272,8 @@ export enum ViewState {
   PROFILES = 'PROFILES',
   YOUR_DAY = 'YOUR_DAY',
   EMAIL_SETTINGS = 'EMAIL_SETTINGS',
-  ACTIVITY_PLANNER = 'ACTIVITY_PLANNER'
+  ACTIVITY_PLANNER = 'ACTIVITY_PLANNER',
+  CYCLING = 'CYCLING'
 }
 
 export interface CustomEvent {
@@ -282,7 +287,7 @@ export interface CustomEvent {
     active: boolean;
 }
 
-export type ActivityType = 'bbq' | 'cycling' | 'walking' | 'sailing' | 'running' | 'beach' | 'gardening' | 'stargazing' | 'golf' | 'drone' | 'home' | 'work';
+export type ActivityType = 'running' | 'cycling' | 'walking' | 'bbq' | 'beach' | 'sailing' | 'gardening' | 'stargazing' | 'golf' | 'padel' | 'field_sports' | 'tennis' | 'home' | 'work';
 
 export type EnsembleModel = 
     'icon_seamless' | 

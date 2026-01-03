@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ViewState, AppSettings, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
 import { SettingsProfile } from '../components/SettingsProfile';
 import { getTranslation } from '../services/translations';
 import { useAuth } from '../contexts/AuthContext';
+import { getUsage } from '../services/usageService';
 
 interface Props {
     settings: AppSettings;
@@ -14,6 +15,14 @@ interface Props {
 export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNavigate }) => {
     const t = (key: string) => getTranslation(key, settings.language);
     const { user } = useAuth();
+    const [baroCredits, setBaroCredits] = useState(getUsage().baroCredits);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setBaroCredits(getUsage().baroCredits);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
@@ -94,6 +103,11 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                         onUpdateSettings({ ...settings, baroProfile: profile });
                     }}
                     onCreateProfile={() => {
+                        if (baroCredits <= 0) {
+                            alert('Geen Baro Credits beschikbaar. Koop nieuwe credits om een profiel aan te maken.');
+                            return;
+                        }
+
                         let defaultName = `Nieuw Profiel ${settings.baroProfiles ? settings.baroProfiles.length + 1 : 1}`;
                         if (user?.email) {
                             const nameFromEmail = user.email.split('@')[0];

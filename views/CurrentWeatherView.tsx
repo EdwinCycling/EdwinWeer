@@ -450,7 +450,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000
       };
 
-      const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'running'];
+      const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'running', 'padel', 'tennis', 'field_sports'];
       return activities.map(type => ({
           type,
           ...calculateActivityScore(activityData, type, settings.language)
@@ -464,6 +464,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             case 'walking': return 'hiking';
             case 'sailing': return 'sailing';
             case 'running': return 'directions_run';
+            case 'padel': return 'sports_tennis';
+            case 'tennis': return 'sports_tennis';
+            case 'field_sports': return 'sports_soccer';
+            case 'golf': return 'sports_golf';
+            case 'gardening': return 'yard';
+            case 'beach': return 'beach_access';
+            case 'stargazing': return 'nights_stay';
+            default: return 'help';
         }
     };
 
@@ -550,6 +558,16 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   </button>
               </Tooltip>
 
+              <Tooltip content={t('nav.barometer')} position="bottom">
+                  <button
+                      onClick={() => onNavigate(ViewState.BAROMETER)}
+                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      aria-label={t('nav.barometer')}
+                  >
+                      <Icon name="speed" className="text-xl sm:text-2xl" />
+                  </button>
+              </Tooltip>
+
               <Tooltip content={t('nav.map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.MAP)}
@@ -575,7 +593,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
-        <div className="flex flex-col pt-28 pb-4">
+        <div className="flex flex-col pt-20 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
                 <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />

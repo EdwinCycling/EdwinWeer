@@ -66,7 +66,7 @@ async function sendTelegramNotification(chatId, text) {
     }
 }
 
-// Helper: Calculate Score (Simplified logic for Node)
+// Helper: Calculate Score (Matches frontend activityService.ts logic)
 function calculateScore(weather, activity) {
     // Get tomorrow's data (index 1)
     const i = 1; 
@@ -75,70 +75,266 @@ function calculateScore(weather, activity) {
     
     // Basic metrics for tomorrow
     const tempMax = day.temperature_2m_max[i];
+    const tempMin = day.temperature_2m_min[i];
+    const tempFeelsLike = (tempMax + tempMin) / 2; // Approximation
+    
     const precipSum = day.precipitation_sum[i];
     const precipProb = day.precipitation_probability_max[i];
     const windMax = day.wind_speed_10m_max[i];
     const windGusts = day.wind_gusts_10m_max[i];
-    const sunshine = day.sunshine_duration[i] / 3600; // hours
+    const sunshine = day.sunshine_duration ? day.sunshine_duration[i] / 3600 : 0; // hours
+    const weatherCode = day.weather_code[i];
+    
+    // Approximations for missing daily fields
+    const sunChance = (sunshine / 12) * 100; // Rough estimate %
+    const cloudCover = 100 - sunChance; // Rough estimate
+    const visibility = 10000; // Default good visibility
+    const humidity = 80; // Default
 
     let score = 10;
     let reasons = [];
 
-    // Generic penalties
-    if (precipSum > 5) { score -= 3; reasons.push("Veel regen"); }
-    else if (precipSum > 1) { score -= 1; reasons.push("Beetje regen"); }
+    const penalize = (points, reason) => {
+        if (points > 0) {
+            score -= points;
+            reasons.push(reason);
+        }
+    };
 
-    if (windMax > 40) { score -= 3; reasons.push("Harde wind"); }
-    else if (windMax > 25) { score -= 1; reasons.push("Waaierig"); }
-
-    // Specific logic
     switch (activity) {
         case 'bbq':
-            if (tempMax < 15) { score -= 3; reasons.push("Te koud"); }
-            if (tempMax < 10) { score -= 5; reasons.push("Veel te koud"); }
-            if (precipProb > 40) { score -= 4; reasons.push("Regenkans"); }
+            // BBQ / Terrasje
+            if (precipSum > 0.1 || precipProb > 30) penalize(8, "Regen");
+            if (tempFeelsLike < 10) penalize(8, "Te koud");
+            else if (tempFeelsLike < 15) penalize(5, "Jas nodig");
+            else if (tempFeelsLike < 20) penalize(2, "Frisjes");
+            
+            if (tempFeelsLike > 30) penalize(2, "Te heet");
+            
+            if (windMax > 38) penalize(6, "Harde wind");
+            else if (windMax > 28) penalize(3, "Hinderlijke wind");
+            else if (windMax > 19) penalize(1, "Matige wind");
             break;
+
         case 'cycling':
-            if (windMax > 30) { score -= 2; reasons.push("Harde wind"); }
-            if (precipProb > 50) { score -= 3; reasons.push("Regenkans"); }
-            if (tempMax < 5) { score -= 2; reasons.push("Koud"); }
+            // Fietsen
+            if (windMax > 49) penalize(9, "Stormachtig");
+            else if (windMax > 39) penalize(8, "Te harde wind");
+            else if (windMax > 29) penalize(4, "Zware tegenwind");
+            else if (windMax > 19) penalize(2, "Merkbare wind");
+            
+            if (windGusts > 75) penalize(5, "Gevaarlijke windstoten");
+            else if (windGusts > 60) penalize(3, "Harde windstoten");
+
+            if (precipSum > 0.1) {
+                const rainPenalty = Math.min(9, Math.ceil(precipSum * 2) + 2);
+                penalize(rainPenalty, "Kans op regen");
+            }
+
+            if (tempFeelsLike < 0) penalize(7, "Extreem koud");
+            else if (tempFeelsLike < 5) penalize(5, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(2, "Koud");
+            
+            if (tempFeelsLike > 32) penalize(5, "Veel te warm voor inspanning");
+            else if (tempFeelsLike > 28) penalize(3, "Te warm voor inspanning");
             break;
-        case 'running':
-            if (tempMax > 25) { score -= 3; reasons.push("Te warm"); }
-            if (tempMax < 0) { score -= 2; reasons.push("Gladheid risico"); }
-            break;
-        case 'sailing':
-            if (windMax < 10) { score -= 3; reasons.push("Te weinig wind"); }
-            if (windGusts > 50) { score -= 4; reasons.push("Gevaarlijke vlagen"); }
-            break;
-        case 'beach':
-            if (tempMax < 20) { score -= 4; reasons.push("Te koud"); }
-            if (sunshine < 4) { score -= 3; reasons.push("Weinig zon"); }
-            if (precipProb > 20) { score -= 5; reasons.push("Regen"); }
-            break;
+
         case 'walking':
-            if (precipProb > 60) { score -= 4; reasons.push("Regenachtig"); }
+            // Wandelen
+            if (precipProb > 40) penalize(2, "Kans op regen");
+            if (precipSum > 0.5) penalize(3, "Regenachtig");
+
+            if (windMax > 75) penalize(8, "Storm");
+            else if (windMax > 61) penalize(6, "Gevaarlijke wind");
+            else if (windMax > 49) penalize(3, "Zeer harde wind");
+            else if (windMax > 38) penalize(1, "Harde wind");
+
+            if (tempFeelsLike < 0) penalize(5, "Vrieskou");
+            else if (tempFeelsLike < 5) penalize(3, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(1, "Frisjes");
+            
+            if (tempFeelsLike > 32) penalize(5, "Veel te heet");
+            else if (tempFeelsLike > 28) penalize(3, "Te heet");
+
+            if (sunChance < 20) penalize(2, "Te weinig zon");
+            else if (sunChance > 60 && score < 10) score += 1;
             break;
+
+        case 'sailing':
+            // Zeilen
+            if (windMax < 6) penalize(6, "Te weinig wind");
+            else if (windMax < 12) penalize(2, "Weinig wind");
+            else if (windMax >= 29 && windMax <= 38) penalize(1, "Stevige wind");
+            else if (windMax >= 39 && windMax <= 49) penalize(4, "Harde wind");
+            else if (windMax > 49) penalize(9, "Storm op water");
+
+            if ([95, 96, 99].includes(weatherCode)) {
+                score = 1;
+                reasons.push("Gevaar: Onweer");
+            }
+
+            if (tempFeelsLike < 0) penalize(10, "Water bevroren");
+            else if (tempFeelsLike < 5) penalize(7, "Erg koud op water");
+            else if (tempFeelsLike < 10) penalize(4, "Koud op water");
+            else if (tempFeelsLike < 12) penalize(3, "Fris op water");
+            break;
+
+        case 'running':
+            // Hardlopen
+            if (tempFeelsLike > 25) penalize(6, "Hittestress risico");
+            else if (tempFeelsLike > 20) penalize(3, "Eigenlijk te warm");
+            
+            if (tempFeelsLike < 0) penalize(4, "Koude lucht");
+            else if (tempFeelsLike < 5) penalize(2, "Erg koud");
+
+            if (humidity > 85 && tempFeelsLike > 20) penalize(4, "Benauwd");
+
+            if (windMax > 29) penalize(4, "Zwaar ploegen");
+
+            if (precipSum > 3.0) penalize(5, "Doorweekt");
+            else if (precipSum > 1.0) penalize(2, "Natte schoenen");
+            break;
+
+        case 'beach':
+            // Strand
+            if (tempFeelsLike < 15) penalize(9, "Te koud");
+            else if (tempFeelsLike < 20) penalize(7, "Te koud voor strand");
+            else if (tempFeelsLike < 22) penalize(3, "Frisjes");
+
+            if (cloudCover > 80) penalize(8, "Geen zon");
+            else if (cloudCover > 40) penalize(4, "Te veel bewolking");
+
+            if (windMax > 28) penalize(5, "Zandhappen");
+
+            if (precipProb > 30) penalize(6, "Risico op natte spullen");
+            break;
+
         case 'gardening':
-            if (precipSum > 2) { score -= 2; reasons.push("Natte grond"); }
-            if (tempMax < 5) { score -= 2; reasons.push("Te koud"); }
+            // Tuinieren
+            if (precipSum > 0.5) penalize(8, "In de regen werken is niks");
+            // No precip24h available easily here, skipping muddy soil check based on past rain
+            
+            if (tempFeelsLike < 0) penalize(9, "Grond bevroren");
+            else if (tempFeelsLike < 5) penalize(6, "Te koud voor tuinieren");
+            else if (tempFeelsLike < 8) penalize(3, "Koude handen");
+            else if (tempFeelsLike < 10) penalize(1, "Frisjes");
+            
+            if (tempFeelsLike > 32) penalize(6, "Veel te heet");
+            else if (tempFeelsLike > 28) penalize(4, "Te heet voor fysiek werk");
+
+            if (windMax > 49) penalize(6, "Schade aan planten");
+            else if (windMax > 38) penalize(4, "Harde wind");
+            else if (windMax > 29) penalize(3, "Hoge planten waaien kapot");
             break;
+
         case 'stargazing':
-            // Need cloud cover at night (approx 22:00 - 02:00)
-            // Simplified: check daily sunshine inverse? No, check hourly cloud cover night
-            // For now use daily assumption or random penalty if simple
-            // Let's assume clear night if high pressure? Hard to know without hourly analysis.
-            // Using a simple proxy:
-            if (precipProb > 30) { score -= 5; reasons.push("Bewolking/Regen"); }
+            // Sterrenkijken
+            if (cloudCover > 75) penalize(9, "Je ziet niets");
+            else if (cloudCover > 25) penalize(6, "Te veel storing");
+            else if (cloudCover > 10) penalize(2, "Af en toe een wolk");
+            
+            if (visibility < 5000) penalize(8, "Atmosfeer niet transparant");
+
+            if (precipSum > 0) penalize(10, "Telescoop mag niet nat worden");
+
+            if (tempFeelsLike < 0) penalize(4, "Koud om stil te staan");
+            else if (tempFeelsLike < 5) penalize(2, "Erg fris");
+            else if (tempFeelsLike < 10) penalize(1, "Jas nodig");
+
+            if (windMax > 29) penalize(5, "Telescoop trilt");
+            else if (windMax > 19) penalize(3, "Beeld onrustig");
             break;
+
         case 'golf':
-            if (windMax > 30) { score -= 3; reasons.push("Wind"); }
-            if (precipSum > 0.5) { score -= 3; reasons.push("Regen"); }
+            // Golf
+            if (windMax > 49) penalize(9, "Onspeelbaar");
+            else if (windMax > 19) penalize(4, "Invloed op de bal");
+
+            if (precipSum > 0.2) penalize(4, "Natte grips");
+            
+            if ([95, 96, 99].includes(weatherCode)) {
+                score = 1;
+                reasons.push("Levensgevaarlijk (onweer)");
+            }
+
+            if (tempFeelsLike < 0) penalize(10, "Baan bevroren");
+            else if (tempFeelsLike < 5) penalize(6, "Bal is hard");
+            else if (tempFeelsLike < 10) penalize(2, "Frisjes");
             break;
-        case 'drone':
-            if (windGusts > 30) { score -= 5; reasons.push("Harde windstoten"); }
-            if (precipProb > 10) { score -= 5; reasons.push("Regenrisico"); }
+
+        case 'padel':
+            // Padel
+            if (tempFeelsLike > 30) penalize(5, "Te heet");
+            else if (tempFeelsLike > 25) penalize(2, "Warm");
+
+            if (tempFeelsLike < 0) penalize(10, "Baan bevroren");
+            else if (tempFeelsLike < 5) penalize(5, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(2, "Frisjes");
+
+            if (precipSum === 0 && precipProb < 10) score += 1;
+            else if (precipSum > 2) penalize(8, "Baan kletsnat");
+            else if (precipSum > 0 || precipProb > 30) penalize(3, "Baan vochtig");
+
+            if (windMax > 49) penalize(6, "Harde wind");
             break;
+
+        case 'field_sports':
+            // Veld Sport
+            if (tempFeelsLike > 30) penalize(8, "Te heet voor fysiek werk");
+            else if (tempFeelsLike > 25) penalize(5, "Te heet");
+            else if (tempFeelsLike > 20) penalize(2, "Warm");
+
+            if (tempFeelsLike < 0) penalize(8, "Ondergrond bevroren");
+            else if (tempFeelsLike < 5) penalize(5, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(2, "Frisjes");
+
+            if (precipSum === 0 && precipProb < 10) score += 1;
+            else if (precipSum > 5) penalize(9, "Veld onbespeelbaar");
+            else if (precipSum > 2) penalize(5, "Nat veld");
+            else if (precipSum > 0 || precipProb > 30) penalize(3, "Vochtig veld");
+
+            if (windMax > 49) penalize(8, "Stormachtig");
+            else if (windMax > 28) penalize(3, "Lastig voor balcontrole");
+            break;
+
+        case 'tennis':
+            // Tennis
+            if (tempFeelsLike > 30) penalize(5, "Te heet");
+            else if (tempFeelsLike > 25) penalize(2, "Warm");
+
+            if (tempFeelsLike < 0) penalize(8, "Baan bevroren");
+            else if (tempFeelsLike < 5) penalize(5, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(2, "Frisjes");
+
+            if (precipSum === 0 && precipProb < 10) score += 1;
+            else if (precipSum > 2) penalize(9, "Baan onbespeelbaar");
+            else if (precipSum > 0 || precipProb > 30) penalize(5, "Natte lijnen/baan");
+
+            if (windMax < 12) score += 1;
+
+            if (windMax > 38) penalize(8, "Onspeelbare wind");
+            else if (windMax > 28) penalize(5, "Veel windinvloed");
+            else if (windMax >= 12) penalize(2, "Merkbare wind");
+            break;
+    }
+
+    // BONUS: Sunshine during rain
+    const isRainy = precipSum > 0.1 || precipProb > 30;
+    if (isRainy && sunChance > 10) {
+        let bonus = 0;
+        if (sunChance > 75) bonus = 3;
+        else if (sunChance > 50) bonus = 2;
+        else if (sunChance > 20) bonus = 1;
+
+        if (bonus > 0) {
+            score += bonus;
+            reasons.unshift(`Afwisselend zon en regen (+${bonus})`);
+        }
+    }
+
+    // Sub-zero penalty generic
+    if (tempFeelsLike < 0 && !['stargazing', 'padel', 'field_sports', 'tennis', 'sailing'].includes(activity)) {
+        penalize(2, "Gevoelstemperatuur onder nul");
     }
 
     return {
@@ -167,7 +363,9 @@ async function generateAIContent(weather, activity, scoreData, userName) {
             'gardening': "Focus op temepratuur en neerslag en gevoelstemperatuur (onder 10) en hitte index",
             'stargazing': "Focus op bewolkingsgraad 's nachts en neerslag.",
             'golf': "Focus op wind en neerslag.",
-            'drone': "Focus op windstoten, windkracht en regenrisico."
+            'padel': "Focus op neerslag, wind en temperatuur (te koud/heet).",
+            'field_sports': "Focus op neerslag (velden), temperatuur en wind.",
+            'tennis': "Focus op wind, neerslag en temperatuur."
         };
 
         const focus = focusPoints[activity] || "Focus op algemene geschiktheid.";

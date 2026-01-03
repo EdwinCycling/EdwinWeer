@@ -7,6 +7,7 @@ import { db, messaging } from '../services/firebase';
 import { getToken, deleteToken, onMessage } from 'firebase/messaging';
 import { ScheduleConfig } from '../components/ScheduleConfig';
 import { getTranslation } from '../services/translations';
+import { getUsage } from '../services/usageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -20,12 +21,23 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<string[]>([]);
+  const [baroCredits, setBaroCredits] = useState<number>(0);
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   const addLog = (msg: string) => {
     console.log(`[NotifView] ${msg}`);
     setLogs(prev => [`${new Date().toLocaleTimeString()} - ${msg}`, ...prev].slice(0, 50));
   };
+
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (user) {
+        const usage = getUsage();
+        setBaroCredits(usage.baroCredits || 0);
+      }
+    };
+    fetchCredits();
+  }, [user]);
   
   // Profile & Location handling
   const locations = settings?.favorites || [];
@@ -75,6 +87,12 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
 
   useEffect(() => {
     const checkNotificationStatus = async () => {
+      // Feature is mobile only
+      if (!isMobile) {
+          setLoading(false);
+          return;
+      }
+
       if (!user) {
         setLoading(false);
         return;
@@ -354,43 +372,71 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
            </div>
         </div>
 
-        {/* Schedule Config */}
-        {settings && onUpdateSettings && (
+        {/* Notification Schedule Config */}
+        {fcmToken && settings && onUpdateSettings && currentProfile && (
             <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
                 <h3 className="font-bold text-lg px-1">{t('notifications.schedule.title') || 'Melding Schema'}</h3>
                 
-                {/* Location Selector */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
-                        {t('notifications.select_location') || 'Selecteer Locatie'}
-                    </label>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
-                        {locations.length > 0 ? locations.map((loc, idx) => (
-                            <button
-                                key={`loc-${idx}`}
-                                onClick={() => updateLocation(loc.name)}
-                                className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
-                                    selectedLocationName === loc.name
-                                        ? 'bg-primary border-primary text-white shadow-md'
-                                        : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
-                                }`}
-                            >
-                                {loc.name}
-                            </button>
-                        )) : (
-                            <div className="text-sm text-slate-500 italic px-2">
-                                {t('notifications.no_locations') || 'Geen favoriete locaties gevonden. Voeg deze eerst toe via de zoekfunctie.'}
-                            </div>
-                        )}
+                {baroCredits <= 0 ? (
+                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
+                        <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                        <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                            Je hebt Baro credits nodig om een schema te maken en weerberichten te ontvangen.
+                        </p>
+                        <button
+                            onClick={() => onNavigate(ViewState.PRICING)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors">
+                            Credits kopen
+                        </button>
                     </div>
-                </div>
+                ) : (
+                    <>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-4 flex items-center justify-between">
+                            <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                                Beschikbare Baro Credits: <strong>{baroCredits}</strong>
+                            </span>
+                        </div>
 
-                <ScheduleConfig 
-                    title={`Schema voor ${selectedLocationName}`}
-                    schedule={currentProfile.messengerSchedule} 
-                    onUpdate={updateSchedule}
-                    language={settings.language}
-                />
+                        {/* Location Selector (Only for notifications view) */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
+                                {t('notifications.select_location') || 'Selecteer Locatie'}
+                            </label>
+                            {locations.length > 0 ? (
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
+                                    {locations.map((loc, idx) => (
+                                        <button
+                                            key={`${loc.name}-${idx}`}
+                                            onClick={() => updateLocation(loc.name)}
+                                            className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
+                                                selectedLocationName === loc.name
+                                                    ? 'bg-primary border-primary text-white shadow-md'
+                                                    : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
+                                            }`}
+                                        >
+                                            {loc.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-500 italic px-1">
+                                    {t('notifications.no_locations') || 'Geen favoriete locaties gevonden.'}
+                                </p>
+                            )}
+                        </div>
+
+                        <ScheduleConfig 
+                            title={`Schema voor ${selectedLocationName}`}
+                            schedule={currentProfile.messengerSchedule} // Reuse messenger schedule structure for push
+                            onUpdate={(newSchedule) => updateSchedule(newSchedule)}
+                            language={settings.language}
+                        />
+                        
+                        <p className="text-xs text-slate-400 dark:text-white/40 px-1 mt-2">
+                            {t('notifications.platform_note') || 'Je ontvangt meldingen op dit apparaat.'}
+                        </p>
+                    </>
+                )}
             </div>
         )}
 

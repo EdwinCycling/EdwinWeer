@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ViewState, AppSettings, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
 import { ScheduleConfig } from '../components/ScheduleConfig';
 import { getTranslation } from '../services/translations';
+import { getUsage } from '../services/usageService';
 
 interface Props {
     settings: AppSettings;
@@ -16,6 +17,14 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
     const [selectedProfileId, setSelectedProfileId] = useState<string>(settings.baroProfile?.id || (profiles.length > 0 ? profiles[0].id : ''));
 
     const selectedProfile = profiles.find(p => p.id === selectedProfileId);
+    const [baroCredits, setBaroCredits] = useState(getUsage().baroCredits);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setBaroCredits(getUsage().baroCredits);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
 
     const updateProfile = (updatedProfile: BaroProfile) => {
         const index = profiles.findIndex(p => p.id === updatedProfile.id);
@@ -85,6 +94,27 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
 
                 {profiles.length > 0 && (
                     <>
+                        {baroCredits <= 0 ? (
+                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center mb-6">
+                                <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                                <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                                    Je hebt Baro credits nodig om een schema te maken en weerberichten te ontvangen.
+                                </p>
+                                <button
+                                    onClick={() => onNavigate(ViewState.PRICING)}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                                >
+                                    Credits kopen
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-6 flex items-center justify-between">
+                                <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                                    Beschikbare Baro Credits: <strong>{baroCredits}</strong>
+                                </span>
+                            </div>
+                        )}
+
                          {/* Profile Selector */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">

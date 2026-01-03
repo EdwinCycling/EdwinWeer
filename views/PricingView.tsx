@@ -339,7 +339,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                     disabled={loading}
                     className="w-full py-3 rounded-xl font-bold transition-colors mt-auto bg-white text-purple-900 hover:bg-purple-50 flex items-center justify-center gap-2"
                 >
-                    {loading ? t('pricing.loading') : t('pricing.buy_baro')}
+                    {loading ? t('pricing.loading') : t('pricing.baro_buy')}
                 </button>
             </div>
         </div>

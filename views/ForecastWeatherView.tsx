@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex } from '../services/weatherService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode, loadEnsembleModel } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
@@ -187,7 +187,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                   precip24h
               };
 
-              const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
+              const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'padel', 'field_sports', 'tennis'];
               activityScores = activities.map(act => ({
                   type: act,
                   ...calculateActivityScore(activityData, act, settings.language)
@@ -285,32 +285,6 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       const h = Math.round(sec / 3600);
       const m = Math.round((sec % 3600) / 60);
       return `${h}h ${m}m`;
-  };
-
-  const calculateDewPoint = (T: number, RH: number) => {
-      return T - ((100 - RH) / 5);
-  };
-
-  const getActivityIcon = (type: ActivityType) => {
-      switch(type) {
-          case 'bbq': return 'outdoor_grill';
-          case 'cycling': return 'directions_bike';
-          case 'walking': return 'directions_walk';
-          case 'sailing': return 'sailing';
-          case 'running': return 'directions_run';
-          case 'beach': return 'beach_access';
-          case 'gardening': return 'yard';
-          case 'stargazing': return 'auto_awesome';
-          case 'golf': return 'golf_course';
-          case 'drone': return 'flight';
-          default: return 'sports_score';
-      }
-  };
-
-  const getScoreColor = (score: number) => {
-      if (score >= 8) return 'text-green-500 dark:text-green-400';
-      if (score >= 5.5) return 'text-yellow-500 dark:text-yellow-400';
-      return 'text-red-500 dark:text-red-400';
   };
 
   const getWeekendAreas = () => {
@@ -682,7 +656,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 </div>
 
                                 {activitiesMode !== 'none' && d.activityScores.length > 0 && (
-                                    <div className="flex flex-row justify-between items-center gap-1 mt-2 pt-2 border-t border-slate-200 dark:border-white/5 overflow-x-auto scrollbar-hide">
+                                    <div className={`${isMobile ? 'grid grid-cols-6 gap-y-2 place-items-center' : 'flex flex-row justify-between items-center overflow-x-auto scrollbar-hide'} gap-1 mt-2 pt-2 border-t border-slate-200 dark:border-white/5`}>
                                         {d.activityScores
                                             .filter(s => settings.enabledActivities?.[s.type] !== false)
                                             .map(score => {

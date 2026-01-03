@@ -613,6 +613,14 @@ export const calculateHeatIndex = (tempC: number, rh: number): number => {
     return c;
 };
 
+export const calculateDewPoint = (tempC: number, rh: number): number => {
+    // Magnus formula
+    const a = 17.27;
+    const b = 237.7;
+    const alpha = ((a * tempC) / (b + tempC)) + Math.log(rh / 100.0);
+    return (b * alpha) / (a - alpha);
+};
+
 export const calculateJagTi = (tempC: number, windSpeedKmh: number): number | null => {
     // JAG/TI conditions:
     // T between -46 and +10 °C
@@ -655,6 +663,15 @@ export const getActivityIcon = (activity: string): string => {
         case 'walking': return 'directions_walk';
         case 'bbq': return 'outdoor_grill';
         case 'beach': return 'beach_access';
+        case 'sailing': return 'sailing';
+        case 'gardening': return 'yard';
+        case 'stargazing': return 'nights_stay';
+        case 'golf': return 'sports_golf';
+        case 'padel': return 'sports_handball'; // Creative choice for Padel to distinguish from Tennis
+        case 'field_sports': return 'sports_soccer';
+        case 'tennis': return 'sports_tennis';
+        case 'home': return 'home';
+        case 'work': return 'work';
         default: return 'help';
     }
 };

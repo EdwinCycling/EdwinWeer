@@ -40,6 +40,11 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings }) => {
     { id: 'offline', category: 'general', questionKey: 'faq.q.offline', answerKey: 'faq.a.offline' },
     
     // Features
+    { id: 'messenger', category: 'features', questionKey: 'faq.q.messenger', answerKey: 'faq.a.messenger' },
+    { id: 'email', category: 'features', questionKey: 'faq.q.email', answerKey: 'faq.a.email' },
+    { id: 'push', category: 'features', questionKey: 'faq.q.push', answerKey: 'faq.a.push' },
+    { id: 'yourday', category: 'features', questionKey: 'faq.q.yourday', answerKey: 'faq.a.yourday' },
+    { id: 'planner', category: 'features', questionKey: 'faq.q.planner', answerKey: 'faq.a.planner' },
     { id: 'ai', category: 'features', questionKey: 'faq.q.ai', answerKey: 'faq.a.ai' },
     { id: 'barometer', category: 'features', questionKey: 'faq.q.barometer', answerKey: 'faq.a.barometer' },
     { id: 'climate', category: 'features', questionKey: 'faq.q.climate', answerKey: 'faq.a.climate' },

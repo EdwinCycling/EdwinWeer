@@ -113,6 +113,10 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     };
 
     const handleAddNew = () => {
+        if (baroCredits <= 0) {
+            alert(t('baro.error.limit') || 'Geen Baro Credits beschikbaar');
+            return;
+        }
         if (events.length >= MAX_EVENTS) return;
         setCurrentEvent({
             id: crypto.randomUUID(),

@@ -9,6 +9,7 @@ import { searchCityByName } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation } from '../services/storageService';
 import { fetchForecast } from '../services/weatherService';
 import { generateBaroWeatherReport } from '../services/geminiService';
+import { getUsage } from '../services/usageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -18,8 +19,26 @@ interface Props {
 
 const ACTIVITIES: ActivityType[] = [
   'bbq', 'cycling', 'walking', 'sailing', 'running', 
-  'beach', 'gardening', 'stargazing', 'golf', 'drone'
+  'beach', 'gardening', 'stargazing', 'golf', 'padel', 'field_sports', 'tennis'
 ];
+
+const getActivityIcon = (type: ActivityType) => {
+    switch (type) {
+        case 'bbq': return 'outdoor_grill';
+        case 'cycling': return 'directions_bike';
+        case 'walking': return 'hiking';
+        case 'sailing': return 'sailing';
+        case 'running': return 'directions_run';
+        case 'padel': return 'sports_tennis';
+        case 'tennis': return 'sports_tennis';
+        case 'field_sports': return 'sports_soccer';
+        case 'golf': return 'sports_golf';
+        case 'gardening': return 'yard';
+        case 'beach': return 'beach_access';
+        case 'stargazing': return 'nights_stay';
+        default: return 'help';
+    }
+};
 
 const DAYS = [
   { val: 1, label: 'Ma' },
@@ -44,6 +63,14 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [baroCredits, setBaroCredits] = useState(getUsage().baroCredits);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+        setBaroCredits(getUsage().baroCredits);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -133,7 +160,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
 
   useEffect(() => {
     const saveAuto = async () => {
-      if (!user || !telegramConnected || loading) return;
+      if (!user || !telegramConnected || loading || baroCredits <= 0) return;
       
       setSaving(true);
       try {
@@ -192,6 +219,21 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
              {t('planner.intro.note')}
           </p>
         </div>
+
+        {baroCredits <= 0 && (
+            <div className="bg-red-50 dark:bg-red-900/20 w-full p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
+                <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                    Je hebt Baro credits nodig om de planner te gebruiken en op te slaan.
+                </p>
+                <button
+                    onClick={() => onNavigate(ViewState.PRICING)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                >
+                    Credits kopen
+                </button>
+            </div>
+        )}
 
         {/* Location Selection */}
         <div className="w-full bg-white dark:bg-card-dark p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 relative z-30">
@@ -315,18 +357,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                 <div className={`size-10 rounded-full flex items-center justify-center transition-colors ${
                                     isEnabled ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-white/40'
                                 }`}>
-                                    <Icon name={
-                                        activity === 'running' ? 'directions_run' :
-                                        activity === 'cycling' ? 'directions_bike' :
-                                        activity === 'walking' ? 'directions_walk' :
-                                        activity === 'bbq' ? 'outdoor_grill' :
-                                        activity === 'beach' ? 'beach_access' :
-                                        activity === 'sailing' ? 'sailing' :
-                                        activity === 'gardening' ? 'yard' : // or grass
-                                        activity === 'stargazing' ? 'star' : // or nightlight
-                                        activity === 'golf' ? 'golf_course' :
-                                        activity === 'drone' ? 'flight' : 'help'
-                                    } />
+                                    <Icon name={getActivityIcon(activity)} />
                                 </div>
                                 <span className="font-bold capitalize">{t('activity.' + activity)}</span>
                             </div>

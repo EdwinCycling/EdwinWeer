@@ -22,9 +22,11 @@ const activityIcons: Record<ActivityType, string> = {
     running: 'directions_run',
     beach: 'beach_access',
     gardening: 'yard',
-    stargazing: 'auto_awesome',
-    golf: 'golf_course',
-    drone: 'flight',
+    stargazing: 'nights_stay',
+    golf: 'sports_golf',
+    padel: 'sports_tennis',
+    field_sports: 'sports_soccer',
+    tennis: 'sports_tennis',
     home: 'home',
     work: 'work'
 };

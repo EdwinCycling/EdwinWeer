@@ -48,7 +48,9 @@ const DEFAULT_ENABLED_ACTIVITIES: Record<ActivityType, boolean> = {
     gardening: true,
     stargazing: true,
     golf: true,
-    drone: true,
+    padel: true,
+    field_sports: true,
+    tennis: true,
     home: false,
     work: false
 };

@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { ScheduleConfig } from '../components/ScheduleConfig';
 import { getTranslation } from '../services/translations';
+import { getUsage } from '../services/usageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -18,6 +19,14 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
   const t = (key: string) => getTranslation(key, settings?.language || 'nl');
   const [telegramChatId, setTelegramChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [baroCredits, setBaroCredits] = useState(getUsage().baroCredits);
+
+  useEffect(() => {
+      const interval = setInterval(() => {
+          setBaroCredits(getUsage().baroCredits);
+      }, 2000);
+      return () => clearInterval(interval);
+  }, []);
   
   // Profile handling
   const profiles = settings?.baroProfiles || (settings?.baroProfile ? [settings.baroProfile] : []);
@@ -165,38 +174,61 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
         {telegramChatId && settings && onUpdateSettings && profiles.length > 0 && (
             <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
                 <h3 className="font-bold text-lg px-1">Messenger Schema</h3>
-                
-                {/* Profile Selector */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
-                        Selecteer Profiel
-                    </label>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
-                        {profiles.map((p, idx) => (
-                            <button
-                                key={p.id || `profile-${idx}`}
-                                onClick={() => setSelectedProfileId(p.id)}
-                                className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
-                                    selectedProfileId === p.id
-                                        ? 'bg-primary border-primary text-white shadow-md'
-                                        : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
-                                }`}
-                            >
-                                {p.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
 
-                {selectedProfile && (
-                    <ScheduleConfig 
-                        title={`Messenger Schema voor ${selectedProfile.name}`}
-                        schedule={selectedProfile.messengerSchedule}
-                        onUpdate={(newSchedule) => {
-                            updateProfile({ ...selectedProfile, messengerSchedule: newSchedule });
-                        }}
-                        language={settings.language}
-                    />
+                {baroCredits <= 0 ? (
+                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
+                        <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                        <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                            Je hebt Baro credits nodig om een schema te maken en weerberichten te ontvangen.
+                        </p>
+                        <button
+                            onClick={() => onNavigate(ViewState.PRICING)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                        >
+                            Credits kopen
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-4 flex items-center justify-between">
+                            <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                                Beschikbare Baro Credits: <strong>{baroCredits}</strong>
+                            </span>
+                        </div>
+                
+                        {/* Profile Selector */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
+                                Selecteer Profiel
+                            </label>
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
+                                {profiles.map((p, idx) => (
+                                    <button
+                                        key={p.id || `profile-${idx}`}
+                                        onClick={() => setSelectedProfileId(p.id)}
+                                        className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
+                                            selectedProfileId === p.id
+                                                ? 'bg-primary border-primary text-white shadow-md'
+                                                : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
+                                        }`}
+                                    >
+                                        {p.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {selectedProfile && (
+                            <ScheduleConfig 
+                                title={`Messenger Schema voor ${selectedProfile.name}`}
+                                schedule={selectedProfile.messengerSchedule}
+                                onUpdate={(newSchedule) => {
+                                    updateProfile({ ...selectedProfile, messengerSchedule: newSchedule });
+                                }}
+                                language={settings.language}
+                            />
+                        )}
+                    </>
                 )}
             </div>
         )}

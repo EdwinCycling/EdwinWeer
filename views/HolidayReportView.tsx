@@ -5,7 +5,7 @@ import { getTranslation } from '../services/translations';
 import { loadCurrentLocation } from '../services/storageService';
 import { searchCityByName } from '../services/geoService';
 import { ComposedChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, ReferenceLine, ReferenceArea, Bar } from 'recharts';
-import { fetchHistoricalRange, fetchHistoricalRangePastYears } from '../services/weatherService';
+import { fetchHistoricalRange, fetchHistoricalRangePastYears, getActivityIcon } from '../services/weatherService';
 import { calculateActivityScore } from '../services/activityService';
 import { CircleMarker, LayersControl, MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 
@@ -412,7 +412,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
 
         const vibe = calculateVibe({ avgTemp, totalRain, totalSun });
 
-        const allActivities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'drone'];
+        const allActivities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'padel', 'field_sports', 'tennis', 'home', 'work'];
         const enabledActivities = allActivities.filter(a => settings.enabledActivities?.[a] !== false);
         const activitySums: Partial<Record<ActivityType, number>> = {};
         enabledActivities.forEach(a => { activitySums[a] = 0; });
@@ -479,21 +479,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
     }
   };
 
-  const getActivityIcon = (type: ActivityType) => {
-      switch(type) {
-          case 'bbq': return 'outdoor_grill';
-          case 'cycling': return 'directions_bike';
-          case 'walking': return 'directions_walk';
-          case 'sailing': return 'sailing';
-          case 'running': return 'directions_run';
-          case 'beach': return 'beach_access';
-          case 'gardening': return 'yard';
-          case 'stargazing': return 'auto_awesome';
-          case 'golf': return 'golf_course';
-          case 'drone': return 'flight';
-          default: return 'sports_score';
-      }
-  };
+
 
   const getScoreColor = (score: number) => {
       if (score >= 8) return "text-green-500 dark:text-green-400";
