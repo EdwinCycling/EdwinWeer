@@ -153,15 +153,25 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
 }
 
 // Helper: Get Location from Gemini for long races
-async function getRaceLocationFromGemini(raceName: string, date: string, info: string = "") {
+async function getRaceLocationFromGemini(raceName: string, date: string, info: string = "", country: string = "") {
     try {
         const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
-        const prompt = `Baseer je op de koersnaam "${raceName}" op datum "${date}" en informatie "${info}". Wat is de finishlocatie (Stad, Land) van deze etappe of koers? Geef ALLEEN de locatie terug (bijv. "Paris, France"). Als je het niet weet, geef dan "Unknown" terug.`;
+        const prompt = `
+            Je bent een wielerexpert. Baseer je op:
+            - Koersnaam: "${raceName}"
+            - Datum: "${date}"
+            - Informatie: "${info}"
+            - Land (indien bekend): "${country}"
+
+            Wat is de meest waarschijnlijke finishlocatie (Stad) van deze koers of etappe op deze specifieke datum?
+            Geef ALLEEN de stad en het land terug (bijv. "Utsunomiya, Japan" of "Oudenaarde, België").
+            Als je het echt niet weet, geef dan "Unknown" terug.
+        `;
         
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text().trim();
-        return text === "Unknown" ? null : text;
+        const text = response.text().trim().replace(/[*_#]/g, ''); // Remove formatting
+        return text.toLowerCase().includes("unknown") ? null : text;
     } catch (e) {
         console.error("Error getting location from Gemini:", e);
         return null;
@@ -189,38 +199,19 @@ export const handler = async (event: any, context: any) => {
         const today = now.toISOString().split('T')[0];
         console.log(`Querying Notion for date: ${today}`);
         
-        // Debug Notion Client
-        console.log('Notion client keys:', Object.keys(notion));
-        if ((notion as any).databases) {
-            console.log('Notion databases keys:', Object.keys((notion as any).databases));
-            console.log('Type of query:', typeof (notion as any).databases.query);
-        } else {
-            console.error('Notion databases property is missing!');
-        }
+        const cleanDbId = databaseId.trim().replace(/-/g, '');
+        const url = `https://api.notion.com/v1/databases/${cleanDbId}/query`;
+        console.log(`Querying Notion URL: ${url}`); 
 
         const filter = {
             and: [
-                {
-                    property: "Start datum",
-                    date: {
-                        on_or_before: today
-                    }
-                },
-                {
-                    property: "Eind datum",
-                    date: {
-                        on_or_after: today
-                    }
-                }
+                { property: "Start datum", date: { on_or_before: today } },
+                { property: "Eind datum", date: { on_or_after: today } }
             ]
         };
 
         let response: any;
         try {
-            const cleanDbId = databaseId.trim().replace(/-/g, '');
-            const url = `https://api.notion.com/v1/databases/${cleanDbId}/query`;
-            console.log(`Querying Notion via direct fetch: ${url}`);
-
             const fetchResponse = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -288,11 +279,11 @@ export const handler = async (event: any, context: any) => {
             let locationName = null;
             const weatherField = props.Weer?.rich_text?.[0]?.plain_text || ""; 
             const locationMatch = weatherField.match(/data-label_1="([^"]*)"/);
-            locationName = locationMatch ? locationMatch[1] : null;
+            locationName = (locationMatch && locationMatch[1]) ? locationMatch[1] : null;
 
             // Fallback: Als locatie niet in het weer-veld staat, of als het een lange rittenkoers is, gebruik AI
             if (!locationName || durationDays > 7) {
-                const aiLoc = await getRaceLocationFromGemini(nameTitle, today, info);
+                const aiLoc = await getRaceLocationFromGemini(nameTitle, today, info, country);
                 if (aiLoc) locationName = aiLoc;
             }
             
@@ -389,11 +380,12 @@ export const handler = async (event: any, context: any) => {
                     
                     message += `\n${report.weather}\n\n`;
                 }
-                message += `<i>Informatie bron: www.ishetalkoers.nl</i>\n`;
+                message += `<i>Informatie bron: <a href="https://www.ishetalkoers.nl">www.ishetalkoers.nl</a></i>\n`;
                 message += `<i>Je hebt nog ${credits - 1} Baro credits.</i>`;
                 
                 const telegramId = userData.telegramChatId;
                 if (telegramId) {
+                    console.log(`Sending Telegram report to user: ${userData.email || userData.displayName || userDoc.id} (ChatID: ${telegramId})`);
                     await sendTelegramNotification(telegramId, message);
                 }
             } else {
@@ -435,6 +427,7 @@ export const handler = async (event: any, context: any) => {
                 message += `Je hebt nog ${credits - 1} Baro credits.</p>`;
                 message += `</div>`;
 
+                console.log(`Sending Email report to user: ${userData.email} (UID: ${userDoc.id})`);
                 await sendEmailNotification(userData.email, `Dagelijkse koers update: ${raceReports.length} koersen vandaag`, message);
             }
 

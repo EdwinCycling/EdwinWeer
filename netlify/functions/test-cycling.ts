@@ -72,17 +72,31 @@ export const handler = async (event: any, context: any) => {
 
             // 3. Weer/Locatie extractie
             const weerHtml = properties?.Weer?.rich_text?.[0]?.plain_text || '';
-            const locationMatch = weerHtml.match(/data-label_1="([^"]+)"/);
-            let location = locationMatch ? locationMatch[1] : null;
+            const locationMatch = weerHtml.match(/data-label_1="([^"]*)"/);
+            let location = (locationMatch && locationMatch[1]) ? locationMatch[1] : null;
 
             // Fallback: Als locatie niet in het weer-veld staat, probeer het via AI te vinden
             if (!location && geminiKey) {
                 try {
                     const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
                     const infoText = properties.Informatie?.rich_text?.[0]?.plain_text || "";
-                    const locPrompt = `Baseer je op de koersnaam "${cleanTitle}" en de informatie "${infoText}". Wat is de finishlocatie (Stad, Land) van deze koers? Geef ALLEEN de locatie terug (bijv. "Utsunomiya, Japan"). Als je het niet weet, geef dan "Onbekend" terug.`;
+                    const locPrompt = `
+                        Je bent een wielerexpert. Baseer je op:
+                        - Koersnaam: "${cleanTitle}"
+                        - Datum: "${today}"
+                        - Informatie: "${infoText}"
+                        - Land: "${country}"
+
+                        Wat is de meest waarschijnlijke finishlocatie (Stad) van deze koers op deze datum?
+                        Geef ALLEEN de stad en het land terug (bijv. "Utsunomiya, Japan"). 
+                        Als je het echt niet weet, geef dan "Onbekend" terug.
+                    `;
                     const locResult = await model.generateContent(locPrompt);
-                    location = locResult.response.text().trim();
+                    const aiLoc = locResult.response.text().trim().replace(/[*_#]/g, '');
+                    if (!aiLoc.toLowerCase().includes("onbekend")) {
+                        location = aiLoc;
+                        log(`AI Locatie Fallback gevonden: ${location}`);
+                    }
                 } catch (e) {
                     log(`Fout bij AI locatie fallback voor ${cleanTitle}:`, e);
                 }
