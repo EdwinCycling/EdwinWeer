@@ -358,16 +358,16 @@ export const handler = async (event: any, context: any) => {
                 continue;
             }
 
-            // Timezone Check: Send only between 06:00 and 10:00 local time
+            // Timezone Check: Send only between 06:00 and 20:00 local time
             const timezone = settings.timezone || 'Europe/Amsterdam';
             const userTimeStr = now.toLocaleString('en-US', { timeZone: timezone });
             const userTime = new Date(userTimeStr);
             const userHour = userTime.getHours();
 
-            // Skip if not morning (allow 6-10 window)
+            // Skip if not in allowed window (06:00 - 20:00)
             // Note: In test mode (event.isTest), we skip this check
-            if (!event.isTest && (userHour < 6 || userHour > 10)) {
-                console.log(`Skipping user ${userEmail}: Local time is ${userHour}:00 (only sending between 06:00-10:00).`);
+            if (!event.isTest && (userHour < 6 || userHour > 20)) {
+                console.log(`Skipping user ${userEmail}: Local time is ${userHour}:00 (only sending between 06:00-20:00).`);
                 continue;
             }
 
