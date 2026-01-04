@@ -358,12 +358,13 @@ export const handler = async (event: any, context: any) => {
             const credits = userData.usage?.baroCredits || 0;
             const lastUpdate = userData.last_cycling_update_date;
             const userEmail = userData.email || userData.displayName || userDoc.id;
+            const isTestUser = userEmail === 'edwin@editsolutions.nl';
 
             if (credits <= 0) {
                 console.log(`Skipping user ${userEmail}: No credits left (${credits}).`);
                 continue;
             }
-            if (lastUpdate === today) {
+            if (lastUpdate === today && !isTestUser) {
                 console.log(`Skipping user ${userEmail}: Already received update today.`);
                 continue;
             }
@@ -375,8 +376,8 @@ export const handler = async (event: any, context: any) => {
             const userHour = userTime.getHours();
 
             // Skip if not in allowed window (06:00 - 20:00)
-            // Note: In test mode (event.isTest), we skip this check
-            if (!event.isTest && (userHour < 6 || userHour > 20)) {
+            // Note: In test mode (event.isTest) or for test users, we skip this check
+            if (!event.isTest && !isTestUser && (userHour < 6 || userHour > 20)) {
                 console.log(`Skipping user ${userEmail}: Local time is ${userHour}:00 (only sending between 06:00-20:00).`);
                 continue;
             }
@@ -387,7 +388,7 @@ export const handler = async (event: any, context: any) => {
             let message = "";
             if (channel === 'telegram') {
                 message = `<b>Dagelijkse koers update</b>\n\n`;
-                message += `Vandaag staan er ${raceReports.length} koersen op het programma:\n`;
+                message += `Vandaag ${raceReports.length === 1 ? 'staat er' : 'staan er'} ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} op het programma:\n`;
                 message += raceReports.map(r => `• ${r.title}`).join('\n') + `\n\n`;
 
                 for (const report of raceReports) {
@@ -412,7 +413,7 @@ export const handler = async (event: any, context: any) => {
                 // Email
                 message = `<div style="font-family: sans-serif; max-width: 600px; margin: auto; color: #1e293b;">`;
                 message += `<h1 style="color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Dagelijkse koers update</h1>`;
-                message += `<p style="font-size: 16px;">Vandaag staan er ${raceReports.length} koersen op het programma:</p>`;
+                message += `<p style="font-size: 16px;">Vandaag ${raceReports.length === 1 ? 'staat er' : 'staan er'} ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} op het programma:</p>`;
                 message += `<ul style="background: #f8fafc; padding: 15px 15px 15px 35px; border-radius: 12px; list-style-type: '🚴 '; ">` + 
                            raceReports.map(r => `<li style="margin-bottom: 5px; font-weight: bold;">${r.title}</li>`).join('') + 
                            `</ul>`;
@@ -448,7 +449,7 @@ export const handler = async (event: any, context: any) => {
                 message += `</div>`;
 
                 console.log(`Sending Email report to user: ${userData.email} (UID: ${userDoc.id})`);
-                await sendEmailNotification(userData.email, `Dagelijkse koers update: ${raceReports.length} koersen vandaag`, message);
+                await sendEmailNotification(userData.email, `Dagelijkse koers update: ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} vandaag`, message);
             }
 
             await db.collection('users').doc(userDoc.id).update({
