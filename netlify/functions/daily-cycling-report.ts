@@ -97,9 +97,10 @@ function extractLocationName(htmlString: string): string | null {
 }
 
 // Helper: Geocode Location
-async function geocodeLocation(locationName: string) {
+async function geocodeLocation(locationName: string, country: string = "") {
     try {
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1&language=nl&format=json`;
+        const query = country ? `${locationName}, ${country}` : locationName;
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=nl&format=json`;
         const response = await fetch(url);
         const data: any = await response.json();
         if (data.results && data.results.length > 0) {
@@ -299,8 +300,8 @@ export const handler = async (event: any, context: any) => {
             let weatherText = "Geen weerbericht beschikbaar.";
             let locationDisplay = locationName || "Onbekend";
 
-            if (locationName) {
-                const geo = await geocodeLocation(`${locationName}, ${country}`);
+            if (locationDisplay !== "Onbekend") {
+                const geo = await geocodeLocation(locationDisplay, country);
                 if (geo) {
                     locationDisplay = `${geo.name}, ${geo.country}`;
                     const weather = await getWeather(geo.lat, geo.lon);
