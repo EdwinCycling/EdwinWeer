@@ -172,28 +172,56 @@ export const handler = async (event: any, context: any) => {
         const today = new Date().toISOString().split('T')[0];
         console.log(`Querying Notion for date: ${today}`);
         
-        // Query for active races: Start <= Today AND End >= Today
-        const response = await (notion.databases as any).query({
-            database_id: databaseId,
-            filter: {
-                and: [
-                    {
-                        property: "Start datum",
-                        date: {
-                            on_or_before: today
-                        }
-                    },
-                    {
-                        property: "Eind datum",
-                        date: {
-                            on_or_after: today
-                        }
-                    }
-                ]
-            }
-        } as any);
+        // Debug Notion Client
+        console.log('Notion client keys:', Object.keys(notion));
+        if ((notion as any).databases) {
+            console.log('Notion databases keys:', Object.keys((notion as any).databases));
+            console.log('Type of query:', typeof (notion as any).databases.query);
+        } else {
+            console.error('Notion databases property is missing!');
+        }
 
-        const races = response.results;
+        // Query for active races: Start <= Today AND End >= Today
+        let response;
+        const filter = {
+            and: [
+                {
+                    property: "Start datum",
+                    date: {
+                        on_or_before: today
+                    }
+                },
+                {
+                    property: "Eind datum",
+                    date: {
+                        on_or_after: today
+                    }
+                }
+            ]
+        };
+
+        try {
+            if ((notion as any).databases && typeof (notion as any).databases.query === 'function') {
+                 response = await (notion.databases as any).query({
+                    database_id: databaseId,
+                    filter: filter
+                } as any);
+            } else {
+                console.warn('Using fallback notion.request for query');
+                response = await notion.request({
+                    path: `databases/${databaseId}/query`,
+                    method: 'POST',
+                    body: {
+                        filter: filter
+                    }
+                });
+            }
+        } catch (queryError) {
+            console.error('Error executing Notion query:', queryError);
+            throw queryError;
+        }
+
+        const races = (response as any).results;
         console.log(`Found ${races.length} active races for today (${today})`);
 
         if (races.length === 0) {
