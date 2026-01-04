@@ -140,14 +140,23 @@ async function getWeather(lat: number, lon: number) {
 }
 
 // Helper: Generate Text with Gemini
-async function generateWeatherText(raceName: string, location: string, weatherData: any, additionalInfo: any = {}) {
+async function generateWeatherText(raceName: string, location: string, weatherData: any, additionalInfo: any = {}, language: string = 'nl') {
     try {
         const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
         
+        const langMap: Record<string, string> = {
+            'nl': 'Nederlands',
+            'en': 'English',
+            'de': 'Deutsch',
+            'fr': 'Français',
+            'es': 'Español'
+        };
+        const targetLang = langMap[language] || 'Nederlands';
+
         const weatherContext = `Data: ${JSON.stringify(weatherData)}. Focus: Middagweer (13:00-17:00).`;
 
         const prompt = `
-            Je bent een enthousiaste wieler-weerman. Schrijf een boeiend weerbericht in het Nederlands voor de koers: "${raceName}".
+            Je bent een enthousiaste wieler-weerman. Schrijf een boeiend weerbericht in het ${targetLang} voor de koers: "${raceName}".
             Locatie: ${location}.
             ${weatherContext}
             
@@ -159,6 +168,7 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
             Focus op de middag/finale (wind, temperatuur, neerslag) en wat dit betekent voor de renners (waaiers? gladde wegen? zware finale?).
             Maak er een meeslepend, sportief verhaal van. Gebruik een paar relevante emoji's.
             Max 8-10 zinnen.
+            ${language === 'nl' ? '' : `IMPORTANT: Provide the output in ${targetLang}.`}
         `;
         
         const result = await model.generateContent(prompt);
@@ -166,7 +176,7 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
         return response.text();
     } catch (e) {
         console.error("Error generating text:", e);
-        return "Geen weerbericht beschikbaar.";
+        return language === 'nl' ? "Geen weerbericht beschikbaar." : "No weather report available.";
     }
 }
 
@@ -247,7 +257,7 @@ export const handler = async (event: any, context: any) => {
             });
 
             if (!fetchResponse.ok) {
-                const errorData = await fetchResponse.json();
+                const errorData = await fetchResponse.json() as any;
                 throw new Error(errorData.message || `Notion API Error: ${fetchResponse.status}`);
             }
 
@@ -266,6 +276,21 @@ export const handler = async (event: any, context: any) => {
         if (races.length === 0) {
             return { statusCode: 200, body: "No races today" };
         }
+
+        // 3. Process Users
+        const usersSnapshot = await db.collection('users')
+            .where('settings.cycling_updates.enabled', '==', true)
+            .get();
+
+        const activeUsers = usersSnapshot.docs;
+        console.log(`Found ${activeUsers.length} users with cycling updates enabled.`);
+
+        const uniqueLanguages = new Set<string>();
+        activeUsers.forEach(doc => {
+            const lang = doc.data().settings?.language || 'nl';
+            uniqueLanguages.add(lang);
+        });
+        console.log(`Unique languages found: ${Array.from(uniqueLanguages).join(', ')}`);
 
         // 2. Prepare Race Data (Generic)
         const raceReports = [];
@@ -308,7 +333,7 @@ export const handler = async (event: any, context: any) => {
                 if (aiLoc) locationName = aiLoc;
             }
             
-            let weatherText = "Geen weerbericht beschikbaar.";
+            let weatherTexts: Record<string, string> = {};
             let locationDisplay = locationName || "Onbekend";
 
             if (locationDisplay !== "Onbekend") {
@@ -331,15 +356,24 @@ export const handler = async (event: any, context: any) => {
                                 wind_dir: hourly.wind_direction_10m[indices[Math.floor(indices.length/2)]]
                             };
                             
-                            weatherText = await generateWeatherText(
-                                nameTitle, 
-                                locationDisplay, 
-                                relevantWeather, 
-                                { info, history: winners, notable }
-                            );
+                            // Generate for all unique languages found
+                            for (const lang of Array.from(uniqueLanguages)) {
+                                weatherTexts[lang] = await generateWeatherText(
+                                    nameTitle, 
+                                    locationDisplay, 
+                                    relevantWeather, 
+                                    { info, history: winners, notable },
+                                    lang
+                                );
+                            }
                         }
                     }
                 }
+            }
+
+            // Default weather text if none generated
+            if (Object.keys(weatherTexts).length === 0) {
+                weatherTexts['nl'] = "Geen weerbericht beschikbaar.";
             }
 
             raceReports.push({
@@ -347,7 +381,7 @@ export const handler = async (event: any, context: any) => {
                 category: category,
                 location: locationDisplay,
                 status: status,
-                weather: weatherText,
+                weatherTexts: weatherTexts,
                 country: country,
                 info: info,
                 winners: winners,
@@ -355,30 +389,29 @@ export const handler = async (event: any, context: any) => {
             });
         }
 
-        // 3. Process Users
-        const usersSnapshot = await db.collection('users')
-            .where('settings.cycling_updates.enabled', '==', true)
-            .get();
-
-        console.log(`Found ${usersSnapshot.docs.length} users with cycling updates enabled.`);
-
+        // 3. Process Users (Continue with activeUsers)
         let count = 0;
-        for (const userDoc of usersSnapshot.docs) {
+        for (const userDoc of activeUsers) {
             const userData = userDoc.data();
             const settings = userData.settings || {};
             const credits = userData.usage?.baroCredits || 0;
             const lastUpdate = userData.last_cycling_update_date;
-            const userEmail = (userData.email || userData.displayName || userDoc.id || "").toLowerCase().trim();
-            const isTestUser = userEmail === 'edwin@editsolutions.nl';
+            
+            // Gebruik UID als backup als email ontbreekt in het document
+            const userEmail = (userData.email || "").toLowerCase().trim();
+            const userId = userDoc.id;
+            
+            // Edwin's UID en Email bypass
+            const isTestUser = userEmail === 'edwin@editsolutions.nl' || userId === 'rsxquehpcsrq9mfkqay9rujjzw42';
 
-            console.log(`Processing user: ${userEmail} (isTestUser: ${isTestUser}, credits: ${credits}, lastUpdate: ${lastUpdate})`);
+            console.log(`Processing user: ${userId} (Email: ${userEmail || 'N/A'}, isTestUser: ${isTestUser}, credits: ${credits}, lastUpdate: ${lastUpdate})`);
 
             if (credits <= 0 && !isTestUser) {
-                console.log(`Skipping user ${userEmail}: No credits left (${credits}).`);
+                console.log(`Skipping user ${userId}: No credits left (${credits}).`);
                 continue;
             }
             if (lastUpdate === today && !isTestUser) {
-                console.log(`Skipping user ${userEmail}: Already received update today.`);
+                console.log(`Skipping user ${userId}: Already received update today.`);
                 continue;
             }
 
@@ -391,17 +424,37 @@ export const handler = async (event: any, context: any) => {
             // Skip if not in allowed window (06:00 - 20:00)
             // Note: In test mode (event.isTest) or for test users, we skip this check
             if (!event.isTest && !isTestUser && (userHour < 6 || userHour > 20)) {
-                console.log(`Skipping user ${userEmail}: Local time is ${userHour}:00 (only sending between 06:00-20:00).`);
+                console.log(`Skipping user ${userId}: Local time is ${userHour}:00 (only sending between 06:00-20:00).`);
                 continue;
             }
 
+            // Bepaal de taal voor de AI
+            const userLang = settings.language || 'nl';
+            const langMap: Record<string, string> = {
+                'nl': 'Nederlands',
+                'en': 'English',
+                'de': 'Deutsch',
+                'fr': 'Français',
+                'es': 'Español'
+            };
+            const targetLang = langMap[userLang] || 'Nederlands';
+
             const channel = settings.cycling_updates?.channel || 'email';
             
-            // Build Unified Message
+            // Build Unified Message (Gebruik generieke reports die we al hebben voorbereid)
+            // Maar als de taal anders is dan NL, moeten we het weerbericht vertalen of opnieuw genereren
+            // Voor nu houden we het simpel: we sturen de NL versie, tenzij we AI opdracht geven per taal.
+            // TODO: In de toekomst AI per taal aanroepen in de generic reports loop.
+            
             let message = "";
             if (channel === 'telegram') {
-                message = `<b>Dagelijkse koers update</b>\n\n`;
-                message += `Vandaag ${raceReports.length === 1 ? 'staat er' : 'staan er'} ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} op het programma:\n`;
+                const header = userLang === 'nl' ? 'Dagelijkse koers update' : 'Daily cycling update';
+                const raceInfo = userLang === 'nl' 
+                    ? `Vandaag ${raceReports.length === 1 ? 'staat er' : 'staan er'} ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} op het programma:`
+                    : `Today there ${raceReports.length === 1 ? 'is' : 'are'} ${raceReports.length} ${raceReports.length === 1 ? 'race' : 'races'} scheduled:`;
+
+                message = `<b>${header}</b>\n\n`;
+                message += `${raceInfo}\n`;
                 message += raceReports.map(r => `• ${r.title}`).join('\n') + `\n\n`;
 
                 for (const report of raceReports) {
@@ -409,24 +462,34 @@ export const handler = async (event: any, context: any) => {
                     message += `📍 ${report.location} | 📅 ${report.status}\n`;
                     
                     if (report.info) message += `ℹ️ ${report.info}\n`;
-                    if (report.winners) message += `🏆 Recente winnaars: ${report.winners}\n`;
-                    if (report.notable) message += `✨ Opmerkelijk: ${report.notable}\n`;
+                    if (report.winners) message += `🏆 ${userLang === 'nl' ? 'Recente winnaars' : 'Recent winners'}: ${report.winners}\n`;
+                    if (report.notable) message += `✨ ${userLang === 'nl' ? 'Opmerkelijk' : 'Notable'}: ${report.notable}\n`;
                     
-                    message += `\n${report.weather}\n\n`;
+                    const weather = report.weatherTexts[userLang] || report.weatherTexts['nl'] || "No weather report available.";
+                    message += `\n${weather}\n\n`;
                 }
-                message += `<i>Informatie bron: <a href="https://www.ishetalkoers.nl">www.ishetalkoers.nl</a></i>\n`;
-                message += `<i>Je hebt nog ${credits - 1} Baro credits.</i>`;
+                const footer = userLang === 'nl' ? 'Informatie bron' : 'Information source';
+                const creditsInfo = userLang === 'nl' ? `Je hebt nog ${credits - 1} Baro credits.` : `You have ${credits - 1} Baro credits left.`;
+                
+                message += `<i>${footer}: <a href="https://www.ishetalkoers.nl">www.ishetalkoers.nl</a></i>\n`;
+                message += `<i>${creditsInfo}</i>`;
                 
                 const telegramId = userData.telegramChatId;
                 if (telegramId) {
-                    console.log(`Sending Telegram report to user: ${userData.email || userData.displayName || userDoc.id} (ChatID: ${telegramId})`);
+                    console.log(`Sending Telegram report to user: ${userId} (ChatID: ${telegramId})`);
                     await sendTelegramNotification(telegramId, message);
                 }
             } else {
                 // Email
+                const emailSubject = userLang === 'nl' 
+                    ? `Dagelijkse koers update: ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} vandaag`
+                    : `Daily cycling update: ${raceReports.length} ${raceReports.length === 1 ? 'race' : 'races'} today`;
+
                 message = `<div style="font-family: sans-serif; max-width: 600px; margin: auto; color: #1e293b;">`;
-                message += `<h1 style="color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Dagelijkse koers update</h1>`;
-                message += `<p style="font-size: 16px;">Vandaag ${raceReports.length === 1 ? 'staat er' : 'staan er'} ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} op het programma:</p>`;
+                message += `<h1 style="color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">${userLang === 'nl' ? 'Dagelijkse koers update' : 'Daily cycling update'}</h1>`;
+                message += `<p style="font-size: 16px;">${userLang === 'nl' 
+                    ? `Vandaag ${raceReports.length === 1 ? 'staat er' : 'staan er'} ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} op het programma:`
+                    : `Today there ${raceReports.length === 1 ? 'is' : 'are'} ${raceReports.length} ${raceReports.length === 1 ? 'race' : 'races'} scheduled:`}</p>`;
                 message += `<ul style="background: #f8fafc; padding: 15px 15px 15px 35px; border-radius: 12px; list-style-type: '🚴 '; ">` + 
                            raceReports.map(r => `<li style="margin-bottom: 5px; font-weight: bold;">${r.title}</li>`).join('') + 
                            `</ul>`;
@@ -442,33 +505,42 @@ export const handler = async (event: any, context: any) => {
                     
                     if (report.info || report.winners || report.notable) {
                         message += `<div style="margin-bottom: 20px; font-size: 14px; background: #f1f5f9; padding: 15px; border-radius: 8px;">`;
-                        if (report.info) message += `<p style="margin: 0 0 8px 0;"><strong>ℹ️ Koersinfo:</strong> ${report.info}</p>`;
-                        if (report.winners) message += `<p style="margin: 0 0 8px 0;"><strong>🏆 Recente winnaars:</strong> ${report.winners}</p>`;
-                        if (report.notable) message += `<p style="margin: 0;"><strong>✨ Opmerkelijk:</strong> ${report.notable}</p>`;
+                        if (report.info) message += `<p style="margin: 0 0 8px 0;"><strong>ℹ️ ${userLang === 'nl' ? 'Koersinfo' : 'Race info'}:</strong> ${report.info}</p>`;
+                        if (report.winners) message += `<p style="margin: 0 0 8px 0;"><strong>🏆 ${userLang === 'nl' ? 'Recente winnaars' : 'Recent winners'}:</strong> ${report.winners}</p>`;
+                        if (report.notable) message += `<p style="margin: 0;"><strong>✨ ${userLang === 'nl' ? 'Opmerkelijk' : 'Notable'}:</strong> ${report.notable}</p>`;
                         message += `</div>`;
                     }
 
                     message += `<div style="background: white; line-height: 1.6; font-style: italic; color: #334155;">`;
-                    message += report.weather.replace(/\n/g, '<br>');
+                    const weather = report.weatherTexts[userLang] || report.weatherTexts['nl'] || "No weather report available.";
+                    message += weather.replace(/\n/g, '<br>');
                     message += `</div>`;
                     
                     message += `</div>`;
                     message += `</div>`;
                 }
                 
+                const footerText = userLang === 'nl' ? 'Informatie bron' : 'Information source';
+                const creditsLeftText = userLang === 'nl' ? `Je hebt nog ${credits - 1} Baro credits.` : `You have ${credits - 1} Baro credits left.`;
+
                 message += `<p style="margin-top: 40px; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">`;
-                message += `Informatie bron: <a href="https://www.ishetalkoers.nl" style="color: #4f46e5; text-decoration: none;">www.ishetalkoers.nl</a><br>`;
-                message += `Je hebt nog ${credits - 1} Baro credits.</p>`;
+                message += `${footerText}: <a href="https://www.ishetalkoers.nl" style="color: #4f46e5; text-decoration: none;">www.ishetalkoers.nl</a><br>`;
+                message += `${creditsLeftText}</p>`;
                 message += `</div>`;
 
-                console.log(`Sending Email report to user: ${userData.email} (UID: ${userDoc.id})`);
-                await sendEmailNotification(userData.email, `Dagelijkse koers update: ${raceReports.length} ${raceReports.length === 1 ? 'koers' : 'koersen'} vandaag`, message);
+                console.log(`Sending Email report to user: ${userData.email || userId} (UID: ${userId})`);
+                await sendEmailNotification(userData.email || userId, emailSubject, message);
             }
 
-            await db.collection('users').doc(userDoc.id).update({
-                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                'last_cycling_update_date': today
-            });
+            // Update user usage unless it's a test user
+            if (!isTestUser) {
+                await db.collection('users').doc(userId).update({
+                    'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                    'last_cycling_update_date': today
+                });
+            } else {
+                console.log(`Bypassing usage update for test user: ${userId}`);
+            }
             count++;
         }
 
