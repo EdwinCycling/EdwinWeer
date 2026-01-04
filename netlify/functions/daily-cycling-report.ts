@@ -339,15 +339,24 @@ export const handler = async (event: any, context: any) => {
             .where('settings.cycling_updates.enabled', '==', true)
             .get();
 
+        console.log(`Found ${usersSnapshot.docs.length} users with cycling updates enabled.`);
+
         let count = 0;
         for (const userDoc of usersSnapshot.docs) {
             const userData = userDoc.data();
             const settings = userData.settings || {};
             const credits = userData.usage?.baroCredits || 0;
             const lastUpdate = userData.last_cycling_update_date;
+            const userEmail = userData.email || userData.displayName || userDoc.id;
 
-            if (credits <= 0) continue;
-            if (lastUpdate === today) continue;
+            if (credits <= 0) {
+                console.log(`Skipping user ${userEmail}: No credits left (${credits}).`);
+                continue;
+            }
+            if (lastUpdate === today) {
+                console.log(`Skipping user ${userEmail}: Already received update today.`);
+                continue;
+            }
 
             // Timezone Check: Send only between 06:00 and 10:00 local time
             const timezone = settings.timezone || 'Europe/Amsterdam';
@@ -358,6 +367,7 @@ export const handler = async (event: any, context: any) => {
             // Skip if not morning (allow 6-10 window)
             // Note: In test mode (event.isTest), we skip this check
             if (!event.isTest && (userHour < 6 || userHour > 10)) {
+                console.log(`Skipping user ${userEmail}: Local time is ${userHour}:00 (only sending between 06:00-10:00).`);
                 continue;
             }
 
