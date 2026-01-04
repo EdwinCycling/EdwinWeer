@@ -283,14 +283,12 @@ export const handler = async (event: any, context: any) => {
             .get();
 
         const activeUsers = usersSnapshot.docs;
-        console.log(`Found ${activeUsers.length} users with cycling updates enabled.`);
 
         const uniqueLanguages = new Set<string>();
         activeUsers.forEach(doc => {
             const lang = doc.data().settings?.language || 'nl';
             uniqueLanguages.add(lang);
         });
-        console.log(`Unique languages found: ${Array.from(uniqueLanguages).join(', ')}`);
 
         // 2. Prepare Race Data (Generic)
         const raceReports = [];
@@ -402,29 +400,27 @@ export const handler = async (event: any, context: any) => {
             const userId = userDoc.id;
             
             // Edwin's UID en Email bypass
-            const isTestUser = userEmail === 'edwin@editsolutions.nl' || userId === 'rsxquehpcsrq9mfkqay9rujjzw42';
+            const isTestUser = false;
 
-            console.log(`Processing user: ${userId} (Email: ${userEmail || 'N/A'}, isTestUser: ${isTestUser}, credits: ${credits}, lastUpdate: ${lastUpdate})`);
-
-            if (credits <= 0 && !isTestUser) {
+            if (credits <= 0) {
                 console.log(`Skipping user ${userId}: No credits left (${credits}).`);
                 continue;
             }
-            if (lastUpdate === today && !isTestUser) {
+            if (lastUpdate === today) {
                 console.log(`Skipping user ${userId}: Already received update today.`);
                 continue;
             }
 
-            // Timezone Check: Send only between 06:00 and 20:00 local time
+            // Timezone Check: Send only between 07:00 and 10:00 local time
             const timezone = settings.timezone || 'Europe/Amsterdam';
             const userTimeStr = now.toLocaleString('en-US', { timeZone: timezone });
             const userTime = new Date(userTimeStr);
             const userHour = userTime.getHours();
 
-            // Skip if not in allowed window (06:00 - 20:00)
-            // Note: In test mode (event.isTest) or for test users, we skip this check
-            if (!event.isTest && !isTestUser && (userHour < 6 || userHour > 20)) {
-                console.log(`Skipping user ${userId}: Local time is ${userHour}:00 (only sending between 06:00-20:00).`);
+            // Skip if not in allowed window (07:00 - 10:00)
+            // Note: In test mode (event.isTest) we skip this check
+            if (!event.isTest && (userHour < 7 || userHour > 10)) {
+                console.log(`Skipping user ${userId}: Local time is ${userHour}:00 (only sending between 07:00-10:00).`);
                 continue;
             }
 
@@ -532,15 +528,11 @@ export const handler = async (event: any, context: any) => {
                 await sendEmailNotification(userData.email || userId, emailSubject, message);
             }
 
-            // Update user usage unless it's a test user
-            if (!isTestUser) {
-                await db.collection('users').doc(userId).update({
-                    'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                    'last_cycling_update_date': today
-                });
-            } else {
-                console.log(`Bypassing usage update for test user: ${userId}`);
-            }
+            // Update user usage
+            await db.collection('users').doc(userId).update({
+                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                'last_cycling_update_date': today
+            });
             count++;
         }
 
