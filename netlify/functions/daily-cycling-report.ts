@@ -4,9 +4,12 @@ import fetch from 'node-fetch';
 import * as Brevo from '@getbrevo/brevo';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+console.log("MODULE LOAD: daily-cycling-report.ts");
+
 // Initialize Firebase Admin
 if (!admin.apps.length) {
     try {
+        console.log("Initializing Firebase Admin...");
         let serviceAccount;
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
             serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -23,6 +26,7 @@ if (!admin.apps.length) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount)
             });
+            console.log("Firebase Admin initialized successfully.");
         } else {
             console.error("Missing Firebase Admin credentials");
         }
@@ -34,14 +38,17 @@ if (!admin.apps.length) {
 const db = admin.apps.length ? admin.firestore() : null;
 
 // Initialize Notion
+console.log("Initializing Notion client...");
 const notion = new Client({
     auth: process.env.NOTION_API_KEY,
 });
 
 // Initialize Gemini
+console.log("Initializing Gemini AI...");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Initialize Brevo
+console.log("Initializing Brevo API...");
 const brevoApi = new Brevo.TransactionalEmailsApi();
 const brevoApiKey = process.env.BREVO_API_KEY || '';
 if (brevoApi.setApiKey) {
@@ -191,10 +198,14 @@ async function getRaceLocationFromGemini(raceName: string, date: string, info: s
 
 // Main Function
 export const handler = async (event: any, context: any) => {
-    console.log("Starting Daily Cycling Report...");
+    console.log("--------------------------------------------------");
+    console.log("DAILY CYCLING REPORT HANDLER START");
+    console.log("Time:", new Date().toISOString());
+    console.log("Is Test Event:", !!event.isTest);
+    console.log("--------------------------------------------------");
 
     if (!db) {
-        console.error("Database not initialized");
+        console.error("CRITICAL: Database (Firestore) not initialized!");
         return { statusCode: 500, body: "Database not initialized" };
     }
 
