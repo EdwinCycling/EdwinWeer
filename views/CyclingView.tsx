@@ -50,7 +50,7 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
         if (newEnabled && baroCredits <= 0) {
             alert("Geen credits meer. Waardeer je saldo op om deze functie te gebruiken.");
             setLoading(false);
-            return; // Should not happen due to UI disabled state, but double check
+            return; 
         }
 
         const newSettings = {
@@ -151,8 +151,8 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                                 Via welk kanaal wil je updates ontvangen?
                             </label>
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${channel === 'email' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                     <input
                                         type="radio"
                                         name="channel"
@@ -161,11 +161,11 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                         onChange={() => handleSave(enabled, 'email')}
                                         className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                                     />
-                                    <span className="text-2xl">📨</span>
+                                    <span className="text-xl">📨</span>
                                     <span className="font-medium text-slate-700 dark:text-slate-200">E-mail</span>
                                 </label>
 
-                                <label className={`flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${!telegramLinked ? 'opacity-75' : ''}`}>
+                                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!telegramLinked ? 'opacity-50 cursor-not-allowed' : ''} ${channel === 'telegram' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                     <input
                                         type="radio"
                                         name="channel"
@@ -175,28 +175,22 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                         disabled={!telegramLinked}
                                         className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                                     />
-                                    <span className="text-2xl">✈️</span>
-                                    <div className="flex-1">
-                                        <span className="font-medium text-slate-700 dark:text-slate-200">Telegram</span>
-                                        {!telegramLinked && (
-                                            <p className="text-xs text-red-500 mt-0.5">
-                                                Koppel eerst Telegram in instellingen
-                                            </p>
-                                        )}
+                                    <span className="text-xl">✈️</span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="font-medium text-slate-700 dark:text-slate-200 block truncate">Telegram</span>
                                     </div>
                                 </label>
                             </div>
+                            {!telegramLinked && (
+                                <p className="text-[10px] text-red-500 mt-2 flex items-center gap-1">
+                                    <Icon name="info" className="text-xs" />
+                                    Koppel eerst Telegram in instellingen
+                                </p>
+                            )}
                         </div>
                     )}
 
-                    {baroCredits <= 0 && (
-                         <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-500/20 rounded-xl flex items-center gap-3">
-                            <Icon name="warning" className="text-red-500" />
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                                Je hebt geen Baro Credits meer. Waardeer op om updates te ontvangen.
-                            </p>
-                         </div>
-                    )}
+
                 </div>
 
                 <div className="text-center text-xs text-slate-400 dark:text-slate-600">

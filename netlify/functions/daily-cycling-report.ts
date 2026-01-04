@@ -122,10 +122,26 @@ async function getWeather(lat: number, lon: number) {
 }
 
 // Helper: Generate Text with Gemini
-async function generateWeatherText(raceName: string, location: string, weatherData: any) {
+async function generateWeatherText(raceName: string, location: string, weatherData: any, additionalInfo: any = {}) {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `Schrijf een zakelijk weerbericht (geen emoticons) voor de wielerkoers ${raceName} in ${location}. Focus: Middagweer (13:00-17:00). Data: ${JSON.stringify(weatherData)}. Beschrijf wind en neerslag invloed op de koers. Max 5 zinnen.`;
+        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        
+        const weatherContext = `Data: ${JSON.stringify(weatherData)}. Focus: Middagweer (13:00-17:00).`;
+
+        const prompt = `
+            Je bent een enthousiaste wieler-weerman. Schrijf een boeiend weerbericht in het Nederlands voor de koers: "${raceName}".
+            Locatie: ${location}.
+            ${weatherContext}
+            
+            Betrek deze informatie in je verhaal:
+            - Koersinfo: "${additionalInfo.info || ''}"
+            - Recente winnaars: "${additionalInfo.history || ''}"
+            - Opmerkelijk: "${additionalInfo.notable || ''}"
+            
+            Focus op de middag/finale (wind, temperatuur, neerslag) en wat dit betekent voor de renners (waaiers? gladde wegen? zware finale?).
+            Maak er een meeslepend, sportief verhaal van. Gebruik een paar relevante emoji's.
+            Max 8-10 zinnen.
+        `;
         
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -137,10 +153,10 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
 }
 
 // Helper: Get Location from Gemini for long races
-async function getRaceLocationFromGemini(raceName: string, date: string) {
+async function getRaceLocationFromGemini(raceName: string, date: string, info: string = "") {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `For the cycling race "${raceName}" on date "${date}", what is the finish location (City, Country) of the stage? Return ONLY the location name (e.g. "Paris, France"), nothing else. If unknown, return "Unknown".`;
+        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const prompt = `Baseer je op de koersnaam "${raceName}" op datum "${date}" en informatie "${info}". Wat is de finishlocatie (Stad, Land) van deze etappe of koers? Geef ALLEEN de locatie terug (bijv. "Paris, France"). Als je het niet weet, geef dan "Unknown" terug.`;
         
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -162,6 +178,7 @@ export const handler = async (event: any, context: any) => {
     }
 
     try {
+        const now = new Date();
         // 1. Notion Data
         const databaseId = process.env.NOTION_DATABASE_ID;
         if (!databaseId) {
@@ -169,7 +186,7 @@ export const handler = async (event: any, context: any) => {
             throw new Error("Missing NOTION_DATABASE_ID");
         }
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = now.toISOString().split('T')[0];
         console.log(`Querying Notion for date: ${today}`);
         
         // Debug Notion Client
@@ -181,8 +198,6 @@ export const handler = async (event: any, context: any) => {
             console.error('Notion databases property is missing!');
         }
 
-        // Query for active races: Start <= Today AND End >= Today
-        let response;
         const filter = {
             and: [
                 {
@@ -200,51 +215,64 @@ export const handler = async (event: any, context: any) => {
             ]
         };
 
+        let response: any;
         try {
-            if ((notion as any).databases && typeof (notion as any).databases.query === 'function') {
-                 response = await (notion.databases as any).query({
-                    database_id: databaseId,
+            const cleanDbId = databaseId.trim().replace(/-/g, '');
+            const url = `https://api.notion.com/v1/databases/${cleanDbId}/query`;
+            console.log(`Querying Notion via direct fetch: ${url}`);
+
+            const fetchResponse = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.NOTION_API_KEY}`,
+                    'Notion-Version': '2022-06-28',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     filter: filter
-                } as any);
-            } else {
-                console.warn('Using fallback notion.request for query');
-                response = await notion.request({
-                    path: `databases/${databaseId}/query`,
-                    method: 'POST',
-                    body: {
-                        filter: filter
-                    }
-                });
+                })
+            });
+
+            if (!fetchResponse.ok) {
+                const errorData = await fetchResponse.json();
+                throw new Error(errorData.message || `Notion API Error: ${fetchResponse.status}`);
             }
+
+            response = await fetchResponse.json();
         } catch (queryError) {
-            console.error('Error executing Notion query:', queryError);
-            throw queryError;
+            console.error('Error querying Notion:', queryError);
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Failed to query Notion database', details: queryError instanceof Error ? queryError.message : String(queryError) })
+            };
         }
 
-        const races = (response as any).results;
+        const races = response.results;
         console.log(`Found ${races.length} active races for today (${today})`);
 
         if (races.length === 0) {
             return { statusCode: 200, body: "No races today" };
         }
 
+        // 2. Prepare Race Data (Generic)
         const raceReports = [];
-
-        // Process each race
         for (const race of races) {
             const props = (race as any).properties;
+            const fullTitle = props.Koers?.title?.[0]?.plain_text || 
+                              props.Name?.title?.[0]?.plain_text || "Onbekende Koers";
             
-            // Extract Data
-            const nameTitle = props.Koers?.title?.[0]?.plain_text || "Onbekende Koers";
+            const countryMatch = fullTitle.match(/\(([^)]+)\)/);
+            const country = countryMatch ? countryMatch[1] : "BE";
+            const nameTitle = fullTitle.replace(/\([^)]+\)/, '').trim();
+
             const category = props.Categorie?.multi_select?.map((c: any) => c.name).join(', ') || "";
             const winners = props["Recente winnaars"]?.rich_text?.[0]?.plain_text || "";
-            const info = props.Informatie?.rich_text?.[0]?.plain_text?.substring(0, 150) + "..." || "";
+            const info = props.Informatie?.rich_text?.[0]?.plain_text || "";
+            const notable = props.Opmerkelijk?.rich_text?.[0]?.plain_text || "";
             
-            // Dates
             const startDateStr = props["Start datum"]?.date?.start;
-            const endDateStr = props["Eind datum"]?.date?.start || startDateStr;
+            const endDateStr = props["Eind datum"]?.date?.end || props["Eind datum"]?.date?.start || startDateStr;
 
-            // Calculate Stage / Status
             let status = "Eendagskoers";
             let durationDays = 1;
             
@@ -252,52 +280,31 @@ export const handler = async (event: any, context: any) => {
                 const start = new Date(startDateStr);
                 const end = new Date(endDateStr);
                 const now = new Date(today);
-                
-                // Calculate day number (1-based)
                 const dayDiff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-                const currentDay = dayDiff + 1;
-                
-                // Calculate total days
-                const totalDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                durationDays = totalDiff;
-                
-                status = `Rit ${currentDay} van ${totalDiff}`;
+                status = `Rit ${dayDiff + 1} van ${Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1}`;
+                durationDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             }
 
-            console.log(`Processing race: ${nameTitle}, Status: ${status}, Duration: ${durationDays} days`);
-
-            // Location Logic
             let locationName = null;
+            const weatherField = props.Weer?.rich_text?.[0]?.plain_text || ""; 
+            const locationMatch = weatherField.match(/data-label_1="([^"]*)"/);
+            locationName = locationMatch ? locationMatch[1] : null;
 
-            // Strategy: 
-            // 1. If long race (> 7 days), ask Gemini for specific stage location
-            // 2. Else use Notion "Weer" field regex
-            
-            if (durationDays > 7) {
-                console.log(`Race > 7 days, asking Gemini for location...`);
-                locationName = await getRaceLocationFromGemini(nameTitle, today);
-                console.log(`Gemini returned location: ${locationName}`);
+            // Fallback: Als locatie niet in het weer-veld staat, of als het een lange rittenkoers is, gebruik AI
+            if (!locationName || durationDays > 7) {
+                const aiLoc = await getRaceLocationFromGemini(nameTitle, today, info);
+                if (aiLoc) locationName = aiLoc;
             }
             
-            // Fallback or if short race
-            if (!locationName) {
-                const weatherField = props.Weer?.rich_text?.[0]?.plain_text || ""; 
-                const locationMatch = weatherField.match(/data-label_1="([^"]*)"/);
-                locationName = locationMatch ? locationMatch[1] : null;
-            }
-            
-            let weatherText = "Geen weerdata beschikbaar.";
+            let weatherText = "Geen weerbericht beschikbaar.";
             let locationDisplay = locationName || "Onbekend";
 
             if (locationName) {
-                console.log(`Geocoding location: ${locationName}`);
-                const geo = await geocodeLocation(locationName);
+                const geo = await geocodeLocation(`${locationName}, ${country}`);
                 if (geo) {
                     locationDisplay = `${geo.name}, ${geo.country}`;
                     const weather = await getWeather(geo.lat, geo.lon);
-                    
                     if (weather) {
-                        // Filter 13:00 - 17:00
                         const hourly = (weather as any).hourly;
                         const indices = hourly.time.map((t: string, i: number) => {
                             const h = parseInt(t.split('T')[1].split(':')[0]);
@@ -309,80 +316,129 @@ export const handler = async (event: any, context: any) => {
                                 temp_avg: indices.reduce((sum: number, i: number) => sum + hourly.temperature_2m[i], 0) / indices.length,
                                 wind_max: Math.max(...indices.map((i: number) => hourly.wind_speed_10m[i])),
                                 precip_prob_max: Math.max(...indices.map((i: number) => hourly.precipitation_probability[i])),
-                                wind_dir: hourly.wind_direction_10m[indices[Math.floor(indices.length/2)]] // mid-afternoon
+                                wind_dir: hourly.wind_direction_10m[indices[Math.floor(indices.length/2)]]
                             };
                             
-                            weatherText = await generateWeatherText(nameTitle, locationDisplay, relevantWeather);
+                            weatherText = await generateWeatherText(
+                                nameTitle, 
+                                locationDisplay, 
+                                relevantWeather, 
+                                { info, history: winners, notable }
+                            );
                         }
                     }
                 }
             }
 
             raceReports.push({
-                title: `${nameTitle} (${category})`,
+                title: nameTitle,
+                category: category,
                 location: locationDisplay,
                 status: status,
                 weather: weatherText,
+                country: country,
                 info: info,
-                history: winners
+                winners: winners,
+                notable: notable
             });
         }
 
         // 3. Process Users
         const usersSnapshot = await db.collection('users')
             .where('settings.cycling_updates.enabled', '==', true)
-            // .where('usage.baroCredits', '>', 0) // Compound query requires index. Do manual filter to avoid index creation for now.
             .get();
 
         let count = 0;
-        
-        for (const doc of usersSnapshot.docs) {
-            const userData = doc.data();
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data();
+            const settings = userData.settings || {};
             const credits = userData.usage?.baroCredits || 0;
             const lastUpdate = userData.last_cycling_update_date;
 
             if (credits <= 0) continue;
             if (lastUpdate === today) continue;
 
-            // 4. Send Message
-            const channel = userData.settings?.cycling_updates?.channel || 'email';
+            // Timezone Check: Send only between 06:00 and 10:00 local time
+            const timezone = settings.timezone || 'Europe/Amsterdam';
+            const userTimeStr = now.toLocaleString('en-US', { timeZone: timezone });
+            const userTime = new Date(userTimeStr);
+            const userHour = userTime.getHours();
+
+            // Skip if not morning (allow 6-10 window)
+            // Note: In test mode (event.isTest), we skip this check
+            if (!event.isTest && (userHour < 6 || userHour > 10)) {
+                continue;
+            }
+
+            const channel = settings.cycling_updates?.channel || 'email';
             
-            // Build Message
+            // Build Unified Message
             let message = "";
             if (channel === 'telegram') {
-                message = `<b>🚴 Wielerkoers Update</b>\n\n`;
+                message = `<b>Dagelijkse koers update</b>\n\n`;
+                message += `Vandaag staan er ${raceReports.length} koersen op het programma:\n`;
+                message += raceReports.map(r => `• ${r.title}`).join('\n') + `\n\n`;
+
                 for (const report of raceReports) {
-                    message += `<b>${report.title}</b>\n`;
-                    message += `📍 ${report.location}\n`;
-                    message += `📅 ${report.status}\n`;
-                    message += `🌤 ${report.weather}\n\n`;
+                    message += `<b>${report.title}</b> (${report.country})\n`;
+                    message += `📍 ${report.location} | 📅 ${report.status}\n`;
+                    
+                    if (report.info) message += `ℹ️ ${report.info}\n`;
+                    if (report.winners) message += `🏆 Recente winnaars: ${report.winners}\n`;
+                    if (report.notable) message += `✨ Opmerkelijk: ${report.notable}\n`;
+                    
+                    message += `\n${report.weather}\n\n`;
                 }
+                message += `<i>Informatie bron: www.ishetalkoers.nl</i>\n`;
                 message += `<i>Je hebt nog ${credits - 1} Baro credits.</i>`;
                 
-                const telegramId = userData.telegramChatId; // Ensure this field exists
+                const telegramId = userData.telegramChatId;
                 if (telegramId) {
                     await sendTelegramNotification(telegramId, message);
                 }
             } else {
                 // Email
-                message = `<h1>🚴 Wielerkoers Update</h1>`;
-                for (const report of raceReports) {
-                    message += `<h2>${report.title}</h2>`;
-                    message += `<p><strong>Locatie:</strong> ${report.location}</p>`;
-                    message += `<p><strong>Status:</strong> ${report.status}</p>`;
-                    message += `<p><strong>Weer:</strong> ${report.weather}</p>`;
-                    message += `<p><strong>Info:</strong> ${report.info}</p>`;
-                    message += `<p><strong>Historie:</strong> ${report.history}</p>`;
-                    message += `<hr>`;
-                }
-                message += `<p><small>Deze koersinformatie wordt beschikbaar gesteld door <a href="https://ishetalkoers.nl">IsHetAlKoers.nl</a></small></p>`;
-                message += `<p>Je hebt nog ${credits - 1} Baro credits.</p>`;
+                message = `<div style="font-family: sans-serif; max-width: 600px; margin: auto; color: #1e293b;">`;
+                message += `<h1 style="color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Dagelijkse koers update</h1>`;
+                message += `<p style="font-size: 16px;">Vandaag staan er ${raceReports.length} koersen op het programma:</p>`;
+                message += `<ul style="background: #f8fafc; padding: 15px 15px 15px 35px; border-radius: 12px; list-style-type: '🚴 '; ">` + 
+                           raceReports.map(r => `<li style="margin-bottom: 5px; font-weight: bold;">${r.title}</li>`).join('') + 
+                           `</ul>`;
 
-                await sendEmailNotification(userData.email, "🚴 Wielerkoers Weerbericht", message);
+                for (const report of raceReports) {
+                    message += `<div style="margin-top: 40px; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">`;
+                    message += `<div style="background: #4f46e5; color: white; padding: 15px 20px;">`;
+                    message += `<h2 style="margin: 0; font-size: 20px;">${report.title} (${report.country})</h2>`;
+                    message += `<p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">📍 ${report.location} | 📅 ${report.status}</p>`;
+                    message += `</div>`;
+                    
+                    message += `<div style="padding: 20px;">`;
+                    
+                    if (report.info || report.winners || report.notable) {
+                        message += `<div style="margin-bottom: 20px; font-size: 14px; background: #f1f5f9; padding: 15px; border-radius: 8px;">`;
+                        if (report.info) message += `<p style="margin: 0 0 8px 0;"><strong>ℹ️ Koersinfo:</strong> ${report.info}</p>`;
+                        if (report.winners) message += `<p style="margin: 0 0 8px 0;"><strong>🏆 Recente winnaars:</strong> ${report.winners}</p>`;
+                        if (report.notable) message += `<p style="margin: 0;"><strong>✨ Opmerkelijk:</strong> ${report.notable}</p>`;
+                        message += `</div>`;
+                    }
+
+                    message += `<div style="background: white; line-height: 1.6; font-style: italic; color: #334155;">`;
+                    message += report.weather.replace(/\n/g, '<br>');
+                    message += `</div>`;
+                    
+                    message += `</div>`;
+                    message += `</div>`;
+                }
+                
+                message += `<p style="margin-top: 40px; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">`;
+                message += `Informatie bron: <a href="https://www.ishetalkoers.nl" style="color: #4f46e5; text-decoration: none;">www.ishetalkoers.nl</a><br>`;
+                message += `Je hebt nog ${credits - 1} Baro credits.</p>`;
+                message += `</div>`;
+
+                await sendEmailNotification(userData.email, `Dagelijkse koers update: ${raceReports.length} koersen vandaag`, message);
             }
 
-            // 5. Update User
-            await db.collection('users').doc(doc.id).update({
+            await db.collection('users').doc(userDoc.id).update({
                 'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
                 'last_cycling_update_date': today
             });
