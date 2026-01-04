@@ -357,10 +357,12 @@ export const handler = async (event: any, context: any) => {
             const settings = userData.settings || {};
             const credits = userData.usage?.baroCredits || 0;
             const lastUpdate = userData.last_cycling_update_date;
-            const userEmail = userData.email || userData.displayName || userDoc.id;
+            const userEmail = (userData.email || userData.displayName || userDoc.id || "").toLowerCase().trim();
             const isTestUser = userEmail === 'edwin@editsolutions.nl';
 
-            if (credits <= 0) {
+            console.log(`Processing user: ${userEmail} (isTestUser: ${isTestUser}, credits: ${credits}, lastUpdate: ${lastUpdate})`);
+
+            if (credits <= 0 && !isTestUser) {
                 console.log(`Skipping user ${userEmail}: No credits left (${credits}).`);
                 continue;
             }
