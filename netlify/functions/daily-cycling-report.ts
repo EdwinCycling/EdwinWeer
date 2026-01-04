@@ -86,6 +86,16 @@ async function sendEmailNotification(email: string, subject: string, htmlContent
     }
 }
 
+// Helper: Extract Location Name from Widget HTML
+function extractLocationName(htmlString: string): string | null {
+    if (!htmlString) return null;
+    const match = htmlString.match(/data-label_1="([^"]*)"/);
+    if (match && match[1]) {
+        return match[1].trim();
+    }
+    return null;
+}
+
 // Helper: Geocode Location
 async function geocodeLocation(locationName: string) {
     try {
@@ -278,8 +288,7 @@ export const handler = async (event: any, context: any) => {
 
             let locationName = null;
             const weatherField = props.Weer?.rich_text?.[0]?.plain_text || ""; 
-            const locationMatch = weatherField.match(/data-label_1="([^"]*)"/);
-            locationName = (locationMatch && locationMatch[1]) ? locationMatch[1] : null;
+            locationName = extractLocationName(weatherField);
 
             // Fallback: Als locatie niet in het weer-veld staat, of als het een lange rittenkoers is, gebruik AI
             if (!locationName || durationDays > 7) {

@@ -10,6 +10,16 @@ const notion = new Client({
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
+// Helper: Extract Location Name from Widget HTML
+function extractLocationName(htmlString: string): string | null {
+    if (!htmlString) return null;
+    const match = htmlString.match(/data-label_1="([^"]*)"/);
+    if (match && match[1]) {
+        return match[1].trim();
+    }
+    return null;
+}
+
 export const handler = async (event: any, context: any) => {
     const logs: string[] = [];
     const log = (msg: string, data?: any) => {
@@ -72,8 +82,7 @@ export const handler = async (event: any, context: any) => {
 
             // 3. Weer/Locatie extractie
             const weerHtml = properties?.Weer?.rich_text?.[0]?.plain_text || '';
-            const locationMatch = weerHtml.match(/data-label_1="([^"]*)"/);
-            let location = (locationMatch && locationMatch[1]) ? locationMatch[1] : null;
+            let location = extractLocationName(weerHtml);
 
             // Fallback: Als locatie niet in het weer-veld staat, probeer het via AI te vinden
             if (!location && geminiKey) {
