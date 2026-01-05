@@ -4,7 +4,7 @@ import { ViewState, AppSettings, Location, OpenMeteoResponse, EnsembleModel, Act
 import { calculateActivityScore, ActivityScore } from '../services/activityService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection } from '../services/weatherService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
@@ -16,7 +16,10 @@ import { getTranslation } from '../services/translations';
 import { WelcomeModal } from '../components/WelcomeModal';
 import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
+import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
+import { WeatherRatingButton } from '../components/WeatherRatingButton';
+import { useLocationSwipe } from '../hooks/useLocationSwipe';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -45,6 +48,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showFavorites, setShowFavorites] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
+  const [showComfortModal, setShowComfortModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitError, setLimitError] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -164,6 +168,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       setLocation(settings.favorites[nextIndex]);
   };
 
+  useLocationSwipe({
+      onSwipeLeft: () => cycleFavorite('next'),
+      onSwipeRight: () => cycleFavorite('prev'),
+  });
+
   const handleCompassSelect = async (direction: string) => {
     setLoadingCity(true);
     try {
@@ -235,7 +244,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                 return {
                     time: i === 0 ? t('now') : date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }),
-                    temp: convertTemp(weatherData.hourly.temperature_2m[index], settings.tempUnit),
+                    temp: convertTempPrecise(weatherData.hourly.temperature_2m[index], settings.tempUnit),
                     icon: mapWmoCodeToIcon(code, isNight),
                     highlight: i === 0
                 };
@@ -412,18 +421,37 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   
   const rainGraph = getRainGraphData();
 
-  const currentTemp = weatherData ? convertTemp(weatherData.current.temperature_2m, settings.tempUnit) : 0;
+  const currentTemp = weatherData ? convertTempPrecise(weatherData.current.temperature_2m, settings.tempUnit) : 0;
   const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
-  const feelsLike = weatherData ? convertTemp(weatherData.current.apparent_temperature, settings.tempUnit) : 0;
+  
+  // Use JAG/TI for feels like if applicable, otherwise fallback to apparent_temperature
+  const jagTi = weatherData ? calculateJagTi(weatherData.current.temperature_2m, weatherData.current.wind_speed_10m) : null;
+  const feelsLike = weatherData 
+    ? (jagTi !== null ? convertTempPrecise(jagTi, settings.tempUnit) : convertTempPrecise(weatherData.current.apparent_temperature, settings.tempUnit))
+    : 0;
+
+  // Significant difference for feels like display
+  const isFeelsLikeSignificant = Math.abs(feelsLike - currentTemp) >= 1;
+  
   const windSpeed = weatherData ? convertWind(weatherData.current.wind_speed_10m, settings.windUnit) : 0;
   
-  const calculateDewPoint = (T: number, RH: number) => {
-      return T - ((100 - RH) / 5);
-  };
-  const dewPoint = weatherData ? calculateDewPoint(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
+  const dewPoint = weatherData ? calculateDewPointMagnus(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
   const heatIndexRaw = weatherData ? calculateHeatIndex(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
   const heatIndex = convertTemp(heatIndexRaw, settings.tempUnit);
+  
+  const currentComfort = weatherData ? calculateComfortScore({
+      apparent_temperature: feelsLike,
+      temperature_2m: currentTemp,
+      wind_speed_10m: windSpeed,
+      relative_humidity_2m: weatherData.current.relative_humidity_2m,
+      precipitation_sum: weatherData.daily.precipitation_sum[0] || 0,
+      cloud_cover: weatherData.current.cloud_cover,
+      precipitation_probability: weatherData.daily.precipitation_probability_max?.[0] || 0,
+      weather_code: weatherData.current.weather_code,
+      wind_gusts_10m: weatherData.current.wind_gusts_10m,
+      uv_index: weatherData.daily.uv_index_max?.[0] || 0
+  }) : null;
   
   const getCurrentHourly = (key: keyof OpenMeteoResponse['hourly']) => {
       if (!weatherData) return 0;
@@ -601,20 +629,20 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                 <div className="text-center relative z-20">
                     {loadingCity ? (
-                        <div className="flex items-center gap-2">
-                             <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
-                             <span className="font-medium">{t('search')}</span>
+                        <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
+                             <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                             <span className="font-medium text-white">{t('search')}</span>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center">
-                            <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
+                        <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
+                            <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
                                 {location.name}, {location.country}
                             </h2>
                             {localTime && (
-                                <p className="text-slate-500 dark:text-white/80 text-sm font-medium mt-1 flex items-center gap-2">
+                                <p className="text-white/90 text-sm font-medium mt-1 flex items-center gap-2">
                                     <Icon name="schedule" className="text-xs" />
                                     {localTime} 
-                                    {timeDiff && <span className="bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-white">{timeDiff}</span>}
+                                    {timeDiff && <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] text-white">{timeDiff}</span>}
                                 </p>
                             )}
                         </div>
@@ -728,26 +756,31 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
         ) : weatherData ? (
             <>
-                <div className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
+                <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
                     <div className="flex items-center gap-4">
                         <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
-                            {currentTemp}°
+                            {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
                         </h1>
                         <div className="flex flex-row gap-2">
-                            {feelsLike < 10 ? (
+                            {weatherData.current.temperature_2m < 10 && (
                                 <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
-                                    <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
-                                    <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
+                                    <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
+                                    <span className="text-lg font-bold">{feelsLike.toFixed(1)}°</span>
                                     <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
                                 </div>
-                            ) : (
-                                heatIndex > currentTemp && (
-                                    <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
-                                        <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
-                                        <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
-                                        <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
-                                    </div>
-                                )
+                            )}
+                            {weatherData.current.temperature_2m > 25 && (
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
+                                    <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
+                                    <span className="text-lg font-bold">{heatIndex}°</span>
+                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
+                                </div>
+                            )}
+                            {currentComfort && (
+                                <WeatherRatingButton 
+                                    score={currentComfort} 
+                                    onClick={() => setShowComfortModal(true)} 
+                                />
                             )}
                         </div>
                     </div>
@@ -1222,6 +1255,12 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       <FeelsLikeInfoModal 
           isOpen={showFeelsLikeModal}
           onClose={() => setShowFeelsLikeModal(false)}
+      />
+      
+      <ComfortScoreModal 
+          isOpen={showComfortModal}
+          onClose={() => setShowComfortModal(false)}
+          settings={settings}
       />
       
       {/* API Limit Modal */}

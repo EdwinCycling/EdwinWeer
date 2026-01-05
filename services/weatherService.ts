@@ -64,9 +64,9 @@ export const convertTemp = (tempC: number, unit: TempUnit): number => {
 
 export const convertTempPrecise = (tempC: number, unit: TempUnit): number => {
     if (unit === TempUnit.FAHRENHEIT) {
-        return parseFloat(((tempC * 9/5) + 32).toFixed(1));
+        return Number(((tempC * 9/5) + 32).toFixed(1));
     }
-    return parseFloat(tempC.toFixed(1));
+    return Number(tempC.toFixed(1));
 };
 
 export const convertWind = (speedKmh: number, unit: WindUnit): number => {
@@ -682,4 +682,164 @@ export const getScoreColor = (score: number): string => {
     if (score >= 4) return 'text-yellow-500';
     if (score >= 2) return 'text-orange-500';
     return 'text-red-500';
+};
+
+export interface ComfortScore {
+    score: number;
+    label: string;
+    mainFactor: string;
+    colorClass: string;
+}
+
+export const calculateComfortScore = (weather: {
+    apparent_temperature?: number; // fallback to temp if missing
+    temperature_2m: number;
+    wind_speed_10m: number;
+    relative_humidity_2m: number;
+    precipitation_sum: number;
+    cloud_cover: number;
+    precipitation_probability?: number;
+    weather_code?: number;
+    wind_gusts_10m?: number;
+    uv_index?: number;
+}): ComfortScore => {
+    // 1. Basis Score (Gevoelstemperatuur)
+    // Use apparent_temperature if available, else temperature_2m
+    const temp = weather.apparent_temperature !== undefined ? weather.apparent_temperature : weather.temperature_2m;
+    
+    let baseScore = 6;
+    if (temp < -5) baseScore = 2;
+    else if (temp < 5) baseScore = 4;
+    else if (temp < 15) baseScore = 6;
+    else if (temp < 20) baseScore = 8;
+    else if (temp <= 26) baseScore = 10;
+    else if (temp <= 30) baseScore = 8;
+    else if (temp <= 35) baseScore = 5;
+    else baseScore = 3;
+
+    let score = baseScore;
+    let mainFactor = '';
+
+    // Track deductions to determine main factor
+    let windDeduction = 0;
+    let humidityDeduction = 0;
+    let precipDeduction = 0;
+    let sunBonus = 0;
+
+    // 2. Wind Correctie
+    if (weather.wind_speed_10m > 20) {
+        const excess = weather.wind_speed_10m - 20;
+        // 0.5 point per 5 km/h
+        windDeduction = (excess / 5) * 0.5;
+        // Max 3 points
+        if (windDeduction > 3) windDeduction = 3;
+        score -= windDeduction;
+    }
+
+    // 3. Hitte/Vocht Correctie
+    if (weather.temperature_2m > 20 && weather.relative_humidity_2m > 75) {
+        humidityDeduction = 1;
+        score -= humidityDeduction;
+    }
+
+    // 4. Neerslag Correctie
+    if (weather.precipitation_sum > 0.5) {
+        // -1 punt per 2 mm
+        precipDeduction = (weather.precipitation_sum / 2);
+        // Cap precip deduction? User said "maximaal 5 punten eraf" in text, but "bij > 5mm is de dagscore maximaal een 4" in steps.
+        if (precipDeduction > 5) precipDeduction = 5;
+        
+        score -= precipDeduction;
+    }
+
+    // 5. Zonnige Bonus
+    if (weather.cloud_cover < 30 && weather.temperature_2m < 25) {
+        sunBonus = 1;
+        score += sunBonus;
+    }
+
+    // Hard Cap for Rain
+    if (weather.precipitation_sum > 5 && score > 4) {
+        score = 4;
+    }
+
+    // Final Rounding and Clamping
+    score = Math.round(score); // Round to integer as requested
+    if (score < 1) score = 1;
+    if (score > 10) score = 10;
+
+    // Determine Main Factor (Detailed Logic)
+    if (!mainFactor) {
+        // 1. Extreme Cold/Heat/Precip overrides
+        if (temp < 0) mainFactor = 'comfort.factor.freezing';
+        else if (temp < 5 && weather.wind_speed_10m > 20) mainFactor = 'comfort.factor.cutting_cold';
+        else if (weather.precipitation_sum > 5) mainFactor = 'comfort.factor.continuous_rain';
+        else if (weather.wind_speed_10m > 50) mainFactor = 'comfort.factor.storm';
+        else if (temp > 35) mainFactor = 'comfort.factor.tropical';
+        
+        // 2. Deductions
+        else if (precipDeduction >= 2) {
+             if (weather.weather_code && [71,73,75,85,86].includes(weather.weather_code)) mainFactor = 'comfort.factor.snow';
+             else if (weather.weather_code && [51,53,55,56,57].includes(weather.weather_code)) mainFactor = 'comfort.factor.drizzle';
+             else if ((weather.precipitation_probability && weather.precipitation_probability > 60)) mainFactor = 'comfort.factor.showers';
+             else mainFactor = 'comfort.factor.precip';
+        }
+        else if (windDeduction >= 1.5) {
+            if (weather.wind_gusts_10m && weather.wind_gusts_10m > weather.wind_speed_10m + 20) mainFactor = 'comfort.factor.gusts';
+            else mainFactor = 'comfort.factor.strong_wind';
+        }
+        else if (humidityDeduction > 0) mainFactor = 'comfort.factor.muggy';
+        
+        // 3. Moderate/Low Scores specific causes
+        else if (score <= 4) {
+            if (temp < 10) mainFactor = 'comfort.factor.low_temp';
+            else if (weather.cloud_cover > 90) mainFactor = 'comfort.factor.gray';
+            else if (weather.cloud_cover > 60) mainFactor = 'comfort.factor.clouds';
+            else if (weather.weather_code && [45,48].includes(weather.weather_code)) mainFactor = 'comfort.factor.fog';
+            else mainFactor = 'comfort.factor.no_sun';
+        }
+    
+        // 4. Positive
+        else if (score >= 8) {
+            if (weather.wind_speed_10m < 5) mainFactor = 'comfort.factor.calm';
+            else if (weather.cloud_cover < 20) mainFactor = 'comfort.factor.sunny';
+            else if (temp >= 20 && temp <= 25) mainFactor = 'comfort.factor.ideal_temp';
+            else mainFactor = 'comfort.factor.top_conditions';
+        }
+        
+        // 5. Fallback for mid-range (5-7)
+        else {
+            if (temp < 15) mainFactor = 'comfort.factor.fresh_air';
+            else if (weather.cloud_cover > 50) mainFactor = 'comfort.factor.clouds';
+            
+            // The user didn't specify a "Neutral" main factor.
+            // Let's use "Bewolking" (clouds) or "Frisse lucht" if applicable.
+            if (!mainFactor) {
+                 if (weather.cloud_cover > 50) mainFactor = 'comfort.factor.clouds';
+                 else mainFactor = 'comfort.factor.sunny'; // If not cloudy and not extreme, it's sunny?
+            }
+        }
+    }
+
+    // Determine Label
+    let label = 'comfort.label.6';
+    if (score >= 9) label = 'comfort.label.10';
+    else if (score >= 8) label = 'comfort.label.8';
+    else if (score >= 6) label = 'comfort.label.6';
+    else if (score >= 4) label = 'comfort.label.4';
+    else if (score >= 2) label = 'comfort.label.2';
+    else label = 'comfort.label.1';
+
+    // Determine Color Class
+    let colorClass = 'bg-slate-500 text-white';
+    if (score >= 8) colorClass = 'bg-green-500 text-white'; // 8-10 Groen
+    else if (score >= 6) colorClass = 'bg-amber-500 text-white'; // 6-7 Geel/Oranje
+    else colorClass = 'bg-slate-400 text-white'; // 1-5 Grijs/Blauw
+
+    return {
+        score,
+        label,
+        mainFactor,
+        colorClass
+    };
 };

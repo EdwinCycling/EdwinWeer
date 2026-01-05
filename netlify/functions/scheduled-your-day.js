@@ -220,8 +220,6 @@ export const handler = async (event, context) => {
             // Send only between 06:00 and 10:00 (Uitloop 6, 7, 8, 9)
             if (userHour < 6 || userHour > 9) continue;
 
-            const baroProfiles = settings.baroProfiles || (settings.baroProfile ? [settings.baroProfile] : []);
-
             // Date comparison based on User Time (midnight)
             const dateForComparison = new Date(userTime);
             dateForComparison.setHours(0, 0, 0, 0);
@@ -269,8 +267,8 @@ export const handler = async (event, context) => {
                     continue;
                 }
 
-                // Proceed
-                const profile = baroProfiles.find(p => p.id === ev.profileId) || baroProfiles[0] || {};
+                // Proceed - Standard Profile
+                const profileName = 'Standaard';
                 
                 // Fetch Weather
                 // We need weather for the target date + maybe period
@@ -302,7 +300,7 @@ export const handler = async (event, context) => {
                 const language = userData.settings?.language || 'nl';
                 const isNL = language === 'nl';
 
-                const emailHtml = await generateReport(weatherData, ev, diffDays, profile.name || 'Standaard', userName, language);
+                const emailHtml = await generateReport(weatherData, ev, diffDays, profileName, userName, language);
 
                 // Prepare credits info for footer
                 const creditsInfo = {

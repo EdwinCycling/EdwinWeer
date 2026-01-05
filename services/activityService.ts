@@ -279,9 +279,9 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             else if (w.tempFeelsLike > 25) penalize(5, 'reason.too_hot');
             else if (w.tempFeelsLike > 20) penalize(2, 'reason.warm');
 
-            if (w.tempFeelsLike < 0) penalize(8, 'reason.ground_frozen');
-            else if (w.tempFeelsLike < 5) penalize(5, 'reason.very_cold');
-            else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
+            if (w.tempFeelsLike < 0) penalize(9, 'reason.ground_frozen');
+            else if (w.tempFeelsLike < 5) penalize(6, 'reason.very_cold');
+            else if (w.tempFeelsLike < 10) penalize(3, 'reason.chilly');
 
             // 2. Neerslag
             if (w.precipMm === 0 && w.precipProb < 10) {
@@ -305,25 +305,28 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
             if (w.tempFeelsLike > 30) penalize(5, 'reason.too_hot');
             else if (w.tempFeelsLike > 25) penalize(2, 'reason.warm');
 
-            if (w.tempFeelsLike < 0) penalize(8, 'reason.frozen_court');
-            else if (w.tempFeelsLike < 5) penalize(5, 'reason.very_cold');
-            else if (w.tempFeelsLike < 10) penalize(2, 'reason.chilly');
+            if (w.tempFeelsLike < 0) penalize(10, 'reason.frozen_court');
+            else if (w.tempFeelsLike < 5) penalize(7, 'reason.very_cold');
+            else if (w.tempFeelsLike < 10) penalize(4, 'reason.chilly');
 
             // 2. Neerslag
             if (w.precipMm === 0 && w.precipProb < 10) {
                 score += 1; // Droog bonus
             } else if (w.precipMm > 2) {
-                penalize(9, 'reason.court_unplayable');
+                penalize(10, 'reason.court_unplayable');
+            } else if (w.precipMm > 0.5) {
+                penalize(8, 'reason.wet_court'); // Moderate rain: heavy negative
             } else if (w.precipMm > 0 || w.precipProb > 30) {
-                penalize(5, 'reason.wet_lines');
+                penalize(5, 'reason.wet_lines'); // Light rain: insufficient score
             }
 
             // 3. Wind
             if (w.windKmh < 12) score += 1; // Bonus 1-2 Bft
 
-            if (w.windKmh > 38) penalize(8, 'reason.unplayable_wind'); // > 5 Bft
-            else if (w.windKmh > 28) penalize(5, 'reason.ball_drift'); // > 4 Bft
-            else if (w.windKmh >= 12) penalize(2, 'reason.noticeable_wind'); // 3 Bft (approx 12-19)
+            if (w.windKmh > 38) penalize(9, 'reason.unplayable_wind'); // 6 Bft or higher: very negative
+            else if (w.windKmh > 28) penalize(5, 'reason.ball_drift'); // 5 Bft: insufficient score (5/10)
+            else if (w.windKmh > 19) penalize(2, 'reason.noticeable_wind'); // 4 Bft: still playable (8/10)
+            // 3 Bft (12-19 km/h) has no penalty anymore
             break;
 
         case 'home':

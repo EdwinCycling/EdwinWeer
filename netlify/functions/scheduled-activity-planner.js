@@ -284,9 +284,9 @@ function calculateScore(weather, activity) {
             else if (tempFeelsLike > 25) penalize(5, "Te heet");
             else if (tempFeelsLike > 20) penalize(2, "Warm");
 
-            if (tempFeelsLike < 0) penalize(8, "Ondergrond bevroren");
-            else if (tempFeelsLike < 5) penalize(5, "Erg koud");
-            else if (tempFeelsLike < 10) penalize(2, "Frisjes");
+            if (tempFeelsLike < 0) penalize(9, "Ondergrond bevroren");
+            else if (tempFeelsLike < 5) penalize(6, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(3, "Frisjes");
 
             if (precipSum === 0 && precipProb < 10) score += 1;
             else if (precipSum > 5) penalize(9, "Veld onbespeelbaar");
@@ -302,19 +302,21 @@ function calculateScore(weather, activity) {
             if (tempFeelsLike > 30) penalize(5, "Te heet");
             else if (tempFeelsLike > 25) penalize(2, "Warm");
 
-            if (tempFeelsLike < 0) penalize(8, "Baan bevroren");
-            else if (tempFeelsLike < 5) penalize(5, "Erg koud");
-            else if (tempFeelsLike < 10) penalize(2, "Frisjes");
+            if (tempFeelsLike < 0) penalize(10, "Baan bevroren");
+            else if (tempFeelsLike < 5) penalize(7, "Erg koud");
+            else if (tempFeelsLike < 10) penalize(4, "Frisjes");
 
             if (precipSum === 0 && precipProb < 10) score += 1;
-            else if (precipSum > 2) penalize(9, "Baan onbespeelbaar");
+            else if (precipSum > 2) penalize(10, "Baan onbespeelbaar");
+            else if (precipSum > 0.5) penalize(8, "Baan kletsnat");
             else if (precipSum > 0 || precipProb > 30) penalize(5, "Natte lijnen/baan");
 
             if (windMax < 12) score += 1;
 
-            if (windMax > 38) penalize(8, "Onspeelbare wind");
+            if (windMax > 38) penalize(9, "Onspeelbare wind");
             else if (windMax > 28) penalize(5, "Veel windinvloed");
-            else if (windMax >= 12) penalize(2, "Merkbare wind");
+            else if (windMax > 19) penalize(2, "Merkbare wind");
+            // 3 Bft has no penalty anymore
             break;
     }
 

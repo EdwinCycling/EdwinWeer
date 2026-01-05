@@ -273,7 +273,8 @@ export enum ViewState {
   YOUR_DAY = 'YOUR_DAY',
   EMAIL_SETTINGS = 'EMAIL_SETTINGS',
   ACTIVITY_PLANNER = 'ACTIVITY_PLANNER',
-  CYCLING = 'CYCLING'
+  CYCLING = 'CYCLING',
+  WEATHER_FINDER = 'WEATHER_FINDER'
 }
 
 export interface CustomEvent {
@@ -282,9 +283,11 @@ export interface CustomEvent {
     date: string; // MM-DD
     endDate?: string; // MM-DD
     duration?: number; // 1-14 days
-    profileId: string;
+    profileId?: string;
     location: Location;
     active: boolean;
+    recurring?: boolean;
+    year?: number;
 }
 
 export type ActivityType = 'running' | 'cycling' | 'walking' | 'bbq' | 'beach' | 'sailing' | 'gardening' | 'stargazing' | 'golf' | 'padel' | 'field_sports' | 'tennis' | 'home' | 'work';

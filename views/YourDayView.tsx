@@ -5,7 +5,7 @@ import { saveCustomEvents, loadCustomEvents } from '../services/storageService';
 import { searchCityByName } from '../services/geoService';
 import { getTranslation } from '../services/translations';
 import { useAuth } from '../contexts/AuthContext';
-import { getUsage } from '../services/usageService';
+import { getUsage, UsageStats } from '../services/usageService';
 import { Modal } from '../components/Modal';
 
 interface Props {
@@ -83,28 +83,30 @@ const DateSelector = ({ value, onChange, label, optional = false, t }: { value: 
 };
 
 export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
-    const { user } = useAuth();
     const t = (key: string) => getTranslation(key, settings.language);
     
     const [events, setEvents] = useState<CustomEvent[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [currentEvent, setCurrentEvent] = useState<Partial<CustomEvent>>({});
     const [showInfoModal, setShowInfoModal] = useState(false);
-    const [baroCredits, setBaroCredits] = useState(0);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [baroCredits, setBaroCredits] = useState<number>(0);
     
     // Location Search State
     const [searchResults, setSearchResults] = useState<Location[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [loadingCity, setLoadingCity] = useState(false);
     
-    const hasBaroProfile = settings.baroProfiles && settings.baroProfiles.length > 0;
-
     useEffect(() => {
         const loadedEvents = loadCustomEvents();
         setEvents(loadedEvents);
         
         const usage = getUsage();
         setBaroCredits(usage.baroCredits);
+        
+        // Listen for usage updates if needed, but simple load on mount is usually enough
+        // or we could interval check if we expect it to change
     }, []);
 
     const handleSaveEvents = (newEvents: CustomEvent[]) => {
@@ -113,22 +115,15 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     };
 
     const handleAddNew = () => {
-        if (baroCredits <= 0) {
-            alert(t('baro.error.limit') || 'Geen Baro Credits beschikbaar');
-            return;
-        }
         if (events.length >= MAX_EVENTS) return;
         setCurrentEvent({
             id: crypto.randomUUID(),
             active: true,
             date: '',
             duration: 1,
-            location: settings.baroProfiles?.[0] ? { 
-                name: settings.baroProfiles[0].location,
-                country: '', 
-                lat: 0, 
-                lon: 0 
-            } : { name: '', country: '', lat: 0, lon: 0 }
+            location: { name: '', country: '', lat: 0, lon: 0 },
+            recurring: false,
+            year: new Date().getFullYear()
         });
         setIsEditing(true);
     };
@@ -139,14 +134,21 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     };
 
     const handleDelete = (id: string) => {
-        if (confirm(t('yourday.delete_confirm'))) {
-            const newEvents = events.filter(e => e.id !== id);
+        setDeleteId(id);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        if (deleteId) {
+            const newEvents = events.filter(e => e.id !== deleteId);
             handleSaveEvents(newEvents);
+            setShowDeleteModal(false);
+            setDeleteId(null);
         }
     };
 
     const handleSaveCurrent = () => {
-        if (!currentEvent.name || !currentEvent.date || !currentEvent.profileId || !currentEvent.location?.name) {
+        if (!currentEvent.name || !currentEvent.date || !currentEvent.location?.name) {
             alert(t('yourday.fill_required'));
             return;
         }
@@ -196,29 +198,6 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
         setShowDropdown(false);
     };
 
-    const handleProfileChange = (profileId: string) => {
-        const profile = settings.baroProfiles?.find(p => p.id === profileId);
-        if (profile) {
-            searchCityByName(profile.location, settings.language).then(results => {
-                if (results.length > 0) {
-                    setCurrentEvent(prev => ({
-                        ...prev,
-                        profileId,
-                        location: results[0]
-                    }));
-                } else {
-                    setCurrentEvent(prev => ({
-                        ...prev,
-                        profileId,
-                        location: { name: profile.location, country: '', lat: 0, lon: 0 }
-                    }));
-                }
-            });
-        } else {
-            setCurrentEvent(prev => ({ ...prev, profileId }));
-        }
-    };
-
     return (
         <div className="space-y-6 pb-24 animate-in fade-in">
             {/* Header */}
@@ -261,24 +240,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 </div>
             </div>
 
-            {!hasBaroProfile && (
-                <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-100 dark:border-red-800 text-center">
-                    <h3 className="font-bold text-red-800 dark:text-red-200 mb-2">{t('yourday.profile_required')}</h3>
-                    <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-                        {t('yourday.profile_required_text')}
-                    </p>
-                    <button
-                        onClick={() => onNavigate(ViewState.SETTINGS)}
-                        className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 transition-colors"
-                    >
-                        {t('yourday.create_profile')}
-                    </button>
-                </div>
-            )}
-
-            {hasBaroProfile && (
-                <>
-                    {isEditing ? (
+            {isEditing ? (
                         <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
                             <h2 className="text-lg font-bold">{currentEvent.id ? t('yourday.edit_day') : t('yourday.new_day')}</h2>
                             
@@ -290,26 +252,58 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     maxLength={40}
                                     value={currentEvent.name || ''}
                                     onChange={e => setCurrentEvent({ ...currentEvent, name: e.target.value })}
-                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
+                                    className="w-full bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/10"
                                     placeholder={t('yourday.name_placeholder')}
                                 />
                             </div>
 
                             {/* Date Selector */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <DateSelector 
-                                    label={t('yourday.date_label')}
-                                    value={currentEvent.date || ''} 
-                                    onChange={val => setCurrentEvent({ ...currentEvent, date: val })}
-                                    t={t}
-                                />
+                                <div className="space-y-4">
+                                    <DateSelector 
+                                        label={t('yourday.date_label')}
+                                        value={currentEvent.date || ''} 
+                                        onChange={val => setCurrentEvent({ ...currentEvent, date: val })}
+                                        t={t}
+                                    />
+                                    
+                                    {/* Recurring & Year */}
+                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-white/5">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="recurring"
+                                                checked={currentEvent.recurring || false}
+                                                onChange={e => setCurrentEvent({ ...currentEvent, recurring: e.target.checked })}
+                                                className="w-5 h-5 rounded text-primary focus:ring-primary bg-white dark:bg-slate-800 border-slate-300 dark:border-white/20"
+                                            />
+                                            <label htmlFor="recurring" className="text-sm font-medium">
+                                                {t('yourday.recurring') || 'Herhalend per kalenderjaar'}
+                                            </label>
+                                        </div>
+                                        
+                                        {!currentEvent.recurring && (
+                                            <div className="flex items-center gap-2 ml-auto">
+                                                <label className="text-sm text-slate-500">{t('yourday.year') || 'Jaar'}:</label>
+                                                <input
+                                                    type="number"
+                                                    min="1900"
+                                                    max="2100"
+                                                    value={currentEvent.year || new Date().getFullYear()}
+                                                    onChange={e => setCurrentEvent({ ...currentEvent, year: parseInt(e.target.value) })}
+                                                    className="w-20 bg-white dark:bg-slate-800 rounded-lg px-2 py-1 text-sm border border-slate-200 dark:border-white/10"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                                 
                                 {/* Duration Slider */}
                                 <div>
                                     <label className="block text-sm font-medium mb-2">
                                         {t('yourday.duration_label')}: {currentEvent.duration || 1} {t('holiday_report.days')}
                                     </label>
-                                    <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 h-[48px]">
+                                    <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 h-[48px] border border-slate-200 dark:border-white/5">
                                         <span className="text-xs text-slate-400">1</span>
                                         <input 
                                             type="range"
@@ -324,21 +318,6 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                 </div>
                             </div>
 
-                            {/* Profile */}
-                            <div>
-                                <label className="block text-sm font-medium mb-2">{t('yourday.profile_choice')}</label>
-                                <select
-                                    value={currentEvent.profileId || ''}
-                                    onChange={e => handleProfileChange(e.target.value)}
-                                    className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
-                                >
-                                    <option value="" disabled>{t('yourday.select_profile')}</option>
-                                    {settings.baroProfiles?.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
                             {/* Location */}
                             <div>
                                 <label className="block text-sm font-medium mb-2">{t('yourday.location_label')}</label>
@@ -347,7 +326,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                         type="text"
                                         value={currentEvent.location?.name || ''}
                                         onChange={e => handleLocationSearch(e.target.value)}
-                                        className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3"
+                                        className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-white/5 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                         placeholder={t('yourday.search_location')}
                                     />
                                     {loadingCity && (
@@ -418,7 +397,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                                 {event.active ? t('yourday.active') : t('yourday.inactive')}
                                             </span>
                                             <span className="text-xs text-slate-400">
-                                                {settings.baroProfiles?.find(p => p.id === event.profileId)?.name || t('yourday.unknown_profile')}
+                                                {event.recurring ? t('yourday.recurring') : `${t('yourday.year')}: ${event.year}`}
                                             </span>
                                         </div>
                                     </div>
@@ -450,7 +429,27 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                             )}
                         </div>
                     )}
-                </>
+
+            {showDeleteModal && (
+                <Modal isOpen={true} onClose={() => setShowDeleteModal(false)} title={t('yourday.delete_title')}>
+                    <div className="space-y-4">
+                        <p>{t('yourday.delete_confirm')}</p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={confirmDelete}
+                                className="flex-1 bg-red-500 text-white font-bold py-2 rounded-xl hover:bg-red-600 transition-colors"
+                            >
+                                {t('yourday.delete_title')}
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white font-bold py-2 rounded-xl hover:bg-slate-200 transition-colors"
+                            >
+                                {t('yourday.cancel')}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
             )}
 
             {showInfoModal && (

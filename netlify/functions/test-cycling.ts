@@ -13,10 +13,34 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // Helper: Extract Location Name from Widget HTML
 function extractLocationName(htmlString: string): string | null {
     if (!htmlString) return null;
-    const match = htmlString.match(/data-label_1="([^"]*)"/);
-    if (match && match[1]) {
-        return match[1].trim();
+
+    // 1. Probeer data-label_1 (meest specifiek, ondersteunt dubbele en enkele quotes)
+    const label1Match = htmlString.match(/data-label_1=["']([^"']*)["']/i);
+    if (label1Match && label1Match[1] && label1Match[1].trim()) {
+        return label1Match[1].trim();
     }
+
+    // 2. Fallback: Probeer uit de href URL te halen (bijv. forecast7.com/en/.../valencia/)
+    const hrefMatch = htmlString.match(/href=["']([^"']*)["']/i);
+    if (hrefMatch && hrefMatch[1]) {
+        const url = hrefMatch[1].trim();
+        const parts = url.split('/').filter(p => p.length > 0);
+        if (parts.length > 0) {
+            const lastPart = parts[parts.length - 1];
+            if (lastPart && !lastPart.includes('.') && isNaN(Number(lastPart))) {
+                return lastPart.replace(/-/g, ' ').toUpperCase();
+            }
+        }
+    }
+
+    // 3. Tweede Fallback: Probeer de tekst tussen de <a> tags (bijv. >VALENCIA WEATHER</a>)
+    const textMatch = htmlString.match(/>([^<]+)<\/a>/i);
+    if (textMatch && textMatch[1]) {
+        let text = textMatch[1].trim();
+        text = text.replace(/\s+(WEATHER|FORECAST|WEER|VERWACHTING)$/i, '');
+        if (text) return text;
+    }
+
     return null;
 }
 
@@ -81,7 +105,7 @@ export const handler = async (event: any, context: any) => {
             const cleanTitle = fullTitle.replace(/\([^)]+\)/, '').trim();
 
             // 3. Weer/Locatie extractie
-            const weerHtml = properties?.Weer?.rich_text?.[0]?.plain_text || '';
+            const weerHtml = properties?.Weer?.rich_text?.map((rt: any) => rt.plain_text).join('') || '';
             let location = extractLocationName(weerHtml);
 
             // Fallback: Als locatie niet in het weer-veld staat, probeer het via AI te vinden

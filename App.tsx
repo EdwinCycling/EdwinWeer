@@ -28,6 +28,7 @@ import { EmailSettingsView } from './views/EmailSettingsView';
 import { MessengerView } from './views/MessengerView';
 import { NotificationsView } from './views/NotificationsView';
 import { ActivityPlannerView } from './views/ActivityPlannerView';
+import { WeatherFinderView } from './views/WeatherFinderView';
 import { ProfilesView } from './views/ProfilesView';
 import { CyclingView } from './views/CyclingView';
 import { ViewState, AppSettings } from './types';
@@ -247,7 +248,9 @@ const App: React.FC = () => {
         return <ProfilesView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.CYCLING:
         return <CyclingView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
-      case ViewState.THIS_DAY:
+      case ViewState.WEATHER_FINDER:
+        return <WeatherFinderView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.PRICING:
         return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
         return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} initialTab={viewParams?.tab} />;
@@ -430,7 +433,7 @@ const App: React.FC = () => {
                                         <Icon name="person" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Configureer jouw weer profiel</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">Configureer jouw weerprofiel</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Beheer jouw persoonlijke voorkeuren</span>
                                     </div>
                                 </button>
@@ -474,7 +477,7 @@ const App: React.FC = () => {
                                         <Icon name="event_note" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht Jouw Dag</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht jouw dag</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Persoonlijke weerberichten voor speciale dagen</span>
                                     </div>
                                 </button>
@@ -489,6 +492,17 @@ const App: React.FC = () => {
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('planner.subtitle')}</span>
                                     </div>
                                 </button>
+
+                                {/* Cycling Weather */}
+                                <button onClick={() => { navigate(ViewState.CYCLING); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+                                        <span className="text-xl md:text-2xl">🚴</span>
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('wielerkoers_weerbericht.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('wielerkoers_weerbericht.subtitle')}</span>
+                                    </div>
+                                </button>
                             </div>
                         </section>
 
@@ -496,13 +510,15 @@ const App: React.FC = () => {
                         <section>
                              <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">Weer Extra's</h3>
                              <div className="space-y-3 md:space-y-4">
-                                <button onClick={() => { navigate(ViewState.CYCLING); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
-                                        <span className="text-xl md:text-2xl">🚴</span>
+
+
+                                <button onClick={() => { navigate(ViewState.WEATHER_FINDER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                        <Icon name="search" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Wielerkoers Weerbericht</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Ontvang dagelijkse koers updates</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('vind_de_dag.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('vind_de_dag.subtitle')}</span>
                                     </div>
                                 </button>
 

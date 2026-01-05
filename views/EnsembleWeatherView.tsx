@@ -7,10 +7,15 @@ import {
     mapWmoCodeToIcon, 
     mapWmoCodeToText, 
     convertTemp, 
+    convertTempPrecise,
     convertWind, 
     convertPrecip, 
     convertPressure,
     getWindDirection,
+    calculateComfortScore,
+    calculateJagTi,
+    calculateHeatIndex,
+    ComfortScore,
     ENSEMBLE_VARS_HOURLY_BASIC,
     ENSEMBLE_VARS_HOURLY_PRO,
     ENSEMBLE_VARS_DAILY_BASIC,
@@ -32,6 +37,10 @@ import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, ReferenceArea } from 'recharts';
+import { WeatherRatingButton } from '../components/WeatherRatingButton';
+import { ComfortScoreModal } from '../components/ComfortScoreModal';
+import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
+import { useLocationSwipe } from '../hooks/useLocationSwipe';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -65,6 +74,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [viewMode, setViewMode] = useState<'all' | 'main' | 'avg' | 'spread' | 'density'>(loadEnsembleViewMode() as any);
   const [timeStep, setTimeStep] = useState<'hourly' | 'daily'>(loadEnsembleTimeStep());
   const [proMode, setProMode] = useState<boolean>(loadEnsembleProMode());
+  const [showComfortModal, setShowComfortModal] = useState(false);
+  const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
   
   // Comparison Mode State
   const [isComparisonMode, setIsComparisonMode] = useState(false);
@@ -595,11 +606,37 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       setLocation(settings.favorites[nextIndex]);
   };
 
+  useLocationSwipe({
+      onSwipeLeft: () => cycleFavorite('next'),
+      onSwipeRight: () => cycleFavorite('prev'),
+  });
+
   const currentTemp = currentWeather ? convertTemp(currentWeather.current.temperature_2m, settings.tempUnit) : 0;
   const highTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_min[0], settings.tempUnit) : 0;
 
-  const availableVariables = timeStep === 'hourly' 
+  const jagTi = currentWeather ? calculateJagTi(currentWeather.current.temperature_2m, currentWeather.current.wind_speed_10m) : null;
+  const feelsLike = currentWeather 
+    ? (jagTi !== null ? convertTempPrecise(jagTi, settings.tempUnit) : convertTempPrecise(currentWeather.current.apparent_temperature, settings.tempUnit))
+    : 0;
+
+  const heatIndexRaw = currentWeather ? calculateHeatIndex(currentWeather.current.temperature_2m, currentWeather.current.relative_humidity_2m) : 0;
+  const heatIndex = convertTemp(heatIndexRaw, settings.tempUnit);
+
+  const currentComfort = currentWeather ? calculateComfortScore({
+      apparent_temperature: currentWeather.current.apparent_temperature,
+      temperature_2m: currentWeather.current.temperature_2m,
+      wind_speed_10m: currentWeather.current.wind_speed_10m,
+      relative_humidity_2m: currentWeather.current.relative_humidity_2m,
+      precipitation_sum: currentWeather.daily.precipitation_sum[0] || 0,
+      cloud_cover: currentWeather.current.cloud_cover,
+      precipitation_probability: currentWeather.daily.precipitation_probability_max?.[0] || 0,
+      weather_code: currentWeather.current.weather_code,
+      wind_gusts_10m: currentWeather.current.wind_gusts_10m,
+      uv_index: currentWeather.daily.uv_index_max?.[0] || 0
+  }) : null;
+
+  const availableVariables = timeStep === 'hourly'  
       ? (proMode ? ENSEMBLE_VARS_HOURLY_PRO : ENSEMBLE_VARS_HOURLY_BASIC)
       : (proMode ? ENSEMBLE_VARS_DAILY_PRO : ENSEMBLE_VARS_DAILY_BASIC);
 
@@ -806,8 +843,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="flex flex-col items-center">
-                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-white">
+                <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
                         {location.name}, {location.country}
                     </h2>
                 </div>
@@ -880,11 +917,35 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         {/* Current Weather Display */}
         {currentWeather && (
-            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
+            <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
                     </h1>
+                    
+                    {currentWeather.current.temperature_2m < 10 && (
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative min-w-[60px] h-[60px]">
+                            <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-200' : 'text-orange-200'}`} />
+                            <span className="text-sm font-bold leading-none mt-0.5">{feelsLike.toFixed(1)}°</span>
+                            <span className="text-[8px] uppercase text-white/80 leading-none mt-0.5">{t('feels_like')}</span>
+                        </div>
+                    )}
+                    
+                    {currentWeather.current.temperature_2m > 25 && (
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative min-w-[60px] h-[60px]">
+                            <Icon name="thermostat" className="text-xl text-orange-200" />
+                            <span className="text-sm font-bold leading-none mt-0.5">{heatIndex}°</span>
+                            <span className="text-[8px] uppercase text-white/80 leading-none mt-0.5">{t('heat_index')}</span>
+                        </div>
+                    )}
+
+                    {currentComfort && (
+                        <WeatherRatingButton 
+                            score={currentComfort} 
+                            onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }} 
+                            className="w-[60px] h-[60px] p-1 bg-white/20 backdrop-blur-md border-white/20"
+                        />
+                    )}
                 </div>
                 <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
                         <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
@@ -1095,6 +1156,22 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         </div>
       </div>
+      {/* Modals */}
+      <ComfortScoreModal 
+          isOpen={showComfortModal} 
+          onClose={() => setShowComfortModal(false)} 
+          settings={settings} 
+      />
+      {showFeelsLikeModal && currentWeather && (
+        <FeelsLikeInfoModal
+            isOpen={showFeelsLikeModal}
+            onClose={() => setShowFeelsLikeModal(false)}
+            currentTemp={currentWeather.current.temperature_2m}
+            windSpeed={currentWeather.current.wind_speed_10m}
+            humidity={currentWeather.current.relative_humidity_2m}
+            apparentTemp={currentWeather.current.apparent_temperature}
+        />
+      )}
     </div>
   );
 };
