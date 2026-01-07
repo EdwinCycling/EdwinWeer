@@ -132,12 +132,24 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
   const getDailyForecast = () => {
       if (!weatherData) return [];
+      
+      const getLocale = (lang: string) => {
+        switch (lang) {
+            case 'nl': return 'nl-NL';
+            case 'de': return 'de-DE';
+            case 'fr': return 'fr-FR';
+            case 'es': return 'es-ES';
+            default: return 'en-GB';
+        }
+      };
+
       return weatherData.daily.time.map((ts, i) => {
           const date = new Date(ts);
-          let dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long' });
+          const locale = getLocale(settings.language);
+          let dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : date.toLocaleDateString(locale, { weekday: 'long' });
           
           if (i > 0) {
-             const dayMonth = date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' });
+             const dayMonth = date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
              dayName += ` ${dayMonth}`;
           }
 
@@ -663,6 +675,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             <div key={i} onClick={() => setSelectedDayIndex(i)} className="flex flex-col p-3 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden">
                                 <div className="flex items-center justify-between w-full gap-2 relative z-10">
                                     <div className="flex items-center gap-3 w-auto min-w-[30%] sm:w-1/4">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }}
+                                            className={`flex items-center justify-center w-10 h-10 rounded-xl ${d.comfort.colorClass} shadow-md flex-shrink-0 hover:opacity-80 transition-opacity cursor-pointer`}
+                                        >
+                                            <span className="text-xl font-bold leading-none">{d.comfort.score}</span>
+                                        </button>
                                         <div className="size-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center flex-shrink-0">
                                             <Icon name={d.icon} className={`text-xl ${i===0 ? 'text-primary' : 'text-slate-600 dark:text-white'}`} />
                                         </div>
@@ -678,12 +696,6 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                                     )}
                                                 </p>
                                             </div>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }}
-                                                className={`flex items-center justify-center w-10 h-10 rounded-xl ${d.comfort.colorClass} shadow-md flex-shrink-0 hover:opacity-80 transition-opacity cursor-pointer`}
-                                            >
-                                                <span className="text-xl font-bold leading-none">{d.comfort.score}</span>
-                                            </button>
                                         </div>
                                     </div>
                                     
@@ -837,11 +849,11 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       {/* Details Modal */}
       {selectedDayIndex !== null && weatherData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedDayIndex(null)} />
-            <div className="relative z-[110] w-[95vw] max-w-[700px] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl p-5">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedDayIndex(null)} />
+            <div className="relative z-[110] w-[95vw] max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
                 
-                {/* Comfort Score Banner */}
-                <div className={`-mx-5 -mt-5 mb-5 p-4 ${dailyForecast[selectedDayIndex].comfort.colorClass} relative overflow-hidden`}>
+                {/* Comfort Score Banner - Fixed at top */}
+                <div className={`shrink-0 p-4 ${dailyForecast[selectedDayIndex].comfort.colorClass} relative overflow-hidden`}>
                     <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-1/4 -translate-y-1/4">
                         <Icon name={mapWmoCodeToIcon(weatherData.daily.weather_code[selectedDayIndex])} className="text-9xl" />
                     </div>
@@ -860,25 +872,163 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setSelectedDayIndex(null)} className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors">
-                            <Icon name="close" />
+                        <button 
+                            onClick={() => setSelectedDayIndex(null)}
+                            className="p-2 rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors backdrop-blur-md"
+                        >
+                            <Icon name="close" className="text-xl" />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between mb-4">
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto p-5 scrollbar-hide">
+                    <div className="sticky top-0 z-[120] bg-white dark:bg-[#1e293b] py-4 border-b border-slate-100 dark:border-white/5 mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Icon name={mapWmoCodeToIcon(weatherData.daily.weather_code[selectedDayIndex])} className="text-3xl text-slate-700 dark:text-white" />
                         <div>
                             <p className="text-xs font-bold uppercase text-slate-500 dark:text-white/60">{t('details')}</p>
                             <p className="text-lg font-bold">
-                                {new Date(weatherData.daily.time[selectedDayIndex]).toLocaleDateString(settings.language==='nl'?'nl-NL':'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                {(() => {
+                                    const date = new Date(weatherData.daily.time[selectedDayIndex]);
+                                    const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
+                                    return date.toLocaleDateString(locales[settings.language] || 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+                                })()}
                             </p>
                         </div>
                     </div>
-                    <button onClick={() => setSelectedDayIndex(null)} className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-sm font-bold">
-                        {t('back')}
-                    </button>
+                </div>
+
+                {/* Hourly Graphs */}
+                <div className="mb-6 pb-6 border-b border-slate-200 dark:border-white/5">
+                    <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">{t('hourly_forecast')} (24u)</h4>
+                    
+                    {/* Temperature Graph */}
+                    <div className="h-48 w-full mb-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={(() => {
+                                const idxs = getDayHourlyIndices(selectedDayIndex);
+                                const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
+                                return idxs.map(i => ({
+                                    time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(locales[settings.language] || 'en-GB', { hour: '2-digit', minute: '2-digit' }),
+                                    temp: convertTemp(weatherData.hourly.temperature_2m[i], settings.tempUnit),
+                                }));
+                            })()} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorTempModal" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                {(() => {
+                                    // Calculate dynamic ticks
+                                    const idxs = getDayHourlyIndices(selectedDayIndex);
+                                    if (idxs.length === 0) return null;
+                                    const vals = idxs.map(i => convertTemp(weatherData.hourly.temperature_2m[i], settings.tempUnit));
+                                    const min = Math.floor(Math.min(...vals));
+                                    const max = Math.ceil(Math.max(...vals));
+                                    const ticks = [];
+                                    for (let i = min - 1; i <= max + 1; i++) ticks.push(i);
+                                    
+                                    return (
+                                        <>
+                                            {ticks.map(tick => (
+                                                <ReferenceLine 
+                                                    key={tick} 
+                                                    y={tick} 
+                                                    stroke={tick % 5 === 0 ? "rgba(128,128,128,0.4)" : "rgba(128,128,128,0.1)"} 
+                                                    strokeWidth={tick % 5 === 0 ? 1.5 : 0.5}
+                                                />
+                                            ))}
+                                            <YAxis 
+                                                domain={[ticks[0], ticks[ticks.length-1]]} 
+                                                ticks={ticks}
+                                                interval={0}
+                                                width={30}
+                                                tick={{ fontSize: 10, fill: '#888' }}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tickFormatter={(val) => val % 5 === 0 ? val : ''}
+                                            />
+                                        </>
+                                    );
+                                })()}
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="transparent" />
+                                <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                    itemStyle={{ color: '#1e293b' }}
+                                    labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
+                                />
+                                <Area type="monotone" dataKey="temp" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTempModal)" strokeWidth={2} name={t('temp')} unit={`°${settings.tempUnit}`} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Rain Graph (Precip Chance Only) */}
+                    {(() => {
+                         const idxs = getDayHourlyIndices(selectedDayIndex);
+                         const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
+                         const rainData = idxs.map(i => ({
+                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(locales[settings.language] || 'en-GB', { hour: '2-digit', minute: '2-digit' }),
+                             precip: convertPrecip(weatherData.hourly.precipitation[i], settings.precipUnit),
+                             prob: weatherData.hourly.precipitation_probability[i] || 0
+                         }));
+                         
+                         return (
+                            <div className="h-32 w-full mb-6">
+                                <h5 className="text-xs font-bold uppercase text-blue-500 mb-2 flex items-center gap-1"><Icon name="rainy" className="text-sm" /> {t('precip_prob')}</h5>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={rainData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
+                                        <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
+                                        <YAxis hide domain={[0, 100]} />
+                                        <Tooltip 
+                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                            itemStyle={{ color: '#0ea5e9' }}
+                                            labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
+                                        />
+                                        <Line type="monotone" dataKey="prob" stroke="#2563eb" strokeWidth={2} dot={false} name="Kans" unit="%" />
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
+                         );
+                    })()}
+
+                    {/* Sunshine Graph (Duration/Prob) */}
+                    {(() => {
+                         const idxs = getDayHourlyIndices(selectedDayIndex);
+                         const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
+                         const sunData = idxs.map(i => ({
+                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(locales[settings.language] || 'en-GB', { hour: '2-digit', minute: '2-digit' }),
+                             sunProb: Math.min(100, Math.round((weatherData.hourly.sunshine_duration[i] / 3600) * 100))
+                         }));
+                         
+                         return (
+                            <div className="h-32 w-full">
+                                <h5 className="text-xs font-bold uppercase text-orange-500 mb-2 flex items-center gap-1"><Icon name="wb_sunny" className="text-sm" /> {t('sunshine')} (Kans)</h5>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={sunData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorSunModal" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
+                                        <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
+                                        <YAxis hide domain={[0, 100]} />
+                                        <Tooltip 
+                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                            itemStyle={{ color: '#f59e0b' }}
+                                            labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
+                                        />
+                                        <Area type="monotone" dataKey="sunProb" stroke="#f59e0b" fillOpacity={1} fill="url(#colorSunModal)" strokeWidth={2} name="Zonneschijn" unit="%" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                         );
+                    })()}
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1027,80 +1177,11 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     </div>
                 </div>
 
-                {/* Hourly Graphs */}
-                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/5">
-                    <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">{t('hourly_forecast')} (24u)</h4>
-                    
-                    {/* Temperature Graph */}
-                    <div className="h-48 w-full mb-6">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={(() => {
-                                const idxs = getDayHourlyIndices(selectedDayIndex);
-                                return idxs.map(i => ({
-                                    time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit' }),
-                                    temp: convertTemp(weatherData.hourly.temperature_2m[i], settings.tempUnit),
-                                    feelsLike: convertTemp(weatherData.hourly.apparent_temperature[i], settings.tempUnit),
-                                }));
-                            })()}>
-                                <defs>
-                                    <linearGradient id="colorTempModal" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
-                                <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
-                                <YAxis hide domain={['dataMin - 2', 'dataMax + 2']} />
-                                <Tooltip 
-                                    contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                                    itemStyle={{ color: '#1e293b' }}
-                                    labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
-                                />
-                                <Area type="monotone" dataKey="temp" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTempModal)" strokeWidth={2} name={t('temp')} unit={`°${settings.tempUnit}`} />
-                                <Area type="monotone" dataKey="feelsLike" stroke="#f59e0b" fill="none" strokeWidth={2} strokeDasharray="3 3" name={t('feels_like')} unit={`°${settings.tempUnit}`} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Rain Graph (only if rain exists) */}
-                    {(() => {
-                         const idxs = getDayHourlyIndices(selectedDayIndex);
-                         const rainData = idxs.map(i => ({
-                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit' }),
-                             precip: convertPrecip(weatherData.hourly.precipitation[i], settings.precipUnit)
-                         }));
-                         const totalRain = rainData.reduce((acc, curr) => acc + curr.precip, 0);
-                         
-                         if (totalRain > 0) {
-                             return (
-                                <div className="h-32 w-full">
-                                    <h5 className="text-xs font-bold uppercase text-blue-500 mb-2 flex items-center gap-1"><Icon name="rainy" className="text-sm" /> {t('precip')}</h5>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={rainData}>
-                                            <defs>
-                                                <linearGradient id="colorRainModal" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                                                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
-                                            <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
-                                            <YAxis hide />
-                                            <Tooltip 
-                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                                                itemStyle={{ color: '#0ea5e9' }}
-                                                labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
-                                            />
-                                            <Area type="monotone" dataKey="precip" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorRainModal)" strokeWidth={2} name={t('precip')} unit={` ${settings.precipUnit}`} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                             );
-                         }
-                         return null;
-                    })()}
-                </div>
+                {/* Hourly Graphs moved to top */}
             </div>
+            </div>
+            
+
         </div>
       )}
 

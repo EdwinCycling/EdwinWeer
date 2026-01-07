@@ -33,16 +33,18 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose, set
         <Modal 
             isOpen={isOpen} 
             onClose={onClose} 
-            className="max-w-xl !p-0 overflow-hidden"
+            className="max-w-xl !p-0 !overflow-visible"
         >
-            <div className="relative h-48 w-full overflow-hidden">
-                <img 
-                    src="/landing/hero-weather.jpg" 
-                    alt="Welcome" 
-                    className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-6">
-                    <h2 className="text-3xl font-bold text-white">{t('welcome.title')}</h2>
+            <div className="relative h-48 w-full">
+                <div className="absolute inset-0 overflow-hidden rounded-t-[2rem]">
+                    <img 
+                        src="/landing/hero-weather.jpg" 
+                        alt="Welcome" 
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-6">
+                        <h2 className="text-3xl font-bold text-white">{t('welcome.title')}</h2>
+                    </div>
                 </div>
 
                 {/* Language Selector inside Modal */}

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, EnsembleModel, ActivityType } from '../types';
 import { calculateActivityScore, ActivityScore } from '../services/activityService';
+import { getVisiblePlanets } from '../services/astronomyService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
 import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
@@ -291,26 +292,101 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const daysToFull = Math.round((moonPhase < 0.5 ? 0.5 - moonPhase : 1.5 - moonPhase) * 29.53);
         const illumination = Math.round((1 - Math.cos(moonPhase * 2 * Math.PI)) / 2 * 100);
 
+        // Calculate visible planets
+        const now = new Date();
+        // Safely get current location with fallback
+        const currentLocation = settings.locations && settings.activeLocationIndex !== undefined 
+            ? settings.locations[settings.activeLocationIndex] 
+            : null;
+        // Use coordinates from current location or fallback to Netherlands center
+        const lat = currentLocation?.lat || 52.1;
+        const lon = currentLocation?.lon || 5.2;
+        
+        const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
+
         return (
-            <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative overflow-hidden flex flex-col justify-between h-[180px]">
-                <div>
-                    <div className="absolute top-0 right-0 p-3 opacity-20">
-                        <Icon name="dark_mode" className="text-6xl text-indigo-300" />
+            <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative overflow-hidden h-[180px] flex flex-col md:flex-row gap-4">
+                {/* Left Section: Moon Phase */}
+                <div className="flex-1 flex flex-col justify-between z-10 relative">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <Icon name="dark_mode" className="text-indigo-400 dark:text-indigo-300" />
+                            <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase">{t('moon_phase')}</p>
+                        </div>
+                        <p className="text-xl font-bold truncate text-slate-800 dark:text-white">{getMoonPhaseText(moonPhase, settings.language)}</p>
                     </div>
-                    <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase mb-1">{t('moon_phase')}</p>
-                    <p className="text-xl font-bold truncate pr-8">{getMoonPhaseText(moonPhase, settings.language)}</p>
-                    
-                    <div className="flex flex-col gap-1 mt-2 text-xs text-slate-600 dark:text-white/70">
-                        <p>{t('moon.days_to_full')}: <span className="font-bold">{daysToFull}</span></p>
-                        <p>{t('moon.illumination')}: <span className="font-bold">{illumination}%</span></p>
+
+                    <div className="flex justify-between items-end">
+                        <div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-white/70">
+                            <p>{t('moon.days_to_full')}: <span className="font-bold">{daysToFull}</span></p>
+                            <p>{t('moon.illumination')}: <span className="font-bold">{illumination}%</span></p>
+                        </div>
+                        <Icon name={getMoonPhaseIcon(moonPhase)} className="text-5xl text-indigo-400 dark:text-indigo-200 opacity-80" />
                     </div>
                 </div>
-                <div className="flex items-center justify-between mt-4">
-                    <div className="flex flex-col">
-                        <span className="text-xs text-slate-500 dark:text-white/60">{t('tonight')}</span>
-                        <span className="text-lg font-medium">{t('visible')}</span>
+
+                {/* Divider */}
+                <div className="hidden md:block w-px bg-slate-200 dark:bg-white/10 my-1"></div>
+                <div className="md:hidden h-px bg-slate-200 dark:bg-white/10"></div>
+
+                {/* Right Section: Visible Planets */}
+                <div className="flex-1 z-10 relative overflow-hidden flex flex-col">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-white/50">{t('moon.visible_planets')}</span>
+                        <span className="text-[9px] text-slate-400">{t('tonight')}</span>
                     </div>
-                    <Icon name={getMoonPhaseIcon(moonPhase)} className="text-5xl text-indigo-400 dark:text-indigo-200" />
+                    
+                    <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin">
+                        <div className="flex flex-col gap-2">
+                            {visiblePlanets.length > 0 ? visiblePlanets.map(p => (
+                                <div key={p.name} className="bg-white/50 dark:bg-black/20 rounded-lg p-2 border border-slate-200 dark:border-white/5 flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-base">{p.icon}</span>
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 hidden sm:inline">{p.nameNl}</span>
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 sm:hidden">{p.nameNl.substring(0, 2)}</span>
+                                        </div>
+                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                                            p.status === 'visible' 
+                                            ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' 
+                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
+                                        }`}>
+                                            {p.status === 'visible' ? (
+                                                <>
+                                                    <span className="hidden sm:inline">{t('visible')}</span>
+                                                    <Icon name="visibility" className="text-[10px] sm:hidden" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="hidden sm:inline">{t('cloud_cover')}</span>
+                                                    <Icon name="cloud" className="text-[10px] sm:hidden" />
+                                                </>
+                                            )}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pl-6">
+                                        <span>Best: <span className="font-medium text-slate-700 dark:text-slate-200">{p.bestTime}</span></span>
+                                        <span>{p.direction} • {p.altitude}°</span>
+                                    </div>
+
+                                    {p.conjunction && (
+                                        <div className="mt-0.5 text-[9px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 pl-6">
+                                            <Icon name="auto_awesome" className="text-[10px]" />
+                                            {p.conjunction}
+                                        </div>
+                                    )}
+                                </div>
+                            )) : (
+                                <div className="text-xs text-slate-400 italic text-center py-4">{t('moon.no_planets_visible')}</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Background Decoration */}
+                <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
+                     <Icon name="dark_mode" className="text-8xl" />
                 </div>
             </div>
         )
@@ -777,13 +853,24 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 </div>
                             )}
                             {currentComfort && (
-                                <WeatherRatingButton 
-                                    score={currentComfort} 
-                                    onClick={() => setShowComfortModal(true)} 
-                                />
-                            )}
+                            <WeatherRatingButton 
+                                score={currentComfort} 
+                                onClick={() => setShowComfortModal(true)} 
+                                className="min-w-[70px] w-auto"
+                            />
+                        )}
+
+                        {/* Desktop Only: 48h Forecast Link */}
+                        <div 
+                            onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
+                            className="hidden md:flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                        >
+                            <Icon name="schedule" className="text-xl text-slate-700 dark:text-white" />
+                            <span className="text-lg font-bold">48u</span>
+                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('forecast') || 'Verwachting'}</span>
                         </div>
                     </div>
+                </div>
                     <p className="text-2xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
                          <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
@@ -1255,6 +1342,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       <FeelsLikeInfoModal 
           isOpen={showFeelsLikeModal}
           onClose={() => setShowFeelsLikeModal(false)}
+          settings={settings}
       />
       
       <ComfortScoreModal 

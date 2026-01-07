@@ -306,7 +306,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <h3 className="text-2xl font-bold mb-2">{t('pricing.baro_weerman')}</h3>
                 <p className="text-purple-200 mb-6">{t('pricing.baro_desc')}</p>
                 <div className="text-4xl font-bold mb-8">
-                    $ 2,50 <span className="text-sm font-normal text-purple-200">eenmalig</span>
+                    {t('pricing.baro_price')} <span className="text-sm font-normal text-purple-200">{t('pricing.one_time')}</span>
                 </div>
 
                 <ul className="space-y-2 mb-8">

@@ -40,19 +40,20 @@ const getActivityIcon = (type: ActivityType) => {
     }
 };
 
-const DAYS = [
-  { val: 1, label: 'Ma' },
-  { val: 2, label: 'Di' },
-  { val: 3, label: 'Wo' },
-  { val: 4, label: 'Do' },
-  { val: 5, label: 'Vr' },
-  { val: 6, label: 'Za' },
-  { val: 0, label: 'Zo' },
-];
-
 export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const { user } = useAuth();
   const t = (key: string) => getTranslation(key, settings.language);
+  
+  const daysList = [
+      { val: 1, label: t('days.short.ma') },
+      { val: 2, label: t('days.short.di') },
+      { val: 3, label: t('days.short.wo') },
+      { val: 4, label: t('days.short.do') },
+      { val: 5, label: t('days.short.vr') },
+      { val: 6, label: t('days.short.za') },
+      { val: 0, label: t('days.short.zo') },
+  ];
+
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [plannerSettings, setPlannerSettings] = useState<ActivityPlannerSettings>({});
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
@@ -222,15 +223,15 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
 
         {baroCredits <= 0 && (
             <div className="bg-red-50 dark:bg-red-900/20 w-full p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
-                <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                <p className="text-red-800 dark:text-red-200 font-bold mb-2">{t('planner.no_credits_title')}</p>
                 <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-                    Je hebt Baro credits nodig om de planner te gebruiken en op te slaan.
+                    {t('planner.no_credits_desc')}
                 </p>
                 <button
                     onClick={() => onNavigate(ViewState.PRICING)}
                     className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
                 >
-                    Credits kopen
+                    {t('planner.buy_credits')}
                 </button>
             </div>
         )}
@@ -239,7 +240,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
         <div className="w-full bg-white dark:bg-card-dark p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 relative z-30">
              <h3 className="font-bold mb-3 flex items-center gap-2">
                  <Icon name="location_on" className="text-indigo-500" />
-                 {t('location')} <span className="text-red-500">*</span>
+                 {t('planner.location_label')} <span className="text-red-500">*</span>
              </h3>
              
              <div className="relative">
@@ -275,7 +276,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                              setSearchQuery(location.name);
                              setSearchResults([]);
                          }}
-                         placeholder={t('search_location')}
+                         placeholder={t('planner.search_placeholder')}
                          className="w-full bg-transparent border-none py-3 px-2 outline-none text-sm font-medium"
                      />
                      {loadingSearch && <Icon name="sync" className="animate-spin text-indigo-500" />}
@@ -325,7 +326,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                         onClick={() => onNavigate(ViewState.MESSENGER)}
                         className="block mt-2 text-red-800 dark:text-red-200 underline"
                     >
-                        Ga naar Messenger Instellingen
+                        {t('planner.goto_messenger')}
                     </button>
                 </div>
              </div>
@@ -393,8 +394,8 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                         className="w-full accent-indigo-500 h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
                                     />
                                     <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                                        <span>1 (Slecht)</span>
-                                        <span>10 (Perfect)</span>
+                                        <span>1 ({t('planner.score_bad')})</span>
+                                        <span>10 ({t('planner.score_perfect')})</span>
                                     </div>
                                 </div>
 
@@ -402,7 +403,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                 <div>
                                     <label className="block text-sm font-medium mb-2">{t('planner.days')}</label>
                                     <div className="flex justify-between gap-1">
-                                        {DAYS.map(day => {
+                                        {daysList.map(day => {
                                             const active = config.days.includes(day.val);
                                             return (
                                                 <button
@@ -452,7 +453,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
              <div className={`transition-all duration-300 flex justify-center ${saving ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                  <div className="bg-white/90 dark:bg-card-dark/90 backdrop-blur shadow-lg border border-indigo-100 dark:border-indigo-500/30 px-4 py-2 rounded-full flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
                      <Icon name="sync" className="animate-spin text-sm" />
-                     {t('settings.saving') || 'Opslaan...'}
+                     {t('planner.saving')}
                  </div>
              </div>
         </div>

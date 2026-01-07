@@ -304,7 +304,10 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             const xmlDoc = parser.parseFromString(text, "text/xml");
             
             // Handle GPX namespaces
-            const trkpts = Array.from(xmlDoc.getElementsByTagName('trkpt'));
+            let trkpts = Array.from(xmlDoc.getElementsByTagName('trkpt'));
+            if (trkpts.length === 0) {
+                trkpts = Array.from(xmlDoc.getElementsByTagName('rtept'));
+            }
             
             if (trkpts.length === 0) {
                 throw new Error("No track points found in GPX");

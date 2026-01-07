@@ -71,7 +71,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
   }, [user]);
 
   const handleDisconnect = async () => {
-    if (!user || !confirm('Weet je zeker dat je Telegram wilt ontkoppelen?')) return;
+    if (!user || !confirm(t('messenger.confirm_disconnect'))) return;
 
     try {
       await updateDoc(doc(db, 'users', user.uid), {
@@ -80,7 +80,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
       setTelegramChatId(null);
     } catch (error) {
       console.error('Error disconnecting Telegram:', error);
-      alert('Er ging iets mis bij het ontkoppelen.');
+      alert(t('messenger.error_disconnect'));
     }
   };
 
@@ -95,7 +95,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
           >
             <Icon name="arrow_back_ios_new" />
           </button>
-          <h1 className="text-lg font-bold">Baro Messenger</h1>
+          <h1 className="text-lg font-bold">{t('messenger.title')}</h1>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
 
           {!user ? (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/50 text-sm text-yellow-800 dark:text-yellow-200">
-              Je moet ingelogd zijn om Telegram te koppelen.
+              {t('messenger.login_required')}
             </div>
           ) : loading ? (
             <div className="flex justify-center p-4">
@@ -135,7 +135,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
                 <Icon name="check_circle" />
-                <span>Telegram is verbonden</span>
+                <span>{t('messenger.status.connected')}</span>
               </div>
               
               <button 
@@ -143,7 +143,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
                 className="w-full py-3 px-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-bold flex items-center justify-center gap-2"
               >
                 <Icon name="link_off" />
-                Ontkoppelen
+                {t('messenger.action.disconnect')}
               </button>
             </div>
           ) : (
@@ -154,7 +154,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
               className="w-full py-3 px-4 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 font-bold"
             >
               <Icon name="send" />
-              Verbind met Telegram
+              {t('messenger.action.connect')}
             </a>
           )}
         </div>
@@ -164,8 +164,8 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
            <div className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
              <Icon name="schedule" className="text-slate-400 mt-1" />
              <div>
-               <h3 className="font-bold text-sm">Dagelijkse Update</h3>
-               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">Ontvang elke ochtend een compact weerbericht afgestemd op jouw profiel.</p>
+               <h3 className="font-bold text-sm">{t('messenger.feature.daily_update')}</h3>
+               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">{t('messenger.feature.daily_update_desc')}</p>
              </div>
            </div>
         </div>
@@ -173,33 +173,33 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
         {/* Messenger Schedule Config */}
         {telegramChatId && settings && onUpdateSettings && profiles.length > 0 && (
             <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
-                <h3 className="font-bold text-lg px-1">Messenger Schema</h3>
+                <h3 className="font-bold text-lg px-1">{t('messenger.schedule.title')}</h3>
 
                 {baroCredits <= 0 ? (
                     <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
-                        <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                        <p className="text-red-800 dark:text-red-200 font-bold mb-2">{t('messenger.schedule.no_credits_title')}</p>
                         <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-                            Je hebt Baro credits nodig om een schema te maken en weerberichten te ontvangen.
+                            {t('messenger.schedule.no_credits_desc')}
                         </p>
                         <button
                             onClick={() => onNavigate(ViewState.PRICING)}
                             className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
                         >
-                            Credits kopen
+                            {t('messenger.schedule.buy_credits')}
                         </button>
                     </div>
                 ) : (
                     <>
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-4 flex items-center justify-between">
                             <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                                Beschikbare Baro Credits: <strong>{baroCredits}</strong>
+                                {t('messenger.credits.available')} <strong>{baroCredits}</strong>
                             </span>
                         </div>
                 
                         {/* Profile Selector */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
-                                Selecteer Profiel
+                                {t('messenger.profile.select')}
                             </label>
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
                                 {profiles.map((p, idx) => (

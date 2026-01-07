@@ -70,6 +70,18 @@ const styles = [
         'enthousiast', 'wetenschappelijk', 'emoji-rijk', 'waarschuwend'
     ];
 
+const styleDisplayMap: Record<string, string> = {
+    'zakelijk': 'profile.style.zakelijk',
+    'makkelijk leesbaar': 'profile.style.makkelijk_leesbaar',
+    'humor': 'profile.style.humor',
+    'sarcastisch': 'profile.style.sarcastisch',
+    'poëtisch': 'profile.style.poetisch',
+    'enthousiast': 'profile.style.enthousiast',
+    'wetenschappelijk': 'profile.style.wetenschappelijk',
+    'emoji-rijk': 'profile.style.emoji_rijk',
+    'waarschuwend': 'profile.style.waarschuwend'
+};
+
 export const SettingsProfile: React.FC<Props> = ({ 
     profile, 
     profiles,
@@ -274,7 +286,7 @@ export const SettingsProfile: React.FC<Props> = ({
         <section className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
-                    Persoonlijk Baro Profiel
+                    {t('profile.section.personal')}
                 </h2>
                 {profiles && profiles.length > 0 && (
                      <div className="flex gap-2">
@@ -308,7 +320,7 @@ export const SettingsProfile: React.FC<Props> = ({
                 {/* Profile Name (Mandatory) */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                        Profiel Naam <span className="text-red-400">*</span>
+                        {t('profile.name.label')} <span className="text-red-400">*</span>
                     </label>
                     <div className="flex gap-2">
                         <input
@@ -316,7 +328,7 @@ export const SettingsProfile: React.FC<Props> = ({
                             value={localProfile.name || ''}
                             onChange={(e) => handleChange('name', e.target.value)}
                             onBlur={handleBlur}
-                            placeholder="Mijn Weerbericht"
+                            placeholder={t('profile.name.placeholder')}
                             className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-primary outline-none"
                         />
                         {profiles && profiles.length > 1 && onDeleteProfile && (
@@ -334,7 +346,7 @@ export const SettingsProfile: React.FC<Props> = ({
                 {/* Location */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                        Locatie / Woonplaats <span className="text-red-400">*</span>
+                        {t('profile.location.label')} <span className="text-red-400">*</span>
                     </label>
                     <div className="flex gap-2 relative">
                         <div className="flex-1 relative">
@@ -343,7 +355,7 @@ export const SettingsProfile: React.FC<Props> = ({
                                 value={localProfile.location}
                                 onChange={(e) => handleLocationSearch(e.target.value)}
                                 onBlur={handleBlur}
-                                placeholder="Bijv. Amsterdam"
+                                placeholder={t('profile.location.placeholder')}
                                 className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-primary outline-none"
                             />
                             {loadingCity && (
@@ -373,7 +385,7 @@ export const SettingsProfile: React.FC<Props> = ({
                             <button
                                 onClick={() => handleChange('location', currentLocationName, true)}
                                 className="bg-slate-100 dark:bg-slate-800 px-4 rounded-xl text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                title="Gebruik huidige locatie"
+                                title={t('profile.location.current')}
                             >
                                 <Icon name="my_location" />
                             </button>
@@ -384,13 +396,13 @@ export const SettingsProfile: React.FC<Props> = ({
                 {/* Length Report */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                        Lengte Bericht
+                        {t('profile.report_length.label')}
                     </label>
                     <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 w-fit">
                         {([
-                            { id: 'factual', label: 'Feitelijk' },
-                            { id: 'standard', label: 'Standaard' },
-                            { id: 'extended', label: 'Uitgebreid' }
+                            { id: 'factual', label: t('profile.report_length.factual') },
+                            { id: 'standard', label: t('profile.report_length.standard') },
+                            { id: 'extended', label: t('profile.report_length.extended') }
                         ]).map(opt => (
                             <button
                                 key={opt.id}
@@ -406,9 +418,9 @@ export const SettingsProfile: React.FC<Props> = ({
                         ))}
                     </div>
                     <p className="text-xs text-slate-500 dark:text-white/40 mt-1">
-                        {(localProfile.reportLength || 'standard') === 'factual' && "Kort en bondig, weinig tekst, vooral data."}
-                        {(localProfile.reportLength || 'standard') === 'standard' && "Een gebalanceerd weerbericht."}
-                        {(localProfile.reportLength || 'standard') === 'extended' && "Een uitgebreid verhaal met veel details."}
+                        {(localProfile.reportLength || 'standard') === 'factual' && t('profile.report_length.desc.factual')}
+                        {(localProfile.reportLength || 'standard') === 'standard' && t('profile.report_length.desc.standard')}
+                        {(localProfile.reportLength || 'standard') === 'extended' && t('profile.report_length.desc.extended')}
                     </p>
                 </div>
 
@@ -425,8 +437,8 @@ export const SettingsProfile: React.FC<Props> = ({
                         {localProfile.isGeneralReport && <Icon name="check" className="text-sm" />}
                     </button>
                     <div className="flex-1">
-                        <span className="text-sm font-medium text-slate-800 dark:text-white block">Algemeen weerbericht</span>
-                        <span className="text-xs text-slate-500 dark:text-white/50 block">Negeer activiteiten en persoonlijke voorkeuren</span>
+                        <span className="text-sm font-medium text-slate-800 dark:text-white block">{t('profile.general_report')}</span>
+                        <span className="text-xs text-slate-500 dark:text-white/50 block">{t('profile.general_report_desc')}</span>
                     </div>
                 </div>
 
@@ -435,7 +447,7 @@ export const SettingsProfile: React.FC<Props> = ({
                         {/* Activities (Toggles) */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Belangrijke Activiteiten
+                                {t('profile.activities.label')}
                             </label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                                 {(Object.keys(activityIcons) as ActivityType[])
@@ -451,7 +463,7 @@ export const SettingsProfile: React.FC<Props> = ({
                                         }`}
                                     >
                                         <Icon name={activityIcons[activity]} className="text-2xl mb-2" />
-                                        <span className="text-xs font-medium">{activityLabels[activity]}</span>
+                                        <span className="text-xs font-medium">{t('activity.' + activity)}</span>
                                     </button>
                                 ))}
                             </div>
@@ -460,20 +472,23 @@ export const SettingsProfile: React.FC<Props> = ({
                         {/* Time of Day */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Belangrijke Dagdelen
+                                {t('profile.time_of_day.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
-                                {['ochtend', 'middag', 'avond', 'nacht'].map(t => (
+                                {['ochtend', 'middag', 'avond', 'nacht'].map(tVal => (
                                     <button
-                                        key={t}
-                                        onClick={() => toggleArrayItem('timeOfDay', t)}
+                                        key={tVal}
+                                        onClick={() => toggleArrayItem('timeOfDay', tVal)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                                            localProfile.timeOfDay?.includes(t)
+                                            localProfile.timeOfDay?.includes(tVal)
                                                 ? 'bg-primary text-white'
                                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
                                         }`}
                                     >
-                                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                                        {tVal === 'ochtend' && t('profile.time.morning')}
+                                        {tVal === 'middag' && t('profile.time.afternoon')}
+                                        {tVal === 'avond' && t('profile.time.evening')}
+                                        {tVal === 'nacht' && t('profile.time.night')}
                                     </button>
                                 ))}
                             </div>
@@ -482,20 +497,25 @@ export const SettingsProfile: React.FC<Props> = ({
                         {/* Transport */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Vervoer
+                                {t('profile.transport.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
-                                {['lopen', 'fiets', 'motor', 'auto', 'OV', 'onbelangrijk'].map(t => (
+                                {['lopen', 'fiets', 'motor', 'auto', 'OV', 'onbelangrijk'].map(tVal => (
                                     <button
-                                        key={t}
-                                        onClick={() => toggleArrayItem('transport', t)}
+                                        key={tVal}
+                                        onClick={() => toggleArrayItem('transport', tVal)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                                            localProfile.transport?.includes(t)
+                                            localProfile.transport?.includes(tVal)
                                                 ? 'bg-primary text-white'
                                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
                                         }`}
                                     >
-                                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                                        {tVal === 'lopen' && t('profile.transport.walk')}
+                                        {tVal === 'fiets' && t('profile.transport.bike')}
+                                        {tVal === 'motor' && t('profile.transport.motor')}
+                                        {tVal === 'auto' && t('profile.transport.car')}
+                                        {tVal === 'OV' && t('profile.transport.public_transport')}
+                                        {tVal === 'onbelangrijk' && t('profile.transport.unimportant')}
                                     </button>
                                 ))}
                             </div>
@@ -504,7 +524,7 @@ export const SettingsProfile: React.FC<Props> = ({
                         {/* Report Style */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Stijl Weerbericht
+                                {t('profile.style.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
                                 {styles.map(s => (
@@ -517,7 +537,7 @@ export const SettingsProfile: React.FC<Props> = ({
                                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
                                         }`}
                                     >
-                                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                                        {t(styleDisplayMap[s] || s)}
                                     </button>
                                 ))}
                             </div>
@@ -526,7 +546,7 @@ export const SettingsProfile: React.FC<Props> = ({
                         {/* Health */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Gezondheid
+                                {t('profile.health.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
                                 <button
@@ -538,7 +558,7 @@ export const SettingsProfile: React.FC<Props> = ({
                                     }`}
                                 >
                                     <Icon name="grain" className="text-lg" />
-                                    Hooikoorts
+                                    {t('profile.health.hayfever')}
                                 </button>
                             </div>
                         </div>
@@ -546,13 +566,13 @@ export const SettingsProfile: React.FC<Props> = ({
                         {/* Other Instructions */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Andere Instructies (Optioneel)
+                                {t('profile.instructions.label')}
                             </label>
                             <textarea
                                 value={localProfile.otherInstructions}
                                 onChange={(e) => handleChange('otherInstructions', e.target.value)}
                                 onBlur={handleBlur}
-                                placeholder="Bijv. ik hou niet van kou, waarschuw me extra..."
+                                placeholder={t('profile.instructions.placeholder')}
                                 className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-primary outline-none min-h-[60px]"
                             />
                         </div>
@@ -562,7 +582,7 @@ export const SettingsProfile: React.FC<Props> = ({
                 {/* Days Ahead */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                        Dagen Vooruit
+                        {t('profile.days_ahead.label')}
                     </label>
                     <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 w-fit">
                         {[1, 2, 3, 7, 14].map(d => (
@@ -612,9 +632,9 @@ export const SettingsProfile: React.FC<Props> = ({
                             {/* Header */}
                             <div className="grid grid-cols-4 gap-2 text-xs font-medium text-slate-500 dark:text-white/50 mb-2">
                                 <div>{t('profile.schedule.days')}</div>
-                                <div className="text-center">🥞 {t('profile.schedule.breakfast').split(' ')[0]}</div>
-                                <div className="text-center">🥪 {t('profile.schedule.lunch').split(' ')[0]}</div>
-                                <div className="text-center">🍖 {t('profile.schedule.dinner').split(' ')[0]}</div>
+                                <div className="text-center">🥞 {t('profile.schedule.breakfast_short')}</div>
+                                <div className="text-center">🥪 {t('profile.schedule.lunch_short')}</div>
+                                <div className="text-center">🍖 {t('profile.schedule.dinner_short')}</div>
                             </div>
 
                             {/* Days */}

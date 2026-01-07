@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getUsage } from '../services/usageService';
+import { getTranslation } from '../services/translations';
 
 interface Props {
     onNavigate: (view: ViewState) => void;
@@ -14,6 +15,7 @@ interface Props {
 
 export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
     const { user } = useAuth();
+    const t = (key: string) => getTranslation(key, settings.language);
     const [baroCredits, setBaroCredits] = useState<number>(0);
     const [enabled, setEnabled] = useState<boolean>(settings.cycling_updates?.enabled || false);
     const [channel, setChannel] = useState<'email' | 'telegram'>(settings.cycling_updates?.channel || 'email');
@@ -91,13 +93,13 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 </button>
                 <div className="flex-1">
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span className="text-2xl">🚴</span> Wielerkoers Weerbericht
+                        <span className="text-2xl">🚴</span> {t('cycling.title')}
                     </h1>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-full border border-indigo-100 dark:border-indigo-500/20">
                     <Icon name="token" className="text-indigo-600 dark:text-indigo-400 text-sm" />
                     <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
-                        {baroCredits} Credits
+                        {baroCredits} {t('cycling.credits')}
                     </span>
                 </div>
             </div>
@@ -106,11 +108,9 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 
                 {/* Intro Card */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm">
-                    <h2 className="text-lg font-bold mb-4 text-slate-800 dark:text-white">Demarrage of Waaiers? 🌬️</h2>
+                    <h2 className="text-lg font-bold mb-4 text-slate-800 dark:text-white">{t('cycling.intro.title')}</h2>
                     <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                        Blijf elke dag op de hoogte van de koersen die vandaag verreden worden. 
-                        Je ontvangt 's ochtends een overzicht de koersen van de dag, én het unieke 
-                        Baro-weerbericht voor de finale van die middag.
+                        {t('cycling.intro.description')}
                     </p>
                 </div>
 
@@ -118,16 +118,16 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="font-bold text-slate-800 dark:text-white">Dagelijkse Koers Update ontvangen</h3>
+                            <h3 className="font-bold text-slate-800 dark:text-white">{t('cycling.receive_updates')}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Kost 1 Baro Credit per ontvangen update
+                                {t('cycling.cost_info')}
                             </p>
                         </div>
                         <div className="flex items-center">
                             <button
                                 onClick={() => {
                                     if (baroCredits <= 0 && !enabled) {
-                                        alert("Je hebt geen credits meer. Waardeer op om te activeren.");
+                                        alert(t('cycling.no_credits_alert'));
                                         return;
                                     }
                                     handleSave(!enabled, channel);
@@ -149,7 +149,7 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                     {enabled && (
                         <div className="pt-4 border-t border-slate-100 dark:border-white/5">
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                Via welk kanaal wil je updates ontvangen?
+                                {t('cycling.channel_select')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
                                 <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${channel === 'email' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -162,7 +162,7 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                         className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                                     />
                                     <span className="text-xl">📨</span>
-                                    <span className="font-medium text-slate-700 dark:text-slate-200">E-mail</span>
+                                    <span className="font-medium text-slate-700 dark:text-slate-200">{t('cycling.settings.channel_email')}</span>
                                 </label>
 
                                 <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!telegramLinked ? 'opacity-50 cursor-not-allowed' : ''} ${channel === 'telegram' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
@@ -177,14 +177,14 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     />
                                     <span className="text-xl">✈️</span>
                                     <div className="flex-1 min-w-0">
-                                        <span className="font-medium text-slate-700 dark:text-slate-200 block truncate">Telegram</span>
+                                        <span className="font-medium text-slate-700 dark:text-slate-200 block truncate">{t('cycling.settings.channel_telegram')}</span>
                                     </div>
                                 </label>
                             </div>
                             {!telegramLinked && (
                                 <p className="text-[10px] text-red-500 mt-2 flex items-center gap-1">
                                     <Icon name="info" className="text-xs" />
-                                    Koppel eerst Telegram in instellingen
+                                    {t('cycling.settings.link_telegram_first')}
                                 </p>
                             )}
                         </div>
@@ -194,8 +194,9 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 </div>
 
                 <div className="text-center text-xs text-slate-400 dark:text-slate-600">
-                    <p>Je ontvangt alleen een bericht als er daadwerkelijk een koers is.</p>
+                    <p>{t('cycling.only_if_race')}</p>
                 </div>
+
             </div>
         </div>
     );

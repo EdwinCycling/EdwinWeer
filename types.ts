@@ -75,6 +75,7 @@ export interface OpenMeteoResponse {
         uv_index: number[];
         wind_speed_10m: number[];
         wind_direction_10m: number[];
+        wind_gusts_10m: number[];
         precipitation: number[];
         // New detailed fields
         visibility: number[];
@@ -95,6 +96,7 @@ export interface OpenMeteoResponse {
         temperature_80m: number[];
         temperature_120m: number[];
         temperature_180m: number[];
+        sunshine_duration: number[];
 
         // Extended Soil
         soil_temperature_0cm: number[];
@@ -195,10 +197,29 @@ export interface AppSettings {
     climatePeriodType?: '30year' | 'decade';
     baroProfile?: BaroProfile;
     baroProfiles?: BaroProfile[]; // Saved profiles
+    trip_planner?: TripPlannerSettings;
     cycling_updates?: {
         enabled: boolean;
         channel: 'email' | 'telegram';
     };
+}
+
+export interface TripPlannerSettings {
+    activity: 'cycling' | 'walking';
+    startTime: string; // "10:00"
+    marginBefore: number; // 0-4
+    marginAfter: number; // 0-4
+    duration: number; // 1-8
+    speed?: number; // km/h
+    useGpxSpeed?: boolean;
+}
+
+export interface BaroWeermanSettings {
+    enabled: boolean;
+    channel: 'email' | 'telegram';
+    days: string[];
+    trip_settings: TripPlannerSettings;
+    location: Location;
 }
 
 export interface BaroProfile {
@@ -274,7 +295,9 @@ export enum ViewState {
   EMAIL_SETTINGS = 'EMAIL_SETTINGS',
   ACTIVITY_PLANNER = 'ACTIVITY_PLANNER',
   CYCLING = 'CYCLING',
-  WEATHER_FINDER = 'WEATHER_FINDER'
+  BARO_WEERMAN = 'BARO_WEERMAN',
+  WEATHER_FINDER = 'WEATHER_FINDER',
+  TRIP_PLANNER = 'TRIP_PLANNER'
 }
 
 export interface CustomEvent {

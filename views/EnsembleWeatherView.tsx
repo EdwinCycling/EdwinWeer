@@ -40,6 +40,7 @@ import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, 
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
+import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 
 interface Props {
@@ -674,7 +675,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                       <Icon name="show_chart" className="text-primary" />
                       {availableVariables.find(v => v.key === selectedVariable)?.label}
                   </h3>
-                  <div className="w-full h-[400px]">
+                  <div className="w-full h-[500px]">
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <ComposedChart data={processChartData.data}>
                               <defs>
@@ -683,7 +684,24 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                       <stop offset="100%" stopColor="#888" stopOpacity={0} />
                                   </linearGradient>
                               </defs>
-                              <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke="rgba(128,128,128,0.2)" />
+                              
+                              {/* Custom Grid for Temperature */}
+                              {isTemp ? (
+                                  <>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={false} stroke="rgba(128,128,128,0.2)" />
+                                    {Array.from({ length: 111 }, (_, i) => i - 50).map(temp => (
+                                        <ReferenceLine 
+                                            key={`grid-${temp}`} 
+                                            y={temp} 
+                                            stroke={temp % 5 === 0 ? "rgba(128,128,128,0.3)" : "rgba(128,128,128,0.1)"}
+                                            strokeWidth={temp % 5 === 0 ? 1.5 : 0.5}
+                                            ifOverflow="hidden"
+                                        />
+                                    ))}
+                                  </>
+                              ) : (
+                                  <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke="rgba(128,128,128,0.2)" />
+                              )}
 
                               {isTemp && (
                                   <>
@@ -924,7 +942,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     </h1>
                     
                     {currentWeather.current.temperature_2m < 10 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative min-w-[60px] h-[60px]">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-1 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative w-[60px] h-[60px]">
                             <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-200' : 'text-orange-200'}`} />
                             <span className="text-sm font-bold leading-none mt-0.5">{feelsLike.toFixed(1)}°</span>
                             <span className="text-[8px] uppercase text-white/80 leading-none mt-0.5">{t('feels_like')}</span>
@@ -932,7 +950,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     )}
                     
                     {currentWeather.current.temperature_2m > 25 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative min-w-[60px] h-[60px]">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-1 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative w-[60px] h-[60px]">
                             <Icon name="thermostat" className="text-xl text-orange-200" />
                             <span className="text-sm font-bold leading-none mt-0.5">{heatIndex}°</span>
                             <span className="text-[8px] uppercase text-white/80 leading-none mt-0.5">{t('heat_index')}</span>
@@ -1166,12 +1184,15 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         <FeelsLikeInfoModal
             isOpen={showFeelsLikeModal}
             onClose={() => setShowFeelsLikeModal(false)}
+            settings={settings}
             currentTemp={currentWeather.current.temperature_2m}
             windSpeed={currentWeather.current.wind_speed_10m}
             humidity={currentWeather.current.relative_humidity_2m}
             apparentTemp={currentWeather.current.apparent_temperature}
         />
       )}
+        {/* Floating Credits Button */}
+        <CreditFloatingButton />
     </div>
   );
 };

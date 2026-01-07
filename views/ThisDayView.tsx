@@ -163,6 +163,9 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           
           saveClimateData(locKey, data);
           
+          // Mark as used today
+          localStorage.setItem('this_day_last_use', new Date().toISOString().split('T')[0]);
+          
           setRawDailyData(data);
           setLastFetchedLocation(locKey);
           processData(data);

@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { searchCityByName } from '../services/geoService';
 import { loadCurrentLocation } from '../services/storageService';
+import { getUsage } from '../services/usageService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
 interface Props {
@@ -398,6 +399,14 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
     setLoading(true);
     setError(null);
 
+    // Check Credits
+    const usage = getUsage();
+    if (usage.weatherCredits <= 250) {
+        setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
+        setLoading(false);
+        return;
+    }
+
     const endDate = new Date();
     endDate.setDate(endDate.getDate() - 1); // Yesterday
     const endDateStr = endDate.toISOString().split('T')[0];
@@ -405,13 +414,23 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
     
     const cacheKey = `weather_history_${location.lat}_${location.lon}_${startDateStr}_${endDateStr}`;
 
+    // Check Daily Limit
+    const today = new Date().toISOString().split('T')[0];
+    const lastUse = localStorage.getItem('weather_finder_last_use');
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (!cachedData && lastUse === today) {
+        setError('Je mag deze functie slechts 1x per dag gebruiken (tenzij data uit cache komt).');
+        setLoading(false);
+        return;
+    }
+
     try {
       // 1. Try Cache
       try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
+        if (cachedData) {
             console.log('Using cached weather history');
-            const data = JSON.parse(cached);
+            const data = JSON.parse(cachedData);
             setHistoricalData(data);
             setLoading(false);
             return data;
@@ -445,6 +464,9 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
           keysToRemove.forEach(k => localStorage.removeItem(k));
           
           localStorage.setItem(cacheKey, JSON.stringify(data.daily));
+          
+          // Update last use only on successful API fetch
+          localStorage.setItem('weather_finder_last_use', today);
       } catch (e) {
           console.warn('Cache write failed', e);
       }

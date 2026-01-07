@@ -182,7 +182,7 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
                     className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/30"
                 >
                     <Icon name="store" />
-                    <span>Credits & Abonnementen beheren</span>
+                    <span>{t('account.manage_credits')}</span>
                 </button>
             </div>
 

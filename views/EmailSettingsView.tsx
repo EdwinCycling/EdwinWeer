@@ -82,12 +82,12 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
 
                 {profiles.length === 0 && (
                     <div className="text-center p-8 text-slate-500 dark:text-white/50">
-                        <p>Je hebt nog geen profielen aangemaakt.</p>
+                        <p>{t('email.no_profiles')}</p>
                         <button 
                             onClick={() => onNavigate(ViewState.PROFILES)}
                             className="mt-4 text-primary font-bold hover:underline"
                         >
-                            Maak eerst een profiel aan
+                            {t('email.create_profile')}
                         </button>
                     </div>
                 )}
@@ -96,21 +96,21 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                     <>
                         {baroCredits <= 0 ? (
                             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center mb-6">
-                                <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                                <p className="text-red-800 dark:text-red-200 font-bold mb-2">{t('messenger.schedule.no_credits_title')}</p>
                                 <p className="text-sm text-red-600 dark:text-red-300 mb-4">
-                                    Je hebt Baro credits nodig om een schema te maken en weerberichten te ontvangen.
+                                    {t('messenger.schedule.no_credits_desc')}
                                 </p>
                                 <button
                                     onClick={() => onNavigate(ViewState.PRICING)}
                                     className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
                                 >
-                                    Credits kopen
+                                    {t('messenger.schedule.buy_credits')}
                                 </button>
                             </div>
                         ) : (
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-6 flex items-center justify-between">
                                 <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                                    Beschikbare Baro Credits: <strong>{baroCredits}</strong>
+                                    {t('email.credits.available')} <strong>{baroCredits}</strong>
                                 </span>
                             </div>
                         )}
@@ -118,7 +118,7 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                          {/* Profile Selector */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
-                                Selecteer Profiel
+                                {t('email.profile.select')}
                             </label>
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                 {profiles.map((p, idx) => (

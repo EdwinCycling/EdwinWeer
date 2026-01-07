@@ -169,6 +169,9 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           // Save to persistent cache
           saveClimateData(locKey, data);
           
+          // Mark as used today
+          localStorage.setItem('climate_change_last_use', new Date().toISOString().split('T')[0]);
+          
           setRawDailyData(data);
           setLastFetchedLocation(locKey);
           processData(data);

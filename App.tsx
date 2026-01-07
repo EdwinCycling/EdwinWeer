@@ -29,8 +29,10 @@ import { MessengerView } from './views/MessengerView';
 import { NotificationsView } from './views/NotificationsView';
 import { ActivityPlannerView } from './views/ActivityPlannerView';
 import { WeatherFinderView } from './views/WeatherFinderView';
+import { TripPlannerView } from './views/TripPlannerView';
 import { ProfilesView } from './views/ProfilesView';
 import { CyclingView } from './views/CyclingView';
+import { BaroWeermanView } from './views/BaroWeermanView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -234,6 +236,8 @@ const App: React.FC = () => {
         return <BarometerView onNavigate={navigate} settings={settings} />;
       case ViewState.CLIMATE_CHANGE:
         return <ClimateChangeView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.THIS_DAY:
+        return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.YOUR_DAY:
         return <YourDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.EMAIL_SETTINGS:
@@ -248,14 +252,16 @@ const App: React.FC = () => {
         return <ProfilesView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.CYCLING:
         return <CyclingView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.BARO_WEERMAN:
+        return <BaroWeermanView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.WEATHER_FINDER:
         return <WeatherFinderView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
-      case ViewState.PRICING:
-        return <ThisDayView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.TRIP_PLANNER:
+        return <TripPlannerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SETTINGS:
         return <SettingsView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} initialTab={viewParams?.tab} />;
       case ViewState.TEAM:
-        return <TeamView onNavigate={navigate} />;
+        return <TeamView onNavigate={navigate} settings={settings} />;
       case ViewState.PRICING:
         return <PricingView onNavigate={navigate} settings={settings} />;
       case ViewState.MODEL_INFO:
@@ -425,7 +431,7 @@ const App: React.FC = () => {
                     <div className="space-y-6">
                         {/* Baro Weerman Section */}
                         <section>
-                            <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">Baro Weerman</h3>
+                            <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.baro_weerman')}</h3>
                             <div className="space-y-3 md:space-y-4">
                                 {/* Profiles */}
                                 <button onClick={() => { navigate(ViewState.PROFILES); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
@@ -433,8 +439,8 @@ const App: React.FC = () => {
                                         <Icon name="person" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Configureer jouw weerprofiel</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Beheer jouw persoonlijke voorkeuren</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.profiles_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.profiles_desc')}</span>
                                     </div>
                                 </button>
 
@@ -444,8 +450,8 @@ const App: React.FC = () => {
                                         <Icon name="mail" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Baro weerberichten : mail</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Stel je email schema in</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.email_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.email_desc')}</span>
                                     </div>
                                 </button>
 
@@ -455,8 +461,8 @@ const App: React.FC = () => {
                                         <Icon name="chat" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Baro Messenger berichten</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Jouw persoonlijke berichten</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.messenger_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.messenger_desc')}</span>
                                     </div>
                                 </button>
 
@@ -466,8 +472,8 @@ const App: React.FC = () => {
                                         <Icon name="notifications" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Push Notificaties</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Ontvang dagelijkse meldingen</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.notifications_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.notifications_desc')}</span>
                                     </div>
                                 </button>
 
@@ -477,8 +483,8 @@ const App: React.FC = () => {
                                         <Icon name="event_note" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">Weerbericht jouw dag</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">Persoonlijke weerberichten voor speciale dagen</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.yourday_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.yourday_desc')}</span>
                                     </div>
                                 </button>
 
@@ -490,6 +496,17 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('planner.title')}</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('planner.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Baro Weerman */}
+                                <button onClick={() => { navigate(ViewState.BARO_WEERMAN); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="face" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('baro_weerman.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('baro_weerman.subtitle')}</span>
                                     </div>
                                 </button>
 
@@ -508,7 +525,7 @@ const App: React.FC = () => {
 
                         {/* Weer Extra's Section */}
                         <section>
-                             <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">Weer Extra's</h3>
+                             <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.extras')}</h3>
                              <div className="space-y-3 md:space-y-4">
 
 
@@ -559,6 +576,16 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('holiday_report.title_default')}</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('holiday_report.menu_subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.TRIP_PLANNER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                        <Icon name="timer" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('trip_planner.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('trip_planner.subtitle')}</span>
                                     </div>
                                 </button>
 
