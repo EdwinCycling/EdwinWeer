@@ -369,7 +369,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   }) : null;
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-background-light dark:bg-background-dark transition-colors duration-300">
       
       {error && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-bounce">
@@ -516,7 +516,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         )}
 
         {/* Forecast Content */}
-        <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors min-h-[60vh]">
+        <div className="bg-white dark:bg-card-dark/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors min-h-[60vh]">
             
             {/* AI Report Section */}
             {weatherData && (
@@ -901,12 +901,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
                 {/* Hourly Graphs */}
                 <div className="mb-6 pb-6 border-b border-slate-200 dark:border-white/5">
-                    <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">{t('hourly_forecast')} (24u)</h4>
+                    <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/60 mb-3">Temperatuur (24U)</h4>
                     
                     {/* Temperature Graph */}
                     <div className="h-48 w-full mb-6">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={(() => {
+                            <AreaChart syncId="dayDetails" data={(() => {
                                 const idxs = getDayHourlyIndices(selectedDayIndex);
                                 const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
                                 return idxs.map(i => ({
@@ -944,7 +944,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                                 domain={[ticks[0], ticks[ticks.length-1]]} 
                                                 ticks={ticks}
                                                 interval={0}
-                                                width={30}
+                                                width={40}
                                                 tick={{ fontSize: 10, fill: '#888' }}
                                                 axisLine={false}
                                                 tickLine={false}
@@ -979,10 +979,18 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             <div className="h-32 w-full mb-6">
                                 <h5 className="text-xs font-bold uppercase text-blue-500 mb-2 flex items-center gap-1"><Icon name="rainy" className="text-sm" /> {t('precip_prob')}</h5>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={rainData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                    <ComposedChart syncId="dayDetails" data={rainData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
                                         <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
-                                        <YAxis hide domain={[0, 100]} />
+                                        <YAxis 
+                                            width={40}
+                                            domain={[0, 100]} 
+                                            ticks={[0, 25, 50, 75, 100]}
+                                            tick={{ fontSize: 10, fill: '#888' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(val) => `${val}%`}
+                                        />
                                         <Tooltip 
                                             contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                                             itemStyle={{ color: '#0ea5e9' }}
@@ -1008,7 +1016,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             <div className="h-32 w-full">
                                 <h5 className="text-xs font-bold uppercase text-orange-500 mb-2 flex items-center gap-1"><Icon name="wb_sunny" className="text-sm" /> {t('sunshine')} (Kans)</h5>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={sunData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                    <AreaChart syncId="dayDetails" data={sunData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorSunModal" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
@@ -1017,7 +1025,15 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
                                         <XAxis dataKey="time" tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} interval={3} />
-                                        <YAxis hide domain={[0, 100]} />
+                                        <YAxis 
+                                            width={40}
+                                            domain={[0, 100]} 
+                                            ticks={[0, 25, 50, 75, 100]}
+                                            tick={{ fontSize: 10, fill: '#888' }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tickFormatter={(val) => `${val}%`}
+                                        />
                                         <Tooltip 
                                             contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                                             itemStyle={{ color: '#f59e0b' }}

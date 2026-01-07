@@ -10,16 +10,14 @@
 }
 
 :root {
-  --bg-primary: #0f172a;
-  --bg-card: #1e293b;
-
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Default to light mode settings */
+  color-scheme: light;
+  color: #1e293b; /* slate-800 */
+  background-color: #f6f8f8; /* background-light */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -27,8 +25,71 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark Mode Overrides */
+:root.dark {
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #0f172a; /* background-dark */
+}
+
+/* Neuro Theme (Dark Base) */
+:root.neuro {
+  --color-primary: #ff8e3c; /* Orange/Coral from image */
+  --color-background-dark: #0f2e2e; /* Deep Teal */
+  --color-card-dark: #134e4a; /* Teal 900 */
+  
+  /* Force dark mode behavior */
+  color-scheme: dark;
+  color: #ccfbf1; /* Teal 100 */
+  background-color: var(--color-background-dark);
+}
+
+/* Iceland Theme (Light Base) */
+:root.iceland {
+  --color-primary: #0ea5e9; /* Sky Blue */
+  --color-background-light: #f0f9ff; /* Sky 50 */
+  --color-background-dark: #0c4a6e; /* Sky 900 (if they switch to dark in iceland? maybe separate) */
+  
+  /* Force light mode behavior */
+  color-scheme: light;
+  color: #0c4a6e; /* Sky 900 */
+  background-color: var(--color-background-light);
+}
+
+/* Retro Theme (Gradient/Colorful) */
+:root.retro {
+  --color-primary: #ffffff; /* White Text as Primary or maybe #1DB954 */
+  --color-background-dark: #121212; /* Spotify Dark */
+  --color-card-dark: #2a2a2a; /* Slightly lighter for cards */
+  
+  /* Force dark mode behavior */
+  color-scheme: dark;
+  color: #ffffff;
+  background-color: var(--color-background-dark);
+}
+
+/* Specific Retro Gradients - Using Tailwind classes or global override */
+.retro .bg-background-dark {
+    background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%); /* Example Gradient */
+    /* Wait, the image is Spotify Orange/Pink */
+    background: linear-gradient(to bottom right, #ffafbd, #ffc3a0); 
+    background: radial-gradient(circle at top left, #f9a8d4, transparent 50%),
+                radial-gradient(circle at top right, #fb923c, transparent 50%),
+                radial-gradient(circle at bottom, #fde047, transparent 50%),
+                #121212; /* Fallback */
+    background-attachment: fixed;
+}
+/* Static Retro Background */
+.retro body {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: cover;
+    background-attachment: fixed;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: inherit;
+  color: inherit;
 }

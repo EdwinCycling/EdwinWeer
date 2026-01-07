@@ -363,7 +363,7 @@ export const en: Dictionary = {
 
     'connect_ride': 'Connect ride',
     'upload_gpx': 'Upload a gpx file to analyze weather impact on your performance.',
-    'select_gpx': 'Select gpx',
+
     'analyzing': 'Analyzing route...',
     'fetching_weather': 'Fetching weather data...',
     'file_error': 'Error processing file.',

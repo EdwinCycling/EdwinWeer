@@ -587,7 +587,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     };
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-background-light dark:bg-background-dark transition-colors duration-300">
       
       {error && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-bounce">
@@ -606,7 +606,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 cloudCover={weatherData.current.cloud_cover}
                 className="absolute inset-0 w-full h-full"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-50 dark:to-background-dark" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background-light dark:to-background-dark" />
         </div>
       )}
 
@@ -620,7 +620,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           {/* Language Selector removed as requested */}
 
 
-          <div className="absolute top-2 right-2 sm:right-4 flex items-center gap-1 sm:gap-3 flex-row-reverse z-50">
+          <div className="absolute top-2 right-4 sm:right-6 flex items-center gap-1 sm:gap-3 flex-row-reverse z-50">
               {/* Refresh Button */}
               <Tooltip content={t('refresh')} position="bottom">
                   <button 
@@ -959,7 +959,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     {(frostWarning || rainAlert) && (
                         <div className="flex flex-col gap-3 mb-8">
                              {frostWarning && (
-                                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
+                                 <div 
+                                    onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
+                                    className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                                 >
                                      <Icon name="ac_unit" className="text-red-400 dark:text-red-300 text-xl" />
                                      <div>
                                          <p className="text-red-600 dark:text-red-200 font-bold text-sm">{t('frost_warning')}</p>
@@ -968,7 +971,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                  </div>
                              )}
                              {rainAlert && (
-                                 <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
+                                 <div 
+                                    onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
+                                    className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-500/10 transition-colors"
+                                 >
                                      <Icon name="rainy" className="text-blue-400 dark:text-blue-300 text-xl" />
                                      <div>
                                          <p className="text-blue-600 dark:text-blue-200 font-bold text-sm">{t('rain_expected')}</p>

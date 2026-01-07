@@ -1098,7 +1098,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
    const insightsList = getInsights();
 
   return (
-    <div className="flex flex-col min-h-screen pb-24 bg-slate-50 dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
+    <div className="flex flex-col min-h-screen pb-24 bg-background-light dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
       <div className="relative flex items-center justify-center p-4 pt-8 mb-2">
           {/* Title & Navigation */}
           <div className="flex items-center gap-4">

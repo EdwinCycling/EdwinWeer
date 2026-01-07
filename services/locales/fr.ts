@@ -323,7 +323,7 @@ export const fr: Dictionary = {
 
     'connect_ride': 'Connecter trajet',
     'upload_gpx': 'Téléchargez un fichier gpx pour analyser l\'influence de la météo sur vos performances.',
-    'select_gpx': 'Sélectionner gpx',
+
     'analyzing': 'Analyse du trajet...',
     'fetching_weather': 'Récupération météo...',
     'file_error': 'Erreur lors du traitement du fichier.',

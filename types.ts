@@ -153,7 +153,7 @@ export enum PressureUnit {
     INHG = 'inHg'
 }
 
-export type AppTheme = 'dark' | 'light';
+export type AppTheme = 'dark' | 'light' | 'neuro' | 'iceland' | 'retro';
 export type AppLanguage = 'en' | 'nl' | 'fr' | 'de' | 'es';
 export type TimeFormat = '12h' | '24h';
 export type MapBaseLayer = 'light' | 'dark' | 'satellite';

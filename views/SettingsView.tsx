@@ -335,7 +335,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             onDragStart={(e) => handleDragStart(e, index)}
                                             onDragOver={(e) => handleDragOver(e, index)}
                                             onDragEnd={handleDragEnd}
-                                            className={`flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl group ${draggedItemIndex === index ? 'opacity-50' : ''} cursor-move`}
+                                            className={`flex items-center justify-between p-3 bg-background-light dark:bg-background-dark rounded-xl group ${draggedItemIndex === index ? 'opacity-50' : ''} cursor-move`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <Icon name="drag_indicator" className="text-slate-300 dark:text-white/20 cursor-grab active:cursor-grabbing" />
@@ -405,17 +405,26 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                              <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm transition-colors">
                                 
                                 {/* Theme Toggle */}
-                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
                                         <Icon name="contrast" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.theme')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                                    <div className="flex flex-wrap gap-1 bg-background-light dark:bg-background-dark rounded-lg p-1">
                                         <button onClick={() => updateSetting('theme', 'light')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'light' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             <Icon name="light_mode" className="text-sm mr-1 inline" /> {t('theme.light')}
                                         </button>
                                         <button onClick={() => updateSetting('theme', 'dark')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'dark' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             <Icon name="dark_mode" className="text-sm mr-1 inline" /> {t('theme.dark')}
+                                        </button>
+                                        <button onClick={() => updateSetting('theme', 'neuro')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'neuro' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
+                                            <Icon name="psychology" className="text-sm mr-1 inline" /> Neuro
+                                        </button>
+                                        <button onClick={() => updateSetting('theme', 'iceland')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'iceland' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
+                                            <Icon name="ac_unit" className="text-sm mr-1 inline" /> Iceland
+                                        </button>
+                                        <button onClick={() => updateSetting('theme', 'retro')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.theme === 'retro' ? 'bg-pink-500 text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
+                                            <Icon name="music_note" className="text-sm mr-1 inline" /> Retro
                                         </button>
                                     </div>
                                 </div>
@@ -426,7 +435,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="language" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.language')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1 overflow-x-auto max-w-[200px] scrollbar-hide">
+                                    <div className="flex bg-background-light dark:bg-background-dark rounded-lg p-1 overflow-x-auto max-w-[200px] scrollbar-hide">
                                         {(['en', 'nl', 'fr', 'de', 'es'] as AppLanguage[]).map((lang) => (
                                             <button 
                                                 key={lang}
@@ -445,7 +454,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="schedule" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.time_format')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                                    <div className="flex bg-background-light dark:bg-background-dark rounded-lg p-1">
                                         <button onClick={() => updateSetting('timeFormat', '24h')} className={`px-3 py-1 rounded-md text-sm font-bold transition-colors ${settings.timeFormat === '24h' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800 dark:text-white/40 dark:hover:text-white'}`}>
                                             24h
                                         </button>
@@ -461,11 +470,11 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="public" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">Tijdzone</span>
                                     </div>
-                                    <select
-                                        value={settings.timezone || 'Europe/Amsterdam'}
-                                        onChange={(e) => updateSetting('timezone', e.target.value)}
-                                        className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
-                                    >
+                                    <select 
+                                value={settings.timezone || 'Europe/Amsterdam'}
+                                onChange={(e) => updateSetting('timezone', e.target.value)}
+                                className="bg-background-light dark:bg-background-dark text-slate-800 dark:text-white text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                            >
                                         <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
                                         <option value="Europe/Brussels">Brussels</option>
                                         <option value="Europe/London">London (GMT/BST)</option>
@@ -483,7 +492,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <Icon name="calendar_today" className="text-slate-700 dark:text-white/60" />
                                         <span className="font-medium text-slate-800 dark:text-white">{t('settings.week_start')}</span>
                                     </div>
-                                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                                    <div className="flex bg-background-light dark:bg-background-dark rounded-lg p-1">
                                         {(['monday', 'sunday', 'saturday'] as const).map(day => (
                                             <button
                                                 key={day}
@@ -629,7 +638,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             max={settings.tempUnit === TempUnit.FAHRENHEIT ? (35 * 9) / 5 + 32 : 35}
                                             value={formatRecordTempValue(settings.recordThresholds?.niceStreakTemp ?? 20)}
                                             onChange={(e) => updateRecordThresholdTemp('niceStreakTemp', e.target.value, 10, 35)}
-                                            className="w-20 bg-slate-100 dark:bg-slate-800 text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-20 bg-background-light dark:bg-background-dark text-right text-sm rounded-lg px-3 py-1.5 border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-primary"
                                         />
                                         <span className="text-sm font-medium">°{settings.tempUnit}</span>
                                     </div>

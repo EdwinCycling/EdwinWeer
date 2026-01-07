@@ -1266,7 +1266,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-background-light dark:bg-background-dark transition-colors duration-300">
       
       {currentWeather && (
         <div className="absolute top-0 left-0 right-0 h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">

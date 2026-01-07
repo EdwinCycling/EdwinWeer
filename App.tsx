@@ -83,9 +83,19 @@ const App: React.FC = () => {
       
       // Apply Theme
       const html = document.documentElement;
+      html.classList.remove('dark', 'neuro', 'iceland', 'retro'); // Fix: remove retro too
+
       if (settings.theme === 'dark') {
           html.classList.add('dark');
+      } else if (settings.theme === 'neuro') {
+          html.classList.add('dark', 'neuro');
+      } else if (settings.theme === 'iceland') {
+          html.classList.add('iceland');
+      } else if (settings.theme === 'retro') {
+          html.classList.add('dark', 'retro');
       } else {
+          // Explicitly handle light mode if needed, though removing classes does it for default
+          // Ensure no residual dark mode
           html.classList.remove('dark');
       }
   }, [settings]);
@@ -282,7 +292,7 @@ const App: React.FC = () => {
   const closeModal = () => setModal(null);
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white relative flex flex-col transition-colors duration-300">
+    <div className="min-h-screen w-full bg-background-light dark:bg-background-dark relative flex flex-col transition-colors duration-300">
         <div className="flex-grow pb-4 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
             <ErrorBoundary settings={settings} onNavigate={navigate}>
                 {renderView()}
@@ -625,47 +635,47 @@ const App: React.FC = () => {
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
                     
                     <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
-                         <button onClick={() => { navigate(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-700 dark:text-white">
                                 <Icon name="settings" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">{t('nav.settings')}</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">{t('nav.settings')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.FAQ); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.FAQ); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                 <Icon name="help" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">Ask Baro</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">Ask Baro</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.TEAM); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                 <Icon name="groups" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">{t('nav.team')}</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">{t('nav.team')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.PRICING); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
                                 <Icon name="payments" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">{t('nav.pricing')}</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">{t('nav.pricing')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.MODEL_INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.MODEL_INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                                 <Icon name="model_training" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">{t('nav.model_info')}</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">{t('nav.model_info')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.INFO); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                                 <Icon name="info" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">{t('nav.info')}</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">{t('nav.info')}</span>
                          </button>
-                         <button onClick={() => { navigate(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
+                         <button onClick={() => { navigate(ViewState.USER_ACCOUNT); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">
                             <div className="size-10 rounded-full bg-slate-200 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-white/60">
                                 <Icon name="account_circle" className="text-xl" />
                             </div>
-                            <span className="font-bold text-sm">{t('nav.user_account')}</span>
+                            <span className="font-bold text-sm text-slate-800 dark:text-white">{t('nav.user_account')}</span>
                          </button>
                     </div>
                     

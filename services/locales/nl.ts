@@ -586,8 +586,6 @@ export const nl: Dictionary = {
     'wind.side': 'Zij',
     'dist': 'Afst',
     'force': 'Kracht',
-    'upload_gpx': 'Upload GPX',
-    'select_gpx': 'Kies bestand',
 
     // Months
     'month.jan': 'Januari',

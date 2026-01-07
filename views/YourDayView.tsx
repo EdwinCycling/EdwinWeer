@@ -201,7 +201,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     return (
         <div className="space-y-6 pb-24 animate-in fade-in">
             {/* Header */}
-            <div className="flex items-center justify-between sticky top-0 bg-slate-50 dark:bg-background-dark z-10 py-4">
+            <div className="flex items-center justify-between sticky top-0 bg-background-light dark:bg-background-dark z-10 py-4">
                 <div className="flex items-center gap-4">
                     <button 
                         onClick={() => onNavigate(ViewState.SETTINGS)} 
