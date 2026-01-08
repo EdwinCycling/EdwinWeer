@@ -55,6 +55,22 @@ export default defineConfig(({ mode }) => {
                 type: 'image/png',
                 purpose: 'any maskable'
               }
+            ],
+            screenshots: [
+              {
+                src: 'landing/vakantie-weer-planner.png',
+                sizes: '1280x720',
+                type: 'image/png',
+                form_factor: 'wide',
+                label: 'Vakantie Weer Planner'
+              },
+              {
+                src: 'landing/baro weerbericht.jpg',
+                sizes: '1280x720',
+                type: 'image/jpg',
+                form_factor: 'wide',
+                label: 'Persoonlijk Weerbericht'
+              }
             ]
           }
         })

@@ -71,6 +71,8 @@ export const en: Dictionary = {
     'install_app': 'Install app',
     'pwa.install_desc': 'Install the app for faster access and offline use.',
     'install': 'Install',
+    'install.mac_safari_title': 'Install on Mac',
+    'install.mac_safari_desc': 'Click "Share" in the toolbar and choose "Add to Dock" to install the app.',
 
     'app.title_prefix': 'Baro',
 

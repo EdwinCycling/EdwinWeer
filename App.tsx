@@ -69,6 +69,7 @@ const App: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPWABanner, setShowPWABanner] = useState(false);
   const [showLoginToast, setShowLoginToast] = useState(false);
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
 
   useScrollLock(menuOpen || extraMenuOpen || modal !== null);
 
@@ -105,6 +106,14 @@ const App: React.FC = () => {
     // Check if PWA
     const isPWA = window.matchMedia('(display-mode: standalone)').matches;
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // Check for Mac Safari
+    const isMac = /Macintosh/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isMac && isSafari && !isPWA) {
+        setShowInstallInstructions(true);
+    }
 
     if (!isPWA && !isMobile) {
         // Increment count
@@ -279,7 +288,7 @@ const App: React.FC = () => {
       case ViewState.COUNTRY_MAP:
         return <CountryMapView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.USER_ACCOUNT:
-        return <UserAccountView onNavigate={navigate} settings={settings} installPWA={installPWA} canInstallPWA={!!deferredPrompt} />;
+        return <UserAccountView onNavigate={navigate} settings={settings} installPWA={installPWA} canInstallPWA={!!deferredPrompt} showInstallInstructions={showInstallInstructions} />;
       case ViewState.INFO:
         return <InfoView onNavigate={navigate} settings={settings} />;
       case ViewState.FAQ:

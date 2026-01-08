@@ -12,9 +12,10 @@ interface Props {
   settings: AppSettings;
   installPWA?: () => void;
   canInstallPWA?: boolean;
+  showInstallInstructions?: boolean;
 }
 
-export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, installPWA, canInstallPWA }) => {
+export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, installPWA, canInstallPWA, showInstallInstructions }) => {
   const { user, sessionExpiry, logout, deleteAccount } = useAuth();
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -79,6 +80,18 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
                     <Icon name="download" />
                     {t('install_app')}
                 </button>
+            )}
+
+            {!canInstallPWA && showInstallInstructions && (
+                <div className="w-full mb-3 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-left border border-blue-100 dark:border-blue-500/20">
+                    <div className="flex items-center gap-2 mb-2 text-blue-700 dark:text-blue-300 font-bold text-sm">
+                        <Icon name="ios_share" />
+                        <span>{t('install.mac_safari_title') || 'Installeren op Mac'}</span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {t('install.mac_safari_desc') || 'Klik op "Deel" in de werkbalk en kies "Zet in Dock" om de app te installeren.'}
+                    </p>
+                </div>
             )}
 
             <button 
