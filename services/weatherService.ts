@@ -1,6 +1,7 @@
 
 import { WeatherData, TempUnit, WindUnit, PrecipUnit, PressureUnit, AppLanguage, EnsembleModel } from "../types";
 import { checkLimit, trackCall } from "./usageService";
+import * as Astronomy from "astronomy-engine";
 
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
@@ -286,6 +287,48 @@ const validateCoordinates = (lat: number, lon: number) => {
     }
 }
 
+export const fetchAstronomy = async (lat: number, lon: number, timezone: string = 'auto', startDate?: string, endDate?: string, utcOffsetSeconds: number = 0) => {
+    // Local calculation using astronomy-engine instead of failing API
+    const observer = new Astronomy.Observer(lat, lon, 0);
+    const moonrise: string[] = [];
+    const moonset: string[] = [];
+    
+    // Determine start and end date
+    const start = startDate ? new Date(startDate) : new Date();
+    // Default to 16 days to match forecast length
+    const end = endDate ? new Date(endDate) : new Date(start.getTime() + 15 * 24 * 3600 * 1000); 
+    
+    // Iterate through each day to find rise and set
+    const current = new Date(start);
+    current.setHours(0, 0, 0, 0);
+    
+    const formatLocalISO = (date: Date, offsetSeconds: number) => {
+        const localDate = new Date(date.getTime() + offsetSeconds * 1000);
+        return localDate.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
+    };
+    
+    // Ensure we don't get stuck in infinite loop and limit to reasonable range
+    let safetyCounter = 0;
+    while (current <= end && safetyCounter < 31) {
+        safetyCounter++;
+        // Use the start of the day to search for events within that 24h period
+        const rise = Astronomy.SearchRiseSet(Astronomy.Body.Moon, observer, 1, current, 1);
+        const set = Astronomy.SearchRiseSet(Astronomy.Body.Moon, observer, -1, current, 1);
+        
+        moonrise.push(rise ? formatLocalISO(rise.date, utcOffsetSeconds) : '');
+        moonset.push(set ? formatLocalISO(set.date, utcOffsetSeconds) : '');
+        
+        current.setDate(current.getDate() + 1);
+    }
+    
+    return {
+        daily: {
+            moonrise,
+            moonset
+        }
+    };
+};
+
 export const fetchForecast = async (lat: number, lon: number, model?: EnsembleModel, pastDays: number = 0) => {
   validateCoordinates(lat, lon);
   
@@ -308,6 +351,27 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   }
 
   const data = await throttledFetch(url);
+  
+  // Fetch moonrise/moonset locally for the exact range of the forecast
+  try {
+      if (data && data.daily && data.daily.time && data.daily.time.length > 0) {
+          const startDate = data.daily.time[0];
+          const endDate = data.daily.time[data.daily.time.length - 1];
+          const utcOffsetSeconds = data.utc_offset_seconds || 0;
+          const astronomyData = await fetchAstronomy(lat, lon, 'auto', startDate, endDate, utcOffsetSeconds);
+          
+          if (astronomyData && astronomyData.daily) {
+              data.daily.moonrise = astronomyData.daily.moonrise;
+              data.daily.moonset = astronomyData.daily.moonset;
+          }
+      }
+  } catch (error) {
+      console.error('Error fetching astronomy data:', error);
+      // Fallback: empty arrays if astronomy fetch fails
+      data.daily.moonrise = data.daily.moonrise || [];
+      data.daily.moonset = data.daily.moonset || [];
+  }
+
   forecastCache[cacheKey] = { timestamp: Date.now(), data };
   return data;
 };
@@ -366,7 +430,23 @@ export const fetchHistoricalFull = async (lat: number, lon: number, date: string
         url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
     }
   
-    return throttledFetch(url);
+    const data = await throttledFetch(url);
+
+    // Fetch moonrise/moonset from Astronomy API for historical date
+    try {
+        const utcOffsetSeconds = data.utc_offset_seconds || 0;
+        const astronomyData = await fetchAstronomy(lat, lon, 'auto', startDate, endDate, utcOffsetSeconds);
+        if (astronomyData && astronomyData.daily) {
+            data.daily.moonrise = astronomyData.daily.moonrise;
+            data.daily.moonset = astronomyData.daily.moonset;
+        }
+    } catch (error) {
+        console.error('Error fetching historical astronomy data:', error);
+        data.daily.moonrise = data.daily.moonrise || [];
+        data.daily.moonset = data.daily.moonset || [];
+    }
+
+    return data;
   };
 
 export const ENSEMBLE_VARS_HOURLY_BASIC = [

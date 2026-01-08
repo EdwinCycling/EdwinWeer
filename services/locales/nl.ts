@@ -276,6 +276,8 @@ export const nl: Dictionary = {
     'rain': 'Regen',
     'sunrise': 'Zonsopgang',
     'sunset': 'Zonsondergang',
+    'moonrise': 'Maansopkomst',
+    'moonset': 'Maanondergang',
     'moon_phase': 'Maanstand',
     'visible': 'Zichtbaar',
     'tonight': 'Vannacht',

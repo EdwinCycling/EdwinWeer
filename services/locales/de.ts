@@ -228,6 +228,8 @@ export const de: Dictionary = {
     'rain': 'Regen',
     'sunrise': 'Sonnenaufgang',
     'sunset': 'Sonnenuntergang',
+    'moonrise': 'Mondaufgang',
+    'moonset': 'Monduntergang',
     'moon_phase': 'Mondphase',
     'visible': 'Sichtbar',
     'tonight': 'Heute nacht',

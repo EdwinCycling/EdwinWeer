@@ -10,6 +10,7 @@ import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
+import { MoonPhaseVisual } from '../components/MoonPhaseVisual';
 import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { Tooltip } from '../components/Tooltip';
 import { FavoritesList } from '../components/FavoritesList';
@@ -292,6 +293,20 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const daysToFull = Math.round((moonPhase < 0.5 ? 0.5 - moonPhase : 1.5 - moonPhase) * 29.53);
         const illumination = Math.round((1 - Math.cos(moonPhase * 2 * Math.PI)) / 2 * 100);
 
+        // Moonrise and Moonset
+        const moonrise = weatherData.daily.moonrise?.[0];
+        const moonset = weatherData.daily.moonset?.[0];
+
+        const formatTime = (timeStr?: string) => {
+            if (!timeStr) return '--:--';
+            const date = new Date(timeStr);
+            return date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: settings.timeFormat === '12h' 
+            });
+        };
+
         // Calculate visible planets
         const now = new Date();
         // Safely get current location with fallback
@@ -305,7 +320,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
 
         return (
-            <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative overflow-hidden h-[180px] flex flex-col md:flex-row gap-4">
+            <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative overflow-hidden min-h-[180px] md:h-[180px] flex flex-col md:flex-row gap-4">
                 {/* Left Section: Moon Phase */}
                 <div className="flex-1 flex flex-col justify-between z-10 relative">
                     <div>
@@ -316,27 +331,41 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <p className="text-xl font-bold truncate text-slate-800 dark:text-white">{getMoonPhaseText(moonPhase, settings.language)}</p>
                     </div>
 
-                    <div className="flex justify-between items-end">
-                        <div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-white/70">
-                            <p>{t('moon.days_to_full')}: <span className="font-bold">{daysToFull}</span></p>
-                            <p>{t('moon.illumination')}: <span className="font-bold">{illumination}%</span></p>
+                    <div className="flex justify-between items-center mt-2">
+                        <div className="flex flex-col gap-1.5 text-xs text-slate-600 dark:text-white/70">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                <p>{t('moon.days_to_full')}: <span className="font-bold text-slate-800 dark:text-white">{daysToFull}</span></p>
+                                <p>{t('moon.illumination')}: <span className="font-bold text-slate-800 dark:text-white">{illumination}%</span></p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200 dark:border-white/10 pt-1.5">
+                                <div className="flex items-center gap-1">
+                                    <Icon name="vertical_align_top" className="text-[14px] text-indigo-400" />
+                                    <span>{t('moonrise')}: <span className="font-bold text-slate-800 dark:text-white">{formatTime(moonrise)}</span></span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <Icon name="vertical_align_bottom" className="text-[14px] text-indigo-400" />
+                                    <span>{t('moonset')}: <span className="font-bold text-slate-800 dark:text-white">{formatTime(moonset)}</span></span>
+                                </div>
+                            </div>
                         </div>
-                        <Icon name={getMoonPhaseIcon(moonPhase)} className="text-5xl text-indigo-400 dark:text-indigo-200 opacity-80" />
+                        <div className="flex-shrink-0 ml-2">
+                            <MoonPhaseVisual phase={moonPhase} size={settings.language === 'nl' ? 56 : 64} />
+                        </div>
                     </div>
                 </div>
 
                 {/* Divider */}
                 <div className="hidden md:block w-px bg-slate-200 dark:bg-white/10 my-1"></div>
-                <div className="md:hidden h-px bg-slate-200 dark:bg-white/10"></div>
+                <div className="md:hidden h-px bg-slate-200 dark:border-white/10 w-full opacity-50"></div>
 
                 {/* Right Section: Visible Planets */}
-                <div className="flex-1 z-10 relative overflow-hidden flex flex-col">
-                    <div className="flex justify-between items-center mb-3">
+                <div className="flex-1 z-10 relative overflow-hidden flex flex-col min-h-[100px] md:min-h-0">
+                    <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-white/50">{t('moon.visible_planets')}</span>
                         <span className="text-[9px] text-slate-400">{t('tonight')}</span>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin">
+                    <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin max-h-[120px] md:max-h-none">
                         <div className="flex flex-col gap-2">
                             {visiblePlanets.length > 0 ? visiblePlanets.map(p => (
                                 <div key={p.name} className="bg-white/50 dark:bg-black/20 rounded-lg p-2 border border-slate-200 dark:border-white/5 flex flex-col gap-1">
@@ -537,11 +566,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     const currentTime = weatherData.current.time;
     const todayStr = currentTime.split('T')[0];
 
-    let maxTemp = -Infinity;
-    let minTemp = Infinity;
-    let maxTime = '';
-    let minTime = '';
-    let found = false;
+    let maxTemp = weatherData.current.temperature_2m;
+    let minTemp = weatherData.current.temperature_2m;
+    let maxTime = currentTime;
+    let minTime = currentTime;
+    let found = true;
 
     weatherData.hourly.time.forEach((time, index) => {
       // Only look at today, and only up to the current local time

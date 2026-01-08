@@ -116,6 +116,8 @@ export interface OpenMeteoResponse {
         temperature_2m_min: number[];
         sunrise: string[];
         sunset: string[];
+        moonrise: string[];
+        moonset: string[];
         uv_index_max: number[];
         precipitation_sum: number[];
         precipitation_probability_max: number[];
