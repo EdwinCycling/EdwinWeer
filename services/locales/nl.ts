@@ -25,6 +25,7 @@ export const nl: Dictionary = {
     'trip_planner.searching_text': 'Zoeken tussen',
     'trip_planner.and': 'en',
     'trip_planner.tab_today': 'Vandaag',
+    'weather.today_label': 'Vandaag',
     'trip_planner.tab_tomorrow': 'Morgen',
     'trip_planner.score': 'Index',
     'trip_planner.wind_varies': 'Draait!',

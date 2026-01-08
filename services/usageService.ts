@@ -433,7 +433,26 @@ export const trackBaroCall = (): boolean => {
 };
 
 export const trackAiCall = () => {
-    trackCall();
+    const stats = getUsage();
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (stats.aiCallsDayStart !== today) {
+        stats.aiCallsDayStart = today;
+        stats.aiCalls = 1;
+    } else {
+        stats.aiCalls = (stats.aiCalls || 0) + 1;
+    }
+    
+    saveUsage(stats);
+    
+    // Increment AI calls in Firestore (atomic)
+    if (currentUserId && db) {
+        const userRef = doc(db, 'users', currentUserId);
+        updateDoc(userRef, {
+            'usage.aiCalls': increment(1),
+            'usage.aiCallsDayStart': today
+        }).catch(err => console.error("Error updating AI calls in Firestore:", err));
+    }
 };
 
 export const getLimit = () => {

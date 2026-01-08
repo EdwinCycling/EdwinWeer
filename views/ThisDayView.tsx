@@ -9,6 +9,7 @@ import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { loadClimateData, saveClimateData } from '../services/storageService';
 import { convertTempPrecise, convertWind, convertPrecip } from '../services/weatherService';
+import { getUsage } from '../services/usageService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -96,7 +97,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
   // Initial Fetch Check (reuse cache logic from ClimateChangeView)
   useEffect(() => {
-      const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
+      const locKey = `${selectedLocation.lat}-${selectedLocation.lon}-history`;
       const cached = loadClimateData(locKey);
       if (cached) {
           setRawDailyData(cached);
@@ -123,15 +124,33 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       const currentFetchId = fetchIdRef.current + 1;
       fetchIdRef.current = currentFetchId;
       
-      const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
+      const locKey = `${selectedLocation.lat}-${selectedLocation.lon}-history`;
+
+      // Check credits (Always required to view/use this feature)
+      const usage = getUsage();
+      if (usage.weatherCredits < 250) {
+          setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
+          return;
+      }
       
       const cached = loadClimateData(locKey);
+      
+      // Daily limit check
+      const lastUse = localStorage.getItem('this_day_last_use');
+      const today = new Date().toISOString().split('T')[0];
+
       // Check if cached data has wind speed (new requirement), if not, re-fetch
       if (cached && cached.daily && cached.daily.wind_speed_10m_max) {
            setRawDailyData(cached);
            setLastFetchedLocation(locKey);
            processData(cached);
            return;
+      }
+
+      // If NOT cached, we need to fetch. Check if we already fetched today.
+      if (lastUse === today) {
+          setError('Je mag deze functie slechts 1x per dag gebruiken (nieuwe data ophalen). Probeer het morgen opnieuw.');
+          return;
       }
 
       setLoading(true);
@@ -144,6 +163,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           
           setLoadingProgress(`Data ophalen (1950-${endYear})...`);
           
+          trackCall();
           // Added wind_gusts_10m_max and wind_speed_10m_max
           const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_gusts_10m_max,wind_speed_10m_max&timezone=auto`;
           

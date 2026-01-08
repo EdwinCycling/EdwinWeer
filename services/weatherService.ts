@@ -286,7 +286,7 @@ const validateCoordinates = (lat: number, lon: number) => {
     }
 }
 
-export const fetchForecast = async (lat: number, lon: number, model?: EnsembleModel) => {
+export const fetchForecast = async (lat: number, lon: number, model?: EnsembleModel, pastDays: number = 0) => {
   validateCoordinates(lat, lon);
   
   const currentVars = 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,surface_pressure,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,is_day';
@@ -298,9 +298,10 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_hours,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
 
   const modelParam = (model && model !== 'best_match') ? `&models=${model}` : '';
-  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16${modelParam}`;
+  const pastDaysParam = pastDays > 0 ? `&past_days=${pastDays}` : '';
+  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&current=${currentVars}&minutely_15=${minutelyVars}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto&forecast_days=16${modelParam}${pastDaysParam}`;
 
-  const cacheKey = `forecast-${lat}-${lon}-${model || 'default'}`;
+  const cacheKey = `forecast-${lat}-${lon}-${model || 'default'}-${pastDays}`;
   const cached = forecastCache[cacheKey];
   if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
       return cached.data;

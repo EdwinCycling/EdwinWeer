@@ -8,6 +8,7 @@ import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { convertTemp, convertWind, convertPrecip, convertPressure } from '../services/weatherService';
 import { loadCurrentLocation } from '../services/storageService';
+import { trackCall } from '../services/usageService';
 
 // @ts-ignore
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -667,6 +668,7 @@ export const CountryMapView: React.FC<CountryMapViewProps> = ({ onNavigate, sett
                     await new Promise(resolve => setTimeout(resolve, 250));
                 }
 
+                trackCall();
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('Network response was not ok');
                 const data = await res.json();

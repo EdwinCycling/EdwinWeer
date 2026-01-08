@@ -52,6 +52,7 @@ export const es: Dictionary = {
     'welcome.customizable_title': 'Totalmente personalizable',
     'welcome.customizable_desc': 'A través de los ajustes puedes adaptar todo a tu gusto: desde unidades y modelos meteorológicos hasta el orden de las tarjetas en tu panel.',
     'welcome.start_button': 'Empezar a explorar',
+    'weather.today_label': 'Hoy',
     'loading': 'Cargando...',
     'error': 'Error',
     'back': 'Atrás',
@@ -323,7 +324,6 @@ export const es: Dictionary = {
 
     'connect_ride': 'Conectar ruta',
     'upload_gpx': 'Sube un archivo gpx para analizar el impacto del clima en tu rendimiento.',
-    'select_gpx': 'Seleccionar gpx',
     'analyzing': 'Analizando ruta...',
     'fetching_weather': 'Obteniendo datos...',
     'file_error': 'Error al procesar archivo.',

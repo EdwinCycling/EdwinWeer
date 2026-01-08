@@ -23,7 +23,7 @@ import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 
 interface Props {
-  onNavigate: (view: ViewState) => void;
+  onNavigate: (view: ViewState, params?: any) => void;
   settings: AppSettings;
   onUpdateSettings?: (settings: AppSettings) => void;
 }
@@ -528,6 +528,59 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       wind_gusts_10m: weatherData.current.wind_gusts_10m,
       uv_index: weatherData.daily.uv_index_max?.[0] || 0
   }) : null;
+
+  const todayExtremes = React.useMemo(() => {
+    if (!weatherData) return null;
+
+    const now = getLocationTime();
+    // Use the date from weatherData.current.time or now to find "today" in the hourly data
+    const currentTime = weatherData.current.time;
+    const todayStr = currentTime.split('T')[0];
+
+    let maxTemp = -Infinity;
+    let minTemp = Infinity;
+    let maxTime = '';
+    let minTime = '';
+    let found = false;
+
+    weatherData.hourly.time.forEach((time, index) => {
+      // Only look at today, and only up to the current local time
+      if (time.startsWith(todayStr) && time <= currentTime) {
+        const temp = weatherData.hourly.temperature_2m[index];
+        found = true;
+
+        if (temp > maxTemp) {
+          maxTemp = temp;
+          maxTime = time;
+        }
+        if (temp < minTemp) {
+          minTemp = temp;
+          minTime = time;
+        }
+      }
+    });
+
+    if (!found) return null;
+
+    const formatTime = (isoTime: string) => {
+      const timePart = isoTime.split('T')[1]; // "HH:MM"
+      if (settings.timeFormat === '12h') {
+        let [hours, minutes] = timePart.split(':').map(Number);
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour '0' should be '12'
+        return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+      }
+      return timePart;
+    };
+
+    return {
+      max: convertTempPrecise(maxTemp, settings.tempUnit),
+      min: convertTempPrecise(minTemp, settings.tempUnit),
+      maxTime: formatTime(maxTime),
+      minTime: formatTime(minTime)
+    };
+    }, [weatherData, settings.tempUnit, settings.timeFormat]);
   
   const getCurrentHourly = (key: keyof OpenMeteoResponse['hourly']) => {
       if (!weatherData) return 0;
@@ -833,44 +886,77 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         ) : weatherData ? (
             <>
                 <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
+                    <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
+                        <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                             {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
                         </h1>
-                        <div className="flex flex-row gap-2">
+                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-row">
                             {weatherData.current.temperature_2m < 10 && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
-                                    <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
-                                    <span className="text-lg font-bold">{feelsLike.toFixed(1)}°</span>
-                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
+                                    <Icon name="thermostat" className={`text-lg md:text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
+                                    <span className="text-base md:text-lg font-bold">{feelsLike.toFixed(1)}°</span>
+                                    <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('feels_like')}</span>
                                 </div>
                             )}
                             {weatherData.current.temperature_2m > 25 && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[80px] h-[100px]">
-                                    <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
-                                    <span className="text-lg font-bold">{heatIndex}°</span>
-                                    <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
+                                    <Icon name="thermostat" className="text-lg md:text-xl text-orange-500 dark:text-orange-300" />
+                                    <span className="text-base md:text-lg font-bold">{heatIndex}°</span>
+                                    <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('heat_index')}</span>
                                 </div>
                             )}
                             {currentComfort && (
-                            <WeatherRatingButton 
-                                score={currentComfort} 
-                                onClick={() => setShowComfortModal(true)} 
-                                className="min-w-[70px] w-auto"
-                            />
-                        )}
+                                <div className="w-[75px] h-[85px] md:w-auto md:h-auto flex items-center justify-center">
+                                    <WeatherRatingButton 
+                                        score={currentComfort} 
+                                        onClick={() => setShowComfortModal(true)} 
+                                        className="w-full h-full md:min-w-[70px] md:w-auto"
+                                    />
+                                </div>
+                            )}
 
-                        {/* Desktop Only: 48h Forecast Link */}
-                        <div 
-                            onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                            className="hidden md:flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group"
-                        >
-                            <Icon name="schedule" className="text-xl text-slate-700 dark:text-white" />
-                            <span className="text-lg font-bold">48u</span>
-                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('forecast') || 'Verwachting'}</span>
+                            {/* 48h Forecast Link (Now also on Mobile) */}
+                            <div 
+                                onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
+                                className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                            >
+                                <Icon name="schedule" className="text-lg md:text-xl text-slate-700 dark:text-white" />
+                                <span className="text-base md:text-lg font-bold">48u</span>
+                                <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('forecast') || 'Verwachting'}</span>
+                            </div>
+
+                            {/* Past 24h Link (Terugblik) (Now also on Mobile) */}
+                            <div 
+                                onClick={() => onNavigate(ViewState.HOURLY_DETAIL, { mode: 'history', title: 'Terugblik', subtitle: '24 uur' })}
+                                className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                            >
+                                <Icon name="history" className="text-lg md:text-xl text-slate-700 dark:text-white" />
+                                <span className="text-base md:text-lg font-bold">24u</span>
+                                <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">Terugblik</span>
+                            </div>
+
+                            {/* Today's Extremes (Min/Max with time) */}
+                            {todayExtremes && (
+                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px]">
+                                    <div className="flex flex-col items-center gap-1 w-full">
+                                        <div className="flex flex-col w-full px-1">
+                                            <div className="flex items-center justify-between w-full">
+                                                <span className="text-sm font-bold text-red-500 dark:text-red-400">{todayExtremes.max}°</span>
+                                                <span className="text-[10px] font-medium text-slate-600 dark:text-white/80">{todayExtremes.maxTime}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col w-full px-1 border-t border-slate-200 dark:border-white/10 pt-1">
+                                            <div className="flex items-center justify-between w-full">
+                                                <span className="text-sm font-bold text-blue-500 dark:text-blue-400">{todayExtremes.min}°</span>
+                                                <span className="text-[10px] font-medium text-slate-600 dark:text-white/80">{todayExtremes.minTime}</span>
+                                            </div>
+                                        </div>
+                                        <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 text-center mt-0.5 font-bold tracking-wider">{t('weather.today_label')}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
                     <p className="text-2xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
                          <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}

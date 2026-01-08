@@ -484,6 +484,51 @@ export const loadClimateData = (locationKey: string): any | null => {
     return null;
 };
 
+const KEY_HOLIDAY_REPORT_CACHE = "weather_app_holiday_report_cache";
+
+export const saveHolidayReport = (key: string, data: any) => {
+    if (typeof window !== "undefined") {
+        try {
+            const cache = JSON.parse(localStorage.getItem(KEY_HOLIDAY_REPORT_CACHE) || '{}');
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Clean up old cache (only keep today's)
+            const newCache: Record<string, { date: string, data: any }> = {};
+            Object.keys(cache).forEach(k => {
+                if (cache[k].date === today) {
+                    newCache[k] = cache[k];
+                }
+            });
+
+            newCache[key] = {
+                date: today,
+                data: data
+            };
+            
+            localStorage.setItem(KEY_HOLIDAY_REPORT_CACHE, JSON.stringify(newCache));
+        } catch (e) {
+            console.error("Failed to save holiday report cache", e);
+        }
+    }
+};
+
+export const loadHolidayReport = (key: string): any | null => {
+    if (typeof window === "undefined") return null;
+    try {
+        const cache = JSON.parse(localStorage.getItem(KEY_HOLIDAY_REPORT_CACHE) || '{}');
+        const entry = cache[key];
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (entry && entry.date === today) {
+            return entry.data;
+        }
+    } catch (e) {
+        console.error("Failed to load holiday report cache", e);
+    }
+    return null;
+};
+
+
 // --- Custom Events (Jouw Dag) ---
 const KEY_CUSTOM_EVENTS = "weather_app_custom_events";
 

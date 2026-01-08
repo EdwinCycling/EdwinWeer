@@ -52,6 +52,7 @@ export const fr: Dictionary = {
     'welcome.customizable_title': 'Entièrement personnalisable',
     'welcome.customizable_desc': 'Via les paramètres, vous pouvez tout personnaliser : des unités et modèles météo à l\'ordre des cartes sur votre tableau de bord.',
     'welcome.start_button': 'Commencer l\'exploration',
+    'weather.today_label': "Aujourd'hui",
     'loading': 'Chargement...',
     'error': 'Erreur',
     'back': 'Retour',

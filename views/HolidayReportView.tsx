@@ -8,6 +8,8 @@ import { ComposedChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cartes
 import { fetchHistoricalRange, fetchHistoricalRangePastYears, getActivityIcon } from '../services/weatherService';
 import { calculateActivityScore } from '../services/activityService';
 import { CircleMarker, LayersControl, MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
+import { getUsage } from '../services/usageService';
+import { saveHolidayReport, loadHolidayReport } from '../services/storageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -324,6 +326,30 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
     setError('');
     if (!validateDates()) return;
     
+    // Security Checks
+    const usage = getUsage();
+    if (usage.weatherCredits < 250) {
+        setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
+        return;
+    }
+
+    const locKey = `${location.lat}-${location.lon}-${startDate}-${endDate}`;
+    const cached = loadHolidayReport(locKey);
+    
+    // Check daily limit
+    const lastUse = localStorage.getItem('holiday_report_last_use');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (cached) {
+        setReportData(cached);
+        return;
+    }
+
+    if (lastUse === today) {
+        setError('Je mag deze functie slechts 1x per dag gebruiken (nieuwe data ophalen). Probeer het morgen opnieuw.');
+        return;
+    }
+    
     setLoading(true);
     try {
         const [data, pastYears] = await Promise.all([
@@ -445,7 +471,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
             };
         });
         
-        setReportData({
+        const finalReportData = {
             days,
             stats: {
                 maxTemp,
@@ -469,7 +495,11 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                 end: endDate,
                 days: days.length
             }
-        });
+        };
+
+        setReportData(finalReportData);
+        saveHolidayReport(locKey, finalReportData);
+        localStorage.setItem('holiday_report_last_use', today);
         
     } catch (e) {
         console.error(e);

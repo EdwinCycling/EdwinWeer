@@ -9,20 +9,25 @@ import { getTranslation } from '../services/translations';
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  initialParams?: any;
 }
 
-export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initialParams }) => {
   const [location] = useState<Location>(loadCurrentLocation());
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFeelsLike, setShowFeelsLike] = useState(false);
   
   const t = (key: string) => getTranslation(key, settings.language);
+  const mode = initialParams?.mode || 'forecast';
+  const title = initialParams?.title || t('hourly.title');
+  const subtitle = initialParams?.subtitle;
 
   useEffect(() => {
     const load = async () => {
         try {
-            const forecast: OpenMeteoResponse = await fetchForecast(location.lat, location.lon);
+            // Fetch with past days if history mode
+            const forecast: OpenMeteoResponse = await fetchForecast(location.lat, location.lon, undefined, mode === 'history' ? 2 : 0);
             
             const now = new Date();
             const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
@@ -32,9 +37,24 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
             const nowIso = `${destTime.getFullYear()}-${pad(destTime.getMonth()+1)}-${pad(destTime.getDate())}T${pad(destTime.getHours())}`;
             
             let startIndex = forecast.hourly.time.findIndex(timeStr => timeStr.startsWith(nowIso));
-            if (startIndex === -1) startIndex = 0;
+            let endIndex = 0;
 
-            const slicedTime = forecast.hourly.time.slice(startIndex, startIndex + 48);
+            if (mode === 'history') {
+                if (startIndex !== -1) {
+                    // Show past 24 hours including current hour
+                    endIndex = startIndex + 1;
+                    startIndex = Math.max(0, startIndex - 23);
+                } else {
+                    // Fallback
+                    startIndex = 0;
+                    endIndex = 24;
+                }
+            } else {
+                if (startIndex === -1) startIndex = 0;
+                endIndex = startIndex + 48;
+            }
+
+            const slicedTime = forecast.hourly.time.slice(startIndex, endIndex);
             
             const processed = slicedTime.map((timeStr, i) => {
                 const idx = startIndex + i;
@@ -81,9 +101,19 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
+      const now = new Date();
+      // Calculate hours difference
+      const diffMs = now.getTime() - dataPoint.fullDate.getTime();
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      
       return (
         <div className="bg-white dark:bg-card-dark p-2 border border-slate-200 dark:border-white/10 rounded-lg shadow-lg z-50 text-slate-800 dark:text-white">
           <p className="text-xs font-bold mb-1">{dataPoint.time}</p>
+          {mode === 'history' && diffHours > 0 && (
+            <p className="text-[10px] text-slate-500 dark:text-white/60 mb-1">
+              {diffHours} {diffHours === 1 ? 'uur geleden' : 'uur geleden'}
+            </p>
+          )}
           <p className="text-sm">
             {payload[0].value} {payload[0].unit}
           </p>
@@ -128,7 +158,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings }) => {
             <Icon name="arrow_back_ios_new" />
         </button>
         <div>
-            <h1 className="text-lg font-bold">{t('hourly.title')}</h1>
+            <h1 className="text-lg font-bold">{title}</h1>
+            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
             <div className="flex items-center gap-1 text-xs opacity-50">
                  <Icon name="location_on" className="text-xs" /> {location.name}
             </div>

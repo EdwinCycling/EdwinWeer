@@ -52,6 +52,7 @@ export const de: Dictionary = {
     'welcome.customizable_title': 'Vollständig anpassbar',
     'welcome.customizable_desc': 'Über die einstellungen kannst du alles nach wunsch anpassen: von einheiten und wettermodellen bis zur reihenfolge der karten auf deinem dashboard.',
     'welcome.start_button': 'Entdecken starten',
+    'weather.today_label': 'Heute',
     'loading': 'Laden...',
     'error': 'Fehler',
     'back': 'Zurück',

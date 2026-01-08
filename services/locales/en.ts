@@ -25,6 +25,7 @@ export const en: Dictionary = {
     'trip_planner.searching_text': 'Searching between',
     'trip_planner.and': 'and',
     'trip_planner.tab_today': 'Today',
+    'weather.today_label': 'Today',
     'trip_planner.tab_tomorrow': 'Tomorrow',
     'trip_planner.score': 'Index',
     'trip_planner.wind_varies': 'Turns!',

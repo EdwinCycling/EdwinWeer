@@ -1,5 +1,6 @@
 import { Location, BaroProfile } from "../types";
 import { MAJOR_CITIES } from "./cityData";
+import { getUsage } from "./usageService";
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 const toDeg = (rad: number) => (rad * 180) / Math.PI;
@@ -93,6 +94,12 @@ export const getWeatherDescription = async (): Promise<string> => {
  */
 export const generateBaroWeatherReport = async (weatherData: any, profile: BaroProfile, userName?: string, language: string = 'nl'): Promise<string> => {
     try {
+        // Security Check: Minimum 250 credits required
+        const usage = getUsage();
+        if (usage.weatherCredits < 250) {
+            throw new Error("Je hebt minimaal 250 weather credits nodig om de AI Weerman te gebruiken.");
+        }
+
         // Prepare the payload, ensuring types are serializable/friendly for the backend
         const payload = {
             weatherData,
