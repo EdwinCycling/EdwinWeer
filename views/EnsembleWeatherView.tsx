@@ -876,7 +876,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
 
             {/* Favorite Cities Selector */}
-            <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2">
+            <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 no-swipe" data-no-swipe="true">
                 <div className="flex gap-3 pr-4">
                     <button 
                          onClick={() => {
@@ -1032,7 +1032,10 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             </select>
                         ) : (
                             <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 shadow-sm">
-                                <div className="max-h-[200px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                                <div 
+                                    className="max-h-[200px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 no-swipe"
+                                    data-no-swipe="true"
+                                >
                                     {ENSEMBLE_MODELS.map(m => (
                                         <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer transition-colors">
                                             <input 
@@ -1140,7 +1143,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 {/* View Mode Selector */}
                 <div>
                     <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('view_mode')}</label>
-                    <div className="flex bg-slate-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto border border-slate-200 dark:border-white/10 shadow-sm">
+                    <div className="flex bg-slate-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto border border-slate-200 dark:border-white/10 shadow-sm no-swipe" data-no-swipe="true">
                         {[
                             { id: 'all', label: t('all') },
                             { id: 'main', label: t('ensemble.main') },

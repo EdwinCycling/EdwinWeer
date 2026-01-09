@@ -1060,7 +1060,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                         </button>
                         <div 
-                            className="flex overflow-x-auto scrollbar-hide -mx-6 px-6 pb-4 gap-5 cursor-pointer"
+                            className="flex overflow-x-auto scrollbar-hide -mx-6 px-6 pb-4 gap-5 cursor-pointer no-swipe"
+                            data-no-swipe="true"
                             onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
                         >
                             {getHourlyForecast().map((hour, idx) => (

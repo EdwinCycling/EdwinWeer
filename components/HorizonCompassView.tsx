@@ -52,10 +52,10 @@ const PLANETS = [
 ];
 
 const DIRECTIONS = [
-    { id: 'N', labelKey: 'dir.N', azimuth: 0 },
-    { id: 'O', labelKey: 'dir.O', azimuth: 90 },
-    { id: 'Z', labelKey: 'dir.Z', azimuth: 180 },
-    { id: 'W', labelKey: 'dir.W', azimuth: 270 }
+    { id: 'N', labelKey: 'dir.long.N', azimuth: 0 },
+    { id: 'O', labelKey: 'dir.long.O', azimuth: 90 },
+    { id: 'Z', labelKey: 'dir.long.Z', azimuth: 180 },
+    { id: 'W', labelKey: 'dir.long.W', azimuth: 270 }
 ];
 
 interface CelestialObject {
@@ -343,7 +343,7 @@ export const HorizonCompassView: React.FC<HorizonCompassViewProps> = ({ isOpen, 
                                 Laten we simple houden: center label is huidige richting.
                             */}
                             <div className="absolute left-1/2 bottom-10 transform -translate-x-1/2 text-white/50 font-bold text-xl">
-                                {t(DIRECTIONS.find(d => d.id === viewDirection)?.labelKey || 'dir.Z')}
+                                {t(DIRECTIONS.find(d => d.id === viewDirection)?.labelKey || 'dir.long.Z')}
                             </div>
                         </div>
                     </div>

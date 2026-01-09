@@ -607,7 +607,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 
                 {viewMode === 'graph' ? (
                     <div className="flex flex-col w-full mt-4">
-                        <div className="w-full h-[400px] select-none pr-2 overflow-x-auto scrollbar-hide">
+                        <div 
+                            className="w-full h-[400px] select-none pr-2 overflow-x-auto scrollbar-hide no-swipe"
+                            data-no-swipe="true"
+                        >
                             <div className="h-full" style={{ minWidth: visibleDays > 7 ? '800px' : '100%' }}>
                                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <ComposedChart data={graphData} margin={{ top: 40, right: 10, left: -20, bottom: 40 }}>

@@ -1381,10 +1381,10 @@ export const fr: Dictionary = {
     'planet.saturn': 'Saturne',
     'planet.moon': 'Lune',
     'planet.sun': 'Soleil',
-    'dir.N': 'Nord',
-    'dir.O': 'Est',
-    'dir.Z': 'Sud',
-    'dir.W': 'Ouest',
+    'dir.long.N': 'Nord',
+    'dir.long.O': 'Est',
+    'dir.long.Z': 'Sud',
+    'dir.long.W': 'Ouest',
 
     // Premium Modal
     'premium.feature.title': 'Fonctionnalité Premium',

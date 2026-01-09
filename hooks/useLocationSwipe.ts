@@ -13,6 +13,22 @@ export const useLocationSwipe = ({ onSwipeLeft, onSwipeRight, threshold = 50 }: 
   const minSwipeDistance = threshold;
 
   const onTouchStart = (e: TouchEvent) => {
+    // Check if the target or any parent should block the swipe
+    const target = e.target as HTMLElement;
+    
+    // Use closest to check for blocking classes/attributes up the tree
+    // Also check for specific chart elements
+    const isBlocked = 
+      target.closest?.('.no-swipe') || 
+      target.closest?.('[data-no-swipe="true"]') ||
+      target.closest?.('.recharts-wrapper') ||
+      target.tagName === 'CANVAS';
+
+    if (isBlocked) {
+      touchStart.current = null;
+      return;
+    }
+
     touchEnd.current = null; 
     touchStart.current = e.targetTouches[0].clientX;
   };

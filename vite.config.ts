@@ -33,6 +33,9 @@ export default defineConfig(({ mode }) => {
         VitePWA({
           registerType: 'autoUpdate',
           includeAssets: ['icons/baro.ico', 'icons/baro-icon-192.png'],
+          workbox: {
+            maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
+          },
           manifest: {
             name: 'Baro Weer',
             short_name: 'Baro',
@@ -81,9 +84,10 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: {
               vendor: ['react', 'react-dom'],
-              charts: ['recharts'],
+              charts: ['recharts', 'chart.js', 'react-chartjs-2'],
               maps: ['leaflet', 'react-leaflet'],
-              firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore']
+              firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+              pdf: ['jspdf', 'html-to-image']
             }
           }
         },

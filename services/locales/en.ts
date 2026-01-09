@@ -1522,10 +1522,10 @@ export const en: Dictionary = {
     'planet.saturn': 'Saturn',
     'planet.moon': 'Moon',
     'planet.sun': 'Sun',
-    'dir.N': 'North',
-    'dir.O': 'East',
-    'dir.Z': 'South',
-    'dir.W': 'West',
+    'dir.long.N': 'North',
+    'dir.long.O': 'East',
+    'dir.long.Z': 'South',
+    'dir.long.W': 'West',
 
     // Premium Modal
     'premium.feature.title': 'Premium Feature',
