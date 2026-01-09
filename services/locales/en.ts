@@ -1510,4 +1510,25 @@ export const en: Dictionary = {
     'days.short.za': 'Sat',
     'days.short.zo': 'Sun',
 
+    // Horizon View
+    'horizon.title': 'Horizon',
+    'horizon.view_direction': 'View Direction',
+    'horizon.time': 'Time',
+    'horizon.time_now': 'Now',
+    'planet.mercury': 'Mercury',
+    'planet.venus': 'Venus',
+    'planet.mars': 'Mars',
+    'planet.jupiter': 'Jupiter',
+    'planet.saturn': 'Saturn',
+    'planet.moon': 'Moon',
+    'planet.sun': 'Sun',
+    'dir.N': 'North',
+    'dir.O': 'East',
+    'dir.Z': 'South',
+    'dir.W': 'West',
+
+    // Premium Modal
+    'premium.feature.title': 'Premium Feature',
+    'premium.feature.desc': 'This feature requires at least 250 Weather Credits.',
+    'premium.view_pricing': 'View Pricing',
 };

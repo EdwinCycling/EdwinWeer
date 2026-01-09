@@ -21,6 +21,9 @@ import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
+import { StarMapModal } from '../components/StarMapModal';
+import { HorizonCompassView } from '../components/HorizonCompassView';
+import { getUsage } from '../services/usageService';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 
 interface Props {
@@ -51,6 +54,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
   const [showComfortModal, setShowComfortModal] = useState(false);
+  const [showStarMap, setShowStarMap] = useState(false);
+  const [showHorizon, setShowHorizon] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitError, setLimitError] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -324,9 +330,41 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 {/* Left Section: Moon Phase */}
                 <div className="flex-1 flex flex-col justify-between z-10 relative">
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Icon name="dark_mode" className="text-indigo-400 dark:text-indigo-300" />
-                            <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase">{t('moon_phase')}</p>
+                        <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                                <Icon name="dark_mode" className="text-indigo-400 dark:text-indigo-300" />
+                                <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase">{t('moon_phase')}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => {
+                                        const credits = getUsage().weatherCredits;
+                                        if (credits < 250) {
+                                            setShowPremiumModal(true);
+                                        } else {
+                                            setShowHorizon(true);
+                                        }
+                                    }}
+                                    className="text-[10px] bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/30 transition-all active:scale-95 flex items-center gap-1.5 border border-indigo-100/50 dark:border-indigo-500/30 shadow-sm cursor-pointer"
+                                >
+                                    <Icon name="visibility" className="text-[12px]" />
+                                    <span>Horizon</span>
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        const credits = getUsage().weatherCredits;
+                                        if (credits < 250) {
+                                            setShowPremiumModal(true);
+                                        } else {
+                                            setShowStarMap(true);
+                                        }
+                                    }}
+                                    className="text-[10px] bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/30 transition-all active:scale-95 flex items-center gap-1.5 border border-indigo-100/50 dark:border-indigo-500/30 shadow-sm cursor-pointer"
+                                >
+                                    <Icon name="public" className="text-[12px]" />
+                                    <span>Sterrenkaart</span>
+                                </button>
+                            </div>
                         </div>
                         <p className="text-xl font-bold truncate text-slate-800 dark:text-white">{getMoonPhaseText(moonPhase, settings.language)}</p>
                     </div>
@@ -1045,7 +1083,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 <span className="text-xs text-blue-400 dark:text-blue-200/60">{t('coming_2_hours')}</span>
                             </div>
                             <div className="h-32 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                     <AreaChart data={rainGraph.data}>
                                         <defs>
                                             <linearGradient id="rainFill" x1="0" y1="0" x2="0" y2="1">
@@ -1497,6 +1535,45 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
         </div>
       </Modal>
+      {showPremiumModal && (
+        <Modal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} title={t('premium.feature.title')}>
+            <div className="p-4 flex flex-col gap-4">
+                <p className="text-slate-600 dark:text-slate-300">{t('premium.feature.desc')}</p>
+                <button 
+                    onClick={() => {
+                        setShowPremiumModal(false);
+                        onNavigate('settings');
+                    }}
+                    className="bg-indigo-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-indigo-700 transition-colors w-full"
+                >
+                    {t('premium.view_pricing')}
+                </button>
+            </div>
+        </Modal>
+      )}
+      {showStarMap && (
+        <StarMapModal 
+        isOpen={showStarMap} 
+        onClose={() => setShowStarMap(false)} 
+        lat={location.lat} 
+        lon={location.lon}
+        cloudCover={weatherData?.current?.cloud_cover || 0}
+        locationName={location.name}
+        temp={weatherData?.current?.temperature_2m || 0}
+        utcOffsetSeconds={weatherData?.utc_offset_seconds || 0}
+      />
+      )}
+      {showHorizon && (
+          <HorizonCompassView 
+            isOpen={showHorizon}
+            onClose={() => setShowHorizon(false)}
+            latitude={location.lat}
+            longitude={location.lon}
+            locationName={location.name}
+            utcOffsetSeconds={weatherData?.utc_offset_seconds || 0}
+            language={settings.language}
+          />
+      )}
     </div>
   );
 };

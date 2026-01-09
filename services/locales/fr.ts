@@ -1369,4 +1369,25 @@ export const fr: Dictionary = {
     'days.short.za': 'Sa',
     'days.short.zo': 'Di',
 
+    // Horizon View
+    'horizon.title': 'Horizon',
+    'horizon.view_direction': 'Direction de vue',
+    'horizon.time': 'Heure',
+    'horizon.time_now': 'Maintenant',
+    'planet.mercury': 'Mercure',
+    'planet.venus': 'Vénus',
+    'planet.mars': 'Mars',
+    'planet.jupiter': 'Jupiter',
+    'planet.saturn': 'Saturne',
+    'planet.moon': 'Lune',
+    'planet.sun': 'Soleil',
+    'dir.N': 'Nord',
+    'dir.O': 'Est',
+    'dir.Z': 'Sud',
+    'dir.W': 'Ouest',
+
+    // Premium Modal
+    'premium.feature.title': 'Fonctionnalité Premium',
+    'premium.feature.desc': 'Cette fonctionnalité nécessite au moins 250 crédits météo.',
+    'premium.view_pricing': 'Voir les prix',
 };

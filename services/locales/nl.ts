@@ -1530,4 +1530,25 @@ export const nl: Dictionary = {
     'days.short.za': 'Za',
     'days.short.zo': 'Zo',
 
+    // Horizon View
+    'horizon.title': 'Horizon',
+    'horizon.view_direction': 'Kijkrichting',
+    'horizon.time': 'Tijd',
+    'horizon.time_now': 'Nu',
+    'planet.mercury': 'Mercurius',
+    'planet.venus': 'Venus',
+    'planet.mars': 'Mars',
+    'planet.jupiter': 'Jupiter',
+    'planet.saturn': 'Saturnus',
+    'planet.moon': 'Maan',
+    'planet.sun': 'Zon',
+    'dir.N': 'Noord',
+    'dir.O': 'Oost',
+    'dir.Z': 'Zuid',
+    'dir.W': 'West',
+
+    // Premium Modal
+    'premium.feature.title': 'Premium Functie',
+    'premium.feature.desc': 'Voor deze functie heb je minimaal 250 Weather Credits nodig.',
+    'premium.view_pricing': 'Bekijk Prijzen',
 };
