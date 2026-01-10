@@ -7,7 +7,7 @@ import { Modal } from '../components/Modal';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { loadClimateData, saveClimateData } from '../services/storageService';
-import { convertTempPrecise, convertWind, convertPrecip } from '../services/weatherService';
+import { convertTempPrecise, convertWind, convertPrecip, throttledFetch } from '../services/weatherService';
 import { getUsage, trackCall } from '../services/usageService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
@@ -77,16 +77,6 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
 
   // Initial Fetch & Refetch on Location Change
   useEffect(() => {
-      // Security Check: Must have > 250 credits to even view cached data
-      const usage = getUsage();
-      if (usage.weatherCredits < 250) {
-          setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
-          setClimateData([]);
-          setRawDailyData(null);
-          setCurrentNormal(null);
-          return;
-      }
-
       const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
       
       // Check persistent cache first
@@ -95,6 +85,17 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           setRawDailyData(cached);
           setLastFetchedLocation(locKey);
           processData(cached);
+          setError(null); // Clear any credit error if we have cached data
+          return;
+      }
+
+      // If not cached, we check credits
+      const usage = getUsage();
+      if (usage.weatherCredits < 150) {
+          setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
+          setClimateData([]);
+          setRawDailyData(null);
+          setCurrentNormal(null);
           return;
       }
 
@@ -139,26 +140,27 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       
       const locKey = `${selectedLocation.lat}-${selectedLocation.lon}`;
 
-      // Check credits (Always required to view/use this feature)
-      const usage = getUsage();
-      if (usage.weatherCredits < 250) {
-          setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
-          return;
-      }
-      
-      // Check cache again
+      // 1. Check cache first (saving credits/avoiding block)
       const cached = loadClimateData(locKey);
       
-      // Daily limit check
-      const lastUse = localStorage.getItem('climate_change_last_use');
-      const today = new Date().toISOString().split('T')[0];
-
       if (cached) {
            setRawDailyData(cached);
            setLastFetchedLocation(locKey);
            processData(cached);
+           setError(null);
            return;
       }
+
+      // 2. Check credits ONLY if we need to fetch
+      const usage = getUsage();
+      if (usage.weatherCredits < 150) {
+          setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
+          return;
+      }
+      
+      // Daily limit check
+      const lastUse = localStorage.getItem('climate_change_last_use');
+      const today = new Date().toISOString().split('T')[0];
 
       // If NOT cached, we need to fetch. Check if we already fetched today.
       if (lastUse === today) {
@@ -178,24 +180,23 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           
           setLoadingProgress(`Data ophalen (1950-${endYear})...`);
           
-          trackCall();
           // Use the exact parameters needed for the view
           const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
           
-          const response = await fetch(url);
+          let data;
+          try {
+             data = await throttledFetch(url);
+          } catch (e: any) {
+             if (e.message && e.message.includes('429')) {
+                  setShowLimitModal(true);
+                  setLoading(false);
+                  return;
+             }
+             throw e;
+          }
           
           if (fetchIdRef.current !== currentFetchId) return;
 
-          if (response.status === 429) {
-              setShowLimitModal(true);
-              setLoading(false);
-              return;
-          }
-
-          if (!response.ok) throw new Error(`Failed to fetch climate data`);
-          
-          const data = await response.json();
-          
           // Save to persistent cache
           saveClimateData(locKey, data);
           

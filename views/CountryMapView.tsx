@@ -6,7 +6,7 @@ import { Icon } from '../components/Icon';
 import L from 'leaflet';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
-import { convertTemp, convertWind, convertPrecip, convertPressure } from '../services/weatherService';
+import { convertTemp, convertWind, convertPrecip, convertPressure, throttledFetch } from '../services/weatherService';
 import { loadCurrentLocation } from '../services/storageService';
 import { trackCall } from '../services/usageService';
 

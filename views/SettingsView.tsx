@@ -468,7 +468,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 <div className="p-4 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
                                     <div className="flex items-center gap-3">
                                         <Icon name="public" className="text-slate-700 dark:text-white/60" />
-                                        <span className="font-medium text-slate-800 dark:text-white">Tijdzone</span>
+                                        <span className="font-medium text-slate-800 dark:text-white">{t('settings.timezone')}</span>
                                     </div>
                                     <select 
                                 value={settings.timezone || 'Europe/Amsterdam'}

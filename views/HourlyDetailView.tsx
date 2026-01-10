@@ -20,7 +20,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
   
   const t = (key: string) => getTranslation(key, settings.language);
   const mode = initialParams?.mode || 'forecast';
-  const title = initialParams?.title || t('hourly.title');
+  const title = mode === 'history' ? t('past_24h') : (initialParams?.title || t('hourly.title'));
   const subtitle = initialParams?.subtitle;
 
   useEffect(() => {
@@ -77,6 +77,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     windDirText: getWindDirection(windDir, settings.language),
                     beaufort: getBeaufort(windSpeed),
                     precipProb: forecast.hourly.precipitation_probability ? forecast.hourly.precipitation_probability[idx] : 0,
+                    precipAmount: forecast.hourly.precipitation ? forecast.hourly.precipitation[idx] : 0,
                     sunshine: Math.min(100, Math.round((sunDuration / 3600) * 100)),
                 };
             });
@@ -111,10 +112,11 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
           <p className="text-xs font-bold mb-1">{dataPoint.time}</p>
           {mode === 'history' && diffHours > 0 && (
             <p className="text-[10px] text-slate-500 dark:text-white/60 mb-1">
-              {diffHours} {diffHours === 1 ? 'uur geleden' : 'uur geleden'}
+              {t('time.hours_ago').replace('{count}', diffHours.toString())}
             </p>
           )}
           <p className="text-sm">
+            {payload[0].name ? <span className="opacity-70 mr-1">{payload[0].name}:</span> : null}
             {payload[0].value} {payload[0].unit}
           </p>
         </div>
@@ -143,17 +145,29 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
   // Find day boundaries (where time is 00:00)
   const dayBoundaries = data.filter(d => d.time === '00:00' || d.time === '00:00 AM' || d.time === '12:00 AM').map(d => d.timestamp);
 
+  const getXAxisTicks = () => {
+    if (!data.length) return [];
+    // Filter timestamps for every 2 hours (even hours)
+    return data
+        .filter(d => {
+            const date = new Date(d.timestamp);
+            return date.getHours() % 2 === 0;
+        })
+        .map(d => d.timestamp);
+  };
+  const xAxisTicks = getXAxisTicks();
+
   const DaySeparator = () => (
       <>
         {dayBoundaries.map((ts, i) => (
-            <ReferenceLine key={i} x={ts} stroke="rgba(0,0,0,0.2)" strokeDasharray="3 3" label={{ value: 'Nieuwe dag', position: 'insideTopRight', fill: '#666', fontSize: 10 }} />
+            <ReferenceLine key={i} x={ts} stroke="#000" strokeOpacity={1} strokeWidth={4} label={{ value: t('new_day'), position: 'insideTopRight', fill: '#444', fontSize: 12, fontWeight: 'bold' }} />
         ))}
       </>
   );
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 overflow-y-auto text-slate-800 dark:text-white transition-colors">
-      <div className="flex items-center p-4 pt-8 sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5">
+      <div className="flex items-center p-4 pt-8 fixed top-0 left-0 right-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-50 border-b border-slate-200 dark:border-white/5">
         <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
             <Icon name="arrow_back_ios_new" />
         </button>
@@ -167,11 +181,11 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
       </div>
 
       {loading ? (
-           <div className="flex-grow flex items-center justify-center">
+           <div className="flex-grow flex items-center justify-center pt-28">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
            </div>
       ) : (
-        <div className="flex flex-col gap-8 p-4">
+        <div className="flex flex-col gap-8 p-4 pt-28">
             
             <div className="w-full overflow-x-auto pb-4">
                 <div className="min-w-[600px] md:min-w-full flex flex-col gap-8 pr-4">
@@ -191,6 +205,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     </linearGradient>
                                 </defs>
                                 <DaySeparator />
+                                <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} stroke="rgba(128,128,128,0.1)" />
                                 {/* Custom Grid Lines */}
                                 {tempTicks.map(tick => (
                                     <ReferenceLine 
@@ -200,7 +215,6 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                         strokeWidth={tick % 5 === 0 ? 1.5 : 1}
                                     />
                                 ))}
-                                <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} stroke="rgba(128,128,128,0.1)" />
                                 <XAxis 
                                     dataKey="timestamp" 
                                     tickFormatter={(ts) => {
@@ -210,7 +224,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
@@ -225,7 +240,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     allowDecimals={false} 
                                 />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Area type="monotone" dataKey="temp" stroke="#13b6ec" fillOpacity={1} fill="url(#colorTempDetail)" unit={`°${settings.tempUnit}`} strokeWidth={3} />
+                                <Area type="monotone" dataKey="temp" stroke="#13b6ec" fillOpacity={1} fill="url(#colorTempDetail)" unit={`°${settings.tempUnit}`} strokeWidth={3} name={t('temp')} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -265,7 +280,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                         tick={{fill: '#888', fontSize: 10}} 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        interval={2} 
+                                        ticks={xAxisTicks}
+                                        interval={0} 
                                         type="number"
                                         domain={['dataMin', 'dataMax']}
                                     />
@@ -279,17 +295,19 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                         interval={0}
                                     />
                                     <Tooltip content={<CustomTooltip />} />
-                                    <Area type="monotone" dataKey="feelsLike" stroke="#fb923c" fillOpacity={1} fill="url(#colorFeelsLike)" unit={`°${settings.tempUnit}`} strokeWidth={3} />
+                                    <Area type="monotone" dataKey="feelsLike" stroke="#fb923c" fillOpacity={1} fill="url(#colorFeelsLike)" unit={`°${settings.tempUnit}`} strokeWidth={3} name={t('feels_like')} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     )}
 
-                    {/* Precipitation Probability Graph (New) */}
+                    {/* Precipitation Graph */}
                     <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="umbrella" className="text-blue-500" />
-                            <span className="text-sm font-bold">{t('precip_prob')} (%)</span>
+                            <span className="text-sm font-bold">
+                                {mode === 'history' ? `${t('precip_amount')} (mm)` : `${t('precip_prob')} (%)`}
+                            </span>
                         </div>
                         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 0 }} syncId="hourly-sync">
@@ -297,6 +315,10 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     <linearGradient id="colorPrecipProb" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
                                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorPrecipAmount" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.5}/>
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
                                     </linearGradient>
                                 </defs>
                                 <DaySeparator />
@@ -310,13 +332,40 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
-                                <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} domain={[0, 100]} />
+                                <YAxis 
+                                    tick={{fill: '#888', fontSize: 10}} 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    width={30} 
+                                    domain={mode === 'history' ? [0, 5] : [0, 100]} 
+                                    allowDataOverflow={mode === 'history'}
+                                />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Area type="monotone" dataKey="precipProb" stroke="#3b82f6" fillOpacity={1} fill="url(#colorPrecipProb)" unit="%" strokeWidth={2} />
+                                {mode === 'history' ? (
+                                    <Area 
+                                        type="monotone" 
+                                        dataKey="precipAmount" 
+                                        stroke="#3b82f6" 
+                                        fillOpacity={1} 
+                                        fill="url(#colorPrecipAmount)" 
+                                        unit=" mm" 
+                                        strokeWidth={2}
+                                        name={t('precip_amount')}
+                                        dot={(props: any) => {
+                                            if (props.payload.precipAmount > 5) {
+                                                return <circle cx={props.cx} cy={props.cy} r={4} fill="#ef4444" stroke="none" />
+                                            }
+                                            return <></>;
+                                        }}
+                                    />
+                                ) : (
+                                    <Area type="monotone" dataKey="precipProb" stroke="#3b82f6" fillOpacity={1} fill="url(#colorPrecipProb)" unit="%" strokeWidth={2} />
+                                )}
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -346,7 +395,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
@@ -376,13 +426,14 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
                                 <YAxis tick={{fill: '#888', fontSize: 10}} axisLine={false} tickLine={false} width={30} allowDecimals={false} domain={[0, 'auto']} />
                                 <Tooltip cursor={{fill: 'rgba(128,128,128,0.1)'}} content={<CustomTooltip />} />
-                                <Bar dataKey="beaufort" fill="#4ade80" radius={[4, 4, 0, 0]} unit=" Bft" barSize={10} />
+                                <Bar dataKey="beaufort" fill="#4ade80" radius={[4, 4, 0, 0]} unit=" Bft" barSize={10} name={t('wind')} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -406,7 +457,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
@@ -471,7 +523,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
@@ -501,7 +554,8 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                     tick={{fill: '#888', fontSize: 10}} 
                                     axisLine={false} 
                                     tickLine={false} 
-                                    interval={2} 
+                                    ticks={xAxisTicks}
+                                    interval={0} 
                                     type="number"
                                     domain={['dataMin', 'dataMax']}
                                 />
@@ -515,7 +569,6 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                 </div>
             </div>
             
-            <p className="text-center text-xs opacity-30 italic pb-8">{t('hourly.scroll_hint')}</p>
         </div>
       )}
     </div>

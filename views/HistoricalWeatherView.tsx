@@ -198,26 +198,29 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
 
   const formatCardDate = (date: Date) => {
-    const locale = settings.language === 'nl' ? 'nl-NL' : 'en-GB';
+    const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+    const locale = locales[settings.language] || 'en-GB';
     const y = date.getFullYear();
-    const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z]/g, '').slice(0, 3);
+    const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z\u00C0-\u00FF]/g, '').slice(0, 3);
     const d = date.getDate();
     const wk = date.toLocaleDateString(locale, { weekday: 'long' });
     return `${d} - ${monShort} - ${y} • ${wk}`;
   };
 
   const formatLegendDate = (date: Date) => {
-    const locale = settings.language === 'nl' ? 'nl-NL' : 'en-GB';
+    const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+    const locale = locales[settings.language] || 'en-GB';
     const y = date.getFullYear();
-    const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z]/g, '').slice(0, 3);
+    const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z\u00C0-\u00FF]/g, '').slice(0, 3);
     const d = date.getDate();
     return `${y} - ${monShort} - ${d}`;
   };
 
   const formatUnderSlider = (date: Date) => {
-    const locale = settings.language === 'nl' ? 'nl-NL' : 'en-GB';
+    const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+    const locale = locales[settings.language] || 'en-GB';
     const y = date.getFullYear();
-    const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z]/g, '').slice(0, 3);
+    const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z\u00C0-\u00FF]/g, '').slice(0, 3);
     const d = date.getDate();
     const wk = date.toLocaleDateString(locale, { weekday: 'long' });
     return `${y} - ${monShort} - ${d} • ${wk}`;
@@ -551,15 +554,20 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     const diffTime = today.getTime() - d.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 0) return settings.language === 'nl' ? 'Vandaag' : 'Today';
-    if (diffDays === 1) return settings.language === 'nl' ? 'Gisteren' : 'Yesterday';
+    if (diffDays === 0) return t('time.today');
+    if (diffDays === 1) return t('time.yesterday');
     if (diffDays < 0) {
          const absDays = Math.abs(diffDays);
-         if (absDays === 1) return settings.language === 'nl' ? 'Morgen' : 'Tomorrow';
-         return settings.language === 'nl' ? `Over ${absDays} dagen` : `In ${absDays} days`;
+         if (absDays === 1) return t('time.tomorrow');
+         return t('time.in_days').replace('{count}', String(absDays));
     }
-    return settings.language === 'nl' ? `${diffDays} dagen geleden` : `${diffDays} days ago`;
+    return t('time.days_ago').replace('{count}', String(diffDays));
    };
+
+  const getLocale = () => {
+      const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+      return locales[settings.language] || 'en-GB';
+  };
 
    const allTemps = data.flatMap(d => [d.temp1, d.temp2].filter(v => v !== undefined && v !== null));
    let yTicks: number[] | undefined = undefined;
@@ -1101,18 +1109,15 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     <div className="flex flex-col min-h-screen pb-24 bg-background-light dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
       <div className="relative flex items-center justify-center p-4 pt-8 mb-2">
           {/* Title & Navigation */}
-          <div className="flex items-center gap-4">
-               <button onClick={() => cycleFavorite('prev')} className="p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
-                  <Icon name="chevron_left" className="text-xl" />
-              </button>
-
+          <div className="flex flex-col items-center gap-1">
               <h1 className="text-lg font-bold line-clamp-1 text-center px-2 drop-shadow-sm">
-                  {historicalMode === 'single' ? t('historical.title.single') : t('historical.title.compare')}
+                  {location1.name}
               </h1>
-
-               <button onClick={() => cycleFavorite('next')} className="p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
-                  <Icon name="chevron_right" className="text-xl" />
-              </button>
+              {historicalMode === 'compare' && (
+                  <p className="text-xs font-medium text-slate-500 dark:text-white/60">
+                      {formatLegendDate(date1)} vs {formatLegendDate(date2)}
+                  </p>
+              )}
           </div>
       </div>
 
@@ -1490,6 +1495,22 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                         <div className="h-full w-full flex items-center justify-center text-slate-400">
                             {t('no_data_available')}
                         </div>
+                    )}
+                </div>
+                <div className="flex gap-2 mt-2">
+                    <button
+                        onClick={() => setDashboardOpen({date: date1, location: location1})}
+                        className={`bg-slate-100 dark:bg-white/5 p-2 rounded-xl text-xs font-bold text-center border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors ${historicalMode === 'compare' ? 'w-1/2' : 'w-full'}`}
+                    >
+                        {historicalMode === 'single' ? t('dashboard_date') : t('dashboard_date_1')}
+                    </button>
+                    {historicalMode === 'compare' && (
+                        <button
+                            onClick={() => setDashboardOpen({date: date2, location: location2})}
+                            className="w-1/2 bg-slate-100 dark:bg-white/5 p-2 rounded-xl text-xs font-bold text-center border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                        >
+                            {t('dashboard_date_2')}
+                        </button>
                     )}
                 </div>
                 {/* ... Rest of stats ... */}

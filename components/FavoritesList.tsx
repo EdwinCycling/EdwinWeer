@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Location, AppSettings, TempUnit } from '../types';
 import { Icon } from './Icon';
 import { getTranslation } from '../services/translations';
-import { convertTemp, mapWmoCodeToText, mapWmoCodeToIcon, convertWind } from '../services/weatherService';
+import { convertTemp, mapWmoCodeToText, mapWmoCodeToIcon, convertWind, throttledFetch } from '../services/weatherService';
 import { StaticWeatherBackground } from './StaticWeatherBackground';
 import { loadFavoritesCompactMode, saveFavoritesCompactMode } from '../services/storageService';
 import { useScrollLock } from '../hooks/useScrollLock';
@@ -92,8 +92,7 @@ export const FavoritesList: React.FC<Props> = ({
 
         try {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day,apparent_temperature,precipitation,cloud_cover,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&minutely_15=precipitation&timezone=auto`;
-            const res = await fetch(url);
-            const data = await res.json();
+            const data = await throttledFetch(url);
 
             const newWeather: Record<string, FavoriteWeather> = {};
 

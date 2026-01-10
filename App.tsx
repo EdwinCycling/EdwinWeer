@@ -61,6 +61,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [menuOpen, setMenuOpen] = useState(false);
   const [extraMenuOpen, setExtraMenuOpen] = useState(false);
+  const [baroMenuOpen, setBaroMenuOpen] = useState(false);
   const [modal, setModal] = useState<'disclaimer' | 'cookies' | null>(null);
   const [usageWarning, setUsageWarning] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; current: number; limit: number }>(null);
   const [limitReached, setLimitReached] = useState<null | { scope: 'minute' | 'hour' | 'day' | 'month'; limit: number }>(null);
@@ -71,7 +72,7 @@ const App: React.FC = () => {
   const [showLoginToast, setShowLoginToast] = useState(false);
   const [showInstallInstructions, setShowInstallInstructions] = useState(false);
 
-  useScrollLock(menuOpen || extraMenuOpen || modal !== null);
+  useScrollLock(menuOpen || extraMenuOpen || baroMenuOpen || modal !== null);
 
   const navigate = (view: ViewState, params?: any) => {
       setPreviousView(currentView);
@@ -378,49 +379,49 @@ const App: React.FC = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-50 shadow-2xl transition-colors duration-300 print:hidden">
             <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4">
             <button 
-                onClick={() => { navigate(ViewState.CURRENT); setMenuOpen(false); setExtraMenuOpen(false); }}
+                onClick={() => { navigate(ViewState.CURRENT); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="sunny" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.current')}</span>
             </button>
             <button 
-                onClick={() => { navigate(ViewState.FORECAST); setMenuOpen(false); setExtraMenuOpen(false); }}
+                onClick={() => { navigate(ViewState.FORECAST); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.FORECAST ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="date_range" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.forecast')}</span>
             </button>
             <button 
-                onClick={() => { navigate(ViewState.ENSEMBLE); setMenuOpen(false); setExtraMenuOpen(false); }}
+                onClick={() => { navigate(ViewState.ENSEMBLE); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.ENSEMBLE ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="ssid_chart" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.ensemble')}</span>
             </button>
             <button 
-                onClick={() => { navigate(ViewState.RECORDS); setMenuOpen(false); setExtraMenuOpen(false); }}
+                onClick={() => { navigate(ViewState.RECORDS); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.RECORDS ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="bar_chart" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.records')}</span>
             </button>
             <button 
-                onClick={() => { navigate(ViewState.THIS_DAY); setMenuOpen(false); setExtraMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.THIS_DAY ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-            >
-                <Icon name="calendar_today" />
-                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('this_day.title')}</span>
-            </button>
-            <button 
-                onClick={() => { navigate(ViewState.HISTORICAL); setMenuOpen(false); setExtraMenuOpen(false); }}
+                onClick={() => { navigate(ViewState.HISTORICAL); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HISTORICAL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="calendar_month" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.historical')}</span>
             </button>
             <button 
-                onClick={() => { setExtraMenuOpen(!extraMenuOpen); setMenuOpen(false); }}
+                onClick={() => { setBaroMenuOpen(!baroMenuOpen); setMenuOpen(false); setExtraMenuOpen(false); }}
+                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${baroMenuOpen ? 'text-slate-800 dark:text-white scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+            >
+                <Icon name="face" />
+                <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('menu.extra.baro_weerman')}</span>
+            </button>
+            <button 
+                onClick={() => { setExtraMenuOpen(!extraMenuOpen); setMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${extraMenuOpen ? 'text-slate-800 dark:text-white scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="add_circle" />
@@ -429,7 +430,7 @@ const App: React.FC = () => {
             
             {/* Hamburger Menu Button */}
             <button 
-                onClick={() => { setMenuOpen(!menuOpen); setExtraMenuOpen(false); }}
+                onClick={() => { setMenuOpen(!menuOpen); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${menuOpen ? 'text-slate-800 dark:text-white scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
             >
                 <Icon name="menu" />
@@ -437,6 +438,113 @@ const App: React.FC = () => {
             </button>
         </div>
         </div>
+
+        {/* Baro Weerman Menu Overlay */}
+        {baroMenuOpen && (
+            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
+                <div 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 pb-24 md:p-6 md:pb-28 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
+                    
+                    <div className="space-y-6">
+                        <section>
+                            <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.baro_weerman')}</h3>
+                            <div className="space-y-3 md:space-y-4">
+                                {/* Profiles */}
+                                <button onClick={() => { navigate(ViewState.PROFILES); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="person" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.profiles_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.profiles_desc')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Email Settings */}
+                                <button onClick={() => { navigate(ViewState.EMAIL_SETTINGS); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                        <Icon name="mail" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.email_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.email_desc')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Messenger */}
+                                <button onClick={() => { navigate(ViewState.MESSENGER); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                                        <Icon name="chat" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.messenger_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.messenger_desc')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Push Notifications */}
+                                <button onClick={() => { navigate(ViewState.NOTIFICATIONS); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                                        <Icon name="notifications" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.notifications_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.notifications_desc')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Your Day */}
+                                <button onClick={() => { navigate(ViewState.YOUR_DAY); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
+                                        <Icon name="event_note" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.yourday_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.yourday_desc')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Activity Planner */}
+                                <button onClick={() => { navigate(ViewState.ACTIVITY_PLANNER); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="event_available" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('planner.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('planner.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Baro Weerman */}
+                                <button onClick={() => { navigate(ViewState.BARO_WEERMAN); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="face" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('baro_weerman.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('baro_weerman.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Cycling Weather */}
+                                <button onClick={() => { navigate(ViewState.CYCLING); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+                                        <span className="text-xl md:text-2xl">🚴</span>
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('wielerkoers_weerbericht.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('wielerkoers_weerbericht.subtitle')}</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Extra Menu Overlay */}
         {extraMenuOpen && (
@@ -448,100 +556,6 @@ const App: React.FC = () => {
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
                     
                     <div className="space-y-6">
-                        {/* Baro Weerman Section */}
-                        <section>
-                            <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.baro_weerman')}</h3>
-                            <div className="space-y-3 md:space-y-4">
-                                {/* Profiles */}
-                                <button onClick={() => { navigate(ViewState.PROFILES); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                        <Icon name="person" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.profiles_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.profiles_desc')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Email Settings */}
-                                <button onClick={() => { navigate(ViewState.EMAIL_SETTINGS); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                        <Icon name="mail" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.email_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.email_desc')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Messenger */}
-                                <button onClick={() => { navigate(ViewState.MESSENGER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
-                                        <Icon name="chat" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.messenger_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.messenger_desc')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Push Notifications */}
-                                <button onClick={() => { navigate(ViewState.NOTIFICATIONS); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-                                        <Icon name="notifications" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.notifications_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.notifications_desc')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Your Day */}
-                                <button onClick={() => { navigate(ViewState.YOUR_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
-                                        <Icon name="event_note" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.yourday_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.yourday_desc')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Activity Planner */}
-                                <button onClick={() => { navigate(ViewState.ACTIVITY_PLANNER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                        <Icon name="event_available" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('planner.title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('planner.subtitle')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Baro Weerman */}
-                                <button onClick={() => { navigate(ViewState.BARO_WEERMAN); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                        <Icon name="face" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('baro_weerman.title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('baro_weerman.subtitle')}</span>
-                                    </div>
-                                </button>
-
-                                {/* Cycling Weather */}
-                                <button onClick={() => { navigate(ViewState.CYCLING); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
-                                        <span className="text-xl md:text-2xl">🚴</span>
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('wielerkoers_weerbericht.title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('wielerkoers_weerbericht.subtitle')}</span>
-                                    </div>
-                                </button>
-                            </div>
-                        </section>
-
                         {/* Weer Extra's Section */}
                         <section>
                              <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.extras')}</h3>
@@ -555,6 +569,17 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('vind_de_dag.title')}</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('vind_de_dag.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                {/* This Day (Moved from Bottom Bar) */}
+                                <button onClick={() => { navigate(ViewState.THIS_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                        <Icon name="calendar_today" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('this_day.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('this_day.subtitle')}</span>
                                     </div>
                                 </button>
 

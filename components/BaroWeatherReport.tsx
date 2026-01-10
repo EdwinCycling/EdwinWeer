@@ -358,7 +358,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                     {p.name}
                                                 </button>
                                             ))}
-                                            <button
+                                            {/* <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
@@ -367,7 +367,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                 className="px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                                             >
                                                 {t('baro.new_button')}
-                                            </button>
+                                            </button> */}
                                         </div>
                                     ) : (
                                         <button

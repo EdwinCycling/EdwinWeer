@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewState, AppSettings, Location, TempUnit, WindUnit, PrecipUnit } from '../types';
+import { throttledFetch } from '../services/weatherService';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { searchCityByName } from '../services/geoService';
@@ -399,46 +400,46 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
     setLoading(true);
     setError(null);
 
-    // Check Credits
-    const usage = getUsage();
-    if (usage.weatherCredits <= 250) {
-        setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
-        setLoading(false);
-        return;
-    }
-
     const endDate = new Date();
     endDate.setDate(endDate.getDate() - 1); // Yesterday
     const endDateStr = endDate.toISOString().split('T')[0];
     const startDateStr = '1999-01-01';
     
     const cacheKey = `weather_history_${location.lat}_${location.lon}_${startDateStr}_${endDateStr}`;
+    const cachedData = localStorage.getItem(cacheKey);
+
+    // 1. Try Cache first
+    if (cachedData) {
+        try {
+            console.log('Using cached weather history');
+            const data = JSON.parse(cachedData);
+            setHistoricalData(data);
+            setLoading(false);
+            return data;
+        } catch (e) {
+            console.warn('Cache read failed', e);
+        }
+    }
+
+    // 2. Check Credits ONLY if we need to fetch
+        const usage = getUsage();
+        if (usage.weatherCredits < 150) {
+            setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
+            setLoading(false);
+            return;
+        }
 
     // Check Daily Limit
     const today = new Date().toISOString().split('T')[0];
     const lastUse = localStorage.getItem('weather_finder_last_use');
-    const cachedData = localStorage.getItem(cacheKey);
 
-    if (!cachedData && lastUse === today) {
+    if (lastUse === today) {
         setError('Je mag deze functie slechts 1x per dag gebruiken (tenzij data uit cache komt).');
         setLoading(false);
         return;
     }
 
     try {
-      // 1. Try Cache
-      try {
-        if (cachedData) {
-            console.log('Using cached weather history');
-            const data = JSON.parse(cachedData);
-            setHistoricalData(data);
-            setLoading(false);
-            return data;
-        }
-      } catch (e) {
-        console.warn('Cache read failed', e);
-      }
-
       const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${location.lat}&longitude=${location.lon}&start_date=${startDateStr}&end_date=${endDateStr}&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_hours,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
 
       const response = await fetch(url);

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppSettings, Location, OpenMeteoResponse } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchHistoricalFull, fetchHistorical, mapWmoCodeToIcon, mapWmoCodeToText, convertTemp, convertWind, convertPrecip, convertPressure } from '../services/weatherService';
-import { WeatherBackground } from '../components/WeatherBackground';
+import { fetchHistoricalFull, fetchHistorical, fetchHistoricalDaily, convertTemp } from '../services/weatherService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import { getTranslation } from '../services/translations';
 
@@ -100,46 +99,43 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
             setTrendData(processedTrend);
         }
 
-        // 3. Fetch Yearly Comparison Data (-5 to +5 years)
-        const yearPromises = [];
-        const currentYear = new Date().getFullYear();
+        // 3. Fetch Yearly Comparison Data (-5 to +5 years) - OPTIMIZED to 1 request
         const targetYear = date.getFullYear();
-
-        for (let i = -5; i <= 5; i++) {
-            const y = targetYear + i;
-            // Only fetch if not in the future (roughly check year)
-            // Ideally we check full date, but year check is a good first pass.
-            // Actually, if year == currentYear, we need to check if date has passed? 
-            // The user said "indien niet in de toekomst".
-            // If the requested date is in the future for this year, fetchHistorical might fail or return null.
-            // Let's assume if the date (Month/Day) in Year Y is > Today, we skip.
-            const checkDate = new Date(date);
-            checkDate.setFullYear(y);
-            
-            // Check if future
-            const now = new Date();
-            now.setHours(0,0,0,0);
-            if (checkDate > now) continue;
-
-            const ds = getDateString(checkDate);
-            yearPromises.push(
-                fetchHistorical(location.lat, location.lon, ds, ds)
-                    .then(res => ({ year: y, data: res }))
-                    .catch(() => ({ year: y, data: null }))
-            );
+        const startYear = targetYear - 5;
+        let endYear = targetYear + 5;
+        
+        const rangeStart = new Date(date);
+        rangeStart.setFullYear(startYear);
+        const rangeEnd = new Date(date);
+        rangeEnd.setFullYear(endYear);
+        
+        // Ensure we don't fetch into the future
+        const now = new Date();
+        if (rangeEnd > now) {
+            rangeEnd.setTime(now.getTime());
         }
 
-        const yearResults = await Promise.all(yearPromises);
-        const processedYears = yearResults
-            .filter(r => r.data && r.data.daily && r.data.daily.temperature_2m_max)
-            .map(r => ({
-                year: r.year,
-                min: convertTemp(r.data.daily.temperature_2m_min[0], settings.tempUnit),
-                max: convertTemp(r.data.daily.temperature_2m_max[0], settings.tempUnit)
-            }))
-            .sort((a, b) => a.year - b.year);
-            
-        setYearData(processedYears);
+        const rangeData = await fetchHistoricalDaily(location.lat, location.lon, getDateString(rangeStart), getDateString(rangeEnd));
+        
+        if (rangeData && rangeData.daily) {
+             const targetMonth = date.getMonth();
+             const targetDay = date.getDate();
+             const suffix = `-${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+             
+             const processedYears = rangeData.daily.time.reduce((acc: any[], t: string, i: number) => {
+                 // Check if it's the same day of the year using string comparison to avoid timezone issues
+                 if (t.endsWith(suffix)) {
+                     acc.push({
+                         year: parseInt(t.split('-')[0]),
+                         min: convertTemp(rangeData.daily.temperature_2m_min[i], settings.tempUnit),
+                         max: convertTemp(rangeData.daily.temperature_2m_max[i], settings.tempUnit)
+                     });
+                 }
+                 return acc;
+             }, []).sort((a: any, b: any) => a.year - b.year);
+             
+             setYearData(processedYears);
+         }
 
     } catch (e) {
         console.error(e);
@@ -149,19 +145,7 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
     }
   };
 
-  const currentTemp = weatherData ? convertTemp(weatherData.current.temperature_2m, settings.tempUnit) : 0;
-  const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
-  const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
-  
-  // Helper to safely get hourly data
-  const getCurrentHourly = (key: string) => {
-      if (!weatherData || !weatherData.hourly[key]) return 0;
-      // Use the same target index as "current" (max temp time)
-      const temps = weatherData.hourly.temperature_2m;
-      const maxTempIndex = temps.indexOf(Math.max(...temps));
-      const idx = maxTempIndex !== -1 ? maxTempIndex : 14;
-      return weatherData.hourly[key][idx] ?? 0;
-  };
+
 
   if (loading) {
       return (
@@ -174,13 +158,6 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
   return (
     <div className="fixed inset-0 z-50 bg-background-dark overflow-y-auto text-white animate-in slide-in-from-bottom duration-300">
       
-      {weatherData && (
-        <WeatherBackground 
-            weatherCode={weatherData.current.weather_code} 
-            isDay={weatherData.current.is_day} 
-        />
-      )}
-      
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background-dark/90 z-0 pointer-events-none" />
 
       {/* Close Button */}
@@ -191,7 +168,7 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
         <Icon name="close" className="text-2xl" />
       </button>
 
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="relative z-10 flex flex-col min-h-screen max-w-5xl mx-auto w-full">
         
         {/* Header */}
         <div className="pt-12 pb-6 text-center">
@@ -203,24 +180,6 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                 {date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
         </div>
-
-        {/* Main Temp */}
-        {weatherData && (
-            <div className="flex flex-col items-center justify-center py-6">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-[100px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
-                        {currentTemp}°
-                    </h1>
-                </div>
-                <p className="text-2xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
-                        <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, false)} className="text-3xl" />
-                    {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
-                </p>
-                <p className="text-white/80 text-lg font-normal drop-shadow-md mt-1">
-                    H:{highTemp}° L:{lowTemp}°
-                </p>
-            </div>
-        )}
 
         {/* Dashboard Content */}
         <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 pb-32 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] text-slate-800 dark:text-white transition-colors flex-1">
@@ -242,7 +201,8 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                                         const d = new Date(val);
                                         return `${d.getDate()}/${d.getMonth()+1}`;
                                     }}
-                                    minTickGap={30}
+                                    interval={0}
+                                    minTickGap={0}
                                 />
                                 <YAxis width={45} tick={{fill: '#888', fontSize: 11}} tickLine={false} axisLine={false} />
                                 <Tooltip 
@@ -251,12 +211,12 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                                 <Legend />
                                 <ReferenceLine x={getDateString(date)} stroke="#ef4444" strokeDasharray="3 3" />
                                 {/* Solid Lines (Past/Today) */}
-                                <Line type="monotone" dataKey="maxSolid" name={t('historical.max')} stroke="#f59e0b" strokeWidth={2} dot={false} connectNulls={false} />
+                                <Line type="monotone" dataKey="maxSolid" name={t('historical.max')} stroke="#ef4444" strokeWidth={2} dot={false} connectNulls={false} />
                                 <Line type="monotone" dataKey="minSolid" name={t('historical.min')} stroke="#3b82f6" strokeWidth={2} dot={false} connectNulls={false} />
                                 
                                 {/* Dotted Lines (Future) - Use same color but dashed */}
-                                <Line type="monotone" dataKey="maxDotted" name={`${t('historical.max')} (${t('historical.forecast')})`} stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="5 5" connectNulls={false} />
-                                <Line type="monotone" dataKey="minDotted" name={`${t('historical.min')} (${t('historical.forecast')})`} stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="5 5" connectNulls={false} />
+                                <Line type="monotone" dataKey="maxDotted" name={t('historical.max')} stroke="#ef4444" strokeWidth={2} dot={false} strokeDasharray="5 5" connectNulls={false} legendType="none" />
+                                <Line type="monotone" dataKey="minDotted" name={t('historical.min')} stroke="#3b82f6" strokeWidth={2} dot={false} strokeDasharray="5 5" connectNulls={false} legendType="none" />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -288,7 +248,7 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                                 />
                                 <Legend />
                                 <ReferenceLine x={date.getFullYear()} stroke="#ef4444" strokeDasharray="3 3" />
-                                <Line type="monotone" dataKey="max" name={t('historical.max')} stroke="#f59e0b" strokeWidth={2} dot={true} />
+                                <Line type="monotone" dataKey="max" name={t('historical.max')} stroke="#ef4444" strokeWidth={2} dot={true} />
                                 <Line type="monotone" dataKey="min" name={t('historical.min')} stroke="#3b82f6" strokeWidth={2} dot={true} />
                             </LineChart>
                         </ResponsiveContainer>
@@ -314,49 +274,7 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
             )}
             */}
 
-            {/* 3. Details Grid */}
-            {weatherData && (
-                <div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                            <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="water_drop" /></div>
-                            <div>
-                                <p className="text-[10px] font-bold uppercase opacity-40">{t('humidity')}</p>
-                                <p className="text-sm font-bold">{getCurrentHourly('relative_humidity_2m')}%</p>
-                            </div>
-                        </div>
-                        <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                            <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="air" /></div>
-                            <div>
-                                <p className="text-[10px] font-bold uppercase opacity-40">{t('wind')}</p>
-                                <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_10m'), settings.windUnit)} {settings.windUnit}</p>
-                            </div>
-                        </div>
-                        <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                            <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="compress" /></div>
-                            <div>
-                                <p className="text-[10px] font-bold uppercase opacity-40">{t('pressure')}</p>
-                                <p className="text-sm font-bold">{convertPressure(getCurrentHourly('surface_pressure'), settings.pressureUnit)} {settings.pressureUnit}</p>
-                            </div>
-                        </div>
-                         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                            <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="rainy" /></div>
-                            <div>
-                                <p className="text-[10px] font-bold uppercase opacity-40">{t('precip')}</p>
-                                <p className="text-sm font-bold">{convertPrecip(weatherData.daily.precipitation_sum[0], settings.precipUnit)} {settings.precipUnit}</p>
-                            </div>
-                        </div>
-                         <div className="bg-slate-100 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5">
-                            <div className="bg-white dark:bg-white/5 p-2 rounded-lg opacity-70"><Icon name="wb_sunny" /></div>
-                            <div>
-                                <p className="text-[10px] font-bold uppercase opacity-40">{t('sunshine')}</p>
-                                <p className="text-sm font-bold">{Math.round(weatherData.daily.sunshine_duration[0] / 3600)}h {Math.round((weatherData.daily.sunshine_duration[0] % 3600) / 60)}m</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
         </div>
       </div>

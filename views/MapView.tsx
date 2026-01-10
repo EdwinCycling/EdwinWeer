@@ -4,7 +4,7 @@ import { ViewState, AppSettings, MapBaseLayer } from '../types';
 import { Icon } from '../components/Icon';
 import { loadCurrentLocation } from '../services/storageService';
 import { MAJOR_CITIES, City } from '../services/cityData';
-import { convertTemp } from '../services/weatherService';
+import { convertTemp, throttledFetch } from '../services/weatherService';
 import { getTranslation } from '../services/translations';
 import L from 'leaflet';
 
@@ -189,8 +189,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
                     const lons = chunk.map(c => c.lon).join(',');
 
                     try {
-                        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m`);
-                        const data = await response.json();
+                        const data = await throttledFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m`);
 
                         if (!data || data.error) continue;
 

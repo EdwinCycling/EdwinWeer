@@ -5,7 +5,7 @@ import { getTranslation } from '../services/translations';
 import { loadCurrentLocation } from '../services/storageService';
 import { searchCityByName } from '../services/geoService';
 import { ComposedChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, ReferenceLine, ReferenceArea, Bar } from 'recharts';
-import { fetchHistoricalRange, fetchHistoricalRangePastYears, getActivityIcon } from '../services/weatherService';
+import { fetchHistoricalRange, fetchHistoricalRangePastYears, getActivityIcon, throttledFetch } from '../services/weatherService';
 import { calculateActivityScore } from '../services/activityService';
 import { CircleMarker, LayersControl, MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { getUsage } from '../services/usageService';
@@ -67,11 +67,19 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
         setMapError('');
         setRainViewerTileUrl(null);
         try {
-            const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-            if (!res.ok) {
-                throw new Error(`Error: RainViewer request failed (${res.status}).`);
-            }
-            const json = await res.json();
+            const res = await throttledFetch('https://api.rainviewer.com/public/weather-maps.json');
+            // throttledFetch returns json directly, but the original code expected a response object to check .ok
+            // wait, throttledFetch returns response.json().
+            // So 'res' will be the json object.
+            
+            // Original code:
+            // const res = await fetch(...);
+            // if (!res.ok) throw ...
+            // const json = await res.json();
+            
+            // throttledFetch handles !ok and returns json.
+            // So we can just use the result as json.
+            const json = res;
             const host: string = json.host || 'https://tilecache.rainviewer.com';
             const frames = [...(json.radar?.past || []), ...(json.radar?.nowcast || [])];
             const latest = frames.length ? frames[frames.length - 1] : null;
@@ -326,24 +334,26 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
     setError('');
     if (!validateDates()) return;
     
-    // Security Checks
-    const usage = getUsage();
-    if (usage.weatherCredits < 250) {
-        setError('Je hebt minimaal 250 weather credits nodig om deze functie te gebruiken.');
-        return;
-    }
-
     const locKey = `${location.lat}-${location.lon}-${startDate}-${endDate}`;
     const cached = loadHolidayReport(locKey);
     
+    // 1. Check cache first
+    if (cached) {
+        setReportData(cached);
+        setError('');
+        return;
+    }
+
+    // 2. Check Credits ONLY if we need to fetch
+    const usage = getUsage();
+    if (usage.weatherCredits < 150) {
+        setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
+        return;
+    }
+
     // Check daily limit
     const lastUse = localStorage.getItem('holiday_report_last_use');
     const today = new Date().toISOString().split('T')[0];
-
-    if (cached) {
-        setReportData(cached);
-        return;
-    }
 
     if (lastUse === today) {
         setError('Je mag deze functie slechts 1x per dag gebruiken (nieuwe data ophalen). Probeer het morgen opnieuw.');

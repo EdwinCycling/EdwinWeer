@@ -14,10 +14,10 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // --- SECURITY: REQUEST THROTTLING ---
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 seconde delay between requests
+const MIN_REQUEST_INTERVAL = 250; // 250ms delay between requests
 let requestQueue = Promise.resolve();
 
-const throttledFetch = async (url: string) => {
+export const throttledFetch = async (url: string) => {
     const fetchAction = async () => {
         checkLimit();
         trackCall();
@@ -150,37 +150,38 @@ export const mapWmoCodeToIcon = (code: number | null | undefined, isNight = fals
 // Mappings for English and Dutch
 export const mapWmoCodeToText = (code: number, lang: AppLanguage = 'en'): string => {
     const isNl = lang === 'nl';
+    const isDe = lang === 'de';
     
     switch (code) {
-      case 0: return isNl ? 'Onbewolkt' : 'Clear Sky';
-      case 1: return isNl ? 'Licht bewolkt' : 'Mainly Clear';
-      case 2: return isNl ? 'Half bewolkt' : 'Partly Cloudy';
-      case 3: return isNl ? 'Zwaar bewolkt' : 'Overcast';
-      case 45: return isNl ? 'Mist' : 'Fog';
-      case 48: return isNl ? 'Rijp' : 'Depositing Rime Fog';
-      case 51: return isNl ? 'Lichte motregen' : 'Light Drizzle';
-      case 53: return isNl ? 'Motregen' : 'Drizzle';
-      case 55: return isNl ? 'Zware motregen' : 'Dense Drizzle';
-      case 56: return isNl ? 'Lichte ijzel' : 'Light Freezing Drizzle';
-      case 57: return isNl ? 'Zware ijzel' : 'Dense Freezing Drizzle';
-      case 61: return isNl ? 'Lichte regen' : 'Light Rain';
-      case 63: return isNl ? 'Regen' : 'Rain';
-      case 65: return isNl ? 'Zware regen' : 'Heavy Rain';
-      case 66: return isNl ? 'Lichte ijzelregen' : 'Freezing Rain';
-      case 67: return isNl ? 'Zware ijzelregen' : 'Heavy Freezing Rain';
-      case 71: return isNl ? 'Lichte sneeuw' : 'Light Snow';
-      case 73: return isNl ? 'Sneeuw' : 'Snow';
-      case 75: return isNl ? 'Zware sneeuw' : 'Heavy Snow';
-      case 77: return isNl ? 'Sneeuwkorrels' : 'Snow Grains';
-      case 80: return isNl ? 'Lichte buien' : 'Light Showers';
-      case 81: return isNl ? 'Buien' : 'Showers';
-      case 82: return isNl ? 'Zware buien' : 'Violent Showers';
-      case 85: return isNl ? 'Lichte sneeuwbuien' : 'Light Snow Showers';
-      case 86: return isNl ? 'Zware sneeuwbuien' : 'Heavy Snow Showers';
-      case 95: return isNl ? 'Onweer' : 'Thunderstorm';
-      case 96: return isNl ? 'Onweer & Hagel' : 'Thunderstorm with Hail';
-      case 99: return isNl ? 'Zwaar Onweer' : 'Heavy Thunderstorm';
-      default: return isNl ? 'Onbekend' : 'Unknown';
+      case 0: return isNl ? 'Onbewolkt' : isDe ? 'Klarer Himmel' : 'Clear Sky';
+      case 1: return isNl ? 'Licht bewolkt' : isDe ? 'Leicht bewölkt' : 'Mainly Clear';
+      case 2: return isNl ? 'Half bewolkt' : isDe ? 'Teilweise bewölkt' : 'Partly Cloudy';
+      case 3: return isNl ? 'Zwaar bewolkt' : isDe ? 'Bedeckt' : 'Overcast';
+      case 45: return isNl ? 'Mist' : isDe ? 'Nebel' : 'Fog';
+      case 48: return isNl ? 'Rijp' : isDe ? 'Nebelreiff' : 'Depositing Rime Fog';
+      case 51: return isNl ? 'Lichte motregen' : isDe ? 'Leichter Nieselregen' : 'Light Drizzle';
+      case 53: return isNl ? 'Motregen' : isDe ? 'Nieselregen' : 'Drizzle';
+      case 55: return isNl ? 'Zware motregen' : isDe ? 'Starker Nieselregen' : 'Dense Drizzle';
+      case 56: return isNl ? 'Lichte ijzel' : isDe ? 'Leichter gefrierender Niesel' : 'Light Freezing Drizzle';
+      case 57: return isNl ? 'Zware ijzel' : isDe ? 'Starker gefrierender Niesel' : 'Dense Freezing Drizzle';
+      case 61: return isNl ? 'Lichte regen' : isDe ? 'Leichter Regen' : 'Light Rain';
+      case 63: return isNl ? 'Regen' : isDe ? 'Regen' : 'Rain';
+      case 65: return isNl ? 'Zware regen' : isDe ? 'Starker Regen' : 'Heavy Rain';
+      case 66: return isNl ? 'Lichte ijzelregen' : isDe ? 'Leichter Eisregen' : 'Freezing Rain';
+      case 67: return isNl ? 'Zware ijzelregen' : isDe ? 'Starker Eisregen' : 'Heavy Freezing Rain';
+      case 71: return isNl ? 'Lichte sneeuw' : isDe ? 'Leichter Schneefall' : 'Light Snow';
+      case 73: return isNl ? 'Sneeuw' : isDe ? 'Schneefall' : 'Snow';
+      case 75: return isNl ? 'Zware sneeuw' : isDe ? 'Starker Schneefall' : 'Heavy Snow';
+      case 77: return isNl ? 'Sneeuwkorrels' : isDe ? 'Schneegriesel' : 'Snow Grains';
+      case 80: return isNl ? 'Lichte buien' : isDe ? 'Leichte Schauer' : 'Light Showers';
+      case 81: return isNl ? 'Buien' : isDe ? 'Schauer' : 'Showers';
+      case 82: return isNl ? 'Zware buien' : isDe ? 'Heftige Schauer' : 'Violent Showers';
+      case 85: return isNl ? 'Lichte sneeuwbuien' : isDe ? 'Leichte Schneeschauer' : 'Light Snow Showers';
+      case 86: return isNl ? 'Zware sneeuwbuien' : isDe ? 'Starke Schneeschauer' : 'Heavy Snow Showers';
+      case 95: return isNl ? 'Onweer' : isDe ? 'Gewitter' : 'Thunderstorm';
+      case 96: return isNl ? 'Onweer & Hagel' : isDe ? 'Gewitter mit Hagel' : 'Thunderstorm with Hail';
+      case 99: return isNl ? 'Zwaar Onweer' : isDe ? 'Starkes Gewitter' : 'Heavy Thunderstorm';
+      default: return isNl ? 'Onbekend' : isDe ? 'Unbekannt' : 'Unknown';
     }
   };
 
@@ -271,9 +272,15 @@ export const getBeaufortDescription = (bft: number, lang: AppLanguage = 'en'): s
 
 export const getWindDirection = (deg: number, lang: AppLanguage = 'en'): string => {
     const isNl = lang === 'nl';
-    const directions = isNl 
-        ? ['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW']
-        : ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const isDe = lang === 'de';
+    
+    let directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    
+    if (isNl) {
+        directions = ['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW'];
+    } else if (isDe) {
+        directions = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
+    }
     
     // Normalize degree to 0-360
     const normalized = (deg % 360 + 360) % 360;
@@ -402,6 +409,35 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   }
 
   return throttledFetch(url);
+};
+
+/**
+ * Fetches only daily historical data for a given range. 
+ * Efficient for long ranges where hourly data is not needed.
+ */
+export const fetchHistoricalDaily = async (lat: number, lon: number, startDate: string, endDate: string) => {
+    validateCoordinates(lat, lon);
+    
+    const end = new Date(endDate);
+    const start = new Date(startDate); // Added start date parsing
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  
+    // Use Archive if end is in past OR start is older than 90 days
+    const useArchive = end < today || start < ninetyDaysAgo;
+    const dailyVars = 'temperature_2m_max,temperature_2m_min,weather_code';
+  
+    let url = '';
+    if (useArchive) {
+        url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
+    } else {
+        url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
+    }
+  
+    return throttledFetch(url);
 };
 
 export const fetchHistoricalFull = async (lat: number, lon: number, date: string) => {

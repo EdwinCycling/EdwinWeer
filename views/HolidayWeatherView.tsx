@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, TempUnit, PrecipUnit, WindUnit, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
 import { searchCityByName } from '../services/geoService';
-import { fetchForecast, fetchSeasonal, fetchHistoricalPeriods, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, convertTemp, convertPrecip, convertWind } from '../services/weatherService';
+import { fetchForecast, fetchSeasonal, fetchHistoricalPeriods, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, convertTemp, convertPrecip, convertWind, throttledFetch } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Legend, ReferenceLine, ComposedChart, Line } from 'recharts';
@@ -493,15 +493,13 @@ export const HolidayWeatherView: React.FC<Props> = ({ onNavigate, settings }) =>
   return (
     <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
 
-        {weatherData && (
-            <div className="absolute inset-0 z-0">
-                <StaticWeatherBackground 
-                    weatherCode={weatherData.current.weather_code} 
-                    isDay={weatherData.current.is_day}
-                    cloudCover={weatherData.current.cloud_cover}
-                />
-            </div>
-        )}
+        <div className="absolute inset-0 z-0">
+            <StaticWeatherBackground 
+                weatherCode={0} 
+                isDay={1}
+                cloudCover={0}
+            />
+        </div>
 
         <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/5 to-transparent dark:to-background-dark/90 z-0 pointer-events-none" />
 

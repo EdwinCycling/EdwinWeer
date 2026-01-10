@@ -1,16 +1,15 @@
 import { Location } from "../types";
 import { checkLimit, trackCall } from "./usageService";
+import { throttledFetch } from "./weatherService";
 
 export const searchCityByName = async (name: string, language: string = 'en'): Promise<Location[]> => {
   if (!name || name.trim().length < 2) return [];
   
-  checkLimit();
-  trackCall();
+  // checkLimit and trackCall are handled inside throttledFetch
   
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=5&language=${language}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Geocoding failed: ${res.status}`);
-  const data = await res.json();
+  const data = await throttledFetch(url);
+  
   const results = (data?.results || []) as any[];
   return results.map((r) => ({
     name: r.name,
@@ -22,6 +21,9 @@ export const searchCityByName = async (name: string, language: string = 'en'): P
 
 export const reverseGeocode = async (lat: number, lon: number): Promise<string | null> => {
   try {
+    checkLimit();
+    trackCall();
+
     // limit precision to 4 decimal places to improve cache hit rate (if any) and privacy
     const latFixed = lat.toFixed(4);
     const lonFixed = lon.toFixed(4);

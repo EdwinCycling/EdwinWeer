@@ -5,6 +5,7 @@ import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, get
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode, loadEnsembleModel } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
+import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
@@ -28,6 +29,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [visibleDays, setVisibleDays] = useState<number>(3);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const [showComfortModal, setShowComfortModal] = useState(false);
+  const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -482,14 +484,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     
                     <div className="flex gap-3">
                         {feelsLike < 10 ? (
-                            <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px]">
+                            <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                                 <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
                                 <span className="text-lg font-bold">{Math.round(feelsLike)}°</span>
                                 <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</span>
                             </div>
                         ) : (
                             heatIndex > currentTemp && (
-                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px]">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                                     <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
                                     <span className="text-lg font-bold">{Math.round(heatIndex)}°</span>
                                     <span className="text-[9px] uppercase text-slate-500 dark:text-white/60">{t('heat_index')}</span>
@@ -660,6 +662,21 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
                             </button>
                         </div>
+
+                        {visibleDays === 14 && (
+                            <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
+                                <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
+                                    Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                </p>
+                                <button 
+                                    onClick={() => onNavigate(ViewState.HOLIDAY)}
+                                    className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="flight" className="text-lg" />
+                                    6-Maanden / Vakantieweer
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ) : (
                 <>
@@ -1042,7 +1059,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                             itemStyle={{ color: '#f59e0b' }}
                                             labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
                                         />
-                                        <Area type="monotone" dataKey="sunProb" stroke="#f59e0b" fillOpacity={1} fill="url(#colorSunModal)" strokeWidth={2} name="Zonneschijn" unit="%" />
+                                        <Area type="monotone" dataKey="sunProb" stroke="#f59e0b" fillOpacity={1} fill="url(#colorSunModal)" strokeWidth={2} name={t('sunshine')} unit="%" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
@@ -1207,6 +1224,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       <ComfortScoreModal 
           isOpen={showComfortModal}
           onClose={() => setShowComfortModal(false)}
+          settings={settings}
+      />
+      
+      <FeelsLikeInfoModal
+          isOpen={showFeelsLikeModal}
+          onClose={() => setShowFeelsLikeModal(false)}
           settings={settings}
       />
 

@@ -659,6 +659,46 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           .map(d => d.time);
   }, [processChartData.data, timeStep]);
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+      if (active && payload && payload.length) {
+          const date = new Date(label);
+          const dateStr = timeStep === 'daily' 
+              ? date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+              : date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
+
+          let items = payload;
+          // Filter for Density/Spread modes
+          if (viewMode === 'density' || viewMode === 'spread') {
+               items = payload.filter((p: any) => ['min', 'max', 'avg'].includes(p.dataKey));
+               // Sort: Max, Avg, Min
+               items.sort((a: any, b: any) => {
+                   const order = { max: 1, avg: 2, min: 3 };
+                   return (order[a.dataKey as keyof typeof order] || 4) - (order[b.dataKey as keyof typeof order] || 4);
+               });
+          }
+
+          return (
+              <div className="bg-white dark:bg-card-dark p-3 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 text-xs min-w-[150px]">
+                  <p className="font-bold mb-2 text-slate-700 dark:text-white border-b border-slate-100 dark:border-white/5 pb-2">{dateStr}</p>
+                  <div className="flex flex-col gap-1">
+                    {items.map((p: any) => (
+                        <div key={p.dataKey} className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
+                            <span className="capitalize text-slate-500 dark:text-white/60 flex-1">
+                                {p.dataKey === 'avg' ? (settings.language === 'nl' ? 'Gemiddelde' : 'Average') : p.name || p.dataKey}
+                            </span>
+                            <span className="font-bold font-mono">
+                                {Number(p.value).toFixed(1)} {p.unit}
+                            </span>
+                        </div>
+                    ))}
+                  </div>
+              </div>
+          );
+      }
+      return null;
+  };
+
   const chartSection = (() => {
       if (loading) {
           return (
@@ -820,6 +860,24 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                   <Line type="monotone" dataKey="avg" stroke="#ef4444" strokeWidth={3} dot={false} isAnimationActive={false} style={{ zIndex: 100 }} />
                               )}
 
+                              {viewMode !== 'all' && (
+                                  (viewMode === 'density' || viewMode === 'spread' || viewMode === 'main' || viewMode === 'avg') ? (
+                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(128,128,128,0.2)', strokeWidth: 1 }} />
+                                  ) : (
+                                    <Tooltip 
+                                        contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                        labelStyle={{ color: '#64748b', marginBottom: '0.5rem', fontWeight: 'bold' }}
+                                        cursor={{ stroke: 'rgba(128,128,128,0.2)', strokeWidth: 1 }}
+                                        labelFormatter={(label) => {
+                                            const date = new Date(label);
+                                            return timeStep === 'daily' 
+                                                ? date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+                                                : date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
+                                        }}
+                                    />
+                                  )
+                              )}
+
                               <Legend content={<CustomLegend />} />
                           </ComposedChart>
                       </ResponsiveContainer>
@@ -942,18 +1000,18 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     </h1>
                     
                     {currentWeather.current.temperature_2m < 10 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-1 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative w-[60px] h-[60px]">
-                            <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-200' : 'text-orange-200'}`} />
-                            <span className="text-sm font-bold leading-none mt-0.5">{feelsLike.toFixed(1)}°</span>
-                            <span className="text-[8px] uppercase text-white/80 leading-none mt-0.5">{t('feels_like')}</span>
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                            <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
+                            <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
+                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 leading-none mt-1">{t('feels_like')}</span>
                         </div>
                     )}
                     
                     {currentWeather.current.temperature_2m > 25 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/20 backdrop-blur-md rounded-xl p-1 border border-white/20 shadow-sm cursor-pointer hover:bg-white/30 transition-all group relative w-[60px] h-[60px]">
-                            <Icon name="thermostat" className="text-xl text-orange-200" />
-                            <span className="text-sm font-bold leading-none mt-0.5">{heatIndex}°</span>
-                            <span className="text-[8px] uppercase text-white/80 leading-none mt-0.5">{t('heat_index')}</span>
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                            <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
+                            <span className="text-lg font-bold leading-none mt-1">{heatIndex}°</span>
+                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 leading-none mt-1">{t('heat_index')}</span>
                         </div>
                     )}
 
@@ -961,7 +1019,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         <WeatherRatingButton 
                             score={currentComfort} 
                             onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }} 
-                            className="w-[60px] h-[60px] p-1 bg-white/20 backdrop-blur-md border-white/20"
+                            className="min-w-[70px] w-auto"
                         />
                     )}
                 </div>
