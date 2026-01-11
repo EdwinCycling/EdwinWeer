@@ -274,35 +274,36 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                              <text x={-5} y={5 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-slate-400 dark:fill-slate-500">Vr</text>
 
                             {processedData.map((item) => (
-                                <UITooltip 
-                                    key={item.date} 
-                                    content={
-                                        <div className="text-center">
-                                            <div className="font-bold">{new Date(item.date).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' })}</div>
-                                            <div>
-                                                {item.value !== null ? (
-                                                    mode === 'rain' 
-                                                        ? `${convertPrecip(item.value, settings.precipUnit)} ${settings.precipUnit}`
-                                                        : mode === 'sun'
-                                                            ? `${Math.round(item.value)}% zon`
-                                                            : `${convertTemp(item.value, settings.tempUnit)}°`
-                                                ) : 'Geen data'}
+                                <g key={item.date}>
+                                    <UITooltip 
+                                        content={
+                                            <div className="text-center">
+                                                <div className="font-bold">{new Date(item.date).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' })}</div>
+                                                <div>
+                                                    {item.value !== null ? (
+                                                        mode === 'rain' 
+                                                            ? `${convertPrecip(item.value, settings.precipUnit)} ${settings.precipUnit}`
+                                                            : mode === 'sun'
+                                                                ? `${Math.round(item.value)}% zon`
+                                                                : `${convertTemp(item.value, settings.tempUnit)}°`
+                                                    ) : 'Geen data'}
+                                                </div>
+                                                <div className="text-[10px] text-slate-300 mt-1">Klik voor details</div>
                                             </div>
-                                            <div className="text-[10px] text-slate-300 mt-1">Klik voor details</div>
-                                        </div>
-                                    }
-                                >
-                                    <rect
-                                        x={item.x * (cellSize + gap)}
-                                        y={item.y * (cellSize + gap)}
-                                        width={cellSize}
-                                        height={cellSize}
-                                        rx={2}
-                                        fill={getColor(item.value, mode)}
-                                        onClick={() => onDayClick && onDayClick(item.date)}
-                                        className="transition-colors hover:stroke-2 hover:stroke-slate-500 cursor-pointer"
-                                    />
-                                </UITooltip>
+                                        }
+                                    >
+                                        <rect
+                                            x={item.x * (cellSize + gap)}
+                                            y={item.y * (cellSize + gap)}
+                                            width={cellSize}
+                                            height={cellSize}
+                                            fill={item.value !== null ? getColor(item.value, mode) : 'transparent'}
+                                            className={`${item.value !== null ? 'cursor-pointer hover:stroke-white/50 hover:stroke-1' : ''} transition-all duration-200`}
+                                            onClick={() => item.value !== null && onDayClick?.(item.date)}
+                                            rx={2}
+                                        />
+                                    </UITooltip>
+                                </g>
                             ))}
                         </g>
                     </svg>
