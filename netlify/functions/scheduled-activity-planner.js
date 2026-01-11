@@ -31,6 +31,17 @@ if (!admin.apps.length) {
 
 const db = admin.apps.length ? admin.firestore() : null;
 
+// Helper: Escape HTML
+function escapeHTML(text) {
+    if (!text) return "";
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 // Helper: Fetch Weather
 async function fetchWeatherData(lat, lon) {
     try {
@@ -64,6 +75,31 @@ async function sendTelegramNotification(chatId, text) {
     } catch (e) {
         console.error('Error sending Telegram:', e);
     }
+}
+
+// Helper: Get Hourly Average
+function getHourlyAverage(hourlyData, startHour, endHour) {
+    if (!hourlyData || !Array.isArray(hourlyData)) return null;
+    
+    // Tomorrow is index 24 to 47
+    const startIndex = 24 + startHour;
+    const endIndex = 24 + endHour;
+    
+    const slice = hourlyData.slice(startIndex, endIndex + 1);
+    if (slice.length === 0) return null;
+    
+    const sum = slice.reduce((a, b) => a + b, 0);
+    return sum / slice.length;
+}
+
+// Helper: Get Hourly Max
+function getHourlyMax(hourlyData, startHour, endHour) {
+    if (!hourlyData || !Array.isArray(hourlyData)) return null;
+    const startIndex = 24 + startHour;
+    const endIndex = 24 + endHour;
+    const slice = hourlyData.slice(startIndex, endIndex + 1);
+    if (slice.length === 0) return null;
+    return Math.max(...slice);
 }
 
 // Helper: Calculate Score (Matches frontend activityService.ts logic)
@@ -103,13 +139,16 @@ function calculateScore(weather, activity) {
 
     switch (activity) {
         case 'bbq':
-            // BBQ / Terrasje
-            if (precipSum > 0.1 || precipProb > 30) penalize(8, "Regen");
-            if (tempFeelsLike < 10) penalize(8, "Te koud");
-            else if (tempFeelsLike < 15) penalize(5, "Jas nodig");
-            else if (tempFeelsLike < 20) penalize(2, "Frisjes");
+            // BBQ / Terrasje - Focus on evening (17:00 - 22:00)
+            const bbqTemp = getHourlyAverage(hourly.apparent_temperature, 17, 22) ?? tempFeelsLike;
+            const bbqRain = getHourlyMax(hourly.precipitation, 17, 22) ?? precipSum;
+
+            if (bbqRain > 0.1 || precipProb > 30) penalize(8, "Regen");
+            if (bbqTemp < 10) penalize(8, "Te koud");
+            else if (bbqTemp < 15) penalize(5, "Jas nodig");
+            else if (bbqTemp < 20) penalize(2, "Frisjes");
             
-            if (tempFeelsLike > 30) penalize(2, "Te heet");
+            if (bbqTemp > 30) penalize(2, "Te heet");
             
             if (windMax > 38) penalize(6, "Harde wind");
             else if (windMax > 28) penalize(3, "Hinderlijke wind");
@@ -228,14 +267,17 @@ function calculateScore(weather, activity) {
             break;
 
         case 'stargazing':
-            // Sterrenkijken
-            if (cloudCover > 75) penalize(9, "Je ziet niets");
-            else if (cloudCover > 25) penalize(6, "Te veel storing");
-            else if (cloudCover > 10) penalize(2, "Af en toe een wolk");
+            // Sterrenkijken - Focus on night (22:00 - 04:00)
+            const nightCloudCover = getHourlyAverage(hourly.cloud_cover, 22, 28) ?? cloudCover;
+            const nightRain = getHourlyMax(hourly.precipitation, 22, 28) ?? precipSum;
+
+            if (nightCloudCover > 75) penalize(9, "Je ziet niets (bewolking)");
+            else if (nightCloudCover > 25) penalize(6, "Te veel storing (bewolking)");
+            else if (nightCloudCover > 10) penalize(2, "Af en toe een wolk");
             
             if (visibility < 5000) penalize(8, "Atmosfeer niet transparant");
 
-            if (precipSum > 0) penalize(10, "Telescoop mag niet nat worden");
+            if (nightRain > 0) penalize(10, "Telescoop mag niet nat worden (regen)");
 
             if (tempFeelsLike < 0) penalize(4, "Koud om stil te staan");
             else if (tempFeelsLike < 5) penalize(2, "Erg fris");
@@ -511,15 +553,23 @@ export const handler = async (event, context) => {
                 continue;
             }
 
+            // Check Credits
+            const baroCredits = userData.usage?.baroCredits || 0;
+            if (baroCredits <= 0) {
+                console.log(`Skipping ${userId}: No Baro credits`);
+                continue;
+            }
+
             // Generate Content
             const userName = userData.displayName || "Sportieveling";
             const aiText = await generateAIContent(weather, activityKey, scoreData, userName);
+            const safeAiText = escapeHTML(aiText);
 
             // Send Telegram
             const message = `
 <b>📅 Activiteiten Planner: Morgen</b>
 
-${aiText}
+${safeAiText}
 
 <b>Score: ${scoreData.score}/10</b>
 <i>Instelling: Minimaal ${config.min_score}</i>
@@ -528,6 +578,12 @@ ${aiText}
             `;
 
             await sendTelegramNotification(userData.telegramChatId, message);
+
+            // Deduct Credit
+            await usersRef.doc(userId).update({
+                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                'usage.aiCalls': admin.firestore.FieldValue.increment(1)
+            });
 
             // Log
             await auditRef.set({

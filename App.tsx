@@ -233,7 +233,7 @@ const App: React.FC = () => {
       case ViewState.CURRENT:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.FORECAST:
-        return <ForecastWeatherView onNavigate={navigate} settings={settings} />;
+        return <ForecastWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.MAP:
         return <MapView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.RECORDS:

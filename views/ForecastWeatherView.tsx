@@ -7,6 +7,7 @@ import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
+import { YrInteractiveMap } from '../components/YrInteractiveMap';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
@@ -19,10 +20,12 @@ import { ComposedChart, Line, Bar, Area, AreaChart, XAxis, YAxis, CartesianGrid,
 interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  onUpdateSettings?: (settings: AppSettings) => void;
 }
 
-export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
+export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
+  const [showMapModal, setShowMapModal] = useState(false);
   const [weatherData, setWeatherData] = useState<OpenMeteoResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,6 +35,18 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  const formatDateTime = () => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return now.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', options);
+  };
 
   const cycleFavorite = (direction: 'next' | 'prev') => {
       if (settings.favorites.length === 0) return;
@@ -505,6 +520,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 className="min-w-[70px] w-auto"
                             />
                         )}
+                        <div onClick={() => setShowMapModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
+                             <Icon name="public" className="text-3xl text-green-500 dark:text-green-300 mb-1" />
+                             <span className="text-[9px] font-bold uppercase text-slate-500 dark:text-white/60 text-center leading-tight">Interactieve<br/>Kaart</span>
+                        </div>
                     </div>
                 </div>
                 <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2 text-white">
@@ -1232,6 +1251,22 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           onClose={() => setShowFeelsLikeModal(false)}
           settings={settings}
       />
+
+      <Modal
+          isOpen={showMapModal}
+          onClose={() => setShowMapModal(false)}
+          title={`${location.name} - ${formatDateTime()}`}
+          fullScreen={true}
+          className="md:m-4 md:h-[calc(100%-2rem)] md:max-w-[calc(100%-2rem)] md:rounded-3xl"
+      >
+          <div className="w-full h-full flex flex-col p-2 sm:p-4">
+            <YrInteractiveMap 
+                userLocation={location}
+                settings={settings}
+                onUpdateSettings={onUpdateSettings}
+            />
+          </div>
+      </Modal>
 
     </div>
   );

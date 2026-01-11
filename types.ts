@@ -197,6 +197,11 @@ export interface AppSettings {
     timezone?: string;
     calendar?: CalendarSettings;
     climatePeriodType?: '30year' | 'decade';
+    yr_map?: {
+        type: 'vind' | 'radar' | 'temperatur';
+        zoom: number;
+        speed: number;
+    };
     baroProfile?: BaroProfile;
     baroProfiles?: BaroProfile[]; // Saved profiles
     trip_planner?: TripPlannerSettings;
