@@ -532,6 +532,8 @@ export const de: Dictionary = {
     'records.sequences.none': 'Keine sequenz gefunden',
 
     'records.diverse_title': 'Diverse extreme',
+    'records.max_min_to_max_rise_title': 'Höchste Min bis Max',
+    'records.max_min_to_max_rise_desc': 'Minimum bis Maximum an einem Tag',
     'records.max_rise': 'Größter Temperaturanstieg (max temp)',
     'records.max_drop': 'Größter Temperaturabfall (max temp)',
     'records.diff_day1': 'Tag 1',

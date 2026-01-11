@@ -422,7 +422,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
 
                 <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
                     <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
-                        {location.name}, {location.country}
+                        <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
+                        <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
                 </div>
 
@@ -634,7 +635,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         >
                             <div className="h-full" style={{ minWidth: visibleDays > 7 ? '800px' : '100%' }}>
                                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                    <ComposedChart data={graphData} margin={{ top: 40, right: 10, left: -20, bottom: 40 }}>
+                                    <ComposedChart data={graphData} margin={{ top: 40, right: 10, left: isMobile ? 0 : -20, bottom: 40 }}>
                                         {getWeekendAreas()}
                                         <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} opacity={0.1} stroke="currentColor" />
                                         <XAxis 

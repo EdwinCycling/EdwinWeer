@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Location, AppSettings, TempUnit } from '../types';
 import { Icon } from './Icon';
 import { getTranslation } from '../services/translations';
-import { convertTemp, mapWmoCodeToText, mapWmoCodeToIcon, convertWind, throttledFetch } from '../services/weatherService';
+import { convertTemp, mapWmoCodeToText, mapWmoCodeToIcon, convertWind, throttledFetch, calculateHeatIndex } from '../services/weatherService';
 import { StaticWeatherBackground } from './StaticWeatherBackground';
 import { loadFavoritesCompactMode, saveFavoritesCompactMode } from '../services/storageService';
 import { useScrollLock } from '../hooks/useScrollLock';
@@ -23,6 +23,7 @@ interface FavoriteWeather {
     precipProb: number;
     cloudCover: number;
     windSpeed: number;
+    humidity: number;
     minutely15: {
         time: string[];
         precipitation: number[];
@@ -91,7 +92,7 @@ export const FavoritesList: React.FC<Props> = ({
         const lons = locations.map(l => l.lon).join(',');
 
         try {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day,apparent_temperature,precipitation,cloud_cover,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&minutely_15=precipitation&timezone=auto`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day,apparent_temperature,precipitation,cloud_cover,wind_speed_10m,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&minutely_15=precipitation&timezone=auto`;
             const data = await throttledFetch(url);
 
             const newWeather: Record<string, FavoriteWeather> = {};
@@ -126,6 +127,7 @@ export const FavoritesList: React.FC<Props> = ({
                     precipProb: item.daily.precipitation_probability_max[0],
                     cloudCover: item.current.cloud_cover,
                     windSpeed: item.current.wind_speed_10m,
+                    humidity: item.current.relative_humidity_2m,
                     minutely15: item.minutely_15
                 };
             };
@@ -306,11 +308,19 @@ export const FavoritesList: React.FC<Props> = ({
                                 <span>{t('temp.high_short')}:{weather ? convertTemp(weather.maxTemp, settings.tempUnit) : '--'}°</span>
                                 <span>{t('temp.low_short')}:{weather ? convertTemp(weather.minTemp, settings.tempUnit) : '--'}°</span>
                             </div>
-                            {/* Feels Like moved here */}
+                            {/* Feels Like / Heat Index */}
                             {weather && (
-                                <div className="text-[11px] text-white/80 mt-0.5">
-                                    {t('feels_like')}: {convertTemp(weather.apparentTemp, settings.tempUnit)}°
-                                </div>
+                                <>
+                                    {weather.apparentTemp < 15 ? (
+                                        <div className="text-[11px] text-white/80 mt-0.5">
+                                            {t('feels_like')}: {convertTemp(weather.apparentTemp, settings.tempUnit)}°
+                                        </div>
+                                    ) : weather.temp > 25 ? (
+                                        <div className="text-[11px] text-orange-200 mt-0.5">
+                                            {t('heat_index')}: {convertTemp(calculateHeatIndex(weather.temp, weather.humidity), settings.tempUnit)}°
+                                        </div>
+                                    ) : null}
+                                </>
                             )}
                         </div>
                     </div>

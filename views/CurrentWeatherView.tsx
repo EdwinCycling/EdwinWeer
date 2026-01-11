@@ -5,7 +5,7 @@ import { calculateActivityScore, ActivityScore } from '../services/activityServi
 import { getVisiblePlanets } from '../services/astronomyService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, getBeaufort, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
@@ -708,6 +708,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
     const pastHourIndex = weatherData ? Math.max(0, getLocationTime().getHours() - 1) : 0;
     const pastWindSpeed = weatherData ? convertWind(weatherData.hourly.wind_speed_10m[pastHourIndex], settings.windUnit) : 0;
+    const pastWindSpeedRaw = weatherData ? weatherData.hourly.wind_speed_10m[pastHourIndex] : 0;
+    const pastWindBft = getBeaufort(pastWindSpeedRaw);
     const pastWindGust = weatherData ? convertWind(weatherData.hourly.wind_gusts_10m[pastHourIndex], settings.windUnit) : 0;
     const pastWindDir = weatherData ? weatherData.hourly.wind_direction_10m[pastHourIndex] : 0;
     const pastWindDirText = getWindDirection(pastWindDir, settings.language);
@@ -980,17 +982,28 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 </div>
                             )}
 
-                            {/* Wind Box (New) */}
-                            <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-1 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                    <Icon name="air" className="text-sm md:text-base text-slate-700 dark:text-white" />
-                                    <span className="text-sm md:text-base font-bold">{pastWindSpeed}</span>
+                            {/* Wind Box (New Compass Style) */}
+                            <div className="relative flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-1 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:w-[80px] md:h-[100px] overflow-hidden">
+                                {/* Compass Background */}
+                                <div className="absolute inset-1 rounded-full border-2 border-slate-300/50 dark:border-white/10" />
+                                <div className="absolute top-1 text-[8px] font-bold text-slate-400">N</div>
+                                <div className="absolute bottom-1 text-[8px] font-bold text-slate-400">{settings.language === 'nl' ? 'Z' : 'S'}</div>
+                                <div className="absolute left-1 text-[8px] font-bold text-slate-400">W</div>
+                                <div className="absolute right-1 text-[8px] font-bold text-slate-400">{settings.language === 'nl' ? 'O' : 'E'}</div>
+
+                                {/* Rotating Arrow */}
+                                <div 
+                                    className="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out"
+                                    style={{ transform: `rotate(${pastWindDir}deg)` }}
+                                >
+                                    <Icon name="north" className="text-xl md:text-2xl text-red-500 absolute top-2 md:top-3" />
                                 </div>
-                                <div className="flex flex-col items-center leading-none gap-0.5">
-                                    <span className="text-[10px] font-bold">{pastWindDirText}</span>
-                                    <span className="text-[9px] text-slate-500 dark:text-white/60">{pastWindGust} <span className="text-[7px] opacity-70">max</span></span>
+
+                                {/* Center Value */}
+                                <div className="z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full w-10 h-10 flex flex-col items-center justify-center shadow-sm border border-slate-100 dark:border-white/5">
+                                    <span className="text-sm md:text-base font-bold leading-none">{pastWindBft}</span>
+                                    <span className="text-[8px] font-medium leading-none opacity-70">bft</span>
                                 </div>
-                                <span className="text-[7px] md:text-[8px] uppercase text-slate-500 dark:text-white/60 text-center mt-1 leading-tight">{t('wind.avg_past_hour')}</span>
                             </div>
 
                             {currentComfort && (

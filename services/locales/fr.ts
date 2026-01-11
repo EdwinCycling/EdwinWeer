@@ -532,6 +532,8 @@ export const fr: Dictionary = {
     'records.sequences.none': 'Aucune séquence trouvée',
 
     'records.diverse_title': 'Extrêmes divers',
+    'records.max_min_to_max_rise_title': 'Plus haut Min à Max',
+    'records.max_min_to_max_rise_desc': 'Minimum au maximum en 1 jour',
     'records.max_rise': 'Plus grande hausse de température (temp max)',
     'records.max_drop': 'Plus grande baisse de température (temp max)',
     'records.extremes.first_summer': 'Premier jour d\'été (≥ 25°C)',

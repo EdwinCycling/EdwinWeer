@@ -583,6 +583,8 @@ export const nl: Dictionary = {
     'records.diverse_title': 'Diverse extremen',
     'records.max_rise': 'Grootste temperatuur stijging (max temp)',
     'records.max_drop': 'Grootste temperatuur daling (max temp)',
+    'records.max_min_to_max_rise_title': 'Hoogste Min naar Max',
+    'records.max_min_to_max_rise_desc': 'Minimale naar maximale in 1 dag',
     'records.diff_day1': 'Dag 1',
     'records.diff_day2': 'Dag 2',
     'records.extremes.first_summer': 'Eerste zomerse dag (≥ 25°C)',

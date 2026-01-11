@@ -576,6 +576,8 @@ export const en: Dictionary = {
     'records.diverse_title': 'Miscellaneous extremes',
     'records.max_rise': 'Largest temperature rise (max temp)',
     'records.max_drop': 'Largest temperature drop (max temp)',
+    'records.max_min_to_max_rise_title': 'Highest Min to Max',
+    'records.max_min_to_max_rise_desc': 'Minimum to maximum in 1 day',
     'records.extremes.first_summer': 'First summer day (≥ 25°C)',
     'records.extremes.last_summer': 'Last summer day (≥ 25°C)',
     'records.extremes.first_warm': 'First warm day (≥ 20°C)',

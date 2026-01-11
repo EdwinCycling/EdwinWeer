@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { ViewState, AppSettings, Location, WindUnit } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchHistorical, convertTemp, convertTempPrecise, convertWind, convertPrecip, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore, calculateJagTi, calculateHeatIndex } from '../services/weatherService';
+import { fetchHistorical, convertTemp, convertTempPrecise, convertWind, convertPrecip, fetchForecast, fetchYearData, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore, calculateJagTi, calculateHeatIndex } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, DEFAULT_SETTINGS } from '../services/storageService';
+import { HeatmapComponent } from '../components/HeatmapComponent';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
@@ -114,6 +115,7 @@ interface ExtremesInfo {
 interface DiverseRecords {
     maxRise: DiverseRecord | null;
     maxDrop: DiverseRecord | null;
+    maxMinToMaxRise: DiverseRecord | null;
     extremes: ExtremesInfo | null;
 }
 
@@ -143,7 +145,8 @@ interface DailyData {
 
 export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
-  const [recordType, setRecordType] = useState<'12month' | 'yearly' | 'monthly' | 'calendar'>('yearly');
+  const [recordType, setRecordType] = useState<'12month' | 'yearly' | 'monthly' | 'calendar' | 'heatmap'>('yearly');
+  const [heatmapData, setHeatmapData] = useState<{ dates: string[], maxTemps: (number|null)[], minTemps: (number|null)[], precip: (number|null)[], sun: (number|null)[], daylight: (number|null)[] } | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [loading, setLoading] = useState(false);
@@ -304,6 +307,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       return `${dayName} ${dayNum}${suffix}`;
   };
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     fetchRecords();
   }, [recordType, selectedYear, selectedMonth, location.lat, location.lon]);
@@ -325,6 +337,30 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setHeatwaves([]);
     setMonthlyStats(null);
     setDailyData([]);
+    setHeatmapData(null);
+
+    if (recordType === 'heatmap') {
+        try {
+             const data = await fetchYearData(location.lat, location.lon, selectedYear);
+             if (data && data.daily && data.daily.time) {
+                 setHeatmapData({
+                     dates: data.daily.time,
+                     maxTemps: data.daily.temperature_2m_max,
+                     minTemps: data.daily.temperature_2m_min,
+                     precip: data.daily.precipitation_sum,
+                     sun: data.daily.sunshine_duration,
+                     daylight: data.daily.daylight_duration
+                 });
+             } else {
+                 setError('Geen data beschikbaar voor dit jaar.');
+             }
+        } catch (e) {
+            console.error(e);
+            setError('Fout bij ophalen data.');
+        }
+        setLoading(false);
+        return;
+    }
 
     // try {
       let startDateStr = '';
@@ -599,9 +635,17 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       let maxDropTemp1 = 0;
       let maxDropTemp2 = 0;
 
+      let maxMinToMaxRiseVal = -Infinity;
+      let maxMinToMaxRiseDay1 = '';
+      let maxMinToMaxRiseDay2 = '';
+      let maxMinToMaxRiseTemp1 = 0;
+      let maxMinToMaxRiseTemp2 = 0;
+
       for (let i = 0; i < times.length - 1; i++) {
         const tMax1 = maxTemps[i];
         const tMax2 = maxTemps[i+1];
+        
+        // Rise/Drop (Max vs Max)
         if (typeof tMax1 === 'number' && !Number.isNaN(tMax1) && typeof tMax2 === 'number' && !Number.isNaN(tMax2)) {
              const diff = tMax2 - tMax1;
              
@@ -614,8 +658,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                  maxRiseTemp2 = tMax2;
              }
 
-             // Drop (diff is negative for drop, so we look for largest magnitude negative number, or largest positive drop value)
-             // User asked for "greatest temp drop", usually meaning tMax1 - tMax2 is max.
+             // Drop
              const drop = tMax1 - tMax2;
              if (drop > maxDropVal) {
                  maxDropVal = drop;
@@ -625,11 +668,26 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                  maxDropTemp2 = tMax2;
              }
         }
+
+        // Min to Max Rise (Min Day 1 to Max Day 2)
+        const tMin1 = minTemps[i];
+        if (typeof tMin1 === 'number' && !Number.isNaN(tMin1) && typeof tMax2 === 'number' && !Number.isNaN(tMax2)) {
+            const rise = tMax2 - tMin1;
+            if (rise > maxMinToMaxRiseVal) {
+                maxMinToMaxRiseVal = rise;
+                maxMinToMaxRiseDay1 = times[i];
+                maxMinToMaxRiseDay2 = times[i+1];
+                maxMinToMaxRiseTemp1 = tMin1;
+                maxMinToMaxRiseTemp2 = tMax2;
+            }
+        }
       }
 
       setDiverseRecords({
           maxRise: maxRiseVal > -Infinity ? { value: maxRiseVal, day1: maxRiseDay1, day2: maxRiseDay2, temp1: maxRiseTemp1, temp2: maxRiseTemp2 } : null,
-          maxDrop: maxDropVal > -Infinity ? { value: maxDropVal, day1: maxDropDay1, day2: maxDropDay2, temp1: maxDropTemp1, temp2: maxDropTemp2 } : null
+          maxDrop: maxDropVal > -Infinity ? { value: maxDropVal, day1: maxDropDay1, day2: maxDropDay2, temp1: maxDropTemp1, temp2: maxDropTemp2 } : null,
+          maxMinToMaxRise: maxMinToMaxRiseVal > -Infinity ? { value: maxMinToMaxRiseVal, day1: maxMinToMaxRiseDay1, day2: maxMinToMaxRiseDay2, temp1: maxMinToMaxRiseTemp1, temp2: maxMinToMaxRiseTemp2 } : null,
+          extremes: null // Will be populated in yearly section if needed, or initialized here
       });
 
       if (recordType === 'yearly') {
@@ -1315,7 +1373,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                 <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
                     <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
-                        {location.name}, {location.country}
+                        <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
+                        <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
                      <p className="text-xs text-white/80 mt-1 drop-shadow-md">
                         {t('records.title')}
@@ -1461,6 +1520,20 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </button>
                 </UITooltip>
 
+                <UITooltip content="Heatmap">
+                 <button
+                onClick={() => setRecordType('heatmap')}
+                className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
+                    recordType === 'heatmap'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
+                }`}
+                >
+                <span className="hidden md:inline">Heatmap</span>
+                <Icon name="grid_on" className="md:hidden" />
+                </button>
+                </UITooltip>
+
                 <UITooltip content={t('records.monthly')}>
                  <button
                 onClick={() => setRecordType('monthly')}
@@ -1490,7 +1563,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </UITooltip>
             </div>
 
-            {(recordType === 'yearly' || recordType === 'monthly' || recordType === 'calendar') && (
+            {(recordType === 'yearly' || recordType === 'monthly' || recordType === 'calendar' || recordType === 'heatmap') && (
                 <div className="flex gap-2">
                      <div className="relative">
                         <select
@@ -1543,6 +1616,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin h-10 w-10 border-2 border-primary border-t-transparent rounded-full" />
             </div>
+          ) : recordType === 'heatmap' ? (
+              <div className="px-4 pb-10 w-full max-w-5xl mx-auto">
+                 {heatmapData && <HeatmapComponent data={heatmapData} year={selectedYear} settings={settings} onDayClick={navigateToHistoricalSingle} />}
+              </div>
           ) : recordType === 'monthly' ? (
               <div className="flex flex-col gap-6 px-4 pb-10 w-full max-w-4xl mx-auto">
                   {monthlyStats && (
@@ -1639,7 +1716,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                     <ReferenceLine key={`weekend-${index}`} x={entry.day} stroke="rgba(128,128,128,0.1)" strokeWidth={20} />
                                 ) : null
                              ))}
-                            <XAxis dataKey="day" stroke="#888888" tick={{fontSize: 10}} interval={0} />
+                            <XAxis 
+                                dataKey="day" 
+                                stroke="#888888" 
+                                tick={{fontSize: 10}} 
+                                interval={0} 
+                                angle={isMobile ? -45 : 0}
+                                textAnchor={isMobile ? 'end' : 'middle'}
+                                height={isMobile ? 50 : 30}
+                            />
                             <YAxis 
                                 domain={[tempDomain.min, tempDomain.max]} 
                                 ticks={tempDomain.yAxisTicks}
@@ -1724,7 +1809,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                     <ReferenceLine key={`weekend-bar-${index}`} x={entry.day} stroke="rgba(128,128,128,0.1)" strokeWidth={20} />
                                 ) : null
                             ))}
-                            <XAxis dataKey="day" stroke="#888888" tick={{fontSize: 10}} interval={0} />
+                            <XAxis 
+                                dataKey="day" 
+                                stroke="#888888" 
+                                tick={{fontSize: 10}} 
+                                interval={0} 
+                                angle={isMobile ? -45 : 0}
+                                textAnchor={isMobile ? 'end' : 'middle'}
+                                height={isMobile ? 50 : 30}
+                            />
                             <YAxis 
                                 yAxisId="left" 
                                 orientation="left" 
@@ -2428,6 +2521,44 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxDrop.day2)}</span>
                                                   <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxDrop.temp2)}°)</span>
+                                              </span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              ) : (
+                                  <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
+                              )}
+                          </button>
+
+                          {/* Max Min to Max Rise */}
+                          <button 
+                            className="bg-white/60 dark:bg-slate-800 rounded-xl p-4 text-left hover:bg-white/80 dark:hover:bg-slate-700 transition-colors"
+                            onClick={() => diverseRecords.maxMinToMaxRise && navigateToHistoricalCompare(diverseRecords.maxMinToMaxRise.day1, diverseRecords.maxMinToMaxRise.day2)}
+                          >
+                              <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  {t('records.max_min_to_max_rise_title')}
+                              </span>
+                              <span className="text-[10px] text-slate-500 dark:text-white/50 block mb-2 italic">
+                                  {t('records.max_min_to_max_rise_desc')}
+                              </span>
+                              {diverseRecords.maxMinToMaxRise ? (
+                                  <div>
+                                      <div className="text-2xl font-bold text-red-500 mb-1">
+                                          +{formatTempValue(diverseRecords.maxMinToMaxRise.value)}°
+                                      </div>
+                                      <div className="text-xs text-slate-500 dark:text-white/60 flex flex-col gap-1">
+                                          <div className="flex justify-between">
+                                              <span>{t('records.diff_day1')}:</span>
+                                              <span className="flex gap-2">
+                                                  <span>{formatDateLabel(diverseRecords.maxMinToMaxRise.day1)}</span>
+                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxMinToMaxRise.temp1)}°)</span>
+                                              </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                              <span>{t('records.diff_day2')}:</span>
+                                              <span className="flex gap-2">
+                                                  <span>{formatDateLabel(diverseRecords.maxMinToMaxRise.day2)}</span>
+                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxMinToMaxRise.temp2)}°)</span>
                                               </span>
                                           </div>
                                       </div>

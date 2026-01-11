@@ -91,6 +91,15 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const t = (key: string) => getTranslation(key, settings.language);
 
   useEffect(() => {
@@ -717,7 +726,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                   </h3>
                   <div className="w-full h-[500px]">
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                          <ComposedChart data={processChartData.data}>
+                          <ComposedChart data={processChartData.data} margin={{ top: 10, right: isMobile ? 0 : 30, left: isMobile ? -20 : 0, bottom: 10 }}>
                               <defs>
                                   <linearGradient id="gradientGrid" x1="0" y1="0" x2="0" y2="1">
                                       <stop offset="0%" stopColor="#888" stopOpacity={0.1} />
@@ -921,7 +930,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
                 <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
                     <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
-                        {location.name}, {location.country}
+                        <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
+                        <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
                 </div>
 
@@ -1201,7 +1211,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 {/* View Mode Selector */}
                 <div>
                     <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('view_mode')}</label>
-                    <div className="flex bg-slate-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto border border-slate-200 dark:border-white/10 shadow-sm no-swipe" data-no-swipe="true">
+                    <div className="flex bg-slate-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto scrollbar-hide border border-slate-200 dark:border-white/10 shadow-sm no-swipe" data-no-swipe="true">
                         {[
                             { id: 'all', label: t('all') },
                             { id: 'main', label: t('ensemble.main') },

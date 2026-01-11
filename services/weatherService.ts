@@ -336,6 +336,27 @@ export const fetchAstronomy = async (lat: number, lon: number, timezone: string 
     };
 };
 
+const getTodayString = () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
+export const fetchYearData = async (lat: number, lon: number, year: number) => {
+    const startDate = `${year}-01-01`;
+    let endDate = `${year}-12-31`;
+    
+    const today = new Date();
+    if (year >= today.getFullYear()) {
+        endDate = getTodayString();
+    }
+    
+    const url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunshine_duration,daylight_duration&timezone=auto`;
+    return throttledFetch(url);
+};
+
 export const fetchForecast = async (lat: number, lon: number, model?: EnsembleModel, pastDays: number = 0) => {
   validateCoordinates(lat, lon);
   
@@ -403,7 +424,9 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   let url = '';
 
   if (useArchive) {
-      url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
+      const todayStr = getTodayString();
+      const actualEndDate = endDate > todayStr ? todayStr : endDate;
+      url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${actualEndDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
   } else {
       url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&hourly=${hourlyVars}&daily=${dailyVars}&timezone=auto`;
   }
@@ -432,7 +455,9 @@ export const fetchHistoricalDaily = async (lat: number, lon: number, startDate: 
   
     let url = '';
     if (useArchive) {
-        url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
+        const todayStr = getTodayString();
+        const actualEndDate = endDate > todayStr ? todayStr : endDate;
+        url = `${ARCHIVE_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${actualEndDate}&daily=${dailyVars}&timezone=auto`;
     } else {
         url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=${dailyVars}&timezone=auto`;
     }

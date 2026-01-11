@@ -531,6 +531,8 @@ export const es: Dictionary = {
     'records.sequences.none': 'No se encontró secuencia',
 
     'records.diverse_title': 'Extremos diversos',
+    'records.max_min_to_max_rise_title': 'Mayor Mín a Máx',
+    'records.max_min_to_max_rise_desc': 'Mínimo a máximo en 1 día',
     'records.max_rise': 'Mayor aumento de temperatura (temp max)',
     'records.max_drop': 'Mayor caída de temperatura (temp max)',
     'records.extremes.first_summer': 'Primer día de verano (≥ 25°C)',
