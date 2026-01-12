@@ -415,6 +415,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
             const data = JSON.parse(cachedData);
             setHistoricalData(data);
             setLoading(false);
+            setToast('Gebruikt opgeslagen data (gratis)');
             return data;
         } catch (e) {
             console.warn('Cache read failed', e);
@@ -422,12 +423,12 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
     }
 
     // 2. Check Credits ONLY if we need to fetch
-        const usage = getUsage();
-        if (usage.weatherCredits < 150) {
-            setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
-            setLoading(false);
-            return;
-        }
+    const usage = getUsage();
+    if (usage.weatherCredits < 150) {
+        setError('Je hebt minimaal 150 weather credits nodig om nieuwe data op te halen. (Opgeslagen zoekopdrachten werken wel)');
+        setLoading(false);
+        return;
+    }
 
     // Check Daily Limit
     const today = new Date().toISOString().split('T')[0];

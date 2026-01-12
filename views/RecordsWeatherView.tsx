@@ -398,7 +398,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const year = selectedYear > currentYearValue ? currentYearValue : selectedYear;
         startDateStr = `${year}-01-01`;
         if (year === currentYearValue) {
-          endDateStr = today.toISOString().split('T')[0];
+            // Use yesterday to avoid partial/forecast data for today
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            endDateStr = yesterday.toISOString().split('T')[0];
+            
+            // Handle Jan 1st edge case
+            if (endDateStr < startDateStr) {
+                endDateStr = startDateStr; 
+            }
         } else {
           endDateStr = `${year}-12-31`;
         }

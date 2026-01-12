@@ -60,6 +60,16 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitError, setLimitError] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+        const activeBtn = scrollContainerRef.current.querySelector('[data-active="true"]');
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+  }, [location]);
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -904,6 +914,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     {settings.favorites.map((fav, i) => (
                         <button 
                             key={i}
+                            data-active={location.name === fav.name && !location.isCurrentLocation}
                             onClick={() => setLocation(fav)}
                             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold' : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-white/20 border-slate-200 dark:border-white/5'}`}
                         >

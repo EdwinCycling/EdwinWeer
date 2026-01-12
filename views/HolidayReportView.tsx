@@ -549,13 +549,19 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                 </button>
                 <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
                     <Icon name="flight" className="text-primary" />
-                    {t('holiday_report.label.title')}
+                    {t('holiday_report.page_title')}
                 </h2>
             </div>
         </div>
 
         <div className="px-6 relative z-10 w-full max-w-4xl mx-auto">
-            {!reportData ? (
+                {error && (
+                    <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl border border-red-100 dark:border-red-900/50 flex items-center gap-3 mb-4 animate-in fade-in slide-in-from-top-2">
+                        <Icon name="error" />
+                        <span className="font-bold">{error}</span>
+                    </div>
+                )}
+                {!reportData ? (
                 <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-white/10">
                     <div className="flex flex-col gap-4">
                         {/* Title */}

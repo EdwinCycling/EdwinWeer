@@ -6,6 +6,8 @@ import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { fetchForecast, mapWmoCodeToText, getWindDirection, calculateMoonPhase } from '../services/weatherService';
 import { loadCurrentLocation } from '../services/storageService';
+import { getUsage } from '../services/usageService';
+import { LimitReachedModal } from '../components/LimitReachedModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -219,6 +221,9 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitError, setLimitError] = useState('');
+
   // Initialize & Fetch Weather
   useEffect(() => {
     if (locationObj) {
@@ -323,6 +328,17 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
   };
 
   const fetchData = async (lat: number, lon: number) => {
+      // Check credits
+      const usage = getUsage();
+      if (usage.weatherCredits < 1) {
+          setLimitError('Geen credits meer beschikbaar om weerdata op te halen.');
+          setShowLimitModal(true);
+          // Don't return here if we want to show cached/existing data? 
+          // But user says "page not hidden".
+          // If we block fetch, weatherData remains empty/default.
+          return;
+      }
+
       try {
           const data = await fetchForecast(lat, lon);
           if (!data) return;
@@ -1299,6 +1315,21 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             <h1 className="text-lg font-bold">{t('share.title')}</h1>
         </div>
 
+        {showLimitModal ? (
+             <div className="flex-1 flex items-center justify-center p-8">
+                 <div className="text-center max-w-md">
+                     <Icon name="block" className="text-4xl text-red-500 mb-4 mx-auto" />
+                     <h2 className="text-xl font-bold mb-2">Limiet Bereikt</h2>
+                     <p className="text-slate-500 mb-6">{limitError}</p>
+                     <button onClick={() => onNavigate(ViewState.CURRENT)} className="px-6 py-2 bg-primary text-white rounded-xl font-bold">Terug</button>
+                 </div>
+                 <LimitReachedModal 
+                    isOpen={showLimitModal} 
+                    onClose={() => setShowLimitModal(false)}
+                    message={limitError}
+                 />
+             </div>
+        ) : (
         <div className="flex flex-col lg:flex-row gap-8 p-4 max-w-7xl mx-auto w-full">
             
             {/* Controls */}
@@ -1701,6 +1732,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             </div>
 
         </div>
+        )}
     </div>
   );
 };

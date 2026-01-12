@@ -82,6 +82,15 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
             return;
         }
 
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate >= today) {
+             setError(t('storyteller.error.future_date') || 'Kies een datum in het verleden');
+             return;
+        }
+
         setStep('loading');
         setError(null);
 
@@ -149,6 +158,24 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                     if (element) {
                         element.classList.remove('shadow-2xl');
                         (element as HTMLElement).style.boxShadow = 'none';
+                    }
+
+                    // Fix for oklch/oklab unsupported colors in html2canvas
+                    const allElements = clonedDoc.getElementsByTagName('*');
+                    for (let i = 0; i < allElements.length; i++) {
+                        const el = allElements[i] as HTMLElement;
+                        const style = window.getComputedStyle(el);
+                        
+                        // If any color property uses oklch/oklab, replace it with a safe fallback
+                        if (style.color && (style.color.includes('oklch') || style.color.includes('oklab'))) {
+                            el.style.color = '#2d3748'; 
+                        }
+                        if (style.backgroundColor && (style.backgroundColor.includes('oklch') || style.backgroundColor.includes('oklab'))) {
+                            el.style.backgroundColor = 'transparent';
+                        }
+                        if (style.borderColor && (style.borderColor.includes('oklch') || style.borderColor.includes('oklab'))) {
+                            el.style.borderColor = '#e2e8f0';
+                        }
                     }
                 }
             });

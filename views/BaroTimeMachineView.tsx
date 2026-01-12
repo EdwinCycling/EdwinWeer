@@ -77,7 +77,18 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
 
     const handleGenerate = async () => {
         if (!selectedLocation) return;
-        if (baroCredits < 1) return;
+        
+        const usage = getUsage();
+        if (usage.baroCredits < 1) {
+            alert(t('baro_time_machine.no_credits_text'));
+            return;
+        }
+        
+        // Additional Check: Weather Credits & Limits
+        if (usage.weatherCredits < 50) { // Assuming some cost for historical data fetch
+             alert("Niet genoeg Weather Credits voor historische data (min 50 nodig).");
+             return;
+        }
 
         setIsGenerating(true);
         try {

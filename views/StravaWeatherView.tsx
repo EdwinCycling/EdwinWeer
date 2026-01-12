@@ -3,9 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { toPng, toBlob } from 'html-to-image';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings, RideData, WindUnit } from '../types';
+import { getTranslation } from '../services/translations';
 import { ResponsiveContainer, ComposedChart, Area, Line, Bar, XAxis, Tooltip, YAxis, CartesianGrid, Legend } from 'recharts';
 import { fetchHistorical, convertTemp, convertWind, convertPrecip } from '../services/weatherService';
-import { getTranslation } from '../services/translations';
+import { getUsage, trackCall } from '../services/usageService';
+import { LimitReachedModal } from '../components/LimitReachedModal';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -67,6 +69,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const [isMapMenuOpen, setIsMapMenuOpen] = useState(true);
   const [showMapTemp, setShowMapTemp] = useState(true);
   const [showMapWind, setShowMapWind] = useState(true);
+  const [isFullScreenMap, setIsFullScreenMap] = useState(false);
   
   // Map State
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -74,7 +77,8 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const markersLayerRef = useRef<any>(null); 
   const exportRef = useRef<HTMLDivElement>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<GPXPoint[]>([]);
-  const [isFullScreenMap, setIsFullScreenMap] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitError, setLimitError] = useState('');
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -287,6 +291,14 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Check Credits
+    const usage = getUsage();
+    if (usage.weatherCredits < 1) {
+        setLimitError('Geen credits meer beschikbaar voor Strava analyse.');
+        setShowLimitModal(true);
+        return;
+    }
 
     setLoading(true);
     setError('');
@@ -549,7 +561,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
         )}
 
         {/* Results Dashboard */}
-        {rideData && (
+        {rideData && !showLimitModal && (
             <>
                 <div ref={exportRef} className="flex flex-col gap-6 bg-slate-50 dark:bg-background-dark p-2 rounded-xl">
                 {/* 1. Map Container - Responsive & Full Screen Capable */}
@@ -803,6 +815,12 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             </>
         )}
       </div>
+      {/* Limit Modal */}
+      <LimitReachedModal 
+        isOpen={showLimitModal} 
+        onClose={() => setShowLimitModal(false)}
+        message={limitError}
+      />
     </div>
   );
 };

@@ -138,7 +138,7 @@ export const handler = async (event: any, context: any) => {
             BELANGRIJKE REGELS:
             1. SCHRIJFSTIJL: Gebruik een VERHALENDE en BOEIENDE journalistieke stijl. Schrijf alsof je de lezer meeneemt in de sfeer van de dag. Vermijd droge opsommingen. Gebruik normale spelling met HOOFDLETTERS waar dat hoort (begin van zinnen, namen, etc.).
             2. TITELS: Gebruik GEEN Camel Case (dus niet Elk Woord Een Hoofdletter). Gebruik normale zin-notatie: "Zware storm teistert de kust van Holland".
-            3. KORT NIEUWS: Dit MOETEN waargebeurde, realistische historische feiten zijn die plaatsvonden op PRECIES deze datum (${date}) of maximaal 1 tot 3 dagen ervoor. Zoek naar belangrijke politieke, culturele of wetenschappelijke gebeurtenissen uit die specifieke tijdgeest.
+            3. KORT NIEUWS: Dit MOETEN waargebeurde, realistische historische feiten zijn die plaatsvonden op PRECIES deze datum (${date}) of maximaal 1 tot 3 dagen ervoor. Zoek naar belangrijke politieke, culturele of wetenschappelijke gebeurtenissen uit die specifieke tijdgeest. Het MOET 100% kloppen, geen aannames. GEEN HALLUCINATIES.
             4. FUN FACT: Een luchtig, maar WAARGEBEURD historisch feitje dat specifiek verbonden is aan deze dag (dag/maand) in de geschiedenis.
             5. FAKE AD: Verzin een grappige, tijd-periodieke advertentie (tekst).
             
@@ -184,7 +184,7 @@ export const handler = async (event: any, context: any) => {
             RÈGLES IMPORTANTES:
             1. STYLE D'ÉCRITURE: Utilisez un style journalistique NARRATIF et CAPTIVANT. Écrivez comme si vous transportiez le lecteur dans l'atmosphère de la journée. Évitez les listes sèches. Utilisez une orthographe normale avec des MAJUSCULES là où elles doivent être (début de phrase, noms, etc.).
             2. TITRES: N'utilisez PAS le Camel Case. Utilisez la notation de phrase normale: "Une violente tempête frappe la côte".
-            3. BRÈVES: Ce DOIVENT être des faits historiques réels et réalistes qui ont eu lieu EXACTEMENT à cette date (${date}) ou au maximum 1 à 3 jours avant. Recherchez des événements politiques, culturels ou scientifiques importants de cette époque spécifique.
+            3. BRÈVES: Ce DOIVENT être des faits historiques réels et réalistes qui ont eu lieu EXACTEMENT à cette date (${date}) ou au maximum 1 à 3 jours avant. Recherchez des événements politiques, culturels ou scientifiques importants de cette époque spécifique. Les faits doivent être 100% exacts, pas de suppositions. PAS D'HALLUCINATIONS.
             4. FAIT AMUSANT: Un fait historique léger mais VRAI spécifiquement lié à ce jour (jour/mois) dans l'histoire.
             5. FAUSSE PUB: Inventez une publicité drôle et d'époque (texte).
 
@@ -230,7 +230,7 @@ export const handler = async (event: any, context: any) => {
             WICHTIGE REGELN:
             1. SCHREIBSTIL: Verwenden Sie einen ERZÄHLENDEN und FESSELNDEN journalistischen Stil. Schreiben Sie so, als würden Sie den Leser in die Atmosphäre des Tages mitnehmen. Vermeiden Sie trockene Aufzählungen. Verwenden Sie normale Rechtschreibung.
             2. TITEL: Verwenden Sie KEIN Camel Case. Verwenden Sie normale Satzschreibweise: "Schwerer Sturm trifft die Küste".
-            3. KURZNACHRICHTEN: Dies MÜSSEN wahre, realistische historische Fakten sein, die GENAU an diesem Datum (${date}) oder maximal 1 bis 3 Tage davor stattfanden. Suchen Sie nach wichtigen politischen, kulturellen oder wissenschaftlichen Ereignissen aus diesem spezifischen Zeitgeist.
+            3. KURZNACHRICHTEN: Dies MÜSSEN wahre, realistische historische Fakten sein, die GENAU an diesem Datum (${date}) oder maximal 1 bis 3 Tage davor stattfanden. Suchen Sie nach wichtigen politischen, kulturellen oder wissenschaftlichen Ereignissen aus diesem spezifischen Zeitgeist. Die Fakten MÜSSEN 100% stimmen, keine Vermutungen. KEINE HALLUZINATIONEN.
             4. FUN FACT: Eine lockere, aber WAHRE historische Tatsache, die speziell mit diesem Tag (Tag/Monat) in der Geschichte verbunden ist.
             5. FAKE AD: Erfinden Sie eine lustige, zeitgenössische Werbung (Text).
 
@@ -276,7 +276,7 @@ export const handler = async (event: any, context: any) => {
             REGLAS IMPORTANTES:
             1. ESTILO DE ESCRITURA: Usa un estilo periodístico NARRATIVO y CAUTIVADOR. Escribe como si llevaras al lector a la atmósfera del día. Evita listas secas. Usa ortografía normal.
             2. TÍTULOS: NO uses Camel Case. Usa notación de frase normal: "Fuerte tormenta golpea la costa".
-            3. NOTICIAS BREVES: Estos DEBEN ser hechos históricos reales y realistas que ocurrieron EXACTAMENTE en esta fecha (${date}) o máximo 1 a 3 días antes. Busca eventos políticos, culturales o científicos importantes de ese espíritu de la época específico.
+            3. NOTICIAS BREVES: Estos DEBEN ser hechos históricos reales y realistas que ocurrieron EXACTAMENTE en esta fecha (${date}) o máximo 1 a 3 días antes. Busca eventos políticos, culturales o científicos importantes de ese espíritu de la época específico. Los hechos DEBEN ser 100% correctos, sin suposiciones. NO ALUCINACIONES.
             4. DATO CURIOSO: Un hecho histórico ligero pero VERDADERO específicamente vinculado a este día (día/mes) en la historia.
             5. ANUNCIO FALSO: Inventa un anuncio divertido y de época (texto).
 
@@ -323,7 +323,7 @@ export const handler = async (event: any, context: any) => {
             IMPORTANT RULES:
             1. WRITING STYLE: Use a NARRATIVE and ENGAGING journalistic style. Write as if you are taking the reader into the atmosphere of the day. Avoid dry lists. Use normal capitalization.
             2. TITLES: Do NOT use Camel Case. Use normal sentence case: "Heavy storm hits the coast".
-            3. SHORT NEWS: These MUST be true, realistic historical facts that happened EXACTLY on this date (${date}) or max 1 to 3 days before. Look for important political, cultural, or scientific events from that specific zeitgeist.
+            3. SHORT NEWS: These MUST be true, realistic historical facts that happened EXACTLY on this date (${date}) or max 1 to 3 days before. Look for important political, cultural, or scientific events from that specific zeitgeist. It MUST be 100% correct, no assumptions. NO HALLUCINATIONS.
             4. FUN FACT: A light but TRUE historical fact specifically linked to this day (day/month) in history.
             5. FAKE AD: Invent a funny, period-appropriate advertisement (text).
 

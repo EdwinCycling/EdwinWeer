@@ -8,7 +8,7 @@ import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { loadClimateData, saveClimateData } from '../services/storageService';
 import { convertTempPrecise, convertWind, convertPrecip, throttledFetch } from '../services/weatherService';
-import { getUsage, trackCall } from '../services/usageService';
+import { getUsage, trackCall, consumeCredit } from '../services/usageService';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -148,13 +148,14 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
            setLastFetchedLocation(locKey);
            processData(cached);
            setError(null);
+           // Toast could be added here if we had a toast state accessible, or just rely on UI state
            return;
       }
 
       // 2. Check credits ONLY if we need to fetch
       const usage = getUsage();
       if (usage.weatherCredits < 150) {
-          setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
+          setError('Je hebt minimaal 150 weather credits nodig om nieuwe klimaatdata op te halen. (Opgeslagen locaties werken wel)');
           return;
       }
       
@@ -202,6 +203,9 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           
           // Mark as used today
           localStorage.setItem('climate_change_last_use', new Date().toISOString().split('T')[0]);
+
+          // Deduct extra credits (9 + 1 from trackCall = 10)
+          consumeCredit('weather', 9);
           
           setRawDailyData(data);
           setLastFetchedLocation(locKey);
@@ -748,7 +752,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                           <select 
                             value={day} 
                             onChange={(e) => setDay(Number(e.target.value))}
-                            className="bg-transparent font-medium p-2 outline-none text-center cursor-pointer hover:bg-white dark:hover:bg-white/10 rounded-xl transition-colors"
+                            className="bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-medium p-2 outline-none text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition-colors"
                           >
                               {Array.from({length: 31}, (_, i) => i + 1).map(d => (
                                   <option key={d} value={d}>{d}</option>
@@ -758,7 +762,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                           <select 
                             value={month} 
                             onChange={(e) => setMonth(Number(e.target.value))}
-                            className="bg-transparent font-medium p-2 outline-none text-center cursor-pointer hover:bg-white dark:hover:bg-white/10 rounded-xl transition-colors"
+                            className="bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-medium p-2 outline-none text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition-colors"
                           >
                               {monthNames.map((m, i) => (
                                   <option key={m} value={i + 1}>{m}</option>

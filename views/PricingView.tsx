@@ -323,6 +323,10 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         <span>{t('pricing.baro_feat3')}</span>
                     </li>
                      <li className="flex items-center gap-3 text-sm text-purple-100">
+                        <Icon name="history_edu" className="text-pink-400" />
+                        <span>{t('pricing.baro_feat5')}</span>
+                    </li>
+                     <li className="flex items-center gap-3 text-sm text-purple-100">
                         <Icon name="bolt" className="text-pink-400" />
                         <span>{t('pricing.baro_feat4')}</span>
                     </li>
