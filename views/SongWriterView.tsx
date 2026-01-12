@@ -81,6 +81,16 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
             return;
         }
 
+        // Check for future date (Open-Meteo Archive only works for past dates)
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate >= today) {
+            setError("Kies een datum in het verleden (minimaal gisteren). De historie gaat tot gisteren.");
+            return;
+        }
+
         setStep('loading');
         setError(null);
 
@@ -106,9 +116,21 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
             });
 
             if (!response.ok) {
-                const errData = await response.json();
-                console.error("Server Error Details:", errData.details);
-                throw new Error(errData.error || 'Failed to generate song');
+                let errorMessage = 'Failed to generate song';
+                try {
+                    const errData = await response.json();
+                    console.error("Server Error Details:", errData.details);
+                    errorMessage = errData.error || errorMessage;
+                } catch (jsonErr) {
+                    console.error("Could not parse error response as JSON", jsonErr);
+                    // If we can't parse JSON, it might be a proxy error or a crash
+                    if (response.status === 500) {
+                        errorMessage = "Server error (500). Is de Netlify functions server gestart?";
+                    } else {
+                        errorMessage = `Fout (${response.status}): ${response.statusText}`;
+                    }
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
