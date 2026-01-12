@@ -3,12 +3,12 @@ import { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fetch from 'node-fetch';
-import { GEMINI_FALLBACK_MODELS } from './config/ai.js';
+import { GEMINI_MODEL, GEMINI_FALLBACK_MODELS } from './config/ai.js';
 
 // Fallback if import fails or is empty
 const SAFE_MODELS = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0 
     ? GEMINI_FALLBACK_MODELS 
-    : ["gemini-2.0-flash", "gemini-1.5-flash"];
+    : ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -176,11 +176,36 @@ export const handler: Handler = async (event) => {
         // 3. Fetch Weather Data (Archive)
         const lat = location.lat;
         const lon = location.lon;
-        const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&hourly=temperature_2m,weather_code,wind_speed_10m,precipitation&timezone=auto`;
+        
+        // Helper to fetch weather with fallback
+        const fetchWeather = async () => {
+             const params = `latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&hourly=temperature_2m,weather_code,wind_speed_10m,precipitation&timezone=auto`;
+             
+             // Try Archive API first (Best for history)
+             const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?${params}`;
+             console.log(`Fetching weather from Archive: ${archiveUrl}`);
+             
+             const archiveRes = await fetch(archiveUrl);
+             if (archiveRes.ok) {
+                 return await archiveRes.json();
+             }
+             
+             console.warn(`Archive API failed (${archiveRes.status}), trying Forecast API...`);
+             
+             // Try Forecast API (Best for recent past, up to 90 days)
+             const forecastUrl = `https://api.open-meteo.com/v1/forecast?${params}`;
+             console.log(`Fetching weather from Forecast: ${forecastUrl}`);
+             
+             const forecastRes = await fetch(forecastUrl);
+             if (forecastRes.ok) {
+                 return await forecastRes.json();
+             }
+             
+             const errText = await forecastRes.text();
+             throw new Error(`Weather API failed (Archive & Forecast): ${errText}`);
+        };
 
-        const weatherRes = await fetch(url);
-        if (!weatherRes.ok) throw new Error('Failed to fetch historical weather');
-        const weatherData: any = await weatherRes.json();
+        const weatherData: any = await fetchWeather();
 
         // 4. Aggregate Data
         const hourly = weatherData.hourly;

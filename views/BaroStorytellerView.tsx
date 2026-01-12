@@ -87,7 +87,7 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
         today.setHours(0, 0, 0, 0);
         
         if (selectedDate >= today) {
-             setError(t('storyteller.error.future_date') || 'Kies een datum in het verleden');
+             setError(t('storyteller.error.future_date') || 'Kies een datum in het verleden (minimaal gisteren). De historie gaat tot gisteren.');
              return;
         }
 
@@ -115,9 +115,20 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
             });
 
             if (!response.ok) {
-                const errData = await response.json();
-                console.error("Server Error Details:", errData.details);
-                throw new Error(errData.error || 'Failed to generate story');
+                let errorMessage = 'Failed to generate story';
+                try {
+                    const errData = await response.json();
+                    console.error("Server Error Details:", errData.details);
+                    errorMessage = errData.error || errorMessage;
+                } catch (jsonErr) {
+                    console.error("Could not parse error response as JSON", jsonErr);
+                    if (response.status === 500) {
+                        errorMessage = "Server error (500). Is de Netlify functions server gestart?";
+                    } else {
+                        errorMessage = `Fout (${response.status}): ${response.statusText}`;
+                    }
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
