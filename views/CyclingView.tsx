@@ -6,6 +6,7 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getUsage } from '../services/usageService';
 import { getTranslation } from '../services/translations';
+import { Toast } from '../components/Toast';
 
 interface Props {
     onNavigate: (view: ViewState) => void;
@@ -21,6 +22,7 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     const [channel, setChannel] = useState<'email' | 'telegram'>(settings.cycling_updates?.channel || 'email');
     const [loading, setLoading] = useState(false);
     const [telegramLinked, setTelegramLinked] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
     useEffect(() => {
         const fetchCreditsAndTelegram = async () => {
@@ -50,7 +52,7 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
         setLoading(true);
         
         if (newEnabled && baroCredits <= 0) {
-            alert("Geen credits meer. Waardeer je saldo op om deze functie te gebruiken.");
+            setToast({ message: "Geen credits meer. Waardeer je saldo op om deze functie te gebruiken.", type: 'error' });
             setLoading(false);
             return; 
         }
@@ -73,9 +75,12 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
             onUpdateSettings(newSettings);
             setEnabled(newEnabled);
             setChannel(newChannel);
+            if (newEnabled) {
+                setToast({ message: "Instellingen succesvol opgeslagen!", type: 'success' });
+            }
         } catch (error) {
             console.error("Error updating settings:", error);
-            alert("Er is een fout opgetreden bij het opslaan.");
+            setToast({ message: "Er is een fout opgetreden bij het opslaan.", type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -127,7 +132,7 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                             <button
                                 onClick={() => {
                                     if (baroCredits <= 0 && !enabled) {
-                                        alert(t('cycling.no_credits_alert'));
+                                        setToast({ message: t('cycling.no_credits_alert'), type: 'error' });
                                         return;
                                     }
                                     handleSave(!enabled, channel);
@@ -198,6 +203,14 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                 </div>
 
             </div>
+
+            {toast && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onClose={() => setToast(null)} 
+                />
+            )}
         </div>
     );
 };

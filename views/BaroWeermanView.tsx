@@ -8,6 +8,7 @@ import { getUsage } from '../services/usageService';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
 import { loadCurrentLocation } from '../services/storageService';
+import { Toast } from '../components/Toast';
 
 interface Props {
     onNavigate: (view: ViewState) => void;
@@ -28,6 +29,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const [enabled, setEnabled] = useState<boolean>(false);
     const [channel, setChannel] = useState<'email' | 'telegram'>('email');
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     
     // Trip Settings State
     const [tripSettings, setTripSettings] = useState<TripPlannerSettings>({
@@ -121,11 +123,11 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
         // Validation
         if (newEnabled) {
             if (baroCredits <= 0) {
-                alert(t('cycling.no_credits_alert'));
+                setToast({ message: t('cycling.no_credits_alert'), type: 'error' });
                 return;
             }
             if (selectedDays.length === 0) {
-                alert("Selecteer minimaal 1 dag.");
+                setToast({ message: "Selecteer minimaal 1 dag.", type: 'error' });
                 return;
             }
         }
@@ -152,11 +154,11 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
             });
             
             setEnabled(newEnabled);
-            alert(t('baro_weerman.saved'));
+            setToast({ message: t('baro_weerman.saved'), type: 'success' });
 
         } catch (error) {
             console.error("Error updating settings:", error);
-            alert("Er is een fout opgetreden bij het opslaan.");
+            setToast({ message: "Er is een fout opgetreden bij het opslaan.", type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -167,8 +169,8 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
         if (selectedDays.includes(day)) {
             setSelectedDays(selectedDays.filter(d => d !== day));
         } else {
-            if (selectedDays.length >= 3) {
-                alert(t('baro_weerman.limit_reached'));
+            if (selectedDays.length >= 7) {
+                setToast({ message: t('baro_weerman.limit_reached'), type: 'info' });
                 return;
             }
             setSelectedDays([...selectedDays, day]);
@@ -430,6 +432,14 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
                 </div>
             </div>
+
+            {toast && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onClose={() => setToast(null)} 
+                />
+            )}
         </div>
     );
 };

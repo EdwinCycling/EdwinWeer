@@ -254,7 +254,7 @@ export const SettingsProfile: React.FC<Props> = ({
     };
 
     const totalScheduled = countTotalScheduled();
-    const isLimitReached = totalScheduled >= 5;
+    const isLimitReached = totalScheduled >= 7;
 
     const toggleScheduleDay = (dayIndex: number, slot: 'breakfast' | 'lunch' | 'dinner') => {
         const newDays = [...(schedule.days || [])];

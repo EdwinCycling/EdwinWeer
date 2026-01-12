@@ -52,7 +52,7 @@ export const ScheduleConfig: React.FC<Props> = ({
     };
 
     const totalScheduled = countTotalScheduled(schedule);
-    const isLimitReached = totalScheduled >= 5;
+    const isLimitReached = totalScheduled >= 7;
 
     const toggleScheduleDay = (dayIndex: number, slot: 'breakfast' | 'lunch' | 'dinner') => {
         const newDays = [...schedule.days];
@@ -63,7 +63,7 @@ export const ScheduleConfig: React.FC<Props> = ({
             day[slot] = false;
         } else {
             // If checking, check limit
-            if (totalScheduled >= 5) return;
+            if (totalScheduled >= 7) return;
             day[slot] = true;
         }
         
