@@ -1,6 +1,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import admin from 'firebase-admin';
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -111,7 +112,7 @@ export const handler = async (event: any, context: any) => {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
         let prompt = "";
         

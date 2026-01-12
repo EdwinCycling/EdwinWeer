@@ -1,39 +1,43 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { CurrentWeatherView } from './views/CurrentWeatherView';
-import { ForecastWeatherView } from './views/ForecastWeatherView';
-import { HistoricalWeatherView } from './views/HistoricalWeatherView';
-import { StravaWeatherView } from './views/StravaWeatherView';
-import { HourlyDetailView } from './views/HourlyDetailView';
-import { MapView } from './views/MapView';
-import { SettingsView } from './views/SettingsView';
-import { EnsembleWeatherView } from './views/EnsembleWeatherView';
-import { HolidayWeatherView } from './views/HolidayWeatherView';
-import { HolidayReportView } from './views/HolidayReportView';
-import { TeamView } from './views/TeamView';
-import { PricingView } from './views/PricingView';
-import { InfoView } from './views/InfoView';
-import { ModelInfoView } from './views/ModelInfoView';
-import { CountryMapView } from './views/CountryMapView';
 import { LoginView } from './views/LoginView';
-import { UserAccountView } from './views/UserAccountView';
-import { RecordsWeatherView } from './views/RecordsWeatherView';
 import { FAQView } from './views/FAQView';
-import { ShareWeatherView } from './views/ShareWeatherView';
-import { BarometerView } from './views/BarometerView';
-import { ClimateChangeView } from './views/ClimateChangeView';
-import { ThisDayView } from './views/ThisDayView';
-import { YourDayView } from './views/YourDayView';
-import { EmailSettingsView } from './views/EmailSettingsView';
-import { MessengerView } from './views/MessengerView';
-import { NotificationsView } from './views/NotificationsView';
-import { ActivityPlannerView } from './views/ActivityPlannerView';
-import { WeatherFinderView } from './views/WeatherFinderView';
-import { TripPlannerView } from './views/TripPlannerView';
-import { ProfilesView } from './views/ProfilesView';
-import { CyclingView } from './views/CyclingView';
-import { BaroWeermanView } from './views/BaroWeermanView';
-import { BaroTimeMachineView } from './views/BaroTimeMachineView';
+import { LoadingSpinner } from './components/LoadingSpinner';
+
+// Lazy load views to improve initial load time
+const ForecastWeatherView = React.lazy(() => import('./views/ForecastWeatherView').then(module => ({ default: module.ForecastWeatherView })));
+const HistoricalWeatherView = React.lazy(() => import('./views/HistoricalWeatherView').then(module => ({ default: module.HistoricalWeatherView })));
+const StravaWeatherView = React.lazy(() => import('./views/StravaWeatherView').then(module => ({ default: module.StravaWeatherView })));
+const HourlyDetailView = React.lazy(() => import('./views/HourlyDetailView').then(module => ({ default: module.HourlyDetailView })));
+const MapView = React.lazy(() => import('./views/MapView').then(module => ({ default: module.MapView })));
+const SettingsView = React.lazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
+const EnsembleWeatherView = React.lazy(() => import('./views/EnsembleWeatherView').then(module => ({ default: module.EnsembleWeatherView })));
+const HolidayWeatherView = React.lazy(() => import('./views/HolidayWeatherView').then(module => ({ default: module.HolidayWeatherView })));
+const HolidayReportView = React.lazy(() => import('./views/HolidayReportView').then(module => ({ default: module.HolidayReportView })));
+const TeamView = React.lazy(() => import('./views/TeamView').then(module => ({ default: module.TeamView })));
+const PricingView = React.lazy(() => import('./views/PricingView').then(module => ({ default: module.PricingView })));
+const InfoView = React.lazy(() => import('./views/InfoView').then(module => ({ default: module.InfoView })));
+const ModelInfoView = React.lazy(() => import('./views/ModelInfoView').then(module => ({ default: module.ModelInfoView })));
+const CountryMapView = React.lazy(() => import('./views/CountryMapView').then(module => ({ default: module.CountryMapView })));
+const UserAccountView = React.lazy(() => import('./views/UserAccountView').then(module => ({ default: module.UserAccountView })));
+const RecordsWeatherView = React.lazy(() => import('./views/RecordsWeatherView').then(module => ({ default: module.RecordsWeatherView })));
+const ShareWeatherView = React.lazy(() => import('./views/ShareWeatherView').then(module => ({ default: module.ShareWeatherView })));
+const BarometerView = React.lazy(() => import('./views/BarometerView').then(module => ({ default: module.BarometerView })));
+const ClimateChangeView = React.lazy(() => import('./views/ClimateChangeView').then(module => ({ default: module.ClimateChangeView })));
+const ThisDayView = React.lazy(() => import('./views/ThisDayView').then(module => ({ default: module.ThisDayView })));
+const YourDayView = React.lazy(() => import('./views/YourDayView').then(module => ({ default: module.YourDayView })));
+const EmailSettingsView = React.lazy(() => import('./views/EmailSettingsView').then(module => ({ default: module.EmailSettingsView })));
+const MessengerView = React.lazy(() => import('./views/MessengerView').then(module => ({ default: module.MessengerView })));
+const NotificationsView = React.lazy(() => import('./views/NotificationsView').then(module => ({ default: module.NotificationsView })));
+const ActivityPlannerView = React.lazy(() => import('./views/ActivityPlannerView').then(module => ({ default: module.ActivityPlannerView })));
+const WeatherFinderView = React.lazy(() => import('./views/WeatherFinderView').then(module => ({ default: module.WeatherFinderView })));
+const TripPlannerView = React.lazy(() => import('./views/TripPlannerView').then(module => ({ default: module.TripPlannerView })));
+const ProfilesView = React.lazy(() => import('./views/ProfilesView').then(module => ({ default: module.ProfilesView })));
+const CyclingView = React.lazy(() => import('./views/CyclingView').then(module => ({ default: module.CyclingView })));
+const BaroWeermanView = React.lazy(() => import('./views/BaroWeermanView').then(module => ({ default: module.BaroWeermanView })));
+const BaroTimeMachineView = React.lazy(() => import('./views/BaroTimeMachineView').then(module => ({ default: module.BaroTimeMachineView })));
+const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView').then(module => ({ default: module.BaroStorytellerView })));
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -277,6 +281,8 @@ const App: React.FC = () => {
         return <BaroWeermanView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.BARO_TIME_MACHINE:
         return <BaroTimeMachineView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.BARO_STORYTELLER:
+        return <BaroStorytellerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.WEATHER_FINDER:
         return <WeatherFinderView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.TRIP_PLANNER:
@@ -308,7 +314,9 @@ const App: React.FC = () => {
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
         <div className="pb-32 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
             <ErrorBoundary settings={settings} onNavigate={navigate}>
-                {renderView()}
+                <Suspense fallback={<LoadingSpinner />}>
+                    {renderView()}
+                </Suspense>
             </ErrorBoundary>
         </div>
 
@@ -584,6 +592,16 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.baro_time_machine_title')}</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.baro_time_machine_desc')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.BARO_STORYTELLER); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                        <Icon name="auto_stories" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.baro_storyteller_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.baro_storyteller_desc')}</span>
                                     </div>
                                 </button>
 

@@ -3,6 +3,7 @@ import { Client } from '@notionhq/client';
 import fetch from 'node-fetch';
 import * as Brevo from '@getbrevo/brevo';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_MODEL } from './config/ai.js';
 
 console.log("MODULE LOAD: daily-cycling-report.ts");
 
@@ -178,7 +179,7 @@ async function getWeather(lat: number, lon: number) {
 // Helper: Generate Text with Gemini
 async function generateWeatherText(raceName: string, location: string, weatherData: any, additionalInfo: any = {}, language: string = 'nl') {
     try {
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
         
         const langMap: Record<string, string> = {
             'nl': 'Nederlands',
@@ -219,7 +220,7 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
 // Helper: Get Location from Gemini for long races
 async function getRaceLocationFromGemini(raceName: string, date: string, info: string = "", country: string = "") {
     try {
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
         const prompt = `
             Je bent een wielerexpert. Baseer je op:
             - Koersnaam: "${raceName}"

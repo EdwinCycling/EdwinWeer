@@ -1,6 +1,7 @@
 import { Client } from '@notionhq/client';
 import fetch from 'node-fetch';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Notion
 const notion = new Client({
@@ -111,7 +112,7 @@ export const handler = async (event: any, context: any) => {
             // Fallback: Als locatie niet in het weer-veld staat, probeer het via AI te vinden
             if (!location && geminiKey) {
                 try {
-                    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+                    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
                     const infoText = properties.Informatie?.rich_text?.[0]?.plain_text || "";
                     const locPrompt = `
                         Je bent een wielerexpert. Baseer je op:
@@ -145,10 +146,10 @@ export const handler = async (event: any, context: any) => {
             log(`Processing: ${cleanTitle} in ${location} (${country})`);
 
             // 5. Gemini AI aanroep
-            let aiReport = "AI Rapportage overgeslagen (geen sleutel of fout)";
+            let aiReport = "Baro Rapportage overgeslagen (geen sleutel of fout)";
             if (geminiKey) {
                 try {
-                    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+                    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
                     const prompt = `
                         Je bent een enthousiaste wieler-weerman. Schrijf een boeiend weerbericht in het Nederlands voor de koers: "${cleanTitle}".
                         Locatie: ${location}, ${country}.

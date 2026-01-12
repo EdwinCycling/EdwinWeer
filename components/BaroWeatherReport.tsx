@@ -4,7 +4,7 @@ import { OpenMeteoResponse, BaroProfile, ViewState, ActivityType, AppLanguage } 
 import { generateBaroWeatherReport } from '../services/geminiService';
 import { Icon } from './Icon';
 import { useAuth } from '../contexts/AuthContext';
-import { getUsage, getLimit, trackCall, decrementLocalBaroCredit } from '../services/usageService';
+import { getUsage, getLimit, trackCall, decrementLocalBaroCredit, trackBaroCall, trackAiCall } from '../services/usageService';
 import { searchCityByName } from '../services/geoService';
 import { fetchForecast, getActivityIcon, getScoreColor } from '../services/weatherService';
 import { calculateActivityScore, ActivityScore, ActivityWeatherData } from '../services/activityService';

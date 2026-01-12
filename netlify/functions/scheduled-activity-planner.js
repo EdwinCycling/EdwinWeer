@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fetch from 'node-fetch';
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -410,7 +411,7 @@ async function generateAIContent(weather, activity, scoreData, userName) {
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
         const activityName = activityNames[activity] || activity;
 

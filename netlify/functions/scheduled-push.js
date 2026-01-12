@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fetch from 'node-fetch';
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -51,14 +52,14 @@ async function fetchWeatherData(lat, lon) {
     }
 }
 
-// Helper: Generate AI Push Notification Content
+// Helper: Generate Baro Push Notification Content
 async function generatePushContent(weatherData, profile, userName) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
         const location = profile.location || "onbekend";
         const userSalutation = userName ? userName.split(' ')[0] : (profile.name || "Gebruiker");

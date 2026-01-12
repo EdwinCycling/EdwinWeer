@@ -3,7 +3,7 @@ import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
 import { searchCityByName } from '../services/geoService';
 import { getTranslation } from '../services/translations';
-import { getUsage, deductBaroCredit } from '../services/usageService';
+import { getUsage, deductBaroCredit, decrementLocalBaroCredit } from '../services/usageService';
 import { fetchHistorical, mapWmoCodeToText, calculateComfortScore } from '../services/weatherService';
 import { generateVintageNewspaper } from '../services/geminiService';
 import { VintageNewspaper } from '../components/VintageNewspaper';

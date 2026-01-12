@@ -2,6 +2,7 @@ import { Location, BaroProfile } from "../types";
 import { MAJOR_CITIES } from "./cityData";
 import { getUsage } from "./usageService";
 import { throttledFetch } from "./weatherService";
+import { auth } from "./firebase";
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 const toDeg = (rad: number) => (rad * 180) / Math.PI;
@@ -115,37 +116,42 @@ export const generateBaroWeatherReport = async (weatherData: any, profile: BaroP
         // We use a relative path which works if deployed or proxied.
         const url = '/.netlify/functions/ai-weather';
 
+        // Get Auth Token
+        const user = auth.currentUser;
+        const token = user ? await user.getIdToken() : null;
+
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-App-Source': 'BaroWeatherApp'
+                    'X-App-Source': 'BaroWeatherApp',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`AI Service Error: ${response.status} Details: ${errorText.substring(0, 100)}`);
+                throw new Error(`Baro Service Error: ${response.status} Details: ${errorText.substring(0, 100)}`);
             }
 
             const data = await response.json();
             return data.text;
         } catch (error: any) {
-            console.error("Failed to generate AI report:", error);
+            console.error("Failed to generate Baro report:", error);
             
             // Helpful error for localhost development
             if (window.location.hostname === 'localhost' && 
                (error.message?.includes("Failed to fetch") || error.message?.includes("Connection refused"))) {
-                throw new Error("Lokale server error: De AI service is niet bereikbaar. Draait 'netlify dev'?");
+                throw new Error("Lokale server error: De Baro service is niet bereikbaar. Draait 'netlify dev'?");
             }
             
             throw error;
         }
 
     } catch (error) {
-        console.error("Failed to generate AI report:", error);
+        console.error("Failed to generate Baro report:", error);
         throw error;
     }
 };

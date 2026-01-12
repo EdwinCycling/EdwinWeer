@@ -251,14 +251,16 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   };
 
   const handleTestNotification = async () => {
-    if (!fcmToken) return;
+    if (!fcmToken || !user) return;
     
     setLoading(true);
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/.netlify/functions/test-push', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ token: fcmToken }),
       });

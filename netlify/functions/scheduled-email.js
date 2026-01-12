@@ -2,6 +2,7 @@ import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Brevo from '@getbrevo/brevo';
 import fetch from 'node-fetch';
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -66,14 +67,14 @@ async function fetchWeatherData(lat, lon) {
     }
 }
 
-// Helper: Generate AI Report (Reusing logic from ai-weather.js)
-async function generateReport(weatherData, profile, userName) {
+// Helper: Generate Baro Report (Reusing logic from ai-weather.js)
+async function generateAIReport(weatherData, profile, userName) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
         const daysAhead = Number(profile.daysAhead) || 3;
         const isGeneral = profile.isGeneralReport === true;

@@ -63,7 +63,7 @@ async function generateReport(weatherData, event, diff, profileName, userName, l
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
         const duration = event.duration || 1;
         const isPeriod = duration > 1 || !!event.endDate;
