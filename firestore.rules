@@ -12,14 +12,16 @@ service cloud.firestore {
       allow create, read: if isOwner(userId);
       
       // Allow update if owner AND credits are not increased (prevents client-side hacking)
-      // Webhook uses Admin SDK which bypasses these rules
+      // Webhook/Backend uses Admin SDK which bypasses these rules
       allow update: if isOwner(userId) && 
         request.resource.data.usage.weatherCredits <= resource.data.usage.weatherCredits &&
         request.resource.data.usage.baroCredits <= resource.data.usage.baroCredits;
       
       // Match the subcollection audit_logs
+      // Only allow creation (append-only) and reading. No updates or deletes to logs.
       match /audit_logs/{logId} {
-        allow read, write: if isOwner(userId);
+        allow read, create: if isOwner(userId);
+        allow update, delete: if false;
       }
     }
     

@@ -1,7 +1,7 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.9260111.1",
+  "version": "0.9260112.1",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
@@ -20,6 +20,7 @@
     "firebase": "^12.6.0",
     "firebase-admin": "^13.6.0",
     "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
     "jspdf": "^3.0.4",
     "leaflet": "^1.9.4",
     "node-fetch": "^3.3.2",

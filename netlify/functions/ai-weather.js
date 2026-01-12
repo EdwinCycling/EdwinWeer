@@ -1,7 +1,37 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import admin from 'firebase-admin';
+
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+    try {
+        let serviceAccount;
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
+            serviceAccount = {
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                // Handle newlines in private key
+                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            };
+        }
+
+        if (serviceAccount) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+        }
+    } catch (e) {
+        console.error("Error initializing Firebase Admin:", e);
+    }
+}
+
+const db = admin.firestore();
+
 export const handler = async (event) => {
   const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Origin': '*', // Controlled by Netlify TOML/Env in production, but kept open here for dev
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-App-Source',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
@@ -23,16 +53,99 @@ export const handler = async (event) => {
     };
   }
 
+  // Security: Rate Limiting (Strict IP-based for AI)
+  const clientIp = event.headers['client-ip'] || event.headers['x-forwarded-for'] || 'unknown';
+  if (clientIp !== 'unknown') {
+      if (!global.aiRateLimitCache) global.aiRateLimitCache = new Map();
+      
+      const now = Date.now();
+      const windowMs = 60 * 60 * 1000; // 1 hour
+      const limit = 20; // 20 AI calls per hour per IP (Generous for user, strict for abuser)
+
+      // Clean old entries
+      if (global.aiRateLimitCache.size > 5000) global.aiRateLimitCache.clear();
+
+      const record = global.aiRateLimitCache.get(clientIp) || { count: 0, startTime: now };
+      
+      if (now - record.startTime > windowMs) {
+          record.count = 1;
+          record.startTime = now;
+      } else {
+          record.count++;
+      }
+      
+      global.aiRateLimitCache.set(clientIp, record);
+
+      if (record.count > limit) {
+           return {
+              statusCode: 429,
+              headers,
+              body: JSON.stringify({ error: 'Too Many Requests (AI Limit)' })
+          };
+      }
+  }
+
+  // Security: Auth Check & Credit Deduction
+  let uid;
+  try {
+      const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return { statusCode: 401, headers, body: JSON.stringify({ error: 'Missing authentication' }) };
+      }
+      const idToken = authHeader.split('Bearer ')[1];
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      uid = decodedToken.uid;
+
+      // Transaction to check and deduct credits
+      await db.runTransaction(async (t) => {
+          const userRef = db.collection('users').doc(uid);
+          const doc = await t.get(userRef);
+          
+          if (!doc.exists) {
+              throw new Error('User profile not found');
+          }
+          
+          const data = doc.data();
+          const usage = data.usage || {};
+          const baroCredits = usage.baroCredits || 0;
+          const weatherCredits = usage.weatherCredits || 0;
+
+          // Check Requirements
+          // 1. Must have > 150 Weather Credits (Pro/Active user check)
+          if (weatherCredits < 150) {
+              throw new Error('Insufficient Weather Credits (min 150 required)');
+          }
+
+          // 2. Must have > 0 Baro Credits (Cost)
+          if (baroCredits <= 0) {
+              throw new Error('Insufficient Baro Credits');
+          }
+
+          // Deduct 1 Baro Credit
+          t.update(userRef, {
+              'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+              'usage.aiCalls': admin.firestore.FieldValue.increment(1) // Track stats
+          });
+      });
+
+  } catch (error) {
+      console.error("Auth/Credit Error:", error);
+      const message = error.message || 'Authentication failed';
+      const status = message.includes('Insufficient') ? 402 : 403;
+      return {
+          statusCode: status,
+          headers,
+          body: JSON.stringify({ error: message })
+      };
+  }
+
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.error("Missing GEMINI_API_KEY");
       return { 
         statusCode: 500, 
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json; charset=utf-8'
-        }, 
+        headers, 
         body: JSON.stringify({ error: "Server configuration error" }) 
       };
     }
@@ -43,10 +156,7 @@ export const handler = async (event) => {
     } catch {
       return {
         statusCode: 400,
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json; charset=utf-8'
-        },
+        headers,
         body: JSON.stringify({ error: 'Invalid JSON body' })
       };
     }
@@ -56,13 +166,13 @@ export const handler = async (event) => {
     if (!weatherData || !profile) {
       return {
         statusCode: 400,
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json; charset=utf-8'
-        },
+        headers,
         body: JSON.stringify({ error: "Missing weather data or profile" })
       };
     }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Upgraded model
 
     const toCommaList = (value, fallback) => {
       if (Array.isArray(value)) return value.filter(Boolean).join(", ") || fallback;
@@ -103,7 +213,7 @@ export const handler = async (event) => {
             // Add weekday name to date string for AI context
             try {
                 const d = new Date(dateStr);
-                const dayName = d.toLocaleDateString(isDutch ? 'nl-NL' : 'en-GB', { weekday: 'long' });
+                const dayName = d.toLocaleDateString(language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long' });
                 return `${dateStr} (${dayName})`;
             } catch (e) {
                 return dateStr;
@@ -198,11 +308,11 @@ export const handler = async (event) => {
           ${JSON.stringify(safeWeatherData)}
 
           OPDRACHT:
-          Schrijf als Baro een weerbericht voor ${userSalutation} voor de locatie ${location}.
+          Schrijf als Baro een weerbericht voor ${userSalutation} voor locatie ${location}.
           Gebruik de weerdata voor de komende ${daysAhead} dagen.
+          SCHRIJF HET HELE BERICHT IN HET NEDERLANDS.
 
-          INSTRUCTIES VOOR LENGTE (${reportLength}):
-          ${reportLength === 'factual' ? '- Schrijf EXTREEM BEKNOPT. Gebruik weinig zinnen. Focus puur op de feiten en data. Geen introductiepraatjes.' : ''}
+          ${reportLength === 'factual' ? '- Schrijf een KORT en BONDIG bericht. Focus op de feiten. Geen poespas.' : ''}
           ${reportLength === 'standard' ? '- Schrijf een gebalanceerd bericht. Niet te kort, niet te lang. Gewoon een goed leesbaar weerbericht.' : ''}
           ${reportLength === 'extended' ? '- Schrijf een UITGEBREID en gedetailleerd verhaal. Neem de ruimte voor nuance, uitleg en context.' : ''}
 
@@ -271,33 +381,23 @@ export const handler = async (event) => {
         `;
     }
 
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
-
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = result.response.text();
 
     return {
       statusCode: 200,
       headers: {
         ...headers,
-        'Content-Type': 'application/json; charset=utf-8'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ text })
     };
-
   } catch (error) {
-    console.error("Gemini Error:", error);
+    console.error('Gemini Error:', error);
     return {
       statusCode: 500,
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json; charset=utf-8'
-      },
-      body: JSON.stringify({ error: "Failed to generate weather report", details: error?.message || String(error) })
+      headers,
+      body: JSON.stringify({ error: 'Failed to generate report' })
     };
   }
 };

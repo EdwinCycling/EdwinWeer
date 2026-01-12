@@ -149,3 +149,59 @@ export const generateBaroWeatherReport = async (weatherData: any, profile: BaroP
         throw error;
     }
 };
+
+export const generateVintageNewspaper = async (
+    weatherData: { 
+        maxTemp: number, 
+        minTemp: number, 
+        precipSum: number, 
+        maxWind: number,
+        morning: { temp: number, condition: string },
+        afternoon: { temp: number, condition: string },
+        evening: { temp: number, condition: string },
+        night: { temp: number, condition: string }
+    },
+    location: string,
+    date: string,
+    lastWeekWeather?: any[],
+    language: string = 'nl'
+) => {
+    try {
+        const usage = getUsage();
+        if (usage.baroCredits < 1) { // Assuming 1 credit per generation
+             throw new Error("Je hebt minimaal 1 Baro credit nodig.");
+        }
+
+        const url = '/.netlify/functions/baro-time-machine';
+        
+        // Get Auth Token
+        const user = auth.currentUser;
+        const token = user ? await user.getIdToken() : null;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-App-Source': 'BaroWeatherApp',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+                weatherData,
+                location,
+                date,
+                lastWeekWeather,
+                language
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Service Error: ${response.status} ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to generate newspaper:", error);
+        throw error;
+    }
+};

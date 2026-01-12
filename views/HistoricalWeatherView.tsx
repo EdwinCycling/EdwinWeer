@@ -5,11 +5,14 @@ import { ViewState, AppSettings, Location } from '../types';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { fetchHistorical, convertTemp, convertWind, convertPrecip, mapWmoCodeToIcon, mapWmoCodeToText } from '../services/weatherService';
+import { fetchHistorical, convertTemp, convertWind, convertPrecip, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, saveHistoricalLocation } from '../services/storageService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
 import { getTranslation } from '../services/translations';
 import { HistoricalDashboard } from './HistoricalDashboard';
+import { VintageNewspaper } from '../components/VintageNewspaper';
+import { generateVintageNewspaper } from '../services/geminiService';
+import { getUsage, deductBaroCredit } from '../services/usageService';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -43,6 +46,21 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   const [syncDates, setSyncDates] = useState<boolean>(true); // Twin date shifting
   const [isMapOpen, setIsMapOpen] = useState(false);
   
+  // Newspaper State
+  const [showNewspaper, setShowNewspaper] = useState(false);
+  const [newspaperData, setNewspaperData] = useState<any>(null);
+  const [isGeneratingNewspaper, setIsGeneratingNewspaper] = useState(false);
+  const [apiLimitReached, setApiLimitReached] = useState(false);
+  const [baroCredits, setBaroCredits] = useState(0);
+
+  // Cache for first available years to save API calls
+  const [availYearCache] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const usage = getUsage();
+    setBaroCredits(usage.baroCredits || 0);
+  }, [showNewspaper]); // Refresh when newspaper is toggled/closed
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ diff: 0, currentAvg: 0, pastAvg: 0 });
@@ -61,6 +79,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     windMax2: 0,
     windDirAvg1: 0,
     windDirAvg2: 0,
+    sunTotal1: 0,
+    sunTotal2: 0,
+    daylightTotal1: 0,
+    daylightTotal2: 0,
     code1: 0,
     code2: 0,
     codeText1: '',
@@ -101,6 +123,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   };
 
   useEffect(() => {
+    setApiLimitReached(false); // Reset on changes
     saveCurrentLocation(location1);
     saveHistoricalLocation(location2);
     fetchData();
@@ -236,6 +259,118 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   const date1Color = 'rgba(128,128,128,1)';
   const date2Color = '#13b6ec';
   
+  const handleGenerateNewspaper = async () => {
+    setIsGeneratingNewspaper(true);
+    try {
+        const usage = getUsage();
+        if (usage.baroCredits < 1) {
+            alert(t('baro_weerman.credits_info'));
+            setIsGeneratingNewspaper(false);
+            return;
+        }
+
+        // Get conditions for morning (6), afternoon (12), evening (18), night (0)
+        // We use the 'data' state which is populated in fetchData
+        const getConditionAt = (hour: number) => {
+            if (!data || data.length <= hour) return "Onbekend";
+            // We need the weather code for that hour. 
+            // fetchData currently doesn't store hourly weather codes in the 'data' state.
+            // I should update fetchData to include them, OR fetch them here.
+            // Since fetchData already ran, maybe it's better to update fetchData to include weather codes.
+            return data[hour]?.conditionText || "Normaal";
+        };
+
+        const weatherSummary = {
+            maxTemp: detail.tempMax1,
+            minTemp: detail.tempMin1,
+            precipSum: detail.rainSum1,
+            maxWind: detail.windMax1,
+            morning: { 
+                temp: data[6]?.temp1 || 0, 
+                condition: data[6]?.conditionText || "Helder" 
+            },
+            afternoon: { 
+                temp: data[12]?.temp1 || 0, 
+                condition: data[12]?.conditionText || "Zonnig" 
+            },
+            evening: { 
+                temp: data[18]?.temp1 || 0, 
+                condition: data[18]?.conditionText || "Licht bewolkt" 
+            },
+            night: { 
+                temp: data[0]?.temp1 || 0, 
+                condition: data[0]?.conditionText || "Helder" 
+            }
+        };
+
+        // Prepare last week weather data for AI context
+        let lastWeekWeather = [];
+        if (context1?.daily?.time) {
+            // We have about 8 days of data (date-6 to date+1).
+            // We want the days BEFORE the current date (date1).
+            // context1.daily.time is sorted.
+            // Find the index of the target date
+            const targetDateStr = getDateString(date1);
+            const targetIdx = context1.daily.time.findIndex((t: string) => t === targetDateStr);
+            
+            if (targetIdx > 0) {
+                // Take up to 7 days before
+                const startIdx = Math.max(0, targetIdx - 7);
+                for (let i = startIdx; i < targetIdx; i++) {
+                    lastWeekWeather.push({
+                        date: context1.daily.time[i],
+                        maxTemp: convertTemp(context1.daily.temperature_2m_max[i], settings.tempUnit),
+                        precipSum: convertPrecip(context1.daily.precipitation_sum[i], settings.precipUnit),
+                        condition: mapWmoCodeToText(context1.daily.weather_code[i], settings.language)
+                    });
+                }
+            }
+        }
+
+        // Calculate Weather Score for the newspaper
+        const comfortScore = calculateComfortScore({
+            temperature_2m: detail.tempAvg1,
+            wind_speed_10m: detail.windMax1,
+            relative_humidity_2m: 50, // Default for historical if not easily available
+            precipitation_sum: detail.rainSum1,
+            cloud_cover: detail.code1 === 3 ? 100 : (detail.code1 === 0 ? 0 : 50),
+            weather_code: detail.code1
+        });
+
+        const result = await generateVintageNewspaper(
+            weatherSummary,
+            location1.name,
+            getDateString(date1),
+            lastWeekWeather
+        );
+
+        // Deduct credit after successful generation
+        deductBaroCredit();
+        const newUsage = getUsage();
+        setBaroCredits(newUsage.baroCredits);
+
+        // Add wind and score to the result object so we can pass it to the newspaper component
+        // or just pass them as props to VintageNewspaper. 
+        // Let's pass them as extra fields in the result's weatherData context if possible, 
+        // but VintageNewspaper uses Props for this.
+        
+        setNewspaperData({
+            ...result,
+            extraWeatherData: {
+                windSpeed: detail.windMax1,
+                windDirection: detail.windDirAvg1,
+                weatherScore: comfortScore.score
+            }
+        });
+        setShowNewspaper(true);
+    } catch (error: any) {
+        console.error("Newspaper Error:", error);
+        alert("Fout bij genereren krant: " + error.message);
+    } finally {
+        setIsGeneratingNewspaper(false);
+    }
+  };
+
   const getWindCardinal = (deg: number) => {
     const dirs = ['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW'];
     return t(`dir.${dirs[Math.round(deg / 45) % 8]}`);
@@ -299,6 +434,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
               wind1: convertWind((data1.hourly.wind_speed_10m?.[h] || 0), settings.windUnit),
               rain1: convertPrecip((data1.hourly.precipitation?.[h] || 0), settings.precipUnit),
               windDir1: data1.hourly.wind_direction_10m?.[h] || 0,
+              conditionText: mapWmoCodeToText(data1.hourly.weather_code?.[h] || 0, settings.language),
             };
           });
 
@@ -344,6 +480,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             windMax2: 0,
             windDirAvg1,
             windDirAvg2: 0,
+            sunTotal1: data1.daily?.sunshine_duration?.[0] || 0,
+            sunTotal2: 0,
+            daylightTotal1: data1.daily?.daylight_duration?.[0] || 0,
+            daylightTotal2: 0,
             code1: data1.daily?.weather_code?.[0] || 0,
             code2: 0,
             codeText1: mapWmoCodeToText(data1.daily?.weather_code?.[0] || 0, settings.language),
@@ -418,6 +558,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 rain2: convertPrecip((data2.hourly.precipitation?.[h] || 0), settings.precipUnit),
                 windDir1: data1.hourly.wind_direction_10m?.[h] || 0,
                 windDir2: data2.hourly.wind_direction_10m?.[h] || 0,
+                conditionText: mapWmoCodeToText(data1.hourly.weather_code?.[h] || 0, settings.language),
             };
         });
         
@@ -486,6 +627,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
           windMax2: convertWind(windRaw2, settings.windUnit),
           windDirAvg1,
           windDirAvg2,
+          sunTotal1: data1.daily?.sunshine_duration?.[0] || 0,
+          sunTotal2: data2.daily?.sunshine_duration?.[0] || 0,
+          daylightTotal1: data1.daily?.daylight_duration?.[0] || 0,
+          daylightTotal2: data2.daily?.daylight_duration?.[0] || 0,
           code1: data1.daily?.weather_code?.[0] || 0,
           code2: data2.daily?.weather_code?.[0] || 0,
           codeText1: mapWmoCodeToText(data1.daily?.weather_code?.[0] || 0, settings.language),
@@ -507,8 +652,11 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
           setNoDataInfo2(null);
         }
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error fetching historical comparison", e);
+        if (e.message?.includes('limit exceeded')) {
+            setApiLimitReached(true);
+        }
     } finally {
         setLoading(false);
     }
@@ -521,28 +669,51 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     try {
       const res = await fetchHistorical(loc.lat, loc.lon, ds, ds);
       return !!(res?.hourly?.temperature_2m?.length);
-    } catch {
+    } catch (e: any) {
+      if (e.message?.includes('limit exceeded')) {
+        setApiLimitReached(true);
+      }
       return false;
     }
   };
 
   const findFirstAvailableYear = async (loc: Location, monthIndex: number, dayNum: number) => {
-    const start = 1900;
+    const cacheKey = `${loc.lat},${loc.lon}`;
+    if (availYearCache[cacheKey]) return availYearCache[cacheKey];
+
+    const start = 1940; // Open-Meteo ERA5 usually starts here
     const end = new Date().getFullYear();
-    let step = 20;
+    let step = 10; // Smaller step but starting later
     let cur = start;
     let found = -1;
+    
+    // Check start first
+    const okStart = await hasDataFor(loc, start, monthIndex, dayNum);
+    if (okStart) {
+        availYearCache[cacheKey] = start;
+        return start;
+    }
+
     while (cur <= end) {
+      if (apiLimitReached) break;
       const ok = await hasDataFor(loc, cur, monthIndex, dayNum);
       if (ok) { found = cur; break; }
       cur += step;
     }
+    
     if (found === -1) return null;
+    
     let low = Math.max(start, found - step);
     for (let y = low; y < found; y++) {
+      if (apiLimitReached) break;
       const ok = await hasDataFor(loc, y, monthIndex, dayNum);
-      if (ok) { return y; }
+      if (ok) { 
+        availYearCache[cacheKey] = y;
+        return y; 
+      }
     }
+    
+    availYearCache[cacheKey] = found;
     return found;
   };
 
@@ -1107,6 +1278,13 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
   return (
     <div className="flex flex-col min-h-screen pb-24 bg-background-light dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
+      {/* API Limit Warning */}
+      {apiLimitReached && (
+        <div className="bg-amber-500 text-white px-4 py-2 text-center text-sm font-medium animate-in slide-in-from-top duration-300">
+          {t('usage.limit_reached_daily')}
+        </div>
+      )}
+
       <div className="relative flex items-center justify-center p-4 pt-8 mb-2">
           {/* Title & Navigation */}
           <div className="flex flex-col items-center gap-1">
@@ -1526,6 +1704,57 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                  {/* Baro's Tijdmachine Card */}
+                  {historicalMode === 'single' && (
+                      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-2xl shadow-lg text-white relative overflow-hidden group col-span-1 md:col-span-2">
+                          <div className="absolute top-0 right-0 p-3 opacity-20">
+                              <Icon name="history_edu" className="text-6xl transform rotate-12" />
+                          </div>
+                          
+                          <div className="relative z-10">
+                              <h3 className="font-bold text-lg flex items-center gap-2 mb-2">
+                                  <Icon name="auto_awesome" />
+                                  Baro's Tijdmachine
+                              </h3>
+                              
+                              {baroCredits > 0 ? (
+                                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
+                                      <p className="text-white/90 text-sm">
+                                          Genereer een historische krant voor <strong>{location1.name}</strong> op <strong>{formatCardDate(date1)}</strong>.
+                                      </p>
+                                      <button 
+                                          onClick={handleGenerateNewspaper}
+                                          disabled={isGeneratingNewspaper}
+                                          className="w-full md:w-auto px-6 py-2 bg-white text-indigo-600 hover:bg-white/90 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg"
+                                      >
+                                          {isGeneratingNewspaper ? (
+                                              <>
+                                                  <div className="size-4 border-2 border-indigo-600/50 border-t-indigo-600 rounded-full animate-spin" />
+                                                  Krant drukken...
+                                              </>
+                                          ) : (
+                                              <>
+                                                  <Icon name="print" />
+                                                  Genereer de krant
+                                              </>
+                                          )}
+                                      </button>
+                                  </div>
+                              ) : (
+                                  <>
+                                      <p className="text-white/90 text-sm mb-4">
+                                          Reis terug in de tijd! Met Baro Credits kun je een unieke krant genereren van deze dag.
+                                      </p>
+                                      <div className="flex items-center gap-2 text-xs bg-black/20 p-2 rounded-lg inline-flex">
+                                          <Icon name="info" />
+                                          <span>Je hebt geen Baro Credits.</span>
+                                      </div>
+                                  </>
+                              )}
+                          </div>
+                      </div>
+                  )}
+
                   {/* ... Cards ... */}
                   <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
                     <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('weather')}</p>
@@ -1651,6 +1880,9 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                             <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
                             <div className="text-sm">
                             <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal1)}</b></div>
+                            <div className="text-[10px] text-slate-500 dark:text-white/40">
+                              {Math.round((detail.sunTotal1 / (detail.daylightTotal1 || 1)) * 100)}% {settings.language === 'nl' ? 'van de dag was zonnig' : 'of the day was sunny'}
+                            </div>
                             </div>
                         </div>
                       </div>
@@ -1661,6 +1893,9 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                               <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
                               <div className="text-sm">
                               <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal2)}</b></div>
+                              <div className="text-[10px] text-slate-500 dark:text-white/40">
+                                {Math.round((detail.sunTotal2 / (detail.daylightTotal2 || 1)) * 100)}% {settings.language === 'nl' ? 'van de dag was zonnig' : 'of the day was sunny'}
+                              </div>
                               </div>
                           </div>
                         </div>
@@ -1696,6 +1931,22 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             location={dashboardOpen.location} 
             settings={settings} 
             onClose={() => setDashboardOpen(null)} 
+        />
+      )}
+
+      {showNewspaper && newspaperData && (
+        <VintageNewspaper
+            data={newspaperData}
+            weatherData={{
+                maxTemp: detail.tempMax1,
+                weatherCode: detail.code1,
+                date: getDateString(date1),
+                location: location1.name,
+                windSpeed: newspaperData.extraWeatherData?.windSpeed,
+                windDirection: newspaperData.extraWeatherData?.windDirection,
+                weatherScore: newspaperData.extraWeatherData?.weatherScore
+            }}
+            onClose={() => setShowNewspaper(false)}
         />
       )}
 

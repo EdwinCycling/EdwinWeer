@@ -900,6 +900,12 @@ export const calculateComfortScore = (weather: {
         score += sunBonus;
     }
 
+    // 6. Cloud/Score Deduction (User Request)
+    // If score > 7 and cloudy (Code 3: Overcast), deduct 1.
+    if (score > 7 && weather.weather_code === 3) {
+        score -= 1;
+    }
+
     // Hard Cap for Rain
     if (weather.precipitation_sum > 5 && score > 4) {
         score = 4;

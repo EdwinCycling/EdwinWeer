@@ -16,6 +16,14 @@ export const useLocationSwipe = ({ onSwipeLeft, onSwipeRight, threshold = 50 }: 
     // Check if the target or any parent should block the swipe
     const target = e.target as HTMLElement;
     
+    // Check vertical position - only allow swipe in top 35% of screen
+    const touchY = e.targetTouches[0].clientY;
+    const screenHeight = window.innerHeight;
+    if (touchY > screenHeight * 0.35) {
+        touchStart.current = null;
+        return;
+    }
+
     // Use closest to check for blocking classes/attributes up the tree
     // Also check for specific chart elements
     const isBlocked = 

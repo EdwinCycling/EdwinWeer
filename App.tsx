@@ -33,6 +33,7 @@ import { TripPlannerView } from './views/TripPlannerView';
 import { ProfilesView } from './views/ProfilesView';
 import { CyclingView } from './views/CyclingView';
 import { BaroWeermanView } from './views/BaroWeermanView';
+import { BaroTimeMachineView } from './views/BaroTimeMachineView';
 import { ViewState, AppSettings } from './types';
 import pkg from './package.json';
 import { loadSettings, saveSettings } from './services/storageService';
@@ -274,6 +275,8 @@ const App: React.FC = () => {
         return <CyclingView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.BARO_WEERMAN:
         return <BaroWeermanView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.BARO_TIME_MACHINE:
+        return <BaroTimeMachineView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.WEATHER_FINDER:
         return <WeatherFinderView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.TRIP_PLANNER:
@@ -302,8 +305,8 @@ const App: React.FC = () => {
   const closeModal = () => setModal(null);
 
   return (
-    <div className="min-h-screen w-full bg-background-light dark:bg-background-dark relative flex flex-col transition-colors duration-300">
-        <div className="flex-grow pb-4 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
+        <div className="pb-32 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8">
             <ErrorBoundary settings={settings} onNavigate={navigate}>
                 {renderView()}
             </ErrorBoundary>
@@ -376,8 +379,8 @@ const App: React.FC = () => {
         )}
 
         {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-50 shadow-2xl transition-colors duration-300 print:hidden">
-            <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#101d22]/90 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-[100] shadow-2xl transition-colors duration-300 print:hidden">
+            <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4 md:pb-6" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
             <button 
                 onClick={() => { navigate(ViewState.CURRENT); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
                 className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
@@ -443,7 +446,8 @@ const App: React.FC = () => {
         {baroMenuOpen && (
             <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 pb-24 md:p-6 md:pb-28 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
@@ -550,7 +554,8 @@ const App: React.FC = () => {
         {extraMenuOpen && (
             <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 pb-24 md:p-6 md:pb-28 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
@@ -569,6 +574,26 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('vind_de_dag.title')}</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('vind_de_dag.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.BARO_TIME_MACHINE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="history_edu" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.baro_time_machine_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.baro_time_machine_desc')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.BARO_TIME_MACHINE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="history_edu" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.baro_time_machine_title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.baro_time_machine_desc')}</span>
                                     </div>
                                 </button>
 
@@ -663,7 +688,8 @@ const App: React.FC = () => {
         {menuOpen && (
             <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-4 pb-24 md:p-6 md:pb-28 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />

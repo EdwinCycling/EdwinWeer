@@ -275,6 +275,22 @@ export const consumeCredit = async (type: 'weather' | 'baro', amount: number = 1
     }
 };
 
+export const decrementLocalBaroCredit = (): boolean => {
+    const stats = getUsage();
+    if (stats.baroCredits > 0) {
+        stats.baroCredits--;
+        
+        // Low credits check
+        if (stats.baroCredits < 10 && !stats.alerts.creditsLow) {
+            stats.alerts.creditsLow = true;
+        }
+        
+        saveUsage(stats);
+        return true;
+    }
+    return false;
+};
+
 export const deductBaroCredit = (): boolean => {
     const stats = getUsage();
     if (stats.baroCredits > 0) {

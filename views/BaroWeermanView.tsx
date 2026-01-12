@@ -189,7 +189,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                 </button>
                 <div className="flex-1">
                     <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <Icon name="face" className="text-2xl" /> {t('share.photo_weather')}
+                        <Icon name="face" className="text-2xl" /> {t('baro_weerman.title')}
                     </h1>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-full border border-indigo-100 dark:border-indigo-500/20">
