@@ -587,16 +587,6 @@ const App: React.FC = () => {
                                     </div>
                                 </button>
 
-                                <button onClick={() => { navigate(ViewState.BARO_TIME_MACHINE); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
-                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                        <Icon name="history_edu" className="text-xl md:text-2xl" />
-                                    </div>
-                                    <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.baro_time_machine_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.baro_time_machine_desc')}</span>
-                                    </div>
-                                </button>
-
                                 {/* This Day (Moved from Bottom Bar) */}
                                 <button onClick={() => { navigate(ViewState.THIS_DAY); setExtraMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">

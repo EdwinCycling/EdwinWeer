@@ -387,6 +387,22 @@ function calculateScore(weather, activity) {
     };
 }
 
+// Activity Dutch Names
+const activityNames = {
+    'bbq': 'BBQ & terras',
+    'cycling': 'Fietsen',
+    'walking': 'Wandelen',
+    'sailing': 'Watersport',
+    'running': 'Hardlopen',
+    'beach': 'Strand & zonnen',
+    'gardening': 'Tuinieren',
+    'stargazing': 'Sterrenkijken',
+    'golf': 'Golf',
+    'padel': 'Padel (outdoor)',
+    'field_sports': 'Veldsport (voetbal/hockey)',
+    'tennis': 'Tennis'
+};
+
 // Helper: Generate AI Text
 async function generateAIContent(weather, activity, scoreData, userName) {
     try {
@@ -395,6 +411,8 @@ async function generateAIContent(weather, activity, scoreData, userName) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite" });
+
+        const activityName = activityNames[activity] || activity;
 
         // Mapping focus points
         const focusPoints = {
@@ -428,10 +446,10 @@ async function generateAIContent(weather, activity, scoreData, userName) {
 
         const prompt = `
 Je bent Baro, de persoonlijke weerman.
-Schrijf een kort, enthousiast bericht voor ${userName} over de activiteit: ${activity.toUpperCase()} voor MORGEN.
+Schrijf een kort, enthousiast bericht voor ${userName} over de activiteit: ${activityName.toUpperCase()} voor MORGEN.
 
 CONTEXT:
-- Activiteit: ${activity}
+- Activiteit: ${activityName}
 - Score: ${scoreData.score}/10
 - Redenen score: ${dataSummary.reasons}
 - Focuspunten: ${focus}
@@ -441,8 +459,8 @@ ${JSON.stringify(dataSummary)}
 
 OPDRACHT:
 Schrijf een bericht van max 3-4 zinnen.
-1. Begin met de conclusie (Doen of niet doen?).
-2. Geef de belangrijkste weerdetails relevant voor ${activity}.
+1. Begin met de conclusie (Doen of niet doen? Baseer dit STRIKT op de score: ${scoreData.score}/10).
+2. Geef de belangrijkste weerdetails relevant voor ${activityName} en benoem specifiek waarom de score zo is (rekening houdend met de redenen: ${dataSummary.reasons}).
 3. Eindig met een korte tip.
 Gebruik GEEN markdown. Gebruik wel emojis.
 Taal: Nederlands.
@@ -566,8 +584,9 @@ export const handler = async (event, context) => {
             const safeAiText = escapeHTML(aiText);
 
             // Send Telegram
+            const activityName = activityNames[activityKey] || activityKey;
             const message = `
-<b>📅 Activiteiten Planner: Morgen</b>
+<b>📅 Planner: ${activityName} (Morgen)</b>
 
 ${safeAiText}
 

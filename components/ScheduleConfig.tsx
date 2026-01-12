@@ -146,7 +146,7 @@ export const ScheduleConfig: React.FC<Props> = ({
 
                     <div className="pt-2 text-right">
                         <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-slate-500 dark:text-white/50'}`}>
-                            {t('profile.schedule.total')}: {totalScheduled}/5
+                            {t('profile.schedule.total')}: {totalScheduled}/7
                         </span>
                     </div>
                 </div>
