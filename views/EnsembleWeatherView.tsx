@@ -1006,7 +1006,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
         {/* Current Weather Display */}
         {currentWeather && (
-            <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
+            <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
                     <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                         {currentTemp}°
@@ -1014,16 +1014,16 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     
                     {currentWeather.current.temperature_2m < 10 && (
                         <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
-                            <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
-                            <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
+                            <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-600 dark:text-blue-300' : 'text-orange-600 dark:text-orange-300'}`} />
+                            <span className="text-lg font-bold leading-none mt-1 text-text-main">{feelsLike.toFixed(1)}°</span>
                             <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('feels_like')}</span>
                         </div>
                     )}
                     
                     {currentWeather.current.temperature_2m > 25 && (
                         <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
-                            <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
-                            <span className="text-lg font-bold leading-none mt-1">{heatIndex}°</span>
+                            <Icon name="thermostat" className="text-xl text-orange-600 dark:text-orange-300" />
+                            <span className="text-lg font-bold leading-none mt-1 text-text-main">{heatIndex}°</span>
                             <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('heat_index')}</span>
                         </div>
                     )}

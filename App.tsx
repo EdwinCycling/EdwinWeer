@@ -456,95 +456,95 @@ const App: React.FC = () => {
         {baroMenuOpen && (
             <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
+                    <div className="w-12 h-1.5 bg-border-color rounded-full mx-auto mb-6 sticky top-0" />
                     
                     <div className="space-y-6">
                         <section>
-                            <h3 className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.baro_weerman')}</h3>
+                            <h3 className="text-text-muted text-xs font-bold uppercase tracking-wider mb-3 px-1">{t('menu.extra.baro_weerman')}</h3>
                             <div className="space-y-3 md:space-y-4">
                                 {/* Profiles */}
-                                <button onClick={() => { navigate(ViewState.PROFILES); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.PROFILES); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                         <Icon name="person" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.profiles_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.profiles_desc')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('menu.extra.profiles_title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('menu.extra.profiles_desc')}</span>
                                     </div>
                                 </button>
 
                                 {/* Email Settings */}
-                                <button onClick={() => { navigate(ViewState.EMAIL_SETTINGS); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.EMAIL_SETTINGS); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
                                         <Icon name="mail" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.email_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.email_desc')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('menu.extra.email_title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('menu.extra.email_desc')}</span>
                                     </div>
                                 </button>
 
                                 {/* Messenger */}
-                                <button onClick={() => { navigate(ViewState.MESSENGER); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.MESSENGER); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
                                         <Icon name="chat" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.messenger_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.messenger_desc')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('menu.extra.messenger_title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('menu.extra.messenger_desc')}</span>
                                     </div>
                                 </button>
 
                                 {/* Push Notifications */}
-                                <button onClick={() => { navigate(ViewState.NOTIFICATIONS); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.NOTIFICATIONS); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
                                         <Icon name="notifications" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.notifications_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.notifications_desc')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('menu.extra.notifications_title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('menu.extra.notifications_desc')}</span>
                                     </div>
                                 </button>
 
                                 {/* Your Day */}
-                                <button onClick={() => { navigate(ViewState.YOUR_DAY); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.YOUR_DAY); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
                                         <Icon name="event_note" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('menu.extra.yourday_title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('menu.extra.yourday_desc')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('menu.extra.yourday_title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('menu.extra.yourday_desc')}</span>
                                     </div>
                                 </button>
 
                                 {/* Activity Planner */}
-                                <button onClick={() => { navigate(ViewState.ACTIVITY_PLANNER); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.ACTIVITY_PLANNER); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                         <Icon name="event_available" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('planner.title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('planner.subtitle')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('planner.title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('planner.subtitle')}</span>
                                     </div>
                                 </button>
 
                                 {/* Baro Weerman */}
-                                <button onClick={() => { navigate(ViewState.BARO_WEERMAN); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.BARO_WEERMAN); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                         <Icon name="face" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
-                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('baro_weerman.title')}</span>
-                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('baro_weerman.subtitle')}</span>
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('baro_weerman.title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('baro_weerman.subtitle')}</span>
                                     </div>
                                 </button>
 
                                 {/* Cycling Weather */}
-                                <button onClick={() => { navigate(ViewState.CYCLING); setBaroMenuOpen(false); }} className="w-full flex items-center bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-slate-100 dark:border-white/5 text-left group">
+                                <button onClick={() => { navigate(ViewState.CYCLING); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
                                         <span className="text-xl md:text-2xl">🚴</span>
                                     </div>
@@ -568,7 +568,7 @@ const App: React.FC = () => {
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
+                    <div className="w-12 h-1.5 bg-border-color rounded-full mx-auto mb-6 sticky top-0" />
                     
                     <div className="space-y-6">
                         {/* Weer Extra's Section */}
@@ -708,11 +708,11 @@ const App: React.FC = () => {
         {menuOpen && (
             <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
                 <div 
-                    className="absolute bottom-0 left-0 right-0 bg-white dark:bg-card-dark rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
+                    className="absolute bottom-0 left-0 right-0 bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sticky top-0" />
+                    <div className="w-12 h-1.5 bg-border-color rounded-full mx-auto mb-6 sticky top-0" />
                     
                     <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
                          <button onClick={() => { navigate(ViewState.SETTINGS); setMenuOpen(false); }} className="flex flex-col items-center justify-center bg-background-light dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-slate-100 dark:border-white/5">

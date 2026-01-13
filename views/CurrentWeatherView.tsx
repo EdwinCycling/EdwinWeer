@@ -33,6 +33,7 @@ interface Props {
 }
 
 export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+  const colors = useThemeColors();
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
   const [lastKnownMyLocation, setLastKnownMyLocation] = useState<Location | null>(() => loadLastKnownMyLocation());
   const [loadingCity, setLoadingCity] = useState(false);
@@ -972,7 +973,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
         ) : weatherData ? (
             <>
-                <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-white">
+                <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main">
                     <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
                         <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
                             {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
@@ -980,14 +981,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <div className="grid grid-cols-3 gap-2 md:flex md:flex-row">
                             {weatherData.current.temperature_2m < 10 && (
                                 <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
-                                    <Icon name="thermostat" className={`text-lg md:text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
+                                    <Icon name="thermostat" className={`text-lg md:text-xl ${feelsLike < currentTemp ? 'text-blue-600 dark:text-blue-300' : 'text-orange-600 dark:text-orange-300'}`} />
                                     <span className="text-base md:text-lg font-bold text-text-main">{feelsLike.toFixed(1)}°</span>
                                     <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('feels_like')}</span>
                                 </div>
                             )}
                             {weatherData.current.temperature_2m > 25 && (
                                 <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
-                                    <Icon name="thermostat" className="text-lg md:text-xl text-orange-500 dark:text-orange-300" />
+                                    <Icon name="thermostat" className="text-lg md:text-xl text-orange-600 dark:text-orange-300" />
                                     <span className="text-base md:text-lg font-bold text-text-main">{heatIndex}°</span>
                                     <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('heat_index')}</span>
                                 </div>
@@ -1076,11 +1077,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </p>
                     <button 
                         onClick={() => onNavigate(ViewState.FORECAST)}
-                        className="text-white/90 text-lg font-normal drop-shadow-md mt-1 hover:scale-105 transition-transform cursor-pointer flex items-center gap-1"
+                        className="text-text-main/90 text-lg font-normal drop-shadow-md mt-1 hover:scale-105 transition-transform cursor-pointer flex items-center gap-1"
                     >
                         H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70" />
                     </button>
-                    <p className="text-white/70 text-sm font-normal drop-shadow-md mt-2">
+                    <p className="text-text-muted text-sm font-normal drop-shadow-md mt-2">
                         {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                             hour: '2-digit', 
                             minute: '2-digit',
