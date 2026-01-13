@@ -25,6 +25,7 @@ import { StarMapModal } from '../components/StarMapModal';
 import { HorizonCompassView } from '../components/HorizonCompassView';
 import { getUsage } from '../services/usageService';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
