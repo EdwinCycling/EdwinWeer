@@ -137,9 +137,9 @@
 	100% { background-position: 0% 50%; }
 }
 
-/* Zorg dat dropdowns ALTIJD boven de Leaflet map (z-index ~400-1000) liggen */
-.dropdown-menu, .mat-menu-panel, .select-options, select, option {
-    z-index: 9999 !important;
+/* Zorg dat dropdowns boven de Leaflet map (z-index ~400-1000) maar onder modals (z-index 2000) liggen */
+.dropdown-menu, .mat-menu-panel, .select-options, select {
+    z-index: 1500 !important;
     position: relative; /* Soms nodig voor stacking context */
 }
 
