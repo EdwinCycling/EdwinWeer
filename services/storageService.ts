@@ -160,7 +160,12 @@ export const loadRemoteData = async (uid: string) => {
                 // We don't want to trigger sync back immediately, so we just write to local storage
                 if (typeof window !== "undefined") {
                     // Merge with existing local settings to preserve local-only fields like 'theme'
-                    const currentLocal = JSON.parse(localStorage.getItem(KEY_APP_SETTINGS) || '{}');
+                    let currentLocal: any = {};
+                    try {
+                        currentLocal = JSON.parse(localStorage.getItem(KEY_APP_SETTINGS) || '{}');
+                    } catch (e) {
+                        console.error("Error parsing local settings:", e);
+                    }
                     const merged = { ...data.settings };
                     
                     // Restore local theme if it exists (since it's not synced)
@@ -296,49 +301,62 @@ export const saveSettings = (settings: AppSettings) => {
 };
 
 export const loadSettings = (): AppSettings => {
-    if (typeof window === "undefined") return DEFAULT_SETTINGS;
+    console.log("storageService: loadSettings called");
+    if (typeof window === "undefined") {
+        console.log("storageService: window is undefined, returning default");
+        return DEFAULT_SETTINGS;
+    }
     const stored = localStorage.getItem(KEY_APP_SETTINGS);
-    if (!stored) return DEFAULT_SETTINGS;
+    if (!stored) {
+        console.log("storageService: No stored settings found, returning default");
+        return DEFAULT_SETTINGS;
+    }
     
-    // Merge with default to ensure new fields (theme, language) exist if old storage
-    const parsed = JSON.parse(stored);
-    
-    // Migration: aiProfile -> caelixProfile -> baroProfile
-    if (parsed.aiProfile && !parsed.baroProfile) {
-        parsed.baroProfile = parsed.aiProfile;
-        delete parsed.aiProfile;
-    }
-    if (parsed.caelixProfile && !parsed.baroProfile) {
-        parsed.baroProfile = parsed.caelixProfile;
-        delete parsed.caelixProfile;
-    }
-
-    if (parsed.aiProfiles && !parsed.baroProfiles) {
-        parsed.baroProfiles = parsed.aiProfiles;
-        delete parsed.aiProfiles;
-    }
-    if (parsed.caelixProfiles && !parsed.baroProfiles) {
-        parsed.baroProfiles = parsed.caelixProfiles;
-        delete parsed.caelixProfiles;
-    }
-
-    return { 
-        ...DEFAULT_SETTINGS, 
-        ...parsed,
-        // Ensure nested objects are merged correctly so new fields (like minHeatDays) are picked up
-        heatwave: {
-            ...DEFAULT_SETTINGS.heatwave,
-            ...(parsed.heatwave || {})
-        },
-        recordThresholds: {
-            ...DEFAULT_SETTINGS.recordThresholds,
-            ...(parsed.recordThresholds || {})
-        },
-        enabledActivities: {
-            ...DEFAULT_SETTINGS.enabledActivities,
-            ...(parsed.enabledActivities || {})
+    try {
+        // Merge with default to ensure new fields (theme, language) exist if old storage
+        const parsed = JSON.parse(stored);
+        console.log("storageService: Parsed settings from localStorage", parsed);
+        
+        // Migration: aiProfile -> caelixProfile -> baroProfile
+        if (parsed.aiProfile && !parsed.baroProfile) {
+            parsed.baroProfile = parsed.aiProfile;
+            delete parsed.aiProfile;
         }
-    };
+        if (parsed.caelixProfile && !parsed.baroProfile) {
+            parsed.baroProfile = parsed.caelixProfile;
+            delete parsed.caelixProfile;
+        }
+
+        if (parsed.aiProfiles && !parsed.baroProfiles) {
+            parsed.baroProfiles = parsed.aiProfiles;
+            delete parsed.aiProfiles;
+        }
+        if (parsed.caelixProfiles && !parsed.baroProfiles) {
+            parsed.baroProfiles = parsed.caelixProfiles;
+            delete parsed.caelixProfiles;
+        }
+
+        return { 
+            ...DEFAULT_SETTINGS, 
+            ...parsed,
+            // Ensure nested objects are merged correctly so new fields (like minHeatDays) are picked up
+            heatwave: {
+                ...DEFAULT_SETTINGS.heatwave,
+                ...(parsed.heatwave || {})
+            },
+            recordThresholds: {
+                ...DEFAULT_SETTINGS.recordThresholds,
+                ...(parsed.recordThresholds || {})
+            },
+            enabledActivities: {
+                ...DEFAULT_SETTINGS.enabledActivities,
+                ...(parsed.enabledActivities || {})
+            }
+        };
+    } catch (e) {
+        console.error("storageService: Error parsing settings from localStorage:", e);
+        return DEFAULT_SETTINGS;
+    }
 };
 
 export const saveEnsembleModel = (model: EnsembleModel) => {

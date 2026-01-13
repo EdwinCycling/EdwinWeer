@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getUsage, loadRemoteUsage } from '../services/usageService';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
@@ -305,14 +305,14 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                          <div className="hidden lg:flex justify-center gap-4 mt-8 w-full">
                             <button 
                                 onClick={handleDownloadPDF}
-                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
+                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-text-main text-bg-page rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
                             >
                                 <Icon name="download" />
                                 {t('pdf')}
                             </button>
                             <button 
                                 onClick={handleShare}
-                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white dark:bg-white/10 text-slate-700 dark:text-white border border-slate-200 dark:border-white/10 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-white/20 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-bg-card text-text-main border border-border-color rounded-xl font-bold hover:bg-bg-page transition-colors"
                             >
                                 <Icon name="share" />
                                 {t('share')}
@@ -322,30 +322,30 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
 
                     {/* Instructions Panel */}
                     <div className="space-y-6">
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100 dark:border-white/5 sticky top-24">
+                        <div className="bg-bg-card rounded-3xl p-6 md:p-8 shadow-xl border border-border-color sticky top-24">
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="bg-gradient-to-br from-indigo-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
                                     <Icon name="music_note" className="text-2xl" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                                    <h2 className="text-xl font-bold text-text-main">
                                         {t('songwriter.instructions.title')}
                                     </h2>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    <p className="text-sm text-text-muted">
                                         {t('songwriter.instructions.subtitle')}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <div className={`p-4 rounded-xl transition-all duration-300 ${hasCopied ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5'} border`}>
+                                <div className={`p-4 rounded-xl transition-all duration-300 ${hasCopied ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-bg-page border-border-color'} border`}>
                                     <div className="flex items-start gap-3">
-                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${hasCopied ? 'bg-green-500 text-white' : 'bg-slate-200 dark:bg-white/20 text-slate-600 dark:text-white'}`}>1</div>
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${hasCopied ? 'bg-green-500 text-white' : 'bg-bg-subtle text-text-main'}`}>1</div>
                                         <div className="flex-1">
-                                            <p className="font-bold text-slate-800 dark:text-white text-sm mb-2">{t('songwriter.step1.title')}</p>
+                                            <p className="font-bold text-text-main text-sm mb-2">{t('songwriter.step1.title')}</p>
                                             <button 
                                                 onClick={handleCopy}
-                                                className={`w-full py-2 px-4 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${hasCopied ? 'bg-green-500 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'}`}
+                                                className={`w-full py-2 px-4 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors ${hasCopied ? 'bg-green-500 text-white' : 'bg-text-main text-bg-page hover:opacity-90'}`}
                                             >
                                                 {hasCopied ? <Icon name="check" /> : <Icon name="content_copy" />}
                                                 {hasCopied ? t('songwriter.copied') : t('songwriter.action.copy')}
@@ -354,16 +354,16 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                                     </div>
                                 </div>
 
-                                <div className={`p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 transition-opacity duration-300 ${!hasCopied ? 'opacity-50' : 'opacity-100'}`}>
+                                <div className={`p-4 rounded-xl border border-border-color bg-bg-page transition-opacity duration-300 ${!hasCopied ? 'opacity-50' : 'opacity-100'}`}>
                                     <div className="flex items-start gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/20 text-slate-600 dark:text-white flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                                        <div className="w-6 h-6 rounded-full bg-bg-subtle text-text-main flex items-center justify-center text-xs font-bold shrink-0">2</div>
                                         <div className="flex-1">
-                                            <p className="font-bold text-slate-800 dark:text-white text-sm mb-2">{t('songwriter.step2.title')}</p>
+                                            <p className="font-bold text-text-main text-sm mb-2">{t('songwriter.step2.title')}</p>
                                             <a 
                                                 href="https://suno.com" 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
-                                                className={`block w-full text-center py-2 px-4 rounded-lg text-sm font-bold transition-colors ${hasCopied ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/30' : 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'}`}
+                                                className={`block w-full text-center py-2 px-4 rounded-lg text-sm font-bold transition-colors ${hasCopied ? 'bg-accent-primary text-text-inverse hover:bg-accent-hover shadow-lg shadow-accent-primary/30' : 'bg-bg-subtle text-text-muted cursor-not-allowed'}`}
                                                 onClick={(e) => !hasCopied && e.preventDefault()}
                                             >
                                                 {t('songwriter.action.suno')}
@@ -372,31 +372,31 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+                                <div className="p-4 rounded-xl border border-border-color bg-bg-page">
                                     <div className="flex items-start gap-3">
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-white/20 text-slate-600 dark:text-white flex items-center justify-center text-xs font-bold shrink-0">3</div>
+                                        <div className="w-6 h-6 rounded-full bg-bg-subtle text-text-main flex items-center justify-center text-xs font-bold shrink-0">3</div>
                                         <div className="flex-1">
-                                            <p className="font-bold text-slate-800 dark:text-white text-sm mb-1">{t('songwriter.step3.title')}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{t('songwriter.step3.desc')}</p>
+                                            <p className="font-bold text-text-main text-sm mb-1">{t('songwriter.step3.title')}</p>
+                                            <p className="text-xs text-text-muted">{t('songwriter.step3.desc')}</p>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div className="pt-4 border-t border-slate-100 dark:border-white/5">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('songwriter.suggestions')}</h3>
+                                <div className="pt-4 border-t border-border-color">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">{t('songwriter.suggestions')}</h3>
                                     <div className="space-y-3">
-                                        <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-lg border border-slate-100 dark:border-white/5">
-                                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                        <div className="bg-bg-page p-3 rounded-lg border border-border-color">
+                                            <p className="text-xs text-text-main leading-relaxed">
                                                 {t('songwriter.style_music')}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-lg border border-slate-100 dark:border-white/5">
-                                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                        <div className="bg-bg-page p-3 rounded-lg border border-border-color">
+                                            <p className="text-xs text-text-main leading-relaxed">
                                                 {t('songwriter.style_voice')}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 dark:bg-white/5 p-3 rounded-lg border border-slate-100 dark:border-white/5">
-                                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                        <div className="bg-bg-page p-3 rounded-lg border border-border-color">
+                                            <p className="text-xs text-text-main leading-relaxed">
                                                 {t('songwriter.style_emotion')}
                                             </p>
                                         </div>
@@ -412,18 +412,18 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                 </div>
 
                 {/* Sticky Action Bar (Mobile Only for PDF/Share) */}
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-full p-2 flex gap-2 z-50 lg:hidden">
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-bg-card/90 backdrop-blur-xl border border-border-color shadow-2xl rounded-full p-2 flex gap-2 z-50 lg:hidden">
                     <button 
                         onClick={handleDownloadPDF}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-700 dark:text-white"
+                        className="p-3 hover:bg-bg-page rounded-full transition-colors text-text-main"
                         title={t('pdf')}
                     >
                         <Icon name="download" />
                     </button>
-                    <div className="w-px bg-slate-200 dark:bg-white/10 my-2" />
+                    <div className="w-px bg-border-color my-2" />
                     <button 
                         onClick={handleShare}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-700 dark:text-white"
+                        className="p-3 hover:bg-bg-page rounded-full transition-colors text-text-main"
                         title={t('share')}
                     >
                         <Icon name="share" />
@@ -447,21 +447,21 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl mb-4">
                     <Icon name="music_note" className="text-3xl" />
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{t('songwriter.title')}</h1>
-                <p className="text-slate-500 dark:text-slate-400">
+                <h1 className="text-3xl font-bold text-text-main mb-2">{t('songwriter.title')}</h1>
+                <p className="text-text-muted">
                     {t('songwriter.intro_desc')}
                 </p>
             </div>
 
             {/* Credit Info */}
-            <div className="bg-slate-50 dark:bg-white/5 rounded-2xl p-4 mb-8 flex items-center justify-between border border-slate-200 dark:border-white/5">
+            <div className="bg-bg-page rounded-2xl p-4 mb-8 flex items-center justify-between border border-border-color">
                 <div className="flex items-center gap-3">
                     <div className="bg-amber-100 dark:bg-amber-500/20 p-2 rounded-lg text-amber-600 dark:text-amber-400">
                         <Icon name="monetization_on" />
                     </div>
                     <div>
-                        <p className="font-bold text-slate-800 dark:text-white">Baro Credits</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Saldo: {baroCredits}</p>
+                        <p className="font-bold text-text-main">Baro Credits</p>
+                        <p className="text-xs text-text-muted">Saldo: {baroCredits}</p>
                     </div>
                 </div>
                 {!canGenerate && (
@@ -474,32 +474,32 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                 )}
             </div>
 
-            <div className="space-y-6 bg-white dark:bg-card-dark p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5">
+            <div className="space-y-6 bg-bg-card p-6 rounded-3xl shadow-sm border border-border-color">
                 
                 {/* Event */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.event')}
                     </label>
                     <select 
                         value={event} 
                         onChange={e => setEvent(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="birth" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.birth')}</option>
-                        <option value="wedding" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.wedding')}</option>
-                        <option value="anniversary" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.anniversary')}</option>
-                        <option value="first_date" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.first_date')}</option>
-                        <option value="vacation" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.vacation')}</option>
-                        <option value="love" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.event.love')}</option>
-                        <option value="meeting" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.event.meeting')}</option>
-                        <option value="other" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.other')}</option>
+                        <option value="birth" className="bg-bg-card text-text-main">{t('storyteller.event.birth')}</option>
+                        <option value="wedding" className="bg-bg-card text-text-main">{t('storyteller.event.wedding')}</option>
+                        <option value="anniversary" className="bg-bg-card text-text-main">{t('storyteller.event.anniversary')}</option>
+                        <option value="first_date" className="bg-bg-card text-text-main">{t('storyteller.event.first_date')}</option>
+                        <option value="vacation" className="bg-bg-card text-text-main">{t('storyteller.event.vacation')}</option>
+                        <option value="love" className="bg-bg-card text-text-main">{t('songwriter.event.love')}</option>
+                        <option value="meeting" className="bg-bg-card text-text-main">{t('songwriter.event.meeting')}</option>
+                        <option value="other" className="bg-bg-card text-text-main">{t('storyteller.event.other')}</option>
                     </select>
                 </div>
 
                 {/* Protagonist */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.protagonist')}
                     </label>
                     <input 
@@ -508,13 +508,13 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                         onChange={e => setProtagonist(e.target.value.slice(0, 40))}
                         placeholder="Bijv. Paul Jansen"
                         maxLength={40}
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 {/* Date */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.date')}
                     </label>
                     <input 
@@ -523,91 +523,91 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                         onChange={e => setDate(e.target.value)}
                         max={new Date().toISOString().split('T')[0]}
                         min="1950-01-01"
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 {/* Weather Role */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('songwriter.form.weather_role')}
                     </label>
                     <select 
                         value={weatherRole} 
                         onChange={e => setWeatherRole(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="none" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.weather_role.none')}</option>
-                        <option value="romantic" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.weather_role.romantic')}</option>
-                        <option value="enemy" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.weather_role.enemy')}</option>
-                        <option value="funny" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.weather_role.funny')}</option>
-                        <option value="metaphor" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.weather_role.metaphor')}</option>
+                        <option value="none" className="bg-bg-card text-text-main">{t('songwriter.weather_role.none')}</option>
+                        <option value="romantic" className="bg-bg-card text-text-main">{t('songwriter.weather_role.romantic')}</option>
+                        <option value="enemy" className="bg-bg-card text-text-main">{t('songwriter.weather_role.enemy')}</option>
+                        <option value="funny" className="bg-bg-card text-text-main">{t('songwriter.weather_role.funny')}</option>
+                        <option value="metaphor" className="bg-bg-card text-text-main">{t('songwriter.weather_role.metaphor')}</option>
                     </select>
                 </div>
 
                 {/* Tone */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('songwriter.form.tone')}
                     </label>
                     <select 
                         value={tone} 
                         onChange={e => setTone(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="none" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.tone.none')}</option>
-                        <option value="formal" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.tone.formal')}</option>
-                        <option value="jovial" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.tone.jovial')}</option>
-                        <option value="funny" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.tone.funny')}</option>
-                        <option value="loving" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.tone.loving')}</option>
-                        <option value="rhyme" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.tone.rhyme')}</option>
+                        <option value="none" className="bg-bg-card text-text-main">{t('songwriter.tone.none')}</option>
+                        <option value="formal" className="bg-bg-card text-text-main">{t('songwriter.tone.formal')}</option>
+                        <option value="jovial" className="bg-bg-card text-text-main">{t('songwriter.tone.jovial')}</option>
+                        <option value="funny" className="bg-bg-card text-text-main">{t('songwriter.tone.funny')}</option>
+                        <option value="loving" className="bg-bg-card text-text-main">{t('songwriter.tone.loving')}</option>
+                        <option value="rhyme" className="bg-bg-card text-text-main">{t('songwriter.tone.rhyme')}</option>
                     </select>
                 </div>
 
                 {/* Rhyme Scheme */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('songwriter.form.rhyme_scheme')}
                     </label>
                     <select 
                         value={rhymeScheme} 
                         onChange={e => setRhymeScheme(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="aabb" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.rhyme_scheme.aabb')}</option>
-                        <option value="abab" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.rhyme_scheme.abab')}</option>
-                        <option value="abcb" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.rhyme_scheme.abcb')}</option>
-                        <option value="freestyle" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('songwriter.rhyme_scheme.freestyle')}</option>
+                        <option value="aabb" className="bg-bg-card text-text-main">{t('songwriter.rhyme_scheme.aabb')}</option>
+                        <option value="abab" className="bg-bg-card text-text-main">{t('songwriter.rhyme_scheme.abab')}</option>
+                        <option value="abcb" className="bg-bg-card text-text-main">{t('songwriter.rhyme_scheme.abcb')}</option>
+                        <option value="freestyle" className="bg-bg-card text-text-main">{t('songwriter.rhyme_scheme.freestyle')}</option>
                     </select>
                 </div>
 
                 {/* Location Search */}
                 <div className="relative">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.location')}
                     </label>
                     <div className="relative">
-                        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             placeholder={t('storyteller.form.location')}
-                            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full bg-bg-page border border-border-color rounded-xl pl-10 pr-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                     </div>
                     {isSearchOpen && searchResults.length > 0 && (
-                        <div className="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-white/5 max-h-60 overflow-y-auto">
+                        <div className="absolute z-50 left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color max-h-60 overflow-y-auto">
                             {searchResults.map((res, i) => (
                                 <button
                                     key={i}
                                     onClick={() => handleSelectLocation(res)}
-                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-100 dark:border-white/5 last:border-0 flex items-center gap-2 text-slate-800 dark:text-white"
+                                    className="w-full text-left px-4 py-3 hover:bg-bg-page border-b border-border-color last:border-0 flex items-center gap-2 text-text-main"
                                 >
-                                    <Icon name="location_on" className="text-slate-400" />
+                                    <Icon name="location_on" className="text-text-muted" />
                                     <div>
                                         <p className="font-bold text-sm">{res.name}</p>
-                                        <p className="text-xs text-slate-500">{res.country} {res.admin1}</p>
+                                        <p className="text-xs text-text-muted">{res.country} {res.admin1}</p>
                                     </div>
                                 </button>
                             ))}
@@ -626,8 +626,8 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                     disabled={!canGenerate || !date || !location || !protagonist}
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
                         canGenerate && date && location && protagonist
-                            ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/25'
-                            : 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
+                            ? 'bg-accent-primary text-text-inverse hover:bg-accent-hover shadow-lg shadow-accent-primary/25'
+                            : 'bg-bg-subtle text-text-muted cursor-not-allowed'
                     }`}
                 >
                     {canGenerate ? t('songwriter.form.generate') : t('storyteller.form.insufficient_credits')}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewState, AppSettings, BaroWeermanSettings, TripPlannerSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getUsage } from '../services/usageService';
@@ -205,84 +205,84 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
             <div className="flex-1 p-4 md:p-6 max-w-3xl mx-auto w-full space-y-6">
                 
                 {/* Intro Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm">
-                    <h2 className="text-lg font-bold mb-2 text-slate-800 dark:text-white">{t('baro_weerman.intro_title')}</h2>
-                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">
+                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm">
+                    <h2 className="text-lg font-bold mb-2 text-text-main">{t('baro_weerman.intro_title')}</h2>
+                    <p className="text-text-muted leading-relaxed text-sm">
                         {t('baro_weerman.intro_desc')}
                     </p>
                 </div>
 
                 {/* Settings Form */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-4">
-                        <h3 className="font-bold text-lg text-slate-800 dark:text-white">{t('baro_weerman.settings_title')}</h3>
+                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm space-y-6">
+                    <div className="flex items-center justify-between border-b border-border-color pb-4">
+                        <h3 className="font-bold text-lg text-text-main">{t('baro_weerman.settings_title')}</h3>
                         
                         {/* Master Toggle */}
                         <button
                             onClick={() => handleSave(!enabled)}
                             disabled={loading}
                             className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                                enabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                                enabled ? 'bg-indigo-600' : 'bg-bg-page'
                             }`}
                         >
                             <span
                                 className={`${
                                     enabled ? 'translate-x-7' : 'translate-x-1'
-                                } inline-block h-6 w-6 transform rounded-full bg-white transition-transform`}
+                                } inline-block h-6 w-6 transform rounded-full bg-bg-card transition-transform`}
                             />
                         </button>
                     </div>
 
                     {/* Location Search */}
                     <div className="relative">
-                        <label className="text-sm font-medium text-slate-500 dark:text-white/60 mb-1 block">{t('trip_planner.location')}</label>
+                        <label className="text-sm font-medium text-text-muted mb-1 block">{t('trip_planner.location')}</label>
                         <div 
                             onClick={() => setIsSearchOpen(true)}
-                            className="flex items-center bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                            className="flex items-center bg-bg-page border border-border-color rounded-xl p-3 cursor-pointer hover:bg-bg-card transition-colors"
                         >
                             <Icon name="location_on" className="text-primary mr-2" />
                             <span className="font-bold truncate flex-1">{location.name}, {location.country}</span>
-                            <Icon name="search" className="text-slate-400" />
+                            <Icon name="search" className="text-text-muted" />
                         </div>
 
                         {/* Search Dropdown */}
                         {isSearchOpen && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1e293b] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                <div className="p-2 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
-                                    <Icon name="search" className="text-slate-400 ml-2" />
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <div className="p-2 border-b border-border-color flex items-center gap-2">
+                                    <Icon name="search" className="text-text-muted ml-2" />
                                     <input
                                         ref={searchInputRef}
                                         type="text"
                                         placeholder={t('trip_planner.search_location')}
-                                        className="w-full bg-transparent p-2 outline-none text-slate-800 dark:text-white placeholder:text-slate-400"
+                                        className="w-full bg-transparent p-2 outline-none text-text-main placeholder:text-text-muted"
                                         value={searchQuery}
                                         onChange={(e) => handleSearch(e.target.value)}
                                     />
-                                    <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg">
+                                    <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-bg-page rounded-lg">
                                         <Icon name="close" />
                                     </button>
                                 </div>
                                 <div className="max-h-60 overflow-y-auto">
                                     {loadingSearch ? (
-                                        <div className="p-4 text-center text-slate-400 text-sm">Loading...</div>
+                                        <div className="p-4 text-center text-text-muted text-sm">Loading...</div>
                                     ) : searchResults.length > 0 ? (
                                         searchResults.map((loc, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => selectLocation(loc)}
-                                                className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-3 transition-colors border-b border-slate-50 dark:border-white/5 last:border-0"
+                                                className="w-full text-left p-3 hover:bg-bg-page flex items-center gap-3 transition-colors border-b border-border-color last:border-0"
                                             >
-                                                <div className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                                                    <Icon name="location_city" className="text-slate-500 dark:text-white/60 text-sm" />
+                                                <div className="size-8 rounded-full bg-bg-page flex items-center justify-center flex-shrink-0">
+                                                    <Icon name="location_city" className="text-text-muted text-sm" />
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-sm">{loc.name}</div>
-                                                    <div className="text-xs text-slate-500 dark:text-white/50">{loc.country}</div>
+                                                    <div className="text-xs text-text-muted">{loc.country}</div>
                                                 </div>
                                             </button>
                                         ))
                                     ) : searchQuery.length > 1 ? (
-                                        <div className="p-4 text-center text-slate-400 text-sm">{t('city_not_found')}</div>
+                                        <div className="p-4 text-center text-text-muted text-sm">{t('city_not_found')}</div>
                                     ) : null}
                                 </div>
                             </div>
@@ -291,11 +291,11 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
                     {/* Activity Toggle */}
                     <div>
-                        <label className="text-sm font-medium text-slate-500 dark:text-white/60 mb-2 block">{t('trip_planner.activity')}</label>
-                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1 w-fit">
+                        <label className="text-sm font-medium text-text-muted mb-2 block">{t('trip_planner.activity')}</label>
+                        <div className="flex bg-bg-page rounded-lg p-1 w-fit">
                             <button 
                                 onClick={() => setTripSettings({ ...tripSettings, activity: 'cycling' })}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${tripSettings.activity === 'cycling' ? 'bg-white dark:bg-white/10 shadow text-primary' : 'text-slate-500 dark:text-white/50'}`}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${tripSettings.activity === 'cycling' ? 'bg-bg-card shadow text-primary' : 'text-text-muted'}`}
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="directions_bike" className="text-lg" />
@@ -304,7 +304,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                             </button>
                             <button 
                                 onClick={() => setTripSettings({ ...tripSettings, activity: 'walking' })}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${tripSettings.activity === 'walking' ? 'bg-white dark:bg-white/10 shadow text-primary' : 'text-slate-500 dark:text-white/50'}`}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${tripSettings.activity === 'walking' ? 'bg-bg-card shadow text-primary' : 'text-text-muted'}`}
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="directions_walk" className="text-lg" />
@@ -317,18 +317,18 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     {/* Start Time & Duration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('trip_planner.start_time')}</label>
+                            <label className="text-sm font-medium text-text-muted">{t('trip_planner.start_time')}</label>
                             <input 
                                 type="time" 
                                 value={tripSettings.startTime}
                                 onChange={(e) => setTripSettings({ ...tripSettings, startTime: e.target.value })}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-lg font-bold outline-none focus:ring-2 focus:ring-primary/50"
+                                className="w-full bg-bg-page border border-border-color rounded-xl p-3 text-lg font-bold outline-none focus:ring-2 focus:ring-primary/50"
                             />
                         </div>
 
                         <div className="space-y-2">
                             <div className="flex justify-between">
-                                <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('trip_planner.duration')}</label>
+                                <label className="text-sm font-medium text-text-muted">{t('trip_planner.duration')}</label>
                                 <span className="font-bold">{tripSettings.duration} {t('trip_planner.duration_hours')}</span>
                             </div>
                             <input 
@@ -338,7 +338,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                 step="1"
                                 value={tripSettings.duration}
                                 onChange={(e) => setTripSettings({ ...tripSettings, duration: parseInt(e.target.value) })}
-                                className="w-full accent-primary h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
+                                className="w-full accent-primary h-2 bg-bg-page rounded-lg appearance-none cursor-pointer"
                             />
                         </div>
                     </div>
@@ -346,8 +346,8 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     {/* Schedule (Days) */}
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('baro_weerman.schedule')}</label>
-                            <span className={`text-xs font-bold ${selectedDays.length === 3 ? 'text-orange-500' : 'text-slate-400'}`}>
+                            <label className="text-sm font-medium text-text-muted">{t('baro_weerman.schedule')}</label>
+                            <span className={`text-xs font-bold ${selectedDays.length === 3 ? 'text-orange-500' : 'text-text-muted'}`}>
                                 {selectedDays.length}/3
                             </span>
                         </div>
@@ -361,7 +361,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                         className={`px-3 py-2 rounded-lg text-sm font-bold transition-all border ${
                                             isSelected 
                                                 ? 'bg-primary text-white border-primary shadow-md' 
-                                                : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10'
+                                                : 'bg-bg-page border-border-color text-text-muted hover:bg-bg-card'
                                         }`}
                                     >
                                         {t(`days.${day}`).substring(0, 2)}
@@ -373,11 +373,11 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
                     {/* Channels */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                        <label className="block text-sm font-medium text-text-muted mb-3">
                             {t('baro_weerman.channel_select')}
                         </label>
                         <div className="grid grid-cols-2 gap-3">
-                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${channel === 'email' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${channel === 'email' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-border-color hover:bg-bg-page'}`}>
                                 <input
                                     type="radio"
                                     name="channel"
@@ -387,10 +387,10 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                                 />
                                 <span className="text-xl">📨</span>
-                                <span className="font-medium text-slate-700 dark:text-slate-200">{t('cycling.settings.channel_email')}</span>
+                                <span className="font-medium text-text-muted">{t('cycling.settings.channel_email')}</span>
                             </label>
 
-                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!telegramLinked ? 'opacity-50 cursor-not-allowed' : ''} ${channel === 'telegram' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!telegramLinked ? 'opacity-50 cursor-not-allowed' : ''} ${channel === 'telegram' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-border-color hover:bg-bg-page'}`}>
                                 <input
                                     type="radio"
                                     name="channel"
@@ -402,7 +402,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                 />
                                 <span className="text-xl">✈️</span>
                                 <div className="flex-1 min-w-0">
-                                    <span className="font-medium text-slate-700 dark:text-slate-200 block truncate">{t('cycling.settings.channel_telegram')}</span>
+                                    <span className="font-medium text-text-muted block truncate">{t('cycling.settings.channel_telegram')}</span>
                                 </div>
                             </label>
                         </div>
@@ -415,7 +415,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     </div>
 
                     {/* Credits Info */}
-                    <div className="text-center text-xs text-slate-400 dark:text-slate-600 pt-4 border-t border-slate-100 dark:border-white/5">
+                    <div className="text-center text-xs text-text-muted pt-4 border-t border-border-color">
                         <p>{t('baro_weerman.credits_info')}</p>
                     </div>
 

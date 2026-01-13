@@ -253,11 +253,11 @@ export const FavoritesList: React.FC<Props> = ({
             <div 
                 key={key}
                 onClick={() => onSelectLocation(loc)}
-                className={`relative overflow-hidden rounded-3xl mb-4 cursor-pointer transform transition-all active:scale-95 shadow-lg border border-white/10 bg-slate-900 ${compactMode ? 'p-4 min-h-[110px]' : 'p-5 min-h-[140px]'}`}
+                className={`relative overflow-hidden rounded-3xl mb-4 cursor-pointer transform transition-all active:scale-95 shadow-lg border border-border-color bg-bg-card ${compactMode ? 'p-4 min-h-[110px]' : 'p-5 min-h-[140px]'}`}
             >
                 {/* Background Weather Animation/Image */}
                 {weather && (
-                     <div className="absolute inset-0 z-0">
+                     <div className="absolute inset-0 z-0 opacity-40">
                         <StaticWeatherBackground 
                             weatherCode={weather.weatherCode} 
                             isDay={weather.isDay} 
@@ -268,43 +268,43 @@ export const FavoritesList: React.FC<Props> = ({
                 )}
                 
                 {/* Subtle overlay for text readability */}
-                <div className="absolute inset-0 bg-black/20 z-0 pointer-events-none" />
+                <div className="absolute inset-0 bg-bg-card/20 z-0 pointer-events-none" />
 
-                <div className={`relative z-10 flex flex-col justify-between h-full text-white drop-shadow-md ${compactMode ? 'gap-2' : 'gap-4'}`}>
+                <div className={`relative z-10 flex flex-col justify-between h-full text-text-main drop-shadow-md ${compactMode ? 'gap-2' : 'gap-4'}`}>
                     
                     {/* Top Row: Name, Time, Main Temp */}
                     <div className="flex justify-between items-start">
                         <div className="flex flex-col gap-0.5">
-                            <h3 className="text-xl font-bold leading-tight drop-shadow-md">
+                            <h3 className="text-xl font-bold leading-tight drop-shadow-md text-text-main">
                                 {loc.name}
                             </h3>
                             {isMyLocation ? (
-                                 <div className="flex items-center gap-1 text-xs text-white/90 font-medium drop-shadow-sm">
+                                 <div className="flex items-center gap-1 text-xs text-text-muted font-medium drop-shadow-sm">
                                     <Icon name="my_location" className="text-[10px]" />
                                     <span>{t('favorites.my_location_last') || 'My Location (last known)'}</span>
                                  </div>
                             ) : (
                                 <div className="flex flex-col">
-                                    <span className="text-sm text-white/90 font-medium tracking-wide drop-shadow-sm">
+                                    <span className="text-sm text-text-muted font-medium tracking-wide drop-shadow-sm">
                                         {weather ? weather.time : '--:--'}
                                     </span>
                                     {timeDiff && (
-                                        <span className="text-[10px] text-white/70">
+                                        <span className="text-[10px] text-text-muted/70">
                                             {timeDiff}
                                         </span>
                                     )}
                                 </div>
                             )}
-                            <div className="text-sm text-white/80 font-medium mt-1">
+                            <div className="text-sm text-text-muted/80 font-medium mt-1">
                                 {weather ? mapWmoCodeToText(weather.weatherCode, settings.language) : '...'}
                             </div>
                         </div>
 
                         <div className="flex flex-col items-end">
-                            <div className="text-5xl font-light tracking-tighter drop-shadow-lg">
+                            <div className="text-5xl font-light tracking-tighter drop-shadow-lg text-text-main">
                                 {weather ? convertTemp(weather.temp, settings.tempUnit) : '--'}°
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-white/90 mt-1">
+                            <div className="flex items-center gap-2 text-xs font-medium text-text-muted mt-1">
                                 <span>{t('temp.high_short')}:{weather ? convertTemp(weather.maxTemp, settings.tempUnit) : '--'}°</span>
                                 <span>{t('temp.low_short')}:{weather ? convertTemp(weather.minTemp, settings.tempUnit) : '--'}°</span>
                             </div>
@@ -312,11 +312,11 @@ export const FavoritesList: React.FC<Props> = ({
                             {weather && (
                                 <>
                                     {weather.apparentTemp < 15 ? (
-                                        <div className="text-[11px] text-white/80 mt-0.5">
+                                        <div className="text-[11px] text-text-muted/80 mt-0.5">
                                             {t('feels_like')}: {convertTemp(weather.apparentTemp, settings.tempUnit)}°
                                         </div>
                                     ) : weather.temp > 25 ? (
-                                        <div className="text-[11px] text-orange-200 mt-0.5">
+                                        <div className="text-[11px] text-orange-500 mt-0.5">
                                             {t('heat_index')}: {convertTemp(calculateHeatIndex(weather.temp, weather.humidity), settings.tempUnit)}°
                                         </div>
                                     ) : null}
@@ -327,7 +327,7 @@ export const FavoritesList: React.FC<Props> = ({
 
                     {/* Bottom Row: Details (Grid) */}
                     {weather && !compactMode && (
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-white/90 border-t border-white/10 pt-3 mt-1">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-text-muted border-t border-border-color pt-3 mt-1">
                             
                             {/* Sun Event */}
                             <div className="flex items-center gap-2">
@@ -357,9 +357,9 @@ export const FavoritesList: React.FC<Props> = ({
                                         <span>{t('cloud_cover') || 'Bewolking'}</span>
                                         <span>{weather.cloudCover}%</span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+                                    <div className="h-1.5 w-full bg-bg-page rounded-full overflow-hidden">
                                         <div 
-                                            className="h-full bg-white/80 rounded-full" 
+                                            className="h-full bg-text-muted/50 rounded-full" 
                                             style={{ width: `${weather.cloudCover}%` }} 
                                         />
                                     </div>
@@ -374,15 +374,15 @@ export const FavoritesList: React.FC<Props> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-slate-100/50 dark:bg-black/50 backdrop-blur-sm flex justify-center animate-in fade-in duration-300">
-            <div className="w-full max-w-5xl h-full bg-slate-100 dark:bg-background-dark flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300 relative">
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex justify-center animate-in fade-in duration-300">
+            <div className="w-full max-w-5xl h-full bg-bg-page flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300 relative">
              {/* Header */}
-             <div className="flex items-center justify-between p-4 pt-6 bg-white/50 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-20">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white pl-2">
+             <div className="flex items-center justify-between p-4 pt-6 bg-bg-card/90 backdrop-blur-md sticky top-0 z-20 border-b border-border-color">
+                <h2 className="text-xl font-bold text-text-main pl-2">
                     {t('favorites') || 'Favorieten'}
                 </h2>
                 <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-white/80 select-none">
+                    <label className="flex items-center gap-2 text-sm font-medium text-text-main select-none">
                         <input
                             type="checkbox"
                             checked={compactMode}
@@ -397,7 +397,7 @@ export const FavoritesList: React.FC<Props> = ({
                     </label>
                     <button 
                         onClick={onClose}
-                        className="p-2 rounded-full bg-slate-200/50 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-white transition-colors"
+                        className="p-2 rounded-full bg-bg-page hover:bg-bg-page/80 text-text-main transition-colors border border-border-color"
                     >
                         <Icon name="close" className="text-xl" />
                     </button>

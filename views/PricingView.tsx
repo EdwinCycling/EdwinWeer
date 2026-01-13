@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { ViewState, AppSettings } from '../types';
 import { getTranslation } from '../services/translations';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { API_LIMITS } from '../services/apiConfig';
 import { getUsage, UsageStats, loadRemoteUsage } from '../services/usageService';
 

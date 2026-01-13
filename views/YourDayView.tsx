@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon';
 import { saveCustomEvents, loadCustomEvents } from '../services/storageService';
 import { searchCityByName } from '../services/geoService';
 import { getTranslation } from '../services/translations';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getUsage, UsageStats } from '../services/usageService';
 import { Modal } from '../components/Modal';
 

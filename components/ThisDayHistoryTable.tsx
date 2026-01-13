@@ -114,12 +114,12 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-white dark:bg-[#101d22] flex flex-col animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] bg-bg-page flex flex-col animate-in fade-in duration-200">
             {/* Header */}
-            <div className="flex-none p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#101d22]">
+            <div className="flex-none p-4 border-b border-border-color flex items-center justify-between bg-bg-card">
                 <div>
-                    <h2 className="text-xl font-bold">{title}</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{subTitle}</p>
+                    <h2 className="text-xl font-bold text-text-main">{title}</h2>
+                    <p className="text-sm text-text-muted">{subTitle}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button 
@@ -131,7 +131,7 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
                     </button>
                     <button 
                         onClick={onClose}
-                        className="bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 p-2 rounded-lg transition-colors"
+                        className="bg-bg-page hover:bg-bg-page/80 p-2 rounded-lg transition-colors text-text-main"
                     >
                         <Icon name="close" />
                     </button>
@@ -139,29 +139,29 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
             </div>
 
             {/* Table Content */}
-            <div className="flex-grow overflow-auto p-4">
-                <div className="bg-white dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-white/5 sticky top-0 z-10">
+            <div className="flex-grow overflow-auto p-4 bg-bg-page">
+                <div className="bg-bg-card rounded-xl border border-border-color overflow-hidden shadow-sm">
+                    <table className="w-full text-sm text-left text-text-main">
+                        <thead className="text-xs text-text-muted uppercase bg-bg-page sticky top-0 z-10">
                             <tr>
-                                <th onClick={() => handleSort('year')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
+                                <th onClick={() => handleSort('year')} className="px-4 py-3 cursor-pointer hover:bg-bg-page/80 select-none">
                                     <div className="flex items-center gap-1">{t('history.table_date')} {getSortIcon('year')}</div>
                                 </th>
-                                <th onClick={() => handleSort('max')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
+                                <th onClick={() => handleSort('max')} className="px-4 py-3 cursor-pointer hover:bg-bg-page/80 select-none">
                                     <div className="flex items-center gap-1">{t('history.table_max_temp')} {getSortIcon('max')}</div>
                                 </th>
-                                <th onClick={() => handleSort('min')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
+                                <th onClick={() => handleSort('min')} className="px-4 py-3 cursor-pointer hover:bg-bg-page/80 select-none">
                                     <div className="flex items-center gap-1">{t('history.table_min_temp')} {getSortIcon('min')}</div>
                                 </th>
-                                <th onClick={() => handleSort('rain')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
+                                <th onClick={() => handleSort('rain')} className="px-4 py-3 cursor-pointer hover:bg-bg-page/80 select-none">
                                     <div className="flex items-center gap-1">{t('history.table_precip')} {getSortIcon('rain')}</div>
                                 </th>
-                                <th onClick={() => handleSort('gust')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 select-none">
+                                <th onClick={() => handleSort('gust')} className="px-4 py-3 cursor-pointer hover:bg-bg-page/80 select-none">
                                     <div className="flex items-center gap-1">{t('history.table_wind')} {getSortIcon('gust')}</div>
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                        <tbody className="divide-y divide-border-color">
                             {sortedData.map((row) => {
                                 const isHighMax = highlights.top10Max.has(row.year);
                                 const isLowMin = highlights.bottom10Min.has(row.year);
@@ -170,22 +170,22 @@ export const ThisDayHistoryTable: React.FC<ThisDayHistoryTableProps> = ({
                                     <tr 
                                         key={row.year} 
                                         className={`
-                                            hover:bg-slate-50 dark:hover:bg-white/5 transition-colors
-                                            ${isHighMax ? 'bg-red-50/50 dark:bg-red-900/10' : ''}
-                                            ${isLowMin ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}
+                                            hover:bg-bg-page transition-colors
+                                            ${isHighMax ? 'bg-red-500/10' : ''}
+                                            ${isLowMin ? 'bg-blue-500/10' : ''}
                                         `}
                                     >
                                         <td className="px-4 py-3 font-medium">{row.year}</td>
-                                        <td className={`px-4 py-3 ${isHighMax ? 'text-red-600 dark:text-red-400 font-bold' : ''}`}>
+                                        <td className={`px-4 py-3 ${isHighMax ? 'text-red-500 font-bold' : ''}`}>
                                             {convertTempPrecise(row.max, settings.tempUnit).toFixed(1)}°
                                         </td>
-                                        <td className={`px-4 py-3 ${isLowMin ? 'text-blue-600 dark:text-blue-400 font-bold' : ''}`}>
+                                        <td className={`px-4 py-3 ${isLowMin ? 'text-blue-500 font-bold' : ''}`}>
                                             {convertTempPrecise(row.min, settings.tempUnit).toFixed(1)}°
                                         </td>
-                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                                        <td className="px-4 py-3 text-text-muted">
                                             {convertPrecip(row.rain, settings.precipUnit)} {settings.precipUnit}
                                         </td>
-                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                                        <td className="px-4 py-3 text-text-muted">
                                             {convertWind(row.gust, WindUnit.BFT)} Bft ({Math.round(row.gust)} km/hr)
                                         </td>
                                     </tr>

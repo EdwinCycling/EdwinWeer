@@ -336,14 +336,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
 
         return (
-            <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative overflow-hidden min-h-[180px] md:h-[180px] flex flex-col md:flex-row gap-4">
+            <div className="bg-bg-card border border-border-color rounded-2xl p-4 relative overflow-hidden min-h-[180px] md:h-[180px] flex flex-col md:flex-row gap-4 transition-colors">
                 {/* Left Section: Moon Phase */}
                 <div className="flex-1 flex flex-col justify-between z-10 relative">
                     <div>
                         <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
-                                <Icon name="dark_mode" className="text-indigo-400 dark:text-indigo-300" />
-                                <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase">{t('moon_phase')}</p>
+                                <Icon name="dark_mode" className="text-accent-primary" />
+                                <p className="text-text-muted text-xs font-bold uppercase">{t('moon_phase')}</p>
                             </div>
                             <div className="flex gap-2">
                                 <button 
@@ -355,7 +355,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             setShowHorizon(true);
                                         }
                                     }}
-                                    className="text-[10px] bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/30 transition-all active:scale-95 flex items-center gap-1.5 border border-indigo-100/50 dark:border-indigo-500/30 shadow-sm cursor-pointer"
+                                    className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold hover:bg-accent-primary/20 transition-all active:scale-95 flex items-center gap-1.5 border border-accent-primary/20 shadow-sm cursor-pointer"
                                 >
                                     <Icon name="visibility" className="text-[12px]" />
                                     <span>Horizon</span>
@@ -369,30 +369,30 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             setShowStarMap(true);
                                         }
                                     }}
-                                    className="text-[10px] bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/30 transition-all active:scale-95 flex items-center gap-1.5 border border-indigo-100/50 dark:border-indigo-500/30 shadow-sm cursor-pointer"
+                                    className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold hover:bg-accent-primary/20 transition-all active:scale-95 flex items-center gap-1.5 border border-accent-primary/20 shadow-sm cursor-pointer"
                                 >
                                     <Icon name="public" className="text-[12px]" />
                                     <span>Sterrenkaart</span>
                                 </button>
                             </div>
                         </div>
-                        <p className="text-xl font-bold truncate text-slate-800 dark:text-white">{getMoonPhaseText(moonPhase, settings.language)}</p>
+                        <p className="text-xl font-bold truncate text-text-main">{getMoonPhaseText(moonPhase, settings.language)}</p>
                     </div>
 
                     <div className="flex justify-between items-center mt-2">
-                        <div className="flex flex-col gap-1.5 text-xs text-slate-600 dark:text-white/70">
+                        <div className="flex flex-col gap-1.5 text-xs text-text-muted">
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                                <p>{t('moon.days_to_full')}: <span className="font-bold text-slate-800 dark:text-white">{daysToFull}</span></p>
-                                <p>{t('moon.illumination')}: <span className="font-bold text-slate-800 dark:text-white">{illumination}%</span></p>
+                                <p>{t('moon.days_to_full')}: <span className="font-bold text-text-main">{daysToFull}</span></p>
+                                <p>{t('moon.illumination')}: <span className="font-bold text-text-main">{illumination}%</span></p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200 dark:border-white/10 pt-1.5">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-color pt-1.5">
                                 <div className="flex items-center gap-1">
-                                    <Icon name="vertical_align_top" className="text-[14px] text-indigo-400" />
-                                    <span>{t('moonrise')}: <span className="font-bold text-slate-800 dark:text-white">{formatTime(moonrise)}</span></span>
+                                    <Icon name="vertical_align_top" className="text-[14px] text-accent-primary" />
+                                    <span>{t('moonrise')}: <span className="font-bold text-text-main">{formatTime(moonrise)}</span></span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Icon name="vertical_align_bottom" className="text-[14px] text-indigo-400" />
-                                    <span>{t('moonset')}: <span className="font-bold text-slate-800 dark:text-white">{formatTime(moonset)}</span></span>
+                                    <Icon name="vertical_align_bottom" className="text-[14px] text-accent-primary" />
+                                    <span>{t('moonset')}: <span className="font-bold text-text-main">{formatTime(moonset)}</span></span>
                                 </div>
                             </div>
                         </div>
@@ -403,30 +403,30 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px bg-slate-200 dark:bg-white/10 my-1"></div>
-                <div className="md:hidden h-px bg-slate-200 dark:border-white/10 w-full opacity-50"></div>
+                <div className="hidden md:block w-px bg-border-color my-1"></div>
+                <div className="md:hidden h-px bg-border-color w-full opacity-50"></div>
 
                 {/* Right Section: Visible Planets */}
                 <div className="flex-1 z-10 relative overflow-hidden flex flex-col min-h-[100px] md:min-h-0">
                     <div className="flex justify-between items-center mb-2">
-                        <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-white/50">{t('moon.visible_planets')}</span>
-                        <span className="text-[9px] text-slate-400">{t('tonight')}</span>
+                        <span className="text-[10px] uppercase font-bold text-text-muted">{t('moon.visible_planets')}</span>
+                        <span className="text-[9px] text-text-muted">{t('tonight')}</span>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin max-h-[120px] md:max-h-none">
                         <div className="flex flex-col gap-2">
                             {visiblePlanets.length > 0 ? visiblePlanets.map(p => (
-                                <div key={p.name} className="bg-white/50 dark:bg-black/20 rounded-lg p-2 border border-slate-200 dark:border-white/5 flex flex-col gap-1">
+                                <div key={p.name} className="bg-bg-page rounded-lg p-2 border border-border-color flex flex-col gap-1">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-base">{p.icon}</span>
-                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 hidden sm:inline">{p.nameNl}</span>
-                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 sm:hidden">{p.nameNl.substring(0, 2)}</span>
+                                            <span className="text-xs font-bold text-text-main hidden sm:inline">{p.nameNl}</span>
+                                            <span className="text-xs font-bold text-text-main sm:hidden">{p.nameNl.substring(0, 2)}</span>
                                         </div>
                                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                                             p.status === 'visible' 
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' 
-                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-500/20 dark:text-slate-400'
+                                            ? 'bg-accent-primary/20 text-accent-primary' 
+                                            : 'bg-bg-card text-text-muted'
                                         }`}>
                                             {p.status === 'visible' ? (
                                                 <>
@@ -442,8 +442,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                         </span>
                                     </div>
                                     
-                                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pl-6">
-                                        <span>Best: <span className="font-medium text-slate-700 dark:text-slate-200">{p.bestTime}</span></span>
+                                    <div className="flex items-center justify-between text-[10px] text-text-muted pl-6">
+                                        <span>Best: <span className="font-medium text-text-main">{p.bestTime}</span></span>
                                         <span>{p.direction} • {p.altitude}°</span>
                                     </div>
 
@@ -455,7 +455,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                     )}
                                 </div>
                             )) : (
-                                <div className="text-xs text-slate-400 italic text-center py-4">{t('moon.no_planets_visible')}</div>
+                                <div className="text-xs text-text-muted italic text-center py-4">{t('moon.no_planets_visible')}</div>
                             )}
                         </div>
                     </div>
@@ -463,7 +463,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                 {/* Background Decoration */}
                 <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
-                     <Icon name="dark_mode" className="text-8xl" />
+                     <Icon name="dark_mode" className="text-text-main text-8xl" />
                 </div>
             </div>
         )
@@ -522,48 +522,48 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     const sunCy = height - (currentYRatio * todayMaxElev);
 
     return (
-        <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 h-[180px] relative">
+        <div className="bg-bg-card border border-border-color rounded-2xl p-4 h-[180px] relative transition-colors">
             <div className="flex justify-between items-start mb-2">
-                 <p className="text-slate-500 dark:text-white/50 text-xs font-bold uppercase">{t('sun_graph.title')}</p>
-                 <div className="flex items-center gap-1 bg-white/50 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
-                    <Icon name="cloud" className="text-xs" />
-                    <span className="text-xs font-bold">{weatherData.current.cloud_cover}%</span>
+                 <p className="text-text-muted text-xs font-bold uppercase">{t('sun_graph.title')}</p>
+                 <div className="flex items-center gap-1 bg-bg-page px-2 py-0.5 rounded-lg border border-border-color">
+                    <Icon name="cloud" className="text-xs text-text-muted" />
+                    <span className="text-xs font-bold text-text-main">{weatherData.current.cloud_cover}%</span>
                  </div>
             </div>
             
             <div className="absolute inset-x-0 bottom-8 h-[100px] flex justify-center overflow-hidden">
                 <svg viewBox={`0 0 ${width} ${height + 10}`} className="w-full h-full" preserveAspectRatio="none">
-                    <path d={`M ${longestPath}`} fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-yellow-500/30" />
-                    <path d={`M ${todayPath}`} fill="none" stroke="url(#sunGradient)" strokeWidth="3" strokeLinecap="round" />
+                    <path d={`M ${longestPath}`} fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-text-muted/30" />
+                    <path d={`M ${todayPath}`} fill="none" stroke="var(--accent-primary)" strokeWidth="3" strokeLinecap="round" />
                     <defs>
                         <linearGradient id="sunGradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#f59e0b" />
-                            <stop offset="50%" stopColor="#fbbf24" />
-                            <stop offset="100%" stopColor="#f59e0b" />
+                            <stop offset="0%" stopColor="var(--accent-primary)" />
+                            <stop offset="50%" stopColor="var(--accent-primary)" />
+                            <stop offset="100%" stopColor="var(--accent-primary)" />
                         </linearGradient>
                     </defs>
                     {currentHr > sunriseHr && currentHr < sunsetHr && (
                          <g transform={`translate(${sunCx}, ${sunCy})`}>
-                            <circle r="6" fill="#fbbf24" stroke="white" strokeWidth="2" />
-                            <circle r="12" fill="#fbbf24" opacity="0.3" className="animate-pulse" />
+                            <circle r="6" fill="var(--accent-primary)" stroke="white" strokeWidth="2" />
+                            <circle r="12" fill="var(--accent-primary)" opacity="0.3" className="animate-pulse" />
                         </g>
                     )}
                 </svg>
             </div>
 
-            <div className="absolute bottom-12 left-4 text-[10px] font-bold text-slate-600 dark:text-white/70">
+            <div className="absolute bottom-12 left-4 text-[10px] font-bold text-text-muted">
                 {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
             </div>
-            <div className="absolute bottom-12 right-4 text-[10px] font-bold text-slate-600 dark:text-white/70">
+            <div className="absolute bottom-12 right-4 text-[10px] font-bold text-text-muted">
                 {new Date(weatherData.daily.sunset[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
             </div>
 
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-slate-500 dark:text-white/60">
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-text-muted">
                 <div className="flex items-center gap-1">
-                    <span className="w-3 h-0.5 bg-yellow-500"></span> {t('sun_graph.today')}
+                    <span className="w-3 h-0.5 bg-accent-primary"></span> {t('sun_graph.today')}
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="w-3 h-0.5 bg-yellow-500/50 border-t border-dashed border-yellow-500"></span> {t('sun_graph.longest')}
+                    <span className="w-3 h-0.5 bg-text-muted/50 border-t border-dashed border-text-muted"></span> {t('sun_graph.longest')}
                 </div>
             </div>
         </div>
@@ -725,7 +725,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     const pastWindDirText = getWindDirection(pastWindDir, settings.language);
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-background-light dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300">
       
       {error && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-bounce">
@@ -744,13 +744,13 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 cloudCover={weatherData.current.cloud_cover}
                 className="absolute inset-0 w-full h-full"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background-light dark:to-background-dark" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-page" />
         </div>
       )}
 
       <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
       
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
         <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8 relative pointer-events-auto h-0">
@@ -763,7 +763,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('refresh')} position="bottom">
                   <button 
                       onClick={loadWeather} 
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label={t('refresh')}
                   >
                       <Icon name="refresh" className={`text-xl sm:text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
@@ -773,7 +773,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('search')} position="bottom">
                   <button
                       onClick={() => setIsSearchOpen(v => !v)}
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label={t('search')}
                   >
                       <Icon name="search" className="text-xl sm:text-2xl" />
@@ -783,7 +783,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={isFavorite(location) ? t('remove_favorite') : t('add_favorite')} position="bottom">
                   <button
                       onClick={toggleFavorite}
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label="Toggle Favorite"
                   >
                       <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-xl sm:text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
@@ -793,7 +793,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('nav.country_map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label="Country Map"
                   >
                       <Icon name="public" className="text-xl sm:text-2xl" />
@@ -803,7 +803,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('nav.barometer')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.BAROMETER)}
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label={t('nav.barometer')}
                   >
                       <Icon name="speed" className="text-xl sm:text-2xl" />
@@ -813,7 +813,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('nav.map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.MAP)}
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label={t('nav.map')}
                   >
                       <Icon name="map" className="text-xl sm:text-2xl" />
@@ -823,7 +823,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('favorites_list') || 'Favorietenlijst'} position="bottom">
                   <button
                       onClick={() => setShowFavorites(true)}
-                      className="p-2 sm:p-3 bg-white/80 dark:bg-slate-800 backdrop-blur-md rounded-full text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
                       aria-label="Favorites List"
                   >
                       <Icon name="list" className="text-xl sm:text-2xl" />
@@ -837,7 +837,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         {/* Header */}
         <div className="flex flex-col pt-20 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-white/90 hover:bg-bg-card/50 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
@@ -864,7 +864,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     )}
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-white/90 hover:bg-bg-card/50 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -906,7 +906,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                  });
                              }
                          }}
-                         className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${location.isCurrentLocation ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold border-primary dark:border-white' : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary border-slate-200 dark:border-white/5'}`}
+                         className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${location.isCurrentLocation ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color'}`}
                     >
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
@@ -916,7 +916,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             key={i}
                             data-active={location.name === fav.name && !location.isCurrentLocation}
                             onClick={() => setLocation(fav)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold' : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-white/20 border-slate-200 dark:border-white/5'}`}
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-accent-primary text-text-inverse font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card/80 border-border-color'}`}
                         >
                             {fav.name}
                         </button>
@@ -926,7 +926,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         </div>
 
         {isSearchOpen && (
-            <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-3 backdrop-blur-md">
+            <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-bg-card border border-border-color rounded-2xl shadow-xl p-3 backdrop-blur-md">
                 <div className="flex gap-2">
                     <input
                         ref={searchInputRef}
@@ -938,12 +938,12 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && searchCities()}
                         placeholder={t('search')}
-                        className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                        className="flex-1 bg-bg-input border border-border-color rounded-xl px-3 py-2 text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
                     />
                     <button
                         onClick={searchCities}
                         disabled={loadingSearch || !searchQuery.trim()}
-                        className="px-3 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                        className="px-3 rounded-xl bg-bg-input text-text-main hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                     >
                         <Icon name={loadingSearch ? 'hourglass_empty' : 'arrow_forward'} />
                     </button>
@@ -953,14 +953,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <button
                             key={`${res.name}-${idx}`}
                             onClick={() => handleSelectSearchResult(res)}
-                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-left"
+                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-bg-page text-left text-text-main"
                         >
                             <span className="font-medium">{res.name}</span>
-                            <span className="text-xs opacity-60">{res.country}</span>
+                            <span className="text-xs text-text-muted">{res.country}</span>
                         </button>
                     ))}
                     {searchResults.length === 0 && !loadingSearch && searchQuery.trim() && (
-                        <p className="text-xs text-slate-500 dark:text-white/60 px-2">{t('no_data_available')}</p>
+                        <p className="text-xs text-text-muted px-2">{t('no_data_available')}</p>
                     )}
                 </div>
             </div>
@@ -979,28 +979,28 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </h1>
                         <div className="grid grid-cols-3 gap-2 md:flex md:flex-row">
                             {weatherData.current.temperature_2m < 10 && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
                                     <Icon name="thermostat" className={`text-lg md:text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
-                                    <span className="text-base md:text-lg font-bold">{feelsLike.toFixed(1)}°</span>
-                                    <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('feels_like')}</span>
+                                    <span className="text-base md:text-lg font-bold text-text-main">{feelsLike.toFixed(1)}°</span>
+                                    <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('feels_like')}</span>
                                 </div>
                             )}
                             {weatherData.current.temperature_2m > 25 && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
                                     <Icon name="thermostat" className="text-lg md:text-xl text-orange-500 dark:text-orange-300" />
-                                    <span className="text-base md:text-lg font-bold">{heatIndex}°</span>
-                                    <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('heat_index')}</span>
+                                    <span className="text-base md:text-lg font-bold text-text-main">{heatIndex}°</span>
+                                    <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('heat_index')}</span>
                                 </div>
                             )}
 
                             {/* Wind Box (New Compass Style) */}
-                            <div className="relative flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-1 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:w-[80px] md:h-[100px] overflow-hidden">
+                            <div className="relative flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-1 border border-border-color shadow-sm w-[75px] h-[85px] md:w-[80px] md:h-[100px] overflow-hidden">
                                 {/* Compass Background */}
-                                <div className="absolute inset-1 rounded-full border-2 border-slate-300/50 dark:border-white/10" />
-                                <div className="absolute top-1 text-[8px] font-bold text-slate-400">N</div>
-                                <div className="absolute bottom-1 text-[8px] font-bold text-slate-400">{settings.language === 'nl' ? 'Z' : 'S'}</div>
-                                <div className="absolute left-1 text-[8px] font-bold text-slate-400">W</div>
-                                <div className="absolute right-1 text-[8px] font-bold text-slate-400">{settings.language === 'nl' ? 'O' : 'E'}</div>
+                                <div className="absolute inset-1 rounded-full border-2 border-border-color" />
+                                <div className="absolute top-1 text-[8px] font-bold text-text-muted">N</div>
+                                <div className="absolute bottom-1 text-[8px] font-bold text-text-muted">{settings.language === 'nl' ? 'Z' : 'S'}</div>
+                                <div className="absolute left-1 text-[8px] font-bold text-text-muted">W</div>
+                                <div className="absolute right-1 text-[8px] font-bold text-text-muted">{settings.language === 'nl' ? 'O' : 'E'}</div>
 
                                 {/* Rotating Arrow */}
                                 <div 
@@ -1011,9 +1011,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 </div>
 
                                 {/* Center Value */}
-                                <div className="z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full w-10 h-10 flex flex-col items-center justify-center shadow-sm border border-slate-100 dark:border-white/5">
-                                    <span className="text-sm md:text-base font-bold leading-none">{pastWindBft}</span>
-                                    <span className="text-[8px] font-medium leading-none opacity-70">bft</span>
+                                <div className="z-10 bg-bg-page backdrop-blur-sm rounded-full w-10 h-10 flex flex-col items-center justify-center shadow-sm border border-border-color">
+                                    <span className="text-sm md:text-base font-bold leading-none text-text-main">{pastWindBft}</span>
+                                    <span className="text-[8px] font-medium leading-none opacity-70 text-text-muted">bft</span>
                                 </div>
                             </div>
 
@@ -1031,40 +1031,40 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             {/* 48h Forecast Link (Now also on Mobile) */}
                             <div 
                                 onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                                className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
                             >
-                                <Icon name="schedule" className="text-lg md:text-xl text-slate-700 dark:text-white" />
-                                <span className="text-base md:text-lg font-bold">48u</span>
-                                <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('forecast')}</span>
+                                <Icon name="schedule" className="text-lg md:text-xl text-text-main" />
+                                <span className="text-base md:text-lg font-bold text-text-main">48u</span>
+                                <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('forecast')}</span>
                             </div>
 
                             {/* Past 24h Link (Terugblik) (Now also on Mobile) */}
                             <div 
                                 onClick={() => onNavigate(ViewState.HOURLY_DETAIL, { mode: 'history', title: t('past_24h'), subtitle: '24 uur' })}
-                                className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                                className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
                             >
-                                <Icon name="history" className="text-lg md:text-xl text-slate-700 dark:text-white" />
-                                <span className="text-base md:text-lg font-bold">24u</span>
-                                <span className="text-[8px] md:text-[9px] uppercase text-slate-500 dark:text-white/60 text-center">{t('past_24h')}</span>
+                                <Icon name="history" className="text-lg md:text-xl text-text-main" />
+                                <span className="text-base md:text-lg font-bold text-text-main">24u</span>
+                                <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('past_24h')}</span>
                             </div>
 
                             {/* Today's Extremes (Min/Max with time) */}
                             {todayExtremes && (
-                                <div className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px]">
+                                <div className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px]">
                                     <div className="flex flex-col items-center gap-1 w-full">
                                         <div className="flex flex-col w-full px-1">
                                             <div className="flex items-center justify-between w-full">
                                                 <span className="text-sm font-bold text-red-500 dark:text-red-400">{todayExtremes.max}°</span>
-                                                <span className="text-[10px] font-medium text-slate-600 dark:text-white/80">{todayExtremes.maxTime}</span>
+                                                <span className="text-[10px] font-medium text-text-muted">{todayExtremes.maxTime}</span>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col w-full px-1 border-t border-slate-200 dark:border-white/10 pt-1">
+                                        <div className="flex flex-col w-full px-1 border-t border-border-color pt-1">
                                             <div className="flex items-center justify-between w-full">
                                                 <span className="text-sm font-bold text-blue-500 dark:text-blue-400">{todayExtremes.min}°</span>
-                                                <span className="text-[10px] font-medium text-slate-600 dark:text-white/80">{todayExtremes.minTime}</span>
+                                                <span className="text-[10px] font-medium text-text-muted">{todayExtremes.minTime}</span>
                                             </div>
                                         </div>
-                                        <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 text-center mt-0.5 font-bold tracking-wider">{t('weather.today_label')}</span>
+                                        <span className="text-[9px] uppercase text-text-muted text-center mt-0.5 font-bold tracking-wider">{t('weather.today_label')}</span>
                                     </div>
                                 </div>
                             )}
@@ -1091,7 +1091,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </p>
                 </div>
 
-                <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors">
+                <div className="bg-bg-page backdrop-blur-2xl rounded-t-[40px] border-t border-border-color p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-text-main transition-colors">
                     
                     {/* Hourly */}
                     <div className="mb-8">
@@ -1099,8 +1099,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
                             className="w-full flex items-center justify-between mb-4 px-1 group"
                         >
-                            <h3 className="text-slate-500 dark:text-white/60 text-xs font-bold uppercase tracking-wider group-hover:text-primary transition-colors">{t('hourly_forecast')}</h3>
-                            <div className="flex items-center gap-1 text-slate-400 dark:text-white/40 text-[10px] uppercase group-hover:text-primary transition-colors">
+                            <h3 className="text-text-muted text-xs font-bold uppercase tracking-wider group-hover:text-accent-primary transition-colors">{t('hourly_forecast')}</h3>
+                            <div className="flex items-center gap-1 text-text-muted/60 text-[10px] uppercase group-hover:text-accent-primary transition-colors">
                                 <span>{t('details')}</span>
                                 <Icon name="chevron_right" className="text-base" />
                             </div>
@@ -1111,9 +1111,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
                         >
                             {getHourlyForecast().map((hour, idx) => (
-                                <div key={idx} className="flex flex-col items-center gap-3 min-w-[64px] shrink-0 group p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
-                                    <p className={`text-sm font-medium ${hour.highlight ? 'text-primary' : 'text-slate-500 dark:text-white/60'}`}>{hour.time}</p>
-                                    <Icon name={hour.icon} className={`text-3xl transition-transform group-hover:scale-110 ${hour.highlight ? 'text-primary' : 'text-slate-700 dark:text-white'}`} />
+                                <div key={idx} className="flex flex-col items-center gap-3 min-w-[64px] shrink-0 group p-2 rounded-2xl hover:bg-bg-card transition-colors">
+                                    <p className={`text-sm font-medium ${hour.highlight ? 'text-accent-primary' : 'text-text-muted'}`}>{hour.time}</p>
+                                    <Icon name={hour.icon} className={`text-3xl transition-transform group-hover:scale-110 ${hour.highlight ? 'text-accent-primary' : 'text-text-main'}`} />
                                     <p className="text-lg font-bold">{hour.temp}°</p>
                                 </div>
                             ))}
@@ -1197,19 +1197,19 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         {/* Activities Section */}
                         {currentActivityScores.length > 0 && (
                             <>
-                                <p className="text-xs text-slate-500 dark:text-white/60 mb-2 italic">
+                                <p className="text-xs text-text-muted mb-2 italic">
                                     Activiteitenscores op basis van actuele weersomstandigheden (momentopname)
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                     {currentActivityScores.map(score => (
-                                    <div key={score.type} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/5 flex flex-row items-center justify-between shadow-sm gap-2">
+                                    <div key={score.type} className="bg-bg-card rounded-xl p-3 border border-border-color flex flex-row items-center justify-between shadow-sm gap-2">
                                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                            <div className={`p-2 rounded-lg bg-white dark:bg-white/5 shrink-0 ${getScoreColor(score.score10)}`}>
+                                            <div className={`p-2 rounded-lg bg-bg-page shrink-0 ${getScoreColor(score.score10)}`}>
                                                 <Icon name={getActivityIcon(score.type)} className="text-lg sm:text-xl" />
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="font-bold text-xs sm:text-sm capitalize truncate">{t('activity.' + score.type)}</p>
-                                                <p className="text-[9px] sm:text-[10px] text-slate-500 dark:text-white/60 italic truncate">"{score.text}"</p>
+                                                <p className="text-[9px] sm:text-[10px] text-text-muted italic truncate">"{score.text}"</p>
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end shrink-0">
@@ -1223,7 +1223,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                         return (
                                                             <div key={s} className="relative w-[12px] h-[12px]">
                                                                 <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <Icon name="star" className="text-[12px] text-slate-200 dark:text-white/10" />
+                                                                    <Icon name="star" className="text-[12px] text-text-muted/20" />
                                                                 </div>
                                                                 <div className="absolute inset-y-0 left-0 w-[50%] overflow-hidden">
                                                                     <div className="w-[12px] h-full flex items-center justify-center">
@@ -1238,7 +1238,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                         <div key={s} className="w-[12px] h-[12px] flex items-center justify-center">
                                                             <Icon 
                                                                 name="star" 
-                                                                className={`text-[12px] ${isFull ? "text-yellow-400 drop-shadow-sm" : "text-slate-200 dark:text-white/10"}`} 
+                                                                className={`text-[12px] ${isFull ? "text-yellow-400 drop-shadow-sm" : "text-text-muted/20"}`} 
                                                             />
                                                         </div>
                                                     );
@@ -1253,236 +1253,236 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Thermodynamics */}
-                            <div onClick={() => setShowFeelsLikeModal(true)} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
+                            <div onClick={() => setShowFeelsLikeModal(true)} className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm relative group cursor-pointer hover:bg-bg-card transition-colors">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('feels_like')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('feels_like')}</p>
                                     <p className="text-sm font-bold">{Math.round(feelsLike)}°</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="humidity_percentage" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="humidity_percentage" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('humidity')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('humidity')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.relative_humidity_2m}%</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water_drop" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="water_drop" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('dew_point')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('dew_point')}</p>
                                     <p className="text-sm font-bold">{Math.round(convertTemp(dewPoint, settings.tempUnit))}°</p>
                                 </div>
                             </div>
 
                             {/* Clouds & Vis */}
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="visibility" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="visibility" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('visibility')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('visibility')}</p>
                                     <p className="text-sm font-bold">{Math.round(getCurrentHourly('visibility') / 1000)} km</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cloud" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="cloud" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('cloud_cover')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('cloud_cover')}</p>
                                     <p className="text-sm font-bold">{weatherData.current.cloud_cover}%</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="cloud_queue" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="cloud_queue" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('current.cloud_levels')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('current.cloud_levels')}</p>
                                     <p className="text-[10px] font-bold">{getCurrentHourly('cloud_cover_low')}/{getCurrentHourly('cloud_cover_mid')}/{getCurrentHourly('cloud_cover_high')}%</p>
                                 </div>
                             </div>
 
                             {/* Wind */}
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="air" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="air" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('wind')}</p>
                                     <p className="text-sm font-bold">{windSpeed} {settings.windUnit}</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="cyclone" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="cyclone" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('wind_gusts')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('wind_gusts')}</p>
                                     <p className="text-sm font-bold">{convertWind(weatherData.current.wind_gusts_10m, settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
                             
                             {/* Atmosphere */}
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="compress" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="compress" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('pressure')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('pressure')}</p>
                                     <p className="text-sm font-bold">{convertPressure(weatherData.current.surface_pressure, settings.pressureUnit)} {settings.pressureUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="speed" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="speed" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('pressure_msl')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('pressure_msl')}</p>
                                     <p className="text-sm font-bold">{convertPressure(weatherData.current.pressure_msl, settings.pressureUnit)} {settings.pressureUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="filter_drama" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="filter_drama" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('vapor_pressure')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('vapor_pressure')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('vapour_pressure_deficit')} kPa</p>
                                 </div>
                             </div>
 
                             {/* Sun & Water */}
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_sunny" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="wb_sunny" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('uv_max')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('uv_max')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.uv_index_max[0]}</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="timelapse" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="timelapse" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('sunshine')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('sunshine')}</p>
                                     <p className="text-sm font-bold">{Math.round(weatherData.daily.sunshine_duration[0] / 3600)}h {Math.round((weatherData.daily.sunshine_duration[0] % 3600) / 60)}m</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="opacity" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="opacity" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('evapotranspiration')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('evapotranspiration')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.et0_fao_evapotranspiration[0]}mm</p>
                                 </div>
                             </div>
 
                             {/* Deep Soil Profile Header */}
                             <div className="col-span-2 md:col-span-3 mt-2">
-                                <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">{t('current.deep_soil_profile')}</h4>
+                                <h4 className="text-xs font-bold uppercase text-text-muted border-b border-border-color pb-1 mb-2">{t('current.deep_soil_profile')}</h4>
                             </div>
                             
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="grass" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="grass" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('soil_temp_0cm')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('soil_temp_0cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_0cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_6cm')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('soil_temp_6cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_6cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="grass" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="grass" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_temp_18cm')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('soil_temp_18cm')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('soil_temperature_18cm'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="water" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="water" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('soil_moist_0_1')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('soil_moist_0_1')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_0_to_1cm')} m³/m³</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_3_9')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('soil_moist_3_9')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_3_to_9cm')} m³/m³</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="water" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="water" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('soil_moist_27_81')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('soil_moist_27_81')}</p>
                                     <p className="text-sm font-bold">{getCurrentHourly('soil_moisture_27_to_81cm')} m³/m³</p>
                                 </div>
                             </div>
 
                              {/* Atmosphere Profile Header */}
                              <div className="col-span-2 md:col-span-3 mt-2">
-                                <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 border-b border-slate-200 dark:border-white/10 pb-1 mb-2">{t('current.atmosphere_profile')}</h4>
+                                <h4 className="text-xs font-bold uppercase text-text-muted border-b border-border-color pb-1 mb-2">{t('current.atmosphere_profile')}</h4>
                             </div>
 
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_80m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('wind_80m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_80m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_120m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('wind_120m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_120m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wind_power" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="wind_power" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('wind_180m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('wind_180m')}</p>
                                     <p className="text-sm font-bold">{convertWind(getCurrentHourly('wind_speed_180m'), settings.windUnit)} {settings.windUnit}</p>
                                 </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp_80m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('temp_80m')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('temperature_80m'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="thermostat" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('temp_180m')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('temp_180m')}</p>
                                     <p className="text-sm font-bold">{convertTemp(getCurrentHourly('temperature_180m'), settings.tempUnit)}°</p>
                                 </div>
                             </div>
                             
                             {/* Precip Daily */}
-                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg shrink-0"><Icon name="umbrella" /></div>
+                            <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm overflow-hidden">
+                                <div className="bg-bg-page p-2 rounded-lg shrink-0"><Icon name="umbrella" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60 truncate">{t('precip_prob')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted truncate">{t('precip_prob')}</p>
                                     <p className="text-sm font-bold">{weatherData.daily.precipitation_probability_max[0]}%</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="rainy" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="rainy" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('today')} {t('precip')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('today')} {t('precip')}</p>
                                     <p className="text-sm font-bold">{convertPrecip(weatherData.daily.precipitation_sum[0], settings.precipUnit)} {settings.precipUnit}</p>
                                 </div>
                             </div>
-                             <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-slate-200 dark:border-white/5 shadow-sm">
-                                <div className="bg-white dark:bg-white/5 p-2 rounded-lg"><Icon name="wb_twilight" /></div>
+                             <div className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">
+                                <div className="bg-bg-page p-2 rounded-lg"><Icon name="wb_twilight" /></div>
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-white/60">{t('daylight')}</p>
+                                    <p className="text-[10px] font-bold uppercase text-text-muted">{t('daylight')}</p>
                                     <p className="text-sm font-bold">{Math.round(weatherData.daily.daylight_duration[0] / 3600)}h {Math.round((weatherData.daily.daylight_duration[0] % 3600) / 60)}m</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-8 pt-8 border-t border-slate-200 dark:border-white/5">
+                    <div className="mt-8 pt-8 border-t border-border-color">
                         <div className="text-center mb-6">
                             <h3 className="text-lg font-bold mb-4">{t('explore_world')}</h3>
-                            <p className="text-slate-500 dark:text-white/60 text-sm">{t('lucky_compass')}</p>
+                            <p className="text-text-muted text-sm">{t('lucky_compass')}</p>
                         </div>
                         
                         <div className="relative size-64 mx-auto my-4 group">
-                             <div className="absolute inset-0 rounded-full border border-slate-200 dark:border-white/5 animate-[spin_60s_linear_infinite]"></div>
-                             <div className="absolute inset-4 rounded-full border border-slate-200 dark:border-white/5 border-dashed animate-[spin_40s_linear_infinite_reverse]"></div>
+                             <div className="absolute inset-0 rounded-full border border-border-color animate-[spin_60s_linear_infinite]"></div>
+                             <div className="absolute inset-4 rounded-full border border-border-color border-dashed animate-[spin_40s_linear_infinite_reverse]"></div>
                              
                              {['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW'].map((dir, i) => {
                                  const angle = i * 45;
@@ -1494,7 +1494,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                         key={dir}
                                         disabled={loadingCity}
                                         onClick={() => handleCompassSelect(dir)}
-                                        className="absolute top-1/2 left-1/2 -ml-5 -mt-5 size-10 rounded-full bg-white dark:bg-background-dark border border-slate-200 dark:border-white/10 hover:bg-primary hover:border-primary hover:text-white flex items-center justify-center font-bold text-xs transition-all duration-300 disabled:opacity-50 shadow-lg z-10 text-slate-700 dark:text-white"
+                                        className="absolute top-1/2 left-1/2 -ml-5 -mt-5 size-10 rounded-full bg-bg-card border border-border-color hover:bg-accent-primary hover:border-accent-primary hover:text-white flex items-center justify-center font-bold text-xs transition-all duration-300 disabled:opacity-50 shadow-lg z-10 text-text-main"
                                         style={style}
                                      >
                                          {t(`dir.${dir}`)}
@@ -1571,14 +1571,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <Icon name="warning" className="text-3xl" />
                 <p className="font-bold">{limitError}</p>
             </div>
-            <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+            <p className="text-text-muted text-sm leading-relaxed">
                 Het lijkt erop dat je het limiet van de gratis weer-data hebt bereikt. 
                 Probeer het later opnieuw of neem contact op met de beheerder voor een upgrade.
             </p>
             <div className="flex justify-end mt-2">
                 <button
                     onClick={() => setShowLimitModal(false)}
-                    className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    className="px-4 py-2 bg-bg-page rounded-lg font-bold hover:bg-bg-page/80 transition-colors"
                 >
                     Sluiten
                 </button>
@@ -1588,13 +1588,13 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       {showPremiumModal && (
         <Modal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} title={t('premium.feature.title')}>
             <div className="p-4 flex flex-col gap-4">
-                <p className="text-slate-600 dark:text-slate-300">{t('premium.feature.desc')}</p>
+                <p className="text-text-muted">{t('premium.feature.desc')}</p>
                 <button 
                     onClick={() => {
                         setShowPremiumModal(false);
                         onNavigate('settings');
                     }}
-                    className="bg-indigo-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-indigo-700 transition-colors w-full"
+                    className="bg-accent-primary text-white py-2 px-4 rounded-lg font-bold hover:bg-accent-secondary transition-colors w-full"
                 >
                     {t('premium.view_pricing')}
                 </button>

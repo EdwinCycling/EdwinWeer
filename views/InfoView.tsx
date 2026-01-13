@@ -13,10 +13,10 @@ export const InfoView: React.FC<Props> = ({ onNavigate, settings }) => {
   const t = (key: string) => getTranslation(key, settings.language);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background-dark p-6 pb-24 text-slate-800 dark:text-white overflow-y-auto">
+    <div className="min-h-screen bg-bg-page p-6 pb-24 text-text-main overflow-y-auto">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-card transition-colors">
                 <Icon name="arrow_back_ios_new" />
             </button>
             <h1 className="text-3xl font-bold">{t('info.title')}</h1>
@@ -27,59 +27,59 @@ export const InfoView: React.FC<Props> = ({ onNavigate, settings }) => {
                 <h2 className="text-4xl font-display font-bold mb-4 bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
                     {t('info.hero_title')}
                 </h2>
-                <p className="text-xl text-slate-600 dark:text-white/80 leading-relaxed">
+                <p className="text-xl text-text-muted leading-relaxed">
                     {t('info.hero_desc')}
                 </p>
             </section>
 
             <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-white/5">
+                <div className="bg-bg-card p-6 rounded-3xl border border-border-color">
                     <div className="size-12 rounded-2xl bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-500 mb-4">
                         <Icon name="history" className="text-2xl" />
                     </div>
                     <h3 className="text-xl font-bold mb-2">{t('info.card.historical_title')}</h3>
-                    <p className="text-slate-500 dark:text-white/60">
+                    <p className="text-text-muted">
                         {t('info.card.historical_desc')}
                     </p>
                 </div>
 
-                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-white/5">
+                <div className="bg-bg-card p-6 rounded-3xl border border-border-color">
                     <div className="size-12 rounded-2xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500 mb-4">
                         <Icon name="model_training" className="text-2xl" />
                     </div>
                     <h3 className="text-xl font-bold mb-2">{t('info.card.ensembles_title')}</h3>
-                    <p className="text-slate-500 dark:text-white/60">
+                    <p className="text-text-muted">
                         {t('info.card.ensembles_desc')}
                     </p>
                 </div>
 
-                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-white/5">
+                <div className="bg-bg-card p-6 rounded-3xl border border-border-color">
                     <div className="size-12 rounded-2xl bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-500 mb-4">
                         <Icon name="grass" className="text-2xl" />
                     </div>
                     <h3 className="text-xl font-bold mb-2">{t('info.card.soil_title')}</h3>
-                    <p className="text-slate-500 dark:text-white/60">
+                    <p className="text-text-muted">
                         {t('info.card.soil_desc')}
                     </p>
                 </div>
 
-                <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-white/5">
+                <div className="bg-bg-card p-6 rounded-3xl border border-border-color">
                     <div className="size-12 rounded-2xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-500 mb-4">
                         <Icon name="analytics" className="text-2xl" />
                     </div>
                     <h3 className="text-xl font-bold mb-2">{t('info.card.privacy_title')}</h3>
-                    <p className="text-slate-500 dark:text-white/60">
+                    <p className="text-text-muted">
                         {t('info.card.privacy_desc')}
                     </p>
                 </div>
             </div>
 
-            <section className="bg-slate-100 dark:bg-white/5 rounded-3xl p-8">
+            <section className="bg-bg-page rounded-3xl p-8 border border-border-color">
                 <h3 className="text-2xl font-bold mb-4">{t('info.unique_title')}</h3>
-                <p className="text-slate-600 dark:text-white/80 mb-4">
+                <p className="text-text-muted mb-4">
                     {t('info.unique_p1')}
                 </p>
-                <p className="text-slate-600 dark:text-white/80">
+                <p className="text-text-muted">
                     {t('info.unique_p2')}
                 </p>
             </section>

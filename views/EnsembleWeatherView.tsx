@@ -42,6 +42,7 @@ import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -68,6 +69,7 @@ const ENSEMBLE_MODELS: {id: EnsembleModel, name: string}[] = [
 const MODEL_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
+  const colors = useThemeColors();
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
   const [currentWeather, setCurrentWeather] = useState<OpenMeteoResponse | null>(null);
   const [ensembleData, setEnsembleData] = useState<any | null>(null);
@@ -517,8 +519,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
     const isDaily = timeStep === 'daily';
 
     return (
-        <div className={`bg-white dark:bg-[#1d2b32] p-3 rounded-xl border border-slate-200 dark:border-white/10 shadow-xl text-xs max-w-[400px]`}>
-            <p className="font-bold mb-2 pb-1 border-b border-slate-100 dark:border-white/10 text-slate-500 dark:text-white/60">
+        <div className={`bg-bg-card p-3 rounded-xl border border-border-color shadow-xl text-xs max-w-[400px]`}>
+            <p className="font-bold mb-2 pb-1 border-b border-border-color text-text-muted">
                 {new Date(label).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                     weekday: 'short', 
                     day: 'numeric', 
@@ -592,7 +594,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                 return (
                     <div key={index} className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-slate-600 dark:text-slate-300 font-medium">{name}</span>
+                        <span className="text-text-muted font-medium">{name}</span>
                     </div>
                 );
             })}
@@ -687,13 +689,13 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
           }
 
           return (
-              <div className="bg-white dark:bg-card-dark p-3 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 text-xs min-w-[150px]">
-                  <p className="font-bold mb-2 text-slate-700 dark:text-white border-b border-slate-100 dark:border-white/5 pb-2">{dateStr}</p>
+              <div className="bg-bg-card p-3 border border-border-color rounded-xl shadow-xl z-50 text-xs min-w-[150px]">
+                  <p className="font-bold mb-2 text-text-main border-b border-border-color pb-2">{dateStr}</p>
                   <div className="flex flex-col gap-1">
                     {items.map((p: any) => (
                         <div key={p.dataKey} className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
-                            <span className="capitalize text-slate-500 dark:text-white/60 flex-1">
+                            <span className="capitalize text-text-muted flex-1">
                                 {p.dataKey === 'avg' ? (settings.language === 'nl' ? 'Gemiddelde' : 'Average') : p.name || p.dataKey}
                             </span>
                             <span className="font-bold font-mono">
@@ -871,12 +873,13 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
                               {viewMode !== 'all' && (
                                   (viewMode === 'density' || viewMode === 'spread' || viewMode === 'main' || viewMode === 'avg') ? (
-                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(128,128,128,0.2)', strokeWidth: 1 }} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: colors.textMuted, strokeOpacity: 0.2, strokeWidth: 1 }} />
                                   ) : (
                                     <Tooltip 
-                                        contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                                        labelStyle={{ color: '#64748b', marginBottom: '0.5rem', fontWeight: 'bold' }}
-                                        cursor={{ stroke: 'rgba(128,128,128,0.2)', strokeWidth: 1 }}
+                                        contentStyle={{ backgroundColor: colors.bgCard, borderRadius: '12px', border: `1px solid ${colors.borderColor}`, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                                        labelStyle={{ color: colors.textMuted, marginBottom: '0.5rem', fontWeight: 'bold' }}
+                                        itemStyle={{ color: colors.textMain }}
+                                        cursor={{ stroke: colors.textMuted, strokeOpacity: 0.2, strokeWidth: 1 }}
                                         labelFormatter={(label) => {
                                             const date = new Date(label);
                                             return timeStep === 'daily' 
@@ -904,7 +907,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   })();
   
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300">
       
       {/* Background from Current Weather */}
       {currentWeather && (
@@ -981,8 +984,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                          }}
                          className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
                              location.isCurrentLocation 
-                                 ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold border-primary dark:border-white' 
-                                 : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary border-slate-200 dark:border-white/5'
+                                 ? 'bg-primary text-white dark:bg-bg-card dark:text-text-main font-bold border-primary dark:border-border-color' 
+                                 : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-primary border-border-color'
                          }`}
                     >
                         <Icon name="my_location" className="text-sm" />
@@ -992,7 +995,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         <button 
                             key={i}
                             onClick={() => setLocation(fav)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold' : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-white/20 border-slate-200 dark:border-white/5'}`}
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-primary text-white dark:bg-bg-card dark:text-text-main font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card border-border-color'}`}
                         >
                             {fav.name}
                         </button>
@@ -1018,10 +1021,10 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     )}
                     
                     {currentWeather.current.temperature_2m > 25 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
                             <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
                             <span className="text-lg font-bold leading-none mt-1">{heatIndex}°</span>
-                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 leading-none mt-1">{t('heat_index')}</span>
+                            <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('heat_index')}</span>
                         </div>
                     )}
 
@@ -1044,7 +1047,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         )}
 
         {/* Ensemble Content */}
-        <div className="bg-white dark:bg-card-dark/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors min-h-[60vh]">
+        <div className="bg-bg-card/90 backdrop-blur-2xl rounded-t-[40px] border-t border-border-color p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-text-main transition-colors min-h-[60vh]">
             
             <div className="mb-6 space-y-4">
                 {/* Top Controls Row */}
@@ -1052,7 +1055,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     {/* Model Select */}
                     <div className="w-full md:w-auto flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60">{t('ensemble.model')}</label>
+                            <label className="block text-xs font-bold uppercase text-text-muted">{t('ensemble.model')}</label>
                             <button 
                                 onClick={() => onNavigate(ViewState.MODEL_INFO)}
                                 className="text-primary hover:text-primary/80 transition-colors"
@@ -1080,7 +1083,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                             className="sr-only peer" 
                                         />
                                         <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/40 rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                                        <span className="ml-2 text-xs font-bold text-slate-500 dark:text-white/60">{t('compare')}</span>
+                                        <span className="ml-2 text-xs font-bold text-text-muted">{t('compare')}</span>
                                     </label>
                                 </div>
                             )}
@@ -1090,22 +1093,22 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                             <select 
                                 value={selectedModel} 
                                 onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors shadow-sm"
+                                className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors shadow-sm text-text-main"
                             >
                                 {ENSEMBLE_MODELS.map(m => (
-                                    <option key={m.id} value={m.id} className="text-slate-800 bg-white">
+                                    <option key={m.id} value={m.id} className="text-text-main bg-bg-card">
                                         {m.name}
                                     </option>
                                 ))}
                             </select>
                         ) : (
-                            <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 shadow-sm">
+                            <div className="bg-bg-input border border-border-color rounded-xl p-3 shadow-sm">
                                 <div 
                                     className="max-h-[200px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 no-swipe"
                                     data-no-swipe="true"
                                 >
                                     {ENSEMBLE_MODELS.map(m => (
-                                        <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 cursor-pointer transition-colors">
+                                        <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer transition-colors text-text-main">
                                             <input 
                                                 type="checkbox"
                                                 checked={uiSelectedModels.includes(m.id)}
@@ -1125,7 +1128,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     ))}
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs text-slate-500 dark:text-white/40">
+                                    <span className="text-xs text-text-muted">
                                         {uiSelectedModels.length} {t('ensemble.selected_range')}
                                     </span>
                                     <div className="flex gap-2">
@@ -1136,7 +1139,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                                     setComparisonModels([]);
                                                     setUiSelectedModels([]);
                                                 }}
-                                                className="px-3 py-2 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white rounded-lg text-xs font-bold hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
+                                                className="px-3 py-2 bg-bg-card border border-border-color text-text-main rounded-lg text-xs font-bold hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                                             >
                                                 {t('cancel')}
                                             </button>

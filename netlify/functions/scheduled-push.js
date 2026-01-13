@@ -103,10 +103,9 @@ async function generatePushContent(weatherData, profile, userName) {
 
     } catch (e) {
         console.error("Error generating push content:", e);
-        // Fallback
         return {
-            title: "Het weer vandaag",
-            body: "Bekijk je dagelijkse weerbericht in de app."
+            title: "Baro Update",
+            body: `Error: ${e.message || "Bekijk het weerbericht in de app."}`
         };
     }
 }

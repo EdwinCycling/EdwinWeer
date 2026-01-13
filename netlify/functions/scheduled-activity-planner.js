@@ -473,7 +473,7 @@ Taal: Nederlands.
 
     } catch (e) {
         console.error("AI Error:", e);
-        return `Morgen is de score voor ${activity} een ${scoreData.score}/10! ${scoreData.reasons.join(", ")}.`;
+        return `Error: ${e.message || `Morgen is de score voor ${activity} een ${scoreData.score}/10! ${scoreData.reasons.join(", ")}.`}`;
     }
 }
 

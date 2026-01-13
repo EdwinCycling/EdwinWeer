@@ -23,7 +23,7 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
         const parts = text.split(/(\*\*.*?\*\*)/g);
         return parts.map((part, i) => {
             if (part.startsWith('**') && part.endsWith('**')) {
-                return <span key={i} className="font-bold text-slate-800 dark:text-white">{part.slice(2, -2)}</span>;
+                return <span key={i} className="font-bold text-text-main">{part.slice(2, -2)}</span>;
             }
             return part;
         });
@@ -31,24 +31,24 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-0 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white dark:bg-[#1e293b] w-full h-full shadow-2xl flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-bg-card w-full h-full shadow-2xl flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 dark:border-white/10 flex items-center justify-between shrink-0">
-                    <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800 dark:text-white">
+                <div className="p-6 border-b border-border-color flex items-center justify-between shrink-0">
+                    <h2 className="text-xl font-bold flex items-center gap-2 text-text-main">
                         <Icon name="info" className="text-primary" />
                         {t('model_info.title')}
                     </h2>
                     <button 
                         onClick={onClose}
-                        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-full hover:bg-bg-page transition-colors"
                     >
-                        <Icon name="close" className="text-slate-500 dark:text-white/60" />
+                        <Icon name="close" className="text-text-muted" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-6 overflow-y-auto text-slate-600 dark:text-white/80 space-y-6 text-sm leading-relaxed">
+                <div className="flex-1 p-6 overflow-y-auto text-text-muted space-y-6 text-sm leading-relaxed">
                     
                     <p className="italic opacity-80 text-base">
                         {t('model_info.intro')}
@@ -74,7 +74,7 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
                     </div>
 
                     <div>
-                        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                        <h3 className="text-base font-bold text-text-main mb-2 flex items-center gap-2">
                             <span>🇺🇸</span> {t('model_info.us_title')}
                         </h3>
                         <p>{renderText(t('model_info.us_gfs'))}</p>
@@ -94,7 +94,7 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
                     </div>
 
                     <div>
-                        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                        <h3 className="text-base font-bold text-text-main mb-2 flex items-center gap-2">
                             <span>📍</span> {t('model_info.spec_title')}
                         </h3>
                         <ul className="space-y-2">
@@ -104,7 +104,7 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
                         </ul>
                     </div>
 
-                    <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-xl text-center">
+                    <div className="bg-bg-page p-4 rounded-xl text-center">
                         <h3 className="font-bold text-lg mb-2">{t('model_info.summary_title')}</h3>
                         <div className="space-y-2 text-sm">
                             <p>{t('model_info.sum_daily')} <span className="font-bold text-primary">DWD ICON / ECMWF IFS</span></p>
@@ -116,7 +116,7 @@ export const ModelInfoModal: React.FC<Props> = ({ isOpen, onClose, settings }) =
                 </div>
 
                 {/* Footer with Close Button */}
-                <div className="p-4 border-t border-slate-100 dark:border-white/10 shrink-0 flex justify-center">
+                <div className="p-4 border-t border-border-color shrink-0 flex justify-center">
                     <button 
                         onClick={onClose}
                         className="bg-primary text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-primary-dark transition-colors w-full md:w-auto"

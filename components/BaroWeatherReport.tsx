@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { OpenMeteoResponse, BaroProfile, ViewState, ActivityType, AppLanguage } from '../types';
 import { generateBaroWeatherReport } from '../services/geminiService';
 import { Icon } from './Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getUsage, getLimit, trackCall, decrementLocalBaroCredit, trackBaroCall, trackAiCall } from '../services/usageService';
 import { searchCityByName } from '../services/geoService';
 import { fetchForecast, getActivityIcon, getScoreColor } from '../services/weatherService';
@@ -245,10 +245,10 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
 
     return (
-        <div className="mx-4 mb-8 bg-white dark:bg-card-dark rounded-3xl shadow-xl overflow-hidden border border-purple-100 dark:border-purple-900/30">
+        <div className="mx-4 mb-8 bg-bg-card rounded-3xl shadow-xl overflow-hidden border border-accent-primary/20">
             {/* Header */}
             <div 
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-white cursor-pointer flex items-center justify-between"
+                className="bg-gradient-to-r from-accent-primary to-accent-hover p-4 text-white cursor-pointer flex items-center justify-between"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className="flex items-center gap-3">
@@ -257,7 +257,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                     </div>
                     <div>
                         <h3 className="font-bold text-lg">{t('baro.title')}</h3>
-                        {profile && <p className="text-xs text-purple-100 opacity-90">{t('baro.subtitle')}</p>}
+                        {profile && <p className="text-xs text-white/90">{t('baro.subtitle')}</p>}
                     </div>
                 </div>
                 <Icon name={isCollapsed ? "expand_more" : "expand_less"} />
@@ -299,9 +299,9 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 <div className="space-y-6 animate-in fade-in">
                                     <button
                                         onClick={() => setShowModal(true)}
-                                        className="px-6 py-4 bg-white dark:bg-white/10 border-2 border-purple-200 dark:border-purple-500/30 hover:border-purple-400 text-purple-700 dark:text-white rounded-2xl font-bold shadow-lg transition-all transform hover:scale-105 flex items-center gap-4 mx-auto"
+                                        className="px-6 py-4 bg-bg-card border-2 border-accent-primary/30 hover:border-accent-primary text-accent-primary dark:text-text-main rounded-2xl font-bold shadow-lg transition-all transform hover:scale-105 flex items-center gap-4 mx-auto"
                                     >
-                                        <div className="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-xl">
+                                        <div className="bg-accent-primary/10 p-2 rounded-xl">
                                             <Icon name="visibility" className="text-xl" />
                                         </div>
                                         <div className="flex flex-col items-start text-left">
@@ -315,8 +315,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         </div>
                                     </button>
 
-                                    <div className="pt-4 border-t border-slate-100 dark:border-white/5">
-                                        <p className="text-xs font-bold text-slate-400 dark:text-white/30 uppercase tracking-widest mb-4">
+                                    <div className="pt-4 border-t border-border-color">
+                                        <p className="text-xs font-bold text-text-muted uppercase tracking-widest mb-4">
                                             {t('baro.generate_new')}
                                         </p>
                                         {profiles && profiles.length > 0 ? (
@@ -325,7 +325,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                     <button
                                                         key={p.id || index}
                                                         onClick={() => handleGenerate(p)}
-                                                        className="px-4 py-2 bg-slate-50 dark:bg-white/5 hover:bg-purple-50 dark:hover:bg-purple-900/20 text-slate-600 dark:text-white/70 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-white/10 hover:border-purple-200"
+                                                        className="px-4 py-2 bg-bg-page hover:bg-accent-primary/10 text-text-main rounded-xl text-xs font-bold transition-all border border-border-color hover:border-accent-primary/50"
                                                     >
                                                         {p.name}
                                                     </button>
@@ -334,7 +334,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         ) : (
                                             <button
                                                 onClick={() => profile && handleGenerate(profile)}
-                                                className="px-6 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl font-bold text-sm hover:bg-purple-200 transition-colors"
+                                                className="px-6 py-2 bg-accent-primary/10 text-accent-primary rounded-xl font-bold text-sm hover:bg-accent-primary/20 transition-colors"
                                             >
                                                 {t('baro.regenerate')}
                                             </button>
@@ -343,7 +343,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 </div>
                             ) : !report && (
                                 <>
-                                    <p className="text-slate-500 dark:text-white/60 mb-6 max-w-md mx-auto">
+                                    <p className="text-text-muted mb-6 max-w-md mx-auto">
                                         {t('baro.generate_prompt')}
                                     </p>
                                     
@@ -353,26 +353,16 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                 <button
                                                     key={p.id || index}
                                                     onClick={() => handleGenerate(p)}
-                                                    className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-slate-700 dark:text-white rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-white/10"
+                                                    className="px-4 py-2 bg-bg-page hover:bg-accent-primary/10 text-text-main rounded-lg text-sm font-medium transition-colors border border-border-color"
                                                 >
                                                     {p.name}
                                                 </button>
                                             ))}
-                                            {/* <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    onNavigate(ViewState.SETTINGS, { tab: 'profile' });
-                                                }}
-                                                className="px-4 py-2 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/50 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-                                            >
-                                                {t('baro.new_button')}
-                                            </button> */}
                                         </div>
                                     ) : (
                                         <button
                                             onClick={() => profile && handleGenerate(profile)}
-                                            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/30 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
+                                            className="px-6 py-3 bg-gradient-to-r from-accent-primary to-accent-hover text-white rounded-xl font-bold shadow-lg shadow-accent-primary/30 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
                                         >
                                             <Icon name="auto_awesome" />
                                             {profile?.name || t('baro.generate_button')}
@@ -387,7 +377,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                     e.stopPropagation();
                                     onNavigate(ViewState.PROFILES);
                                 }}
-                                className="mt-4 text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+                                className="mt-4 text-xs text-accent-primary hover:underline flex items-center justify-center gap-1 mx-auto"
                             >
                                 <Icon name="settings" className="text-sm" />
                                 {t('baro.manage_profiles')}
@@ -397,8 +387,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
                     {loading && (
                         <div className="flex flex-col items-center justify-center py-8 gap-4">
-                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500"></div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-white/60 animate-pulse">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-accent-primary"></div>
+                            <p className="text-sm font-medium text-text-muted animate-pulse">
                                 {t('baro.generating_message')}
                             </p>
                         </div>
@@ -409,23 +399,23 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
             {/* Modal for Report - Rendered via Portal to ensure top z-index */}
             {showModal && report && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/80 backdrop-blur-xl animate-in fade-in duration-300 pt-2 pb-0 px-0 md:p-6" style={{ position: 'fixed', zIndex: 9999 }}>
-                    <div className="bg-white dark:bg-[#1e293b] w-full h-[calc(100dvh-0.5rem)] md:w-full md:max-w-4xl md:h-[90vh] rounded-t-3xl md:rounded-3xl flex flex-col shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-300 ring-1 ring-white/10">
+                    <div className="bg-bg-card w-full h-[calc(100dvh-0.5rem)] md:w-full md:max-w-4xl md:h-[90vh] rounded-t-3xl md:rounded-3xl flex flex-col shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-300 ring-1 ring-white/10">
                         {/* Modal Header */}
-                        <div className="flex-none flex items-center justify-between p-4 border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#1e293b]/50 backdrop-blur-md z-10">
+                        <div className="flex-none flex items-center justify-between p-4 border-b border-border-color bg-bg-card/50 backdrop-blur-md z-10">
                             <div className="flex items-center gap-3">
-                                <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg">
-                                    <Icon name="auto_awesome" className="text-purple-600 dark:text-purple-400" />
+                                <div className="bg-accent-primary/10 p-2 rounded-lg">
+                                    <Icon name="auto_awesome" className="text-accent-primary" />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h3 className="font-bold text-lg text-slate-800 dark:text-white">{t('baro.title')}</h3>
-                                        <span className="text-purple-600 dark:text-purple-400 font-bold px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-xs uppercase tracking-wider">
+                                        <h3 className="font-bold text-lg text-text-main">{t('baro.title')}</h3>
+                                        <span className="text-accent-primary font-bold px-2 py-0.5 bg-accent-primary/10 rounded-lg text-xs uppercase tracking-wider">
                                             {lastUsedProfile?.name}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-white/50">
+                                    <div className="flex items-center gap-2 text-xs text-text-muted">
                                         <Icon name="location_on" className="text-[10px]" />
-                                        <span className="font-bold text-slate-700 dark:text-slate-300">{lastUsedProfile?.location}</span>
+                                        <span className="font-bold text-text-main">{lastUsedProfile?.location}</span>
                                         {reportDate && (
                                             <>
                                                 <span>•</span>
@@ -437,14 +427,14 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                             </div>
                             <button 
                                 onClick={() => setShowModal(false)}
-                                className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-500 dark:text-white/50"
+                                className="p-2 hover:bg-bg-page rounded-full transition-colors text-text-muted"
                             >
                                 <Icon name="close" />
                             </button>
                         </div>
 
                         {/* Modal Content - Scrollable */}
-                        <div className="flex-1 overflow-y-auto scrollbar-hide bg-slate-50 dark:bg-[#0f172a]/30 relative">
+                        <div className="flex-1 overflow-y-auto scrollbar-hide bg-bg-page relative">
                             <div className="p-4 md:p-8">
                                 {/* Copy Success Toast */}
                                 {copySuccess && (
@@ -456,7 +446,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                     </div>
                                 )}
 
-                                <div className="prose dark:prose-invert max-w-none text-base leading-relaxed text-slate-700 dark:text-slate-300">
+                                <div className="prose dark:prose-invert max-w-none text-base leading-relaxed text-text-main">
                                     <div className="whitespace-pre-wrap font-serif text-lg md:text-xl">
                                         {report.split('\n').map((line, i) => {
                                             if (!line.trim()) return <div key={i} className="h-2" />; // Reduced spacer height
@@ -468,7 +458,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                     {parts.map((part, j) => {
                                                         if (part.startsWith('**') && part.endsWith('**')) {
                                                             return (
-                                                                <strong key={j} className="text-purple-600 dark:text-purple-400 font-bold">
+                                                                <strong key={j} className="text-accent-primary font-bold">
                                                                     {part.slice(2, -2)}
                                                                 </strong>
                                                             );
@@ -483,8 +473,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
                                 {/* Scores */}
                                 {activityScores.length > 0 && (
-                                    <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10"> {/* Reduced margin/padding */}
-                                        <h4 className="text-sm font-bold uppercase text-slate-500 dark:text-white/50 mb-4 tracking-widest">
+                                    <div className="mt-6 pt-6 border-t border-border-color"> {/* Reduced margin/padding */}
+                                        <h4 className="text-sm font-bold uppercase text-text-muted mb-4 tracking-widest">
                                             {t('baro.activity_score_title')} ({lastUsedProfile?.location})
                                         </h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -493,18 +483,18 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                             const dayName = date.toLocaleDateString(language === 'en' ? 'en-US' : 'nl-NL', { weekday: 'long', day: 'numeric', month: 'short' });
                                             
                                             return (
-                                                <div key={day.date} className="bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-100 dark:border-white/5">
-                                                    <p className="text-xs font-bold text-slate-500 dark:text-white/60 mb-3 capitalize">{dayName}</p>
+                                                <div key={day.date} className="bg-bg-page rounded-2xl p-4 border border-border-color">
+                                                    <p className="text-xs font-bold text-text-muted mb-3 capitalize">{dayName}</p>
                                                     <div className="space-y-2">
                                                         {day.scores.map(({ type, score }) => (
-                                                            <div key={type} className="flex items-center justify-between bg-white dark:bg-black/20 p-2.5 rounded-xl">
+                                                            <div key={type} className="flex items-center justify-between bg-bg-card p-2.5 rounded-xl">
                                                                 <div className="flex items-center gap-3">
-                                                                    <Icon name={getActivityIcon(type)} className="text-slate-400" />
+                                                                    <Icon name={getActivityIcon(type)} className="text-text-muted" />
                                                                     <span className="text-xs font-bold capitalize">
                                                                         {t(`activity.${type}`) || type}
                                                                     </span>
                                                                 </div>
-                                                                <span className={`text-xs font-black px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/5 ${getScoreColor(score.score10)}`}>
+                                                                <span className={`text-xs font-black px-2 py-1 rounded-lg bg-bg-page ${getScoreColor(score.score10)}`}>
                                                                     {score.score10}/10
                                                                 </span>
                                                             </div>
@@ -520,13 +510,13 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                         </div>
 
                         {/* Modal Footer - Fixed */}
-                        <div className="flex-none p-4 md:p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50/80 dark:bg-[#0f172a]/50 backdrop-blur-md safe-area-bottom pb-8 md:pb-6">
+                        <div className="flex-none p-4 md:p-6 border-t border-border-color bg-bg-page/80 backdrop-blur-md safe-area-bottom pb-8 md:pb-6">
                             <div className="flex flex-col gap-3">
                                 {/* Action Buttons */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <button
                                         onClick={() => setShowModal(false)}
-                                        className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-white rounded-xl font-bold transition-all active:scale-95"
+                                        className="flex items-center justify-center gap-2 px-4 py-3 bg-bg-card hover:bg-bg-card/80 text-text-main rounded-xl font-bold transition-all active:scale-95"
                                     >
                                         <Icon name="close" className="w-5 h-5" />
                                         <span>{t('baro.close')}</span>
@@ -550,7 +540,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
                                     <button
                                         onClick={handleShare}
-                                        className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-purple-500/20"
+                                        className="flex items-center justify-center gap-2 px-4 py-3 bg-accent-primary hover:bg-accent-hover text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-accent-primary/20"
                                     >
                                         <Icon name="share" className="w-5 h-5" />
                                         <span>{t('baro.share')}</span>
@@ -568,9 +558,9 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
             {/* Preview Modal */}
             {showPreviewModal && createPortal(
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowPreviewModal(false)}></div>
-                    <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-300">
-                        <div className="p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                    <div className="absolute inset-0 bg-bg-page/80 backdrop-blur-sm" onClick={() => setShowPreviewModal(false)}></div>
+                    <div className="relative bg-bg-card rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-300">
+                        <div className="p-4 border-b border-border-color flex items-center justify-between bg-gradient-to-r from-accent-primary to-accent-hover text-white">
                             <div className="flex items-center gap-2">
                                 <Icon name="auto_awesome" />
                                 <span className="font-bold">{t('baro.preview_title')}</span>
@@ -586,7 +576,7 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                 className="w-full h-auto rounded-xl"
                             />
                         </div>
-                        <div className="p-4 bg-slate-50 dark:bg-white/5 flex justify-center">
+                        <div className="p-4 bg-bg-page flex justify-center">
                             <button 
                                 onClick={() => {
                                     setShowPreviewModal(false);

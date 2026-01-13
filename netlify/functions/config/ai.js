@@ -1,4 +1,8 @@
 // Central AI Configuration
-// User requested update to latest models (referenced as "3.0" but mapping to latest available 2.0 Flash)
-export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-export const GEMINI_FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+// Strictly uses GEMINI_MODEL from environment variables
+if (!process.env.GEMINI_MODEL) {
+    console.error("CRITICAL: GEMINI_MODEL is missing in process.env!");
+    throw new Error("GEMINI_MODEL environment variable is missing. Please add it to your .env file.");
+}
+export const GEMINI_MODEL = process.env.GEMINI_MODEL;
+console.log(`AI Config: Using model ${GEMINI_MODEL}`);

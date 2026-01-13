@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState, AppSettings, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db, messaging } from '../services/firebase';
 import { getToken, deleteToken, onMessage } from 'firebase/messaging';

@@ -412,10 +412,10 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
             {/* Print Modal */}
             {showPrintModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                    <div className="bg-bg-card rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-slate-900">{t('newspaper.print_edition')}</h3>
-                            <button onClick={() => setShowPrintModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                            <h3 className="text-xl font-bold text-text-main">{t('newspaper.print_edition')}</h3>
+                            <button onClick={() => setShowPrintModal(false)} className="p-2 hover:bg-bg-page rounded-full transition-colors text-text-muted">
                                 <Icon name="close" className="w-5 h-5" />
                             </button>
                         </div>
@@ -424,52 +424,52 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
                             <button 
                                 onClick={handleDownload}
                                 disabled={isExporting}
-                                className="flex flex-col items-center justify-center gap-3 p-4 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-xl transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-border-color hover:border-indigo-200 dark:hover:border-indigo-800 rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform text-indigo-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-indigo-600">
                                     <Icon name="download" className="w-6 h-6" />
                                 </div>
-                                <span className="font-medium text-slate-700">{t('newspaper.download_pdf')}</span>
+                                <span className="font-medium text-text-main">{t('newspaper.download_pdf')}</span>
                             </button>
 
                             <button 
                                 onClick={handlePrint}
                                 disabled={isExporting}
-                                className="hidden flex-col items-center justify-center gap-3 p-4 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-xl transition-all group"
+                                className="hidden flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-border-color hover:border-emerald-200 dark:hover:border-emerald-800 rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform text-emerald-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-emerald-600">
                                     <Icon name="print" className="w-6 h-6" />
                                 </div>
-                                <span className="font-medium text-slate-700">{t('newspaper.print')}</span>
+                                <span className="font-medium text-text-main">{t('newspaper.print')}</span>
                             </button>
 
                             <button 
                                 onClick={handleCopy}
                                 disabled={isExporting}
-                                className="flex flex-col items-center justify-center gap-3 p-4 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 rounded-xl transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-amber-50 dark:hover:bg-amber-900/20 border border-border-color hover:border-amber-200 dark:hover:border-amber-800 rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform text-amber-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-amber-600">
                                     <Icon name="content_copy" className="w-6 h-6" />
                                 </div>
-                                <span className="font-medium text-slate-700">{t('newspaper.copy')}</span>
+                                <span className="font-medium text-text-main">{t('newspaper.copy')}</span>
                             </button>
 
                             <button 
                                 onClick={handleShare}
                                 disabled={isExporting}
-                                className="flex flex-col items-center justify-center gap-3 p-4 bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-200 rounded-xl transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-pink-50 dark:hover:bg-pink-900/20 border border-border-color hover:border-pink-200 dark:hover:border-pink-800 rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform text-pink-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-pink-600">
                                     <Icon name="share" className="w-6 h-6" />
                                 </div>
-                                <span className="font-medium text-slate-700">{t('newspaper.share')}</span>
+                                <span className="font-medium text-text-main">{t('newspaper.share')}</span>
                             </button>
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <div className="mt-6 pt-4 border-t border-border-color flex justify-end">
                             <button 
                                 onClick={() => setShowPrintModal(false)}
-                                className="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium"
+                                className="px-4 py-2 text-text-muted hover:text-text-main font-medium"
                             >
                                 {t('newspaper.close')}
                             </button>
@@ -481,7 +481,7 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
             {/* Toast Notification */}
             {showToast && (
                 <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[999] animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-none">
-                    <div className="bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-white/10">
+                    <div className="bg-bg-card text-text-main px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-border-color">
                         <div className="bg-emerald-500 rounded-full p-1 shadow-lg">
                             <Icon name="check" className="w-4 h-4 text-white" />
                         </div>

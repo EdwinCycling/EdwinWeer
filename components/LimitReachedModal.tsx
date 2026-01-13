@@ -3,7 +3,7 @@ import { Modal } from './Modal';
 import { Icon } from './Icon';
 import { ViewState } from '../types';
 import { STORAGE_KEY } from '../services/apiConfig';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 interface LimitReachedModalProps {
     isOpen: boolean;

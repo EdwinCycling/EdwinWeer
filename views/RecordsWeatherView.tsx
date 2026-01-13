@@ -1244,13 +1244,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     formatValue: (value: number) => React.ReactNode
   ) => {
     const medalClasses = [
-      'bg-amber-500 text-white',
-      'bg-slate-400 text-white',
-      'bg-orange-400 text-white',
+      'bg-amber-500 text-text-inverse',
+      'bg-gray-400 text-text-inverse',
+      'bg-orange-400 text-text-inverse',
     ];
 
     return (
-      <div className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+      <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xl font-bold flex items-center gap-2">
             <Icon name={icon} className={iconColor} />
@@ -1268,23 +1268,23 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     className="flex items-center gap-2 text-left hover:opacity-90"
                   >
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-white/40 shadow-sm ${
-                        medalClasses[index] ?? 'bg-slate-200 text-slate-800'
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-border-color/40 shadow-sm ${
+                        medalClasses[index] ?? 'bg-bg-page text-text-main'
                       }`}
                     >
                       {index + 1}
                     </div>
-                    <span className="text-sm text-slate-600 dark:text-white/70 underline-offset-2 hover:underline">
+                    <span className="text-sm text-text-muted underline-offset-2 hover:underline">
                       {formatDateLabel(entry.date)}
                     </span>
                   </button>
                 </div>
                 <div className="flex flex-col items-end">
-                  <div className="text-sm font-bold text-slate-800 dark:text-white text-right">
+                  <div className="text-sm font-bold text-text-main text-right">
                     {formatValue(entry.value)}
                   </div>
                   {entry.meta && typeof entry.meta.max === 'number' && typeof entry.meta.min === 'number' && (
-                     <div className="text-[10px] text-slate-500 dark:text-white/60">
+                     <div className="text-[10px] text-text-muted">
                         Max: {formatTempValue(entry.meta.max)}° / Min: {formatTempValue(entry.meta.min)}°
                      </div>
                   )}
@@ -1293,7 +1293,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-slate-500 dark:text-white/60">{t('no_data_available')}</p>
+          <p className="text-sm text-text-muted">{t('no_data_available')}</p>
         )}
       </div>
     );
@@ -1306,13 +1306,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     entries: TimeTempDiffEntry[]
   ) => {
     const medalClasses = [
-      'bg-amber-500 text-white',
-      'bg-slate-400 text-white',
-      'bg-orange-400 text-white',
+      'bg-amber-500 text-text-inverse',
+      'bg-gray-400 text-text-inverse',
+      'bg-orange-400 text-text-inverse',
     ];
 
     return (
-      <div className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+      <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xl font-bold flex items-center gap-2">
             <Icon name={icon} className={iconColor} />
@@ -1330,33 +1330,33 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     className="flex items-center gap-2 text-left hover:opacity-90"
                   >
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-white/40 shadow-sm ${
-                        medalClasses[index] ?? 'bg-slate-200 text-slate-800'
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-border-color/40 shadow-sm ${
+                        medalClasses[index] ?? 'bg-bg-page text-text-main'
                       }`}
                     >
                       {index + 1}
                     </div>
                     <div className="flex flex-col leading-tight">
-                      <span className="text-sm text-slate-600 dark:text-white/70 underline-offset-2 hover:underline">{formatDateLabel(entry.date)}</span>
-                      <span className="text-xs text-slate-500 dark:text-white/60">
+                      <span className="text-sm text-text-muted underline-offset-2 hover:underline">{formatDateLabel(entry.date)}</span>
+                      <span className="text-xs text-text-muted">
                         13:00 {formatTempValue(entry.temp13)}° {' • '}22:00 {formatTempValue(entry.temp22)}°
                       </span>
                     </div>
                   </button>
                 </div>
-                <div className="text-sm font-bold text-slate-800 dark:text-white text-right">{formatTempDeltaValue(entry.value)}°</div>
+                <div className="text-sm font-bold text-text-main text-right">{formatTempDeltaValue(entry.value)}°</div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-slate-500 dark:text-white/60">{t('no_data_available')}</p>
+          <p className="text-sm text-text-muted">{t('no_data_available')}</p>
         )}
       </div>
     );
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-background-light dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300">
       
       {currentWeather && (
         <div className="absolute top-0 left-0 right-0 h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
@@ -1370,26 +1370,26 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <CreditFloatingButton onNavigate={onNavigate as any} settings={settings} />
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col h-full w-full">
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
-                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
+                <div className="flex flex-col items-center bg-bg-card/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color shadow-lg">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-text-main">
                         <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
                         <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
-                     <p className="text-xs text-white/80 mt-1 drop-shadow-md">
+                     <p className="text-xs text-text-muted mt-1 drop-shadow-md">
                         {t('records.title')}
                     </p>
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -1431,8 +1431,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 }}
                 className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
                   location.isCurrentLocation 
-                    ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold border-primary dark:border-white' 
-                    : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary border-slate-200 dark:border-white/5'
+                    ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' 
+                    : 'bg-bg-card/60 text-text-main hover:bg-bg-card dark:hover:bg-accent-primary/20 hover:text-accent-primary dark:hover:text-accent-primary border-border-color'
                 }`}
               >
                 <Icon name="my_location" className="text-sm" />
@@ -1444,8 +1444,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   onClick={() => setLocation(fav)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${
                     location.name === fav.name
-                      ? 'bg-primary text-white dark:bg-white dark:text-slate-800 font-bold'
-                      : 'bg-white/60 dark:bg-white/10 text-slate-800 dark:text-white hover:bg-white dark:hover:bg-white/20 border-slate-200 dark:border-white/5'
+                      ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary'
+                      : 'bg-bg-card/60 text-text-main hover:bg-bg-card dark:hover:bg-accent-primary/20 border-border-color'
                   }`}
                 >
                   {fav.name}
@@ -1457,25 +1457,25 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
         {/* Current Weather Display */}
         {currentWeather && (
-            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
+            <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
+                    <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
                         {currentTemp}°
                     </h1>
                     
                     {currentWeather.current.temperature_2m < 10 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
                             <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
                             <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
-                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 leading-none mt-1">{t('feels_like')}</span>
+                            <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('feels_like')}</span>
                         </div>
                     )}
                     
                     {currentWeather.current.temperature_2m > 25 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
                             <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
                             <span className="text-lg font-bold leading-none mt-1">{heatIndex}°</span>
-                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 leading-none mt-1">{t('heat_index')}</span>
+                            <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('heat_index')}</span>
                         </div>
                     )}
 
@@ -1491,22 +1491,22 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
                     {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
                 </p>
-                <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                <p className="text-text-main/80 text-base font-normal drop-shadow-md mt-1">
                     H:{highTemp}° L:{lowTemp}°
                 </p>
             </div>
         )}
 
-        <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-slate-800 dark:text-white transition-colors min-h-[60vh]">
+        <div className="bg-bg-page/95 backdrop-blur-2xl rounded-t-[40px] border-t border-border-color p-6 shadow-2xl animate-in slide-in-from-bottom duration-500 text-text-main transition-colors min-h-[60vh]">
           <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-4 px-4">
-            <div className="flex bg-slate-100 dark:bg-white/5 rounded-full p-1">
+            <div className="flex bg-bg-card rounded-full p-1 border border-border-color/50">
                 <UITooltip content={t('records.12month')}>
                 <button
                 onClick={() => setRecordType('12month')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === '12month'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
+                    ? 'bg-accent-primary text-text-inverse shadow-sm border-accent-primary dark:bg-text-inverse dark:text-text-main dark:border-text-inverse'
+                    : 'text-text-muted hover:text-text-main border-transparent'
                 }`}
                 >
                 <span className="hidden md:inline">{t('records.12month')}</span>
@@ -1519,8 +1519,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 onClick={() => setRecordType('yearly')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'yearly'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
+                    ? 'bg-accent-primary text-text-inverse shadow-sm border-accent-primary dark:bg-text-inverse dark:text-text-main dark:border-text-inverse'
+                    : 'text-text-muted hover:text-text-main border-transparent'
                 }`}
                 >
                 <span className="hidden md:inline">{t('records.yearly')}</span>
@@ -1533,8 +1533,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 onClick={() => setRecordType('heatmap')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'heatmap'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
+                    ? 'bg-accent-primary text-text-inverse shadow-sm border-accent-primary dark:bg-text-inverse dark:text-text-main dark:border-text-inverse'
+                    : 'text-text-muted hover:text-text-main border-transparent'
                 }`}
                 >
                 <span className="hidden md:inline">Heatmap</span>
@@ -1547,8 +1547,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 onClick={() => setRecordType('monthly')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'monthly'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
+                    ? 'bg-accent-primary text-white shadow-sm border-accent-primary dark:bg-text-inverse dark:text-text-main dark:border-text-inverse'
+                    : 'text-text-muted hover:text-text-main border-transparent'
                 }`}
                 >
                 <span className="hidden md:inline">{t('records.monthly')}</span>
@@ -1561,8 +1561,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 onClick={() => setRecordType('calendar')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
                     recordType === 'calendar'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 dark:text-white/70 hover:text-slate-800 dark:hover:text-white'
+                    ? 'bg-accent-primary text-text-inverse shadow-sm border-accent-primary dark:bg-text-inverse dark:text-text-main dark:border-text-inverse'
+                    : 'text-text-muted hover:text-text-main border-transparent'
                 }`}
                 >
                 <span className="hidden md:inline">{t('records.calendar')}</span>
@@ -1577,15 +1577,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <select
                         value={selectedYear}
                         onChange={e => setSelectedYear(parseInt(e.target.value, 10))}
-                        className="appearance-none bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 pr-10 text-sm font-bold text-slate-700 dark:text-white outline-none focus:border-primary/50"
+                        className="appearance-none bg-bg-card border border-border-color rounded-xl px-4 py-2 pr-10 text-sm font-bold text-text-main outline-none focus:border-accent-primary/50"
                         >
                         {years.map(year => (
-                            <option key={year} value={year} className="text-slate-800 bg-white">
+                            <option key={year} value={year} className="text-text-main bg-bg-page">
                             {year}
                             </option>
                         ))}
                         </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                         <Icon name="expand_more" className="text-sm" />
                         </div>
                     </div>
@@ -1595,15 +1595,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             <select
                             value={selectedMonth}
                             onChange={e => setSelectedMonth(parseInt(e.target.value, 10))}
-                            className="appearance-none bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 pr-10 text-sm font-bold text-slate-700 dark:text-white outline-none focus:border-primary/50"
+                            className="appearance-none bg-bg-card border border-border-color rounded-xl px-4 py-2 pr-10 text-sm font-bold text-text-main outline-none focus:border-accent-primary/50"
                             >
                             {months.map(month => (
-                                <option key={month} value={month} className="text-slate-800 bg-white" disabled={selectedYear === new Date().getFullYear() && month > new Date().getMonth() + 1}>
+                                <option key={month} value={month} className="text-text-main bg-bg-page" disabled={selectedYear === new Date().getFullYear() && month > new Date().getMonth() + 1}>
                                 {getMonthName(month)}
                                 </option>
                             ))}
                             </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                             <Icon name="expand_more" className="text-sm" />
                             </div>
                         </div>
@@ -1631,71 +1631,71 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           ) : recordType === 'monthly' ? (
               <div className="flex flex-col gap-6 px-4 pb-10 w-full max-w-4xl mx-auto">
                   {monthlyStats && (
-                      <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-white/5">
-                          <h3 className="text-lg sm:text-xl font-bold mb-4 text-slate-800 dark:text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                      <div className="bg-bg-card rounded-2xl p-4 sm:p-6 border border-border-color">
+                          <h3 className="text-lg sm:text-xl font-bold mb-4 text-text-main flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                             <span>{t('records.monthly_summary')}</span>
                             {selectedYear === new Date().getFullYear() && selectedMonth === new Date().getMonth() + 1 && (
-                                <span className="text-xs sm:text-sm font-normal text-slate-500 dark:text-white/60 bg-slate-200 dark:bg-white/10 px-3 py-1 rounded-full self-start sm:self-auto">
+                                <span className="text-xs sm:text-sm font-normal text-text-muted bg-bg-card/50 px-3 py-1 rounded-full self-start sm:self-auto">
                                     {t('records.intermediate_status')}
                                 </span>
                             )}
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                               {/* Temperature Group */}
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.max_temp_high')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.maxTempHigh ? `${formatTempValue(monthlyStats.maxTempHigh.value)}° (${formatDateWithDay(monthlyStats.maxTempHigh.date)})` : '-'}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.max_temp_high')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.maxTempHigh ? `${formatTempValue(monthlyStats.maxTempHigh.value)}° (${formatDateWithDay(monthlyStats.maxTempHigh.date)})` : '-'}</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.max_temp_low')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.maxTempLow ? `${formatTempValue(monthlyStats.maxTempLow.value)}° (${formatDateWithDay(monthlyStats.maxTempLow.date)})` : '-'}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.max_temp_low')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.maxTempLow ? `${formatTempValue(monthlyStats.maxTempLow.value)}° (${formatDateWithDay(monthlyStats.maxTempLow.date)})` : '-'}</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.min_temp_low')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.minTempLow ? `${formatTempValue(monthlyStats.minTempLow.value)}° (${formatDateWithDay(monthlyStats.minTempLow.date)})` : '-'}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.min_temp_low')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.minTempLow ? `${formatTempValue(monthlyStats.minTempLow.value)}° (${formatDateWithDay(monthlyStats.minTempLow.date)})` : '-'}</span>
                               </div>
 
                               {/* Precipitation & Sun Group */}
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.total_rain')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.totalRain.toFixed(1)} {settings.precipUnit}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.total_rain')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.totalRain.toFixed(1)} {settings.precipUnit}</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.total_sun')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.totalSun.toFixed(1)} u</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.total_sun')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.totalSun.toFixed(1)} u</span>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.rain_days')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.rainDays}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.rain_days')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.rainDays}</span>
                               </div>
 
                               {/* Days Count Group */}
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                  <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.dry_days')}</span>
-                                  <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.dryDays}</span>
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.dry_days')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.dryDays}</span>
                               </div>
                               {monthlyStats.frostDays > 0 && (
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                      <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.frost_days')}</span>
-                                      <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.frostDays}</span>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                      <span className="text-text-muted text-xs sm:text-sm">{t('records.frost_days')}</span>
+                                      <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.frostDays}</span>
                                   </div>
                               )}
                               {monthlyStats.iceDays > 0 && (
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                      <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.ice_days')}</span>
-                                      <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.iceDays}</span>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                      <span className="text-text-muted text-xs sm:text-sm">{t('records.ice_days')}</span>
+                                      <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.iceDays}</span>
                                   </div>
                               )}
                               {monthlyStats.summerDays > 0 && (
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                      <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.summer_days')}</span>
-                                      <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.summerDays}</span>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                      <span className="text-text-muted text-xs sm:text-sm">{t('records.summer_days')}</span>
+                                      <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.summerDays}</span>
                                   </div>
                               )}
                               {monthlyStats.tropicalDays > 0 && (
-                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 h-full gap-1">
-                                      <span className="text-slate-500 dark:text-white/60 text-xs sm:text-sm">{t('records.tropical_days')}</span>
-                                      <span className="font-bold text-slate-800 dark:text-white text-sm sm:text-base">{monthlyStats.tropicalDays}</span>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
+                                      <span className="text-text-muted text-xs sm:text-sm">{t('records.tropical_days')}</span>
+                                      <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.tropicalDays}</span>
                                   </div>
                               )}
                           </div>
@@ -1703,8 +1703,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   )}
                   
                   {/* Temp Chart */}
-                  <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-2 sm:p-4 border border-slate-200 dark:border-white/5 h-96 flex flex-col">
-                      <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white px-2 sm:px-0">{t('records.temperature_graph')}</h3>
+                  <div className="bg-bg-card rounded-2xl p-2 sm:p-4 border border-border-color h-96 flex flex-col">
+                      <h3 className="text-lg font-bold mb-2 text-text-main px-2 sm:px-0">{t('records.temperature_graph')}</h3>
                       <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={dailyData} margin={{top: 5, right: 5, bottom: 5, left: -25}} syncId="monthlyGraph">
@@ -1751,9 +1751,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 axisLine={false} 
                             />
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
-                                itemStyle={{ color: '#f3f4f6' }}
-                                labelStyle={{ color: '#9ca3af' }}
+                                contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                                itemStyle={{ color: 'var(--text-main)' }}
+                                labelStyle={{ color: 'var(--text-muted)' }}
                             />
                             <Line 
                                 type="monotone" 
@@ -1765,7 +1765,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                     if (isMax) {
                                         return (
                                             <g>
-                                                <circle cx={props.cx} cy={props.cy} r={6} fill="#ef4444" stroke="white" strokeWidth={2} />
+                                                <circle cx={props.cx} cy={props.cy} r={6} fill="#ef4444" stroke="var(--bg-card)" strokeWidth={2} />
                                                 <text x={props.cx} y={props.cy - 10} textAnchor="middle" fill="#ef4444" fontSize={10} fontWeight="bold">
                                                     {formatTempValue(props.payload.maxTemp)}°
                                                 </text>
@@ -1787,7 +1787,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                     if (isMin) {
                                         return (
                                             <g>
-                                                <circle cx={props.cx} cy={props.cy} r={6} fill="#3b82f6" stroke="white" strokeWidth={2} />
+                                                <circle cx={props.cx} cy={props.cy} r={6} fill="#3b82f6" stroke="var(--bg-card)" strokeWidth={2} />
                                                 <text x={props.cx} y={props.cy + 15} textAnchor="middle" fill="#3b82f6" fontSize={10} fontWeight="bold">
                                                     {formatTempValue(props.payload.minTemp)}°
                                                 </text>
@@ -1805,8 +1805,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   </div>
 
                   {/* Rain/Sun Chart */}
-                  <div className="bg-slate-100 dark:bg-white/5 rounded-2xl p-2 sm:p-4 border border-slate-200 dark:border-white/5 h-96 flex flex-col">
-                      <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-white px-2 sm:px-0">{t('records.rain_sun_graph')}</h3>
+                  <div className="bg-bg-card rounded-2xl p-2 sm:p-4 border border-border-color h-96 flex flex-col">
+                      <h3 className="text-lg font-bold mb-2 text-text-main px-2 sm:px-0">{t('records.rain_sun_graph')}</h3>
                       <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <ComposedChart data={dailyData} margin={{top: 45, right: 5, bottom: 5, left: -25}} barGap={2} syncId="monthlyGraph">
@@ -1838,7 +1838,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             />
                             <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" label={{ value: '%', angle: 90, position: 'insideRight' }} width={35} domain={[0, 100]} />
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
+                                contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                                 formatter={(value: number, name: string, props: any) => {
                                     if (name === t('sunshine')) return [`${Math.round(value)}%`, name];
                                     // If we are showing rain, ensure we show the real value from the payload if possible
@@ -1879,7 +1879,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               </div>
           ) : recordType === 'calendar' ? (
               <div className="w-full max-w-7xl mx-auto px-4 pb-10">
-                  <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4 bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+                  <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4 bg-bg-card p-4 rounded-2xl border border-border-color shadow-sm">
                       <div className="flex items-center gap-4 order-2 md:order-1">
                           <button 
                               onClick={() => {
@@ -1889,13 +1889,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   setSelectedMonth(newMonth);
                                   setSelectedYear(newYear);
                               }}
-                              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                              className="p-2 rounded-xl hover:bg-bg-page transition-colors"
                           >
                               <Icon name="chevron_left" className="text-2xl" />
                           </button>
                           
-                          <h3 className="text-xl font-bold capitalize flex items-center gap-2 w-48 justify-center">
-                              <Icon name="calendar_month" className="text-primary" />
+                          <h3 className="text-xl font-bold capitalize flex items-center gap-2 w-48 justify-center text-text-main">
+                              <Icon name="calendar_month" className="text-accent-primary" />
                               {new Date(selectedYear, selectedMonth - 1).toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
                           </h3>
                           
@@ -1914,7 +1914,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   setSelectedYear(newYear);
                               }}
                               disabled={selectedYear === new Date().getFullYear() && selectedMonth === new Date().getMonth() + 1}
-                              className={`p-2 rounded-xl transition-colors ${selectedYear === new Date().getFullYear() && selectedMonth === new Date().getMonth() + 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                              className={`p-2 rounded-xl transition-colors ${selectedYear === new Date().getFullYear() && selectedMonth === new Date().getMonth() + 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-bg-page'}`}
                           >
                               <Icon name="chevron_right" className="text-2xl" />
                           </button>
@@ -1926,27 +1926,27 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   type="checkbox" 
                                   checked={settings.calendar?.showHeatmap !== false}
                                   onChange={() => onUpdateSettings?.({ ...settings, calendar: { ...settings.calendar, showHeatmap: !(settings.calendar?.showHeatmap !== false) } })}
-                                  className="rounded border-slate-300 text-primary focus:ring-primary"
+                                  className="rounded border-border-color text-accent-primary focus:ring-accent-primary bg-bg-page"
                               />
-                              <span className="text-sm font-medium text-slate-600 dark:text-white/80">{t('settings.calendar.heatmap') || 'Heatmap'}</span>
+                              <span className="text-sm font-medium text-text-muted">{t('settings.calendar.heatmap') || 'Heatmap'}</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer select-none">
                               <input 
                                   type="checkbox" 
                                   checked={settings.calendar?.showDetails !== false}
                                   onChange={() => onUpdateSettings?.({ ...settings, calendar: { ...settings.calendar, showDetails: !(settings.calendar?.showDetails !== false) } })}
-                                  className="rounded border-slate-300 text-primary focus:ring-primary"
+                                  className="rounded border-border-color text-accent-primary focus:ring-accent-primary bg-bg-page"
                               />
-                              <span className="text-sm font-medium text-slate-600 dark:text-white/80">{t('settings.calendar.details') || 'Details'}</span>
+                              <span className="text-sm font-medium text-text-muted">{t('settings.calendar.details') || 'Details'}</span>
                           </label>
                       </div>
                   </div>
                   
-                  <div className="bg-white dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5 overflow-x-auto shadow-sm">
-                      <table className="w-full border-collapse table-fixed min-w-[700px] md:min-w-0">
+                  <div className="bg-bg-card rounded-2xl p-4 border border-border-color overflow-x-auto shadow-sm">
+                      <table className="w-full border-collapse">
                           <thead>
                               <tr>
-                                  <th className="p-2 text-left text-xs font-bold uppercase text-slate-400 w-12">{t('week') || 'Week'}</th>
+                                  <th className="p-2 text-left text-xs font-bold uppercase text-text-muted w-12">{t('week') || 'Week'}</th>
                                   {(() => {
                                       const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                                       const days = dayKeys.map(key => t(`days.${key}`).substring(0, 3));
@@ -1959,7 +1959,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                           rotatedDays = [days[5], days[6], ...days.slice(0, 5)];
                                       }
                                       return rotatedDays.map(day => (
-                                          <th key={day} className="p-2 text-left text-xs font-bold uppercase text-slate-400 w-[13.5%]">{day}</th>
+                                          <th key={day} className="p-2 text-left text-xs font-bold uppercase text-text-muted w-[13.5%]">{day}</th>
                                       ));
                                   })()}
                               </tr>
@@ -1978,7 +1978,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   return (
                                   <tr key={wIdx}>
                                       <td className="p-2 align-top pt-4 w-12">
-                                          <span className="text-xs font-bold text-slate-400 block bg-slate-100 dark:bg-white/5 px-2 py-1 rounded text-center">{weekNum}</span>
+                                          <span className="text-xs font-bold text-text-muted block bg-bg-card/50 px-2 py-1 rounded text-center">{weekNum}</span>
                                       </td>
                                       {week.map((day, dIdx) => (
                                           <td key={dIdx} className="p-1 align-top h-36 w-[13.5%]">
@@ -1996,7 +1996,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                       <div className="flex justify-between items-start relative z-10">
                                                           <div className="flex items-center gap-1">
                                                               {(settings.calendar?.showDetails !== false) && (
-                                                                  <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full shadow-sm ${day.date === new Date().toISOString().split('T')[0] ? 'bg-primary text-white' : 'bg-white/60 dark:bg-slate-800'}`}>
+                                                                  <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full shadow-sm ${day.date === new Date().toISOString().split('T')[0] ? 'bg-accent-primary text-text-inverse' : 'bg-bg-card/60'}`}>
                                                                       {day.day}
                                                                   </span>
                                                               )}
@@ -2009,12 +2009,12 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                                     ) : day.sun && day.sun > 1 ? (
                                                                         <Icon name="partly_cloudy_day" className="text-2xl text-orange-400 drop-shadow-sm" />
                                                                     ) : (
-                                                                        <Icon name="cloud" className="text-2xl text-slate-400 drop-shadow-sm" />
+                                                                        <Icon name="cloud" className="text-2xl text-text-muted drop-shadow-sm" />
                                                                     )}
                                                                   </div>
                                                               )}
                                                           </div>
-                                                          <div className="flex flex-col items-end bg-white/40 dark:bg-slate-800 px-1.5 py-0.5 rounded-lg backdrop-blur-sm ml-auto">
+                                                          <div className="flex flex-col items-end bg-bg-card/40 px-1.5 py-0.5 rounded-lg backdrop-blur-sm ml-auto">
                                                               <span className="text-sm font-bold">{day.maxTemp?.toFixed(1)}°</span>
                                                               <span className="text-[10px] opacity-70">{day.minTemp?.toFixed(1)}°</span>
                                                           </div>
@@ -2040,7 +2040,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                       </div>
                                                   </div>
                                               ) : (
-                                                  <div className="h-full rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5"></div>
+                                                  <div className="h-full rounded-xl bg-bg-page/20 border border-border-color/20"></div>
                                               )}
                                           </td>
                                       ))}
@@ -2052,7 +2052,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   </div>
                   
                   {settings.calendar?.showHeatmap !== false && (
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500 dark:text-white/60 bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 w-fit mx-auto shadow-sm">
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-text-muted bg-bg-card p-3 rounded-xl border border-border-color w-fit mx-auto shadow-sm">
                         <div className="flex items-center gap-2">
                             <div className="flex gap-0.5">
                                 <div className="w-3 h-3 rounded-sm bg-[#0000FF]"></div>
@@ -2061,7 +2061,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                             <span className="font-medium">{t('records.coldest_days') || '3 Koudste Dagen'}</span>
                         </div>
-                        <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
+                        <div className="w-px h-4 bg-border-color"></div>
                         <div className="flex items-center gap-2">
                             <span className="font-medium">{t('records.warmest_days') || '3 Warmste Dagen'}</span>
                             <div className="flex gap-0.5">
@@ -2153,67 +2153,67 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               </div>
 
               {recordType === 'yearly' && yearlyCounts && (
-                <div className="w-full max-w-2xl bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+                <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xl font-bold flex items-center gap-2">
-                      <Icon name="numbers" className="text-slate-500 dark:text-white/70" />
+                      <Icon name="numbers" className="text-text-muted" />
                       {t('records.counts_title')}
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.warm_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.warmDays}</span>
+                      <span className="text-text-muted">{t('records.counts.warm_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.warmDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.summer_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.summerDays}</span>
+                      <span className="text-text-muted">{t('records.counts.summer_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.summerDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.tropical_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.tropicalDays}</span>
+                      <span className="text-text-muted">{t('records.counts.tropical_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.tropicalDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.frost_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.frostDays}</span>
+                      <span className="text-text-muted">{t('records.counts.frost_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.frostDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.ice_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.iceDays}</span>
+                      <span className="text-text-muted">{t('records.counts.ice_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.iceDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.dry_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.dryDays}</span>
+                      <span className="text-text-muted">{t('records.counts.dry_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.dryDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.rain_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.rainDays}</span>
+                      <span className="text-text-muted">{t('records.counts.rain_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.rainDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.heavy_rain_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.heavyRainDays}</span>
+                      <span className="text-text-muted">{t('records.counts.heavy_rain_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.heavyRainDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.very_wet_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.veryWetDays}</span>
+                      <span className="text-text-muted">{t('records.counts.very_wet_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.veryWetDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.sunny_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.sunnyDays}</span>
+                      <span className="text-text-muted">{t('records.counts.sunny_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.sunnyDays}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-white/70">{t('records.counts.gloomy_days')}</span>
-                      <span className="font-bold text-slate-800 dark:text-white">{yearlyCounts.gloomyDays}</span>
+                      <span className="text-text-muted">{t('records.counts.gloomy_days')}</span>
+                      <span className="font-bold text-text-main">{yearlyCounts.gloomyDays}</span>
                     </div>
                   </div>
                 </div>
               )}
 
               {recordType === 'yearly' && yearlySequences && (
-                <div className="w-full max-w-2xl bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+                <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xl font-bold flex items-center gap-2">
-                      <Icon name="timeline" className="text-slate-500 dark:text-white/70" />
+                      <Icon name="timeline" className="text-text-muted" />
                       {t('records.sequences_title')}
                     </h3>
                   </div>
@@ -2221,24 +2221,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.dry')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted mb-0.5 opacity-70">
                            &le; 0.2 {settings.precipUnit}
                         </span>
                         {yearlySequences.dry && yearlySequences.dry.start && yearlySequences.dry.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.dry.start)} – {formatDateLabel(yearlySequences.dry.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.dry && yearlySequences.dry.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.dry.length} {t('days')}
                         </span>
                       )}
@@ -2246,24 +2246,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.wet')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted mb-0.5 opacity-70">
                            &ge; 0.2 {settings.precipUnit}
                         </span>
                         {yearlySequences.wet && yearlySequences.wet.start && yearlySequences.wet.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.wet.start)} – {formatDateLabel(yearlySequences.wet.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.wet && yearlySequences.wet.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.wet.length} {t('days')}
                         </span>
                       )}
@@ -2271,24 +2271,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.gloomy')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted mb-0.5 opacity-70">
                            &le; 1h sun
                         </span>
                         {yearlySequences.gloomy && yearlySequences.gloomy.start && yearlySequences.gloomy.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.gloomy.start)} – {formatDateLabel(yearlySequences.gloomy.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.gloomy && yearlySequences.gloomy.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.gloomy.length} {t('days')}
                         </span>
                       )}
@@ -2297,24 +2297,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                      {/* Summer Streak */}
                      <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.summer_streak')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted mb-0.5 opacity-70">
                            &ge; {settings.recordThresholds?.summerStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.summerStreakTemp}°
                         </span>
                         {yearlySequences.summerStreak && yearlySequences.summerStreak.start && yearlySequences.summerStreak.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.summerStreak.start)} – {formatDateLabel(yearlySequences.summerStreak.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.summerStreak && yearlySequences.summerStreak.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.summerStreak.length} {t('days')}
                         </span>
                       )}
@@ -2323,24 +2323,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                      {/* Nice Streak */}
                      <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.nice_streak')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
                            &ge; {settings.recordThresholds?.niceStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.niceStreakTemp}°
                         </span>
                         {yearlySequences.niceStreak && yearlySequences.niceStreak.start && yearlySequences.niceStreak.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.niceStreak.start)} – {formatDateLabel(yearlySequences.niceStreak.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.niceStreak && yearlySequences.niceStreak.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.niceStreak.length} {t('days')}
                         </span>
                       )}
@@ -2349,24 +2349,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                      {/* Cold Streak */}
                      <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.cold_streak')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
                            &lt; {settings.recordThresholds?.coldStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.coldStreakTemp}°
                         </span>
                         {yearlySequences.coldStreak && yearlySequences.coldStreak.start && yearlySequences.coldStreak.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.coldStreak.start)} – {formatDateLabel(yearlySequences.coldStreak.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.coldStreak && yearlySequences.coldStreak.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.coldStreak.length} {t('days')}
                         </span>
                       )}
@@ -2375,24 +2375,24 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                      {/* Ice Streak */}
                      <div className="flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-white/70 font-medium">
+                        <span className="text-text-muted font-medium">
                           {t('records.sequences.ice_streak')}
                         </span>
-                        <span className="text-[10px] text-slate-400 mb-0.5">
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
                            &le; {settings.recordThresholds?.iceStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.iceStreakTemp}°
                         </span>
                         {yearlySequences.iceStreak && yearlySequences.iceStreak.start && yearlySequences.iceStreak.end ? (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {formatDateLabel(yearlySequences.iceStreak.start)} – {formatDateLabel(yearlySequences.iceStreak.end)}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500 dark:text-white/60">
+                          <span className="text-xs text-text-muted">
                             {t('records.sequences.none')}
                           </span>
                         )}
                       </div>
                       {yearlySequences.iceStreak && yearlySequences.iceStreak.length > 0 && (
-                        <span className="font-bold text-slate-800 dark:text-white">
+                        <span className="font-bold text-text-main">
                           {yearlySequences.iceStreak.length} {t('days')}
                         </span>
                       )}
@@ -2403,23 +2403,23 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
               {/* Heatwaves Section */}
               {recordType === 'yearly' && (
-                <div className="w-full max-w-2xl bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+                <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
+                    <h3 className="text-xl font-bold flex items-center gap-2 text-text-main">
                       <Icon name="local_fire_department" className="text-orange-500" />
                       {t('records.sequences.heatwave')}
                     </h3>
                     <button 
                         onClick={() => setShowHeatwaveInfo(!showHeatwaveInfo)}
-                        className="text-slate-400 hover:text-primary transition-colors"
+                        className="text-text-muted hover:text-accent-primary transition-colors"
                     >
                         <Icon name="info" className="text-sm" />
                     </button>
                   </div>
 
                   {showHeatwaveInfo && (
-                      <div className="mb-4 p-3 bg-white dark:bg-white/10 rounded-lg text-xs text-slate-600 dark:text-white/80 border border-slate-200 dark:border-white/5 animate-in fade-in slide-in-from-top-1">
-                          <p className="font-bold mb-1">Definition:</p>
+                      <div className="mb-4 p-3 bg-bg-page rounded-lg text-xs text-text-muted border border-border-color animate-in fade-in slide-in-from-top-1">
+                          <p className="font-bold mb-1 text-text-main">Definition:</p>
                           <ul className="list-disc pl-4 space-y-1">
                               <li>Min. {(settings.heatwave || DEFAULT_SETTINGS.heatwave).minLength} days &ge; {(settings.heatwave || DEFAULT_SETTINGS.heatwave).lowerThreshold}°C</li>
                               <li>Of which min. {(settings.heatwave || DEFAULT_SETTINGS.heatwave).minHeatDays} days &ge; {(settings.heatwave || DEFAULT_SETTINGS.heatwave).heatThreshold}°C</li>
@@ -2430,26 +2430,26 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   <div className="space-y-3">
                     {heatwaves.length > 0 ? (
                       heatwaves.map((hw, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm border-b border-slate-200 dark:border-white/5 last:border-0 pb-2 last:pb-0">
+                        <div key={idx} className="flex items-center justify-between text-sm border-b border-border-color last:border-0 pb-2 last:pb-0">
                           <div className="flex flex-col">
-                             <span className="font-medium text-slate-700 dark:text-white/90">
+                             <span className="font-medium text-text-main">
                                {hw.start && hw.end ? `${formatDateLabel(hw.start)} – ${formatDateLabel(hw.end)}` : ''}
                              </span>
                              <div className="flex flex-wrap gap-1 mt-1 max-w-[200px] sm:max-w-xs">
                                {hw.temps && hw.temps.map((temp, idx) => (
-                                 <span key={idx} className="text-[10px] text-slate-500 dark:text-white/60 bg-slate-200 dark:bg-white/10 px-1 rounded">
+                                 <span key={idx} className="text-[10px] text-text-muted bg-bg-page px-1 rounded border border-border-color/50">
                                    {formatTempValue(temp)}
                                  </span>
                                ))}
                              </div>
                           </div>
-                          <span className="font-bold text-slate-800 dark:text-white bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-md text-orange-700 dark:text-orange-300">
+                          <span className="font-bold bg-orange-500/10 px-2 py-1 rounded-md text-orange-600 dark:text-orange-400 border border-orange-500/20">
                             {hw.length} {t('days')}
                           </span>
                         </div>
                       ))
                     ) : (
-                      <div className="text-sm text-slate-500 dark:text-white/60 text-center py-2">
+                      <div className="text-sm text-text-muted text-center py-2">
                         {t('records.sequences.none')}
                       </div>
                     )}
@@ -2459,10 +2459,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
               {/* Diverse Records */}
               {recordType === 'yearly' && diverseRecords && (
-                  <div className="w-full max-w-2xl bg-slate-100 dark:bg-white/5 rounded-2xl p-6 border border-slate-200 dark:border-white/5">
+                  <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
                       <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-bold flex items-center gap-2">
-                              <Icon name="compare_arrows" className="text-slate-500 dark:text-white/70" />
+                          <h3 className="text-xl font-bold flex items-center gap-2 text-text-main">
+                              <Icon name="compare_arrows" className="text-text-muted" />
                               {t('records.diverse_title')}
                           </h3>
                       </div>
@@ -2470,10 +2470,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       <div className="grid grid-cols-1 gap-4">
                           {/* Max Rise */}
                           <button 
-                            className="bg-white/60 dark:bg-slate-800 rounded-xl p-4 text-left hover:bg-white/80 dark:hover:bg-slate-700 transition-colors"
+                            className="bg-bg-page rounded-xl p-4 text-left hover:bg-bg-card border border-border-color transition-colors"
                             onClick={() => diverseRecords.maxRise && navigateToHistoricalCompare(diverseRecords.maxRise.day1, diverseRecords.maxRise.day2)}
                           >
-                              <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
                                   {t('records.max_rise')}
                               </span>
                               {diverseRecords.maxRise ? (
@@ -2481,34 +2481,34 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                       <div className="text-2xl font-bold text-red-500 mb-1">
                                           +{formatTempValue(diverseRecords.maxRise.value)}°
                                       </div>
-                                      <div className="text-xs text-slate-500 dark:text-white/60 flex flex-col gap-1">
+                                      <div className="text-xs text-text-muted flex flex-col gap-1">
                                           <div className="flex justify-between">
                                               <span>{t('records.diff_day1')}:</span>
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxRise.day1)}</span>
-                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxRise.temp1)}°)</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxRise.temp1)}°)</span>
                                               </span>
                                           </div>
                                           <div className="flex justify-between">
                                               <span>{t('records.diff_day2')}:</span>
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxRise.day2)}</span>
-                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxRise.temp2)}°)</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxRise.temp2)}°)</span>
                                               </span>
                                           </div>
                                       </div>
                                   </div>
                               ) : (
-                                  <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
                               )}
                           </button>
 
                           {/* Max Drop */}
                           <button 
-                            className="bg-white/60 dark:bg-slate-800 rounded-xl p-4 text-left hover:bg-white/80 dark:hover:bg-slate-700 transition-colors"
+                            className="bg-bg-page rounded-xl p-4 text-left hover:bg-bg-card border border-border-color transition-colors"
                             onClick={() => diverseRecords.maxDrop && navigateToHistoricalCompare(diverseRecords.maxDrop.day1, diverseRecords.maxDrop.day2)}
                           >
-                              <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
                                   {t('records.max_drop')}
                               </span>
                               {diverseRecords.maxDrop ? (
@@ -2516,37 +2516,37 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                       <div className="text-2xl font-bold text-blue-500 mb-1">
                                           -{formatTempValue(diverseRecords.maxDrop.value)}°
                                       </div>
-                                      <div className="text-xs text-slate-500 dark:text-white/60 flex flex-col gap-1">
+                                      <div className="text-xs text-text-muted flex flex-col gap-1">
                                           <div className="flex justify-between">
                                               <span>{t('records.diff_day1')}:</span>
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxDrop.day1)}</span>
-                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxDrop.temp1)}°)</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxDrop.temp1)}°)</span>
                                               </span>
                                           </div>
                                           <div className="flex justify-between">
                                               <span>{t('records.diff_day2')}:</span>
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxDrop.day2)}</span>
-                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxDrop.temp2)}°)</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxDrop.temp2)}°)</span>
                                               </span>
                                           </div>
                                       </div>
                                   </div>
                               ) : (
-                                  <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
                               )}
                           </button>
 
                           {/* Max Min to Max Rise */}
                           <button 
-                            className="bg-white/60 dark:bg-slate-800 rounded-xl p-4 text-left hover:bg-white/80 dark:hover:bg-slate-700 transition-colors"
+                            className="bg-bg-page rounded-xl p-4 text-left hover:bg-bg-card border border-border-color transition-colors"
                             onClick={() => diverseRecords.maxMinToMaxRise && navigateToHistoricalCompare(diverseRecords.maxMinToMaxRise.day1, diverseRecords.maxMinToMaxRise.day2)}
                           >
-                              <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
                                   {t('records.max_min_to_max_rise_title')}
                               </span>
-                              <span className="text-[10px] text-slate-500 dark:text-white/50 block mb-2 italic">
+                              <span className="text-[10px] text-text-muted opacity-70 block mb-2 italic">
                                   {t('records.max_min_to_max_rise_desc')}
                               </span>
                               {diverseRecords.maxMinToMaxRise ? (
@@ -2554,25 +2554,25 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                       <div className="text-2xl font-bold text-red-500 mb-1">
                                           +{formatTempValue(diverseRecords.maxMinToMaxRise.value)}°
                                       </div>
-                                      <div className="text-xs text-slate-500 dark:text-white/60 flex flex-col gap-1">
+                                      <div className="text-xs text-text-muted flex flex-col gap-1">
                                           <div className="flex justify-between">
                                               <span>{t('records.diff_day1')}:</span>
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxMinToMaxRise.day1)}</span>
-                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxMinToMaxRise.temp1)}°)</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxMinToMaxRise.temp1)}°)</span>
                                               </span>
                                           </div>
                                           <div className="flex justify-between">
                                               <span>{t('records.diff_day2')}:</span>
                                               <span className="flex gap-2">
                                                   <span>{formatDateLabel(diverseRecords.maxMinToMaxRise.day2)}</span>
-                                                  <span className="font-medium text-slate-700 dark:text-white/80">({formatTempValue(diverseRecords.maxMinToMaxRise.temp2)}°)</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxMinToMaxRise.temp2)}°)</span>
                                               </span>
                                           </div>
                                       </div>
                                   </div>
                               ) : (
-                                  <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
                               )}
                           </button>
 
@@ -2580,8 +2580,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                           {diverseRecords.extremes && (
                               <div className="grid grid-cols-1 gap-4">
                                   {/* Summer Days (>= 25) */}
-                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
-                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                      <span className="text-sm font-medium text-text-muted block mb-2">
                                           {t('records.extremes.first_summer')}
                                       </span>
                                       {diverseRecords.extremes.firstSummer ? (
@@ -2589,13 +2589,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
                                             onClick={() => diverseRecords.extremes?.firstSummer && navigateToHistoricalSingle(diverseRecords.extremes.firstSummer.date)}
                                           >
-                                              <span className="font-bold text-slate-800 dark:text-white underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.firstSummer.date)}</span>
+                                              <span className="font-bold text-text-main underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.firstSummer.date)}</span>
                                               <span className="text-amber-500 font-bold">{diverseRecords.extremes.firstSummer.temp}°</span>
                                           </button>
-                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                      ) : <span className="text-sm text-text-muted opacity-60">-</span>}
                                   </div>
-                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
-                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                      <span className="text-sm font-medium text-text-muted block mb-2">
                                           {t('records.extremes.last_summer')}
                                       </span>
                                       {diverseRecords.extremes.lastSummer ? (
@@ -2603,15 +2603,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
                                             onClick={() => diverseRecords.extremes?.lastSummer && navigateToHistoricalSingle(diverseRecords.extremes.lastSummer.date)}
                                           >
-                                              <span className="font-bold text-slate-800 dark:text-white underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.lastSummer.date)}</span>
+                                              <span className="font-bold text-text-main underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.lastSummer.date)}</span>
                                               <span className="text-amber-500 font-bold">{diverseRecords.extremes.lastSummer.temp}°</span>
                                           </button>
-                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                      ) : <span className="text-sm text-text-muted opacity-60">-</span>}
                                   </div>
 
                                   {/* Warm Days (>= 20) -> "Lekker" */}
-                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
-                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                      <span className="text-sm font-medium text-text-muted block mb-2">
                                           {t('records.extremes.first_warm')}
                                       </span>
                                       {diverseRecords.extremes.firstWarm ? (
@@ -2619,13 +2619,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
                                             onClick={() => diverseRecords.extremes?.firstWarm && navigateToHistoricalSingle(diverseRecords.extremes.firstWarm.date)}
                                           >
-                                              <span className="font-bold text-slate-800 dark:text-white underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.firstWarm.date)}</span>
+                                              <span className="font-bold text-text-main underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.firstWarm.date)}</span>
                                               <span className="text-amber-500 font-bold">{diverseRecords.extremes.firstWarm.temp}°</span>
                                           </button>
-                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                      ) : <span className="text-sm text-text-muted opacity-60">-</span>}
                                   </div>
-                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
-                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                      <span className="text-sm font-medium text-text-muted block mb-2">
                                           {t('records.extremes.last_warm')}
                                       </span>
                                       {diverseRecords.extremes.lastWarm ? (
@@ -2633,10 +2633,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                             className="flex items-center justify-between w-full hover:opacity-80 transition-opacity"
                                             onClick={() => diverseRecords.extremes?.lastWarm && navigateToHistoricalSingle(diverseRecords.extremes.lastWarm.date)}
                                           >
-                                              <span className="font-bold text-slate-800 dark:text-white underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.lastWarm.date)}</span>
+                                              <span className="font-bold text-text-main underline-offset-2 hover:underline">{formatDateLabel(diverseRecords.extremes.lastWarm.date)}</span>
                                               <span className="text-amber-500 font-bold">{diverseRecords.extremes.lastWarm.temp}°</span>
                                           </button>
-                                      ) : <span className="text-sm text-slate-400">-</span>}
+                                      ) : <span className="text-sm text-text-muted opacity-60">-</span>}
                                   </div>
                               </div>
                           )}
@@ -2644,35 +2644,35 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                           {/* Frost Info - Moved here */}
                           {frostInfo && (
                               <>
-                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
-                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                      <span className="text-sm font-medium text-text-muted block mb-2">
                                           {t('records.frost.first')}
                                       </span>
                                       {frostInfo.firstFrost ? (
                                           <button 
-                                            className="text-lg font-bold text-slate-800 dark:text-white w-full text-left underline-offset-2 hover:underline"
+                                            className="text-lg font-bold text-text-main w-full text-left underline-offset-2 hover:underline"
                                             onClick={() => frostInfo.firstFrost && navigateToHistoricalSingle(frostInfo.firstFrost)}
                                           >
                                               {formatDateLabel(frostInfo.firstFrost)}
                                           </button>
                                       ) : (
-                                          <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
+                                          <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
                                       )}
                                   </div>
 
-                                  <div className="bg-white/60 dark:bg-slate-800 rounded-xl p-4">
-                                      <span className="text-sm font-medium text-slate-600 dark:text-white/70 block mb-2">
+                                  <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                      <span className="text-sm font-medium text-text-muted block mb-2">
                                           {t('records.frost.last')}
                                       </span>
                                       {frostInfo.lastFrost ? (
                                           <button 
-                                            className="text-lg font-bold text-slate-800 dark:text-white w-full text-left underline-offset-2 hover:underline"
+                                            className="text-lg font-bold text-text-main w-full text-left underline-offset-2 hover:underline"
                                             onClick={() => frostInfo.lastFrost && navigateToHistoricalSingle(frostInfo.lastFrost)}
                                           >
                                               {formatDateLabel(frostInfo.lastFrost)}
                                           </button>
                                       ) : (
-                                          <span className="text-sm text-slate-400">{t('records.sequences.none')}</span>
+                                          <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
                                       )}
                                   </div>
                               </>

@@ -3,7 +3,7 @@ import { ViewState, AppSettings, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
 import { SettingsProfile } from '../components/SettingsProfile';
 import { getTranslation } from '../services/translations';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getUsage } from '../services/usageService';
 
 interface Props {
@@ -25,13 +25,13 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     }, []);
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
+        <div className="flex flex-col min-h-screen bg-bg-page pb-24 animate-in fade-in slide-in-from-bottom-4 text-text-main transition-colors duration-300">
             {/* Header */}
-            <div className="flex flex-col sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
+            <div className="flex flex-col sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors">
                 <div className="flex items-center p-4">
                     <button 
                         onClick={() => onNavigate(ViewState.CURRENT)} 
-                        className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2"
+                        className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2"
                     >
                         <Icon name="arrow_back_ios_new" />
                     </button>
@@ -41,14 +41,14 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
 
             <div className="p-4 max-w-lg mx-auto w-full">
                 {/* Intro Card */}
-                <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 mb-6">
+                <div className="bg-bg-card w-full p-6 rounded-2xl shadow-sm border border-border-color mb-6">
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+                        <div className="size-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
                             <Icon name="person" className="text-2xl" />
                         </div>
                         <div>
                             <h2 className="font-bold text-lg">{t('profile.info.title')}</h2>
-                            <p className="text-sm text-slate-500 dark:text-white/60">{t('profile.info.subtitle')}</p>
+                            <p className="text-sm text-text-muted">{t('profile.info.subtitle')}</p>
                         </div>
                     </div>
                     
@@ -59,14 +59,14 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                         <p>
                             {t('profile.info.body2')}
                         </p>
-                         <p className="text-slate-500 dark:text-white/60 text-xs bg-slate-50 dark:bg-white/5 p-3 rounded-lg">
+                         <p className="text-text-muted text-xs bg-bg-page p-3 rounded-lg">
                             <strong>{t('profile.info.credits')}</strong>
                         </p>
                     </div>
 
                     <button 
                         onClick={() => onNavigate(ViewState.PRICING)}
-                        className="w-full py-3 px-4 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 font-bold"
+                        className="w-full py-3 px-4 bg-accent-primary hover:bg-accent-hover text-text-inverse rounded-xl shadow-lg shadow-accent-primary/20 transition-all flex items-center justify-center gap-2 font-bold"
                     >
                         <Icon name="payments" />
                         {t('profile.info.pricing_link')}

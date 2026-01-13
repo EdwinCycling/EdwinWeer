@@ -200,11 +200,11 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 overflow-y-auto animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
+        <div className="flex flex-col min-h-screen bg-bg-page pb-24 overflow-y-auto animate-in fade-in slide-in-from-bottom-4 text-text-main transition-colors duration-300">
              {/* Header */}
-             <div className="sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors p-4 flex items-center justify-between">
+             <div className="sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors p-4 flex items-center justify-between">
                 <div className="flex items-center">
-                    <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2 transition-colors">
+                    <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2 transition-colors">
                         <Icon name="arrow_back_ios_new" />
                     </button>
                     <div>
@@ -216,59 +216,59 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
             <div className="p-4 space-y-6 max-w-3xl mx-auto w-full">
                 
                 {/* Settings Card */}
-                <div className="bg-white dark:bg-card-dark rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-white/5 space-y-5">
+                <div className="bg-bg-card rounded-2xl p-5 shadow-sm border border-border-color space-y-5">
                     
                     {/* Location Search / GPX Upload */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative">
-                            <label className="text-sm font-medium text-slate-500 dark:text-white/60 mb-1 block">{t('trip_planner.location')}</label>
+                            <label className="text-sm font-medium text-text-muted mb-1 block">{t('trip_planner.location')}</label>
                             <div 
                                 onClick={() => setIsSearchOpen(true)}
-                                className="flex items-center bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                                className="flex items-center bg-bg-page border border-border-color rounded-xl p-3 cursor-pointer hover:bg-bg-page/80 transition-colors"
                             >
                                 <Icon name="location_on" className="text-primary mr-2" />
-                                <span className="font-bold truncate flex-1">{location.name}, {location.country}</span>
-                                <Icon name="search" className="text-slate-400" />
+                                <span className="font-bold truncate flex-1 text-text-main">{location.name}, {location.country}</span>
+                                <Icon name="search" className="text-text-muted" />
                             </div>
 
                             {/* Search Dropdown */}
                             {isSearchOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1e293b] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="p-2 border-b border-slate-100 dark:border-white/5 flex items-center gap-2">
-                                        <Icon name="search" className="text-slate-400 ml-2" />
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="p-2 border-b border-border-color flex items-center gap-2">
+                                        <Icon name="search" className="text-text-muted ml-2" />
                                         <input
                                             ref={searchInputRef}
                                             type="text"
                                             placeholder={t('trip_planner.search_location')}
-                                            className="w-full bg-transparent p-2 outline-none text-slate-800 dark:text-white placeholder:text-slate-400"
+                                            className="w-full bg-transparent p-2 outline-none text-text-main placeholder:text-text-muted"
                                             value={searchQuery}
                                             onChange={(e) => handleSearch(e.target.value)}
                                         />
-                                        <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg">
+                                        <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-bg-page rounded-lg text-text-main">
                                             <Icon name="close" />
                                         </button>
                                     </div>
                                     <div className="max-h-60 overflow-y-auto">
                                         {loadingSearch ? (
-                                            <div className="p-4 text-center text-slate-400 text-sm">Loading...</div>
+                                            <div className="p-4 text-center text-text-muted text-sm">Loading...</div>
                                         ) : searchResults.length > 0 ? (
                                             searchResults.map((loc, i) => (
                                                 <button
                                                     key={i}
                                                     onClick={() => selectLocation(loc)}
-                                                    className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-3 transition-colors border-b border-slate-50 dark:border-white/5 last:border-0"
+                                                    className="w-full text-left p-3 hover:bg-bg-page flex items-center gap-3 transition-colors border-b border-border-color last:border-0"
                                                 >
-                                                    <div className="size-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                                                        <Icon name="location_city" className="text-slate-500 dark:text-white/60 text-sm" />
+                                                    <div className="size-8 rounded-full bg-bg-page flex items-center justify-center flex-shrink-0">
+                                                        <Icon name="location_city" className="text-text-muted text-sm" />
                                                     </div>
                                                     <div>
-                                                        <div className="font-bold text-sm">{loc.name}</div>
-                                                        <div className="text-xs text-slate-500 dark:text-white/50">{loc.country}</div>
+                                                        <div className="font-bold text-sm text-text-main">{loc.name}</div>
+                                                        <div className="text-xs text-text-muted">{loc.country}</div>
                                                     </div>
                                                 </button>
                                             ))
                                         ) : searchQuery.length > 1 ? (
-                                            <div className="p-4 text-center text-slate-400 text-sm">{t('city_not_found')}</div>
+                                            <div className="p-4 text-center text-text-muted text-sm">{t('city_not_found')}</div>
                                         ) : null}
                                     </div>
                                 </div>
@@ -277,12 +277,12 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
                         {/* GPX Upload */}
                         <div className="relative">
-                             <label className="text-sm font-medium text-slate-500 dark:text-white/60 mb-1 block">{t('upload_gpx_short')} (Optioneel)</label>
-                             <label className={`flex items-center justify-center border-2 border-dashed ${gpxRoute.length > 0 ? 'border-green-500 bg-green-50 dark:bg-green-500/10' : 'border-slate-200 dark:border-white/10 hover:border-primary'} rounded-xl p-3 cursor-pointer transition-colors h-[50px]`}>
+                             <label className="text-sm font-medium text-text-muted mb-1 block">{t('upload_gpx_short')} (Optioneel)</label>
+                             <label className={`flex items-center justify-center border-2 border-dashed ${gpxRoute.length > 0 ? 'border-green-500 bg-green-50 dark:bg-green-500/10' : 'border-border-color hover:border-primary'} rounded-xl p-3 cursor-pointer transition-colors h-[50px]`}>
                                 <input type="file" accept=".gpx" onChange={handleFileUpload} className="hidden" />
                                 <div className="flex items-center gap-2 truncate">
-                                    <Icon name={gpxRoute.length > 0 ? "check_circle" : "upload_file"} className={gpxRoute.length > 0 ? "text-green-500" : "text-slate-400"} />
-                                    <span className={`text-sm font-bold truncate ${gpxRoute.length > 0 ? "text-green-700 dark:text-green-400" : "text-slate-500"}`}>
+                                    <Icon name={gpxRoute.length > 0 ? "check_circle" : "upload_file"} className={gpxRoute.length > 0 ? "text-green-500" : "text-text-muted"} />
+                                    <span className={`text-sm font-bold truncate ${gpxRoute.length > 0 ? "text-green-700 dark:text-green-400" : "text-text-muted"}`}>
                                         {gpxRoute.length > 0 ? gpxName : t('select_gpx')}
                                     </span>
                                 </div>
@@ -290,14 +290,14 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
-                        <h2 className="font-bold text-lg flex items-center gap-2">
+                    <div className="flex items-center justify-between pt-2 border-t border-border-color">
+                        <h2 className="font-bold text-lg flex items-center gap-2 text-text-main">
                             <Icon name="tune" className="text-primary" />
                             {t('trip_planner.settings')}
                         </h2>
                         
                         {/* Activity Toggle */}
-                        <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1">
+                        <div className="flex bg-bg-page rounded-lg p-1">
                             <button 
                                 onClick={() => {
                                     const newSpeed = 25;
@@ -305,7 +305,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     const newDuration = dist > 0 ? dist / newSpeed : plannerSettings.duration;
                                     updatePlannerSettings({ activity: 'cycling', speed: newSpeed, duration: newDuration });
                                 }}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${plannerSettings.activity === 'cycling' ? 'bg-white dark:bg-white/10 shadow text-primary' : 'text-slate-500 dark:text-white/50'}`}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${plannerSettings.activity === 'cycling' ? 'bg-bg-card shadow text-primary' : 'text-text-muted'}`}
                             >
                                 <div className="flex items-center gap-1">
                                     <Icon name="directions_bike" className="text-lg" />
@@ -319,7 +319,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     const newDuration = dist > 0 ? dist / newSpeed : plannerSettings.duration;
                                     updatePlannerSettings({ activity: 'walking', speed: newSpeed, duration: newDuration });
                                 }}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${plannerSettings.activity === 'walking' ? 'bg-white dark:bg-white/10 shadow text-primary' : 'text-slate-500 dark:text-white/50'}`}
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${plannerSettings.activity === 'walking' ? 'bg-bg-card shadow text-primary' : 'text-text-muted'}`}
                             >
                                 <div className="flex items-center gap-1">
                                     <Icon name="directions_walk" className="text-lg" />
@@ -332,12 +332,12 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Start Time */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('trip_planner.start_time')}</label>
+                            <label className="text-sm font-medium text-text-muted">{t('trip_planner.start_time')}</label>
                             <input 
                                 type="time" 
                                 value={plannerSettings.startTime}
                                 onChange={(e) => updatePlannerSettings({ startTime: e.target.value })}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-lg font-bold outline-none focus:ring-2 focus:ring-primary/50"
+                                className="w-full bg-bg-page border border-border-color rounded-xl p-3 text-lg font-bold outline-none focus:ring-2 focus:ring-primary/50 text-text-main"
                             />
                         </div>
 
@@ -346,10 +346,10 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                             {gpxRoute.length > 0 ? (
                                 <>
                                     <div className="flex justify-between">
-                                        <label className="text-sm font-medium text-slate-500 dark:text-white/60">
+                                        <label className="text-sm font-medium text-text-muted">
                                             {t('trip_planner.speed')} <span className="text-xs font-normal opacity-70">({t('trip_planner.speed_hint')})</span>
                                         </label>
-                                        <span className="font-bold">{plannerSettings.speed} km/u</span>
+                                        <span className="font-bold text-text-main">{plannerSettings.speed} km/u</span>
                                     </div>
                                     <input 
                                         type="range" 
@@ -363,17 +363,17 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                             const newDuration = dist / newSpeed;
                                             updatePlannerSettings({ speed: newSpeed, duration: newDuration });
                                         }}
-                                        className="w-full accent-primary h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer relative z-10"
+                                        className="w-full accent-primary h-2 bg-border-color rounded-lg appearance-none cursor-pointer relative z-10"
                                     />
-                                    <div className="text-xs text-right text-slate-400">
+                                    <div className="text-xs text-right text-text-muted">
                                         {t('trip_planner.calculated_duration')}: {Math.floor(plannerSettings.duration)}u {Math.round((plannerSettings.duration % 1) * 60)}m ({Math.round(gpxRoute[gpxRoute.length - 1].distFromStart)} km)
                                     </div>
                                 </>
                             ) : (
                                 <>
                                     <div className="flex justify-between">
-                                        <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('trip_planner.duration')}</label>
-                                        <span className="font-bold">{plannerSettings.duration} {t('trip_planner.duration_hours')}</span>
+                                        <label className="text-sm font-medium text-text-muted">{t('trip_planner.duration')}</label>
+                                        <span className="font-bold text-text-main">{plannerSettings.duration} {t('trip_planner.duration_hours')}</span>
                                     </div>
                                     <input 
                                         type="range" 
@@ -382,7 +382,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                         step="0.5"
                                         value={plannerSettings.duration}
                                         onChange={(e) => updatePlannerSettings({ duration: parseFloat(e.target.value) })}
-                                        className="w-full accent-primary h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer relative z-10"
+                                        className="w-full accent-primary h-2 bg-border-color rounded-lg appearance-none cursor-pointer relative z-10"
                                     />
                                 </>
                             )}
@@ -393,8 +393,8 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                             {/* Margin Before */}
                             <div className="space-y-2">
                                 <div className="flex justify-between">
-                                    <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('trip_planner.margin_before')}</label>
-                                    <span className="font-bold">{plannerSettings.marginBefore ?? 1} {t('trip_planner.margin_hours')}</span>
+                                    <label className="text-sm font-medium text-text-muted">{t('trip_planner.margin_before')}</label>
+                                    <span className="font-bold text-text-main">{plannerSettings.marginBefore ?? 1} {t('trip_planner.margin_hours')}</span>
                                 </div>
                                 <input 
                                     type="range" 
@@ -403,15 +403,15 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     step="1"
                                     value={plannerSettings.marginBefore ?? 1}
                                     onChange={(e) => updatePlannerSettings({ marginBefore: parseInt(e.target.value) })}
-                                    className="w-full accent-primary h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer relative z-10"
+                                    className="w-full accent-primary h-2 bg-border-color rounded-lg appearance-none cursor-pointer relative z-10"
                                 />
                             </div>
 
                             {/* Margin After */}
                             <div className="space-y-2">
                                 <div className="flex justify-between">
-                                    <label className="text-sm font-medium text-slate-500 dark:text-white/60">{t('trip_planner.margin_after')}</label>
-                                    <span className="font-bold">{plannerSettings.marginAfter ?? 3} {t('trip_planner.margin_hours')}</span>
+                                    <label className="text-sm font-medium text-text-muted">{t('trip_planner.margin_after')}</label>
+                                    <span className="font-bold text-text-main">{plannerSettings.marginAfter ?? 3} {t('trip_planner.margin_hours')}</span>
                                 </div>
                                 <input 
                                     type="range" 
@@ -420,11 +420,11 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     step="1"
                                     value={plannerSettings.marginAfter ?? 3}
                                     onChange={(e) => updatePlannerSettings({ marginAfter: parseInt(e.target.value) })}
-                                    className="w-full accent-primary h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer relative z-10"
+                                    className="w-full accent-primary h-2 bg-border-color rounded-lg appearance-none cursor-pointer relative z-10"
                                 />
                             </div>
 
-                            <p className="text-xs text-center text-slate-400 dark:text-white/40 mt-2">
+                            <p className="text-xs text-center text-text-muted mt-2">
                                 {t('trip_planner.searching_text')} <span className="font-bold text-primary">{
                                     (() => {
                                         const [h, m] = plannerSettings.startTime.split(':').map(Number);
@@ -454,16 +454,16 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                 {/* Results Section */}
                 <div className="space-y-4">
                     {/* Tabs */}
-                    <div className="flex p-1 bg-slate-200/50 dark:bg-white/5 rounded-xl">
+                    <div className="flex p-1 bg-bg-page rounded-xl border border-border-color">
                         <button 
                             onClick={() => { setTargetDay('today'); setResults([]); loadData('today'); }} 
-                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${targetDay === 'today' ? 'bg-white dark:bg-white/10 shadow text-primary' : 'text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white'}`}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${targetDay === 'today' ? 'bg-bg-card shadow text-primary' : 'text-text-muted hover:text-text-main'}`}
                         >
                             {t('trip_planner.tab_today')}
                         </button>
                         <button 
                             onClick={() => { setTargetDay('tomorrow'); setResults([]); loadData('tomorrow'); }}
-                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${targetDay === 'tomorrow' ? 'bg-white dark:bg-white/10 shadow text-primary' : 'text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white'}`}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${targetDay === 'tomorrow' ? 'bg-bg-card shadow text-primary' : 'text-text-muted hover:text-text-main'}`}
                         >
                             {t('trip_planner.tab_tomorrow')}
                         </button>
@@ -477,12 +477,12 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     )}
 
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                        <div className="flex flex-col items-center justify-center py-12 text-text-muted">
                             <Icon name="refresh" className="animate-spin text-3xl mb-2" />
                             <p>{t('loading')}</p>
                         </div>
                     ) : results.length === 0 ? (
-                        <div className="text-center py-12 text-slate-400">
+                        <div className="text-center py-12 text-text-muted">
                             <Icon name="event_busy" className="text-4xl mb-2 opacity-50" />
                             <p>{t('trip_planner.no_results')}</p>
                         </div>
@@ -492,7 +492,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                 <div 
                                     key={idx} 
                                     onClick={() => handleResultClick(option)}
-                                    className={`w-full text-left relative bg-white dark:bg-card-dark rounded-2xl p-4 border transition-all cursor-pointer group ${option.isBest && !areAllResultsGood() ? 'border-amber-400 shadow-lg shadow-amber-500/10 ring-1 ring-amber-400' : option.isTargetTime ? 'border-primary shadow-lg shadow-primary/10' : 'border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10'}`}
+                                    className={`w-full text-left relative bg-bg-card rounded-2xl p-4 border transition-all cursor-pointer group ${option.isBest && !areAllResultsGood() ? 'border-amber-400 shadow-lg shadow-amber-500/10 ring-1 ring-amber-400' : option.isTargetTime ? 'border-primary shadow-lg shadow-primary/10' : 'border-border-color hover:border-text-muted'}`}
                                 >
                                     {option.isBest && !areAllResultsGood() && (
                                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
@@ -510,17 +510,17 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
                                     <div className="flex items-center justify-between mb-3 mt-2">
                                         <div className="flex items-center gap-3">
-                                            <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-lg ${option.isTargetTime ? 'bg-primary/10 text-primary' : 'bg-slate-100 dark:bg-white/5'}`}>
-                                                {option.startTime} <span className="text-slate-400 text-sm font-normal mx-1">-</span> {option.endTime}
+                                            <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-lg text-text-main ${option.isTargetTime ? 'bg-primary/10 text-primary' : 'bg-bg-page'}`}>
+                                                {option.startTime} <span className="text-text-muted text-sm font-normal mx-1">-</span> {option.endTime}
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end">
                                             <StarRating score={option.score} />
                                             <div className="flex items-center gap-1 mt-0.5">
-                                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('trip_planner.baro_index')}: {option.score}</span>
+                                                <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">{t('trip_planner.baro_index')}: {option.score}</span>
                                                 <div className="group relative">
-                                                    <Icon name="help_outline" className="text-[10px] text-slate-400 cursor-help" />
-                                                <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-slate-800 text-white text-[10px] p-2 rounded shadow-lg w-40 z-10">
+                                                    <Icon name="help_outline" className="text-[10px] text-text-muted cursor-help" />
+                                                <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block bg-bg-card border border-border-color text-text-main text-[10px] p-2 rounded shadow-lg w-40 z-10">
                                                     {t('trip_planner.stars_hint')}
                                                 </div>
                                             </div>
@@ -528,10 +528,10 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 mb-4 text-slate-600 dark:text-slate-300">
+                                    <div className="flex items-center gap-3 mb-4 text-text-main">
                                         <div className="flex items-center gap-1.5" title={t('wind_direction')}>
                                             <div 
-                                                className="bg-slate-100 dark:bg-white/5 size-8 rounded-full flex items-center justify-center"
+                                                className="bg-bg-page size-8 rounded-full flex items-center justify-center"
                                                 style={{ transform: `rotate(${option.windDirection}deg)` }}
                                             >
                                                 <Icon name="arrow_downward" className="text-sm" />
@@ -546,31 +546,31 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                             </div>
                                         </div>
 
-                                        <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                                        <div className="h-8 w-px bg-border-color" />
 
                                         <div className="flex items-center gap-1.5">
-                                            <Icon name="thermostat" className="text-slate-400" />
+                                            <Icon name="thermostat" className="text-text-muted" />
                                             <span className="font-bold">{Math.round(option.avgTemp)}°</span>
                                         </div>
 
-                                        <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                                        <div className="h-8 w-px bg-border-color" />
 
                                         <div className="flex items-center gap-1.5">
-                                            <Icon name="water_drop" className={option.maxRain > 30 ? 'text-blue-500' : 'text-slate-400'} />
+                                            <Icon name="water_drop" className={option.maxRain > 30 ? 'text-blue-500' : 'text-text-muted'} />
                                             <span className="font-bold">{Math.round(option.maxRain)}%</span>
                                         </div>
 
-                                        <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                                        <div className="h-8 w-px bg-border-color" />
 
                                         <div className="flex items-center gap-1.5" title="Zonkans">
-                                            <Icon name="wb_sunny" className={option.avgSunChance > 50 ? 'text-orange-500' : 'text-slate-400'} />
+                                            <Icon name="wb_sunny" className={option.avgSunChance > 50 ? 'text-orange-500' : 'text-text-muted'} />
                                             <span className="font-bold">{Math.round(option.avgSunChance)}%</span>
                                         </div>
                                     </div>
 
                                     {/* Warnings / Details */}
                                     {(option.details.length > 0 || option.windVariation) && (
-                                        <div className="space-y-1 pt-3 border-t border-slate-100 dark:border-white/5">
+                                        <div className="space-y-1 pt-3 border-t border-border-color">
                                             {option.windVariation && (
                                                 <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
                                                     <Icon name="rotate_right" className="text-sm mt-0.5" />
@@ -578,7 +578,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                 </div>
                                             )}
                                             {option.details.map((detail, i) => (
-                                                <div key={i} className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                                <div key={i} className="flex items-start gap-2 text-xs text-text-muted">
                                                     <Icon name="info" className="text-sm mt-0.5 opacity-70" />
                                                     <span>{detail}</span>
                                                 </div>
@@ -588,8 +588,8 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
                                     {/* Detail Button */}
                                     {gpxRoute.length > 0 && (
-                                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
-                                            <button className="bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors">
+                                        <div className="mt-3 pt-3 border-t border-border-color flex justify-end">
+                                            <button className="bg-bg-page hover:bg-bg-page/80 text-text-main font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors">
                                                 <Icon name="visibility" className="text-lg" />
                                                 Detail
                                             </button>

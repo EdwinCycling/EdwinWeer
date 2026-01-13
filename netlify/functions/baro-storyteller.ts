@@ -3,12 +3,7 @@ import { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fetch from 'node-fetch';
-import { GEMINI_MODEL, GEMINI_FALLBACK_MODELS } from './config/ai.js';
-
-// Fallback if import fails or is empty
-const SAFE_MODELS = GEMINI_FALLBACK_MODELS && GEMINI_FALLBACK_MODELS.length > 0 
-    ? GEMINI_FALLBACK_MODELS 
-    : ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -217,7 +212,7 @@ export const handler: Handler = async (event) => {
              throw new Error('Incomplete weather data for this date');
         }
 
-        // 5. Generate Story with Gemini (with Fallback & Retry)
+        // 5. Generate Story with Gemini
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
         
@@ -257,38 +252,26 @@ export const handler: Handler = async (event) => {
         let storyData;
         let lastError;
 
-        // Try primary model then fallback
-        const modelsToTry = SAFE_MODELS;
-        
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`Attempting generation with ${modelName}...`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(prompt);
-                const responseText = result.response.text();
-                
-                // Clean markdown code blocks if present
-                const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-                storyData = JSON.parse(cleanJson);
-                
-                if (storyData && storyData.title && storyData.story) {
-                    console.log(`Success with ${modelName}`);
-                    break;
-                }
-            } catch (err: any) {
-                lastError = err;
-                console.warn(`Error with ${modelName}:`, err.message);
-                // If it's a quota error (429), we definitely want to try the fallback
-                if (err.message?.includes('429') || err.message?.includes('quota')) {
-                    continue;
-                }
-                // For other errors, we might still want to try the fallback
-                continue;
+        try {
+            console.log(`Attempting generation with ${GEMINI_MODEL}...`);
+            const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+            const result = await model.generateContent(prompt);
+            const responseText = result.response.text();
+            
+            // Clean markdown code blocks if present
+            const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            storyData = JSON.parse(cleanJson);
+            
+            if (storyData && storyData.title && storyData.story) {
+                console.log(`Success with ${GEMINI_MODEL}`);
             }
+        } catch (err: any) {
+            lastError = err;
+            console.warn(`Error with ${GEMINI_MODEL}:`, err.message);
         }
 
         if (!storyData) {
-            throw new Error(lastError?.message || 'Failed to generate story with all available models');
+            throw new Error(lastError?.message || 'Failed to generate story with configured model');
         }
 
         // 6. Deduct Credit ONLY after successful generation
@@ -322,22 +305,15 @@ export const handler: Handler = async (event) => {
         };
 
     } catch (error: any) {
-        console.error("Story Generation Error:", error);
-        
-        let errorMessage = 'Er is een fout opgetreden bij het genereren van het verhaal.';
-        if (error.message?.includes('429') || error.message?.includes('quota')) {
-            errorMessage = 'De AI-service is momenteel erg druk. Probeer het over een paar minuten opnieuw.';
-        }
-
-        // Add detailed error for debugging if needed (remove in production if strict)
-        const debugInfo = error.message || 'Unknown error';
-
+        console.error("Gemini Error:", error);
+        const statusCode = error.status || 500;
         return {
-            statusCode: 500,
+            statusCode,
             headers,
             body: JSON.stringify({ 
-                error: errorMessage,
-                details: debugInfo 
+                error: error.message || "Failed to generate story",
+                details: error.errorDetails || null,
+                status: statusCode
             })
         };
     }

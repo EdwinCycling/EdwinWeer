@@ -9,6 +9,7 @@ import { searchCityByName } from '../services/geoService';
 import { loadClimateData, saveClimateData } from '../services/storageService';
 import { convertTempPrecise, convertWind, convertPrecip, throttledFetch } from '../services/weatherService';
 import { getUsage, trackCall, consumeCredit } from '../services/usageService';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -52,6 +53,7 @@ const getWindUnitLabel = (unit: WindUnit) => {
 };
 
 export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate, settings, onUpdateSettings }) => {
+  const colors = useThemeColors();
   const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
       // Default to first favorite or a default location
       return settings.favorites.length > 0 ? settings.favorites[0] : {
@@ -526,23 +528,23 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           legend: {
               position: 'top' as const,
               labels: {
-                  color: settings.theme === 'dark' ? '#fff' : '#333'
+                  color: colors.textMain
               }
           },
           title: {
               display: true,
               text: t('climate.chart_title'),
-              color: settings.theme === 'dark' ? '#fff' : '#333'
+              color: colors.textMain
           }
       },
       scales: {
           y: {
-              ticks: { color: settings.theme === 'dark' ? '#ccc' : '#666' },
-              grid: { color: settings.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+              ticks: { color: colors.textMuted },
+              grid: { color: colors.borderColor }
           },
           x: {
-              ticks: { color: settings.theme === 'dark' ? '#ccc' : '#666' },
-              grid: { color: settings.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+              ticks: { color: colors.textMuted },
+              grid: { color: colors.borderColor }
           }
       }
   };
@@ -614,23 +616,23 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   return (
     <div className="w-full min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-4 shadow-sm mb-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-bg-card rounded-2xl p-4 shadow-sm mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-            <button onClick={() => onNavigate('CURRENT')} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
-                <Icon name="arrow_back" className="text-xl text-slate-600 dark:text-slate-300" />
+            <button onClick={() => onNavigate('CURRENT')} className="p-2 hover:bg-bg-page rounded-full transition-colors">
+                <Icon name="arrow_back" className="text-xl text-text-muted" />
             </button>
             <div>
                 <h1 className="text-xl font-bold flex items-center gap-2">
                     <Icon name="thermostat" className="text-orange-500" />
                     {t('climate.title')}
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t('climate.subtitle')}</p>
+                <p className="text-xs text-text-muted">{t('climate.subtitle')}</p>
             </div>
         </div>
         
         <div className="flex-1 min-w-[200px] relative">
-             <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 border border-transparent focus-within:border-blue-500 transition-colors">
-                <Icon name="search" className="text-slate-400 mr-2" />
+             <div className="flex items-center bg-bg-page rounded-xl px-3 py-2 border border-transparent focus-within:border-blue-500 transition-colors">
+                <Icon name="search" className="text-text-muted mr-2" />
                 <input
                     type="text"
                     value={searchQuery}
@@ -638,24 +640,24 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                     onBlur={() => setTimeout(() => setShowFavorites(false), 200)}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder={t('search')}
-                    className="bg-transparent border-none outline-none w-full text-sm placeholder:text-slate-400"
+                    className="bg-transparent border-none outline-none w-full text-sm placeholder:text-text-muted text-text-main"
                 />
             </div>
             
             {/* Search Results & Favorites Dropdown */}
             {(searchResults.length > 0 || (showFavorites && settings.favorites.length > 0)) && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 z-50 overflow-hidden max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color z-50 overflow-hidden max-h-60 overflow-y-auto">
                     {/* Favorites Section */}
                     {showFavorites && searchQuery.length === 0 && settings.favorites.length > 0 && (
                         <>
-                            <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-white/5">
+                            <div className="px-4 py-2 text-xs font-bold text-text-muted uppercase tracking-wider bg-bg-page">
                                 {t('nav.favorites') || 'Favorieten'}
                             </div>
                             {settings.favorites.map((loc, idx) => (
                                 <button
                                     key={`fav-${loc.lat}-${loc.lon}-${idx}`}
                                     onClick={() => selectLocation(loc)}
-                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-50 dark:border-white/5 last:border-0"
+                                    className="w-full text-left px-4 py-3 hover:bg-bg-page flex items-center justify-between border-b border-border-color last:border-0 text-text-main"
                                 >
                                     <span className="font-medium">{loc.name}, {loc.country}</span>
                                     <Icon name="star" className="text-xs text-yellow-400" />
@@ -668,7 +670,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                         <button
                             key={`${loc.lat}-${loc.lon}-${idx}`}
                             onClick={() => selectLocation(loc)}
-                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-50 dark:border-white/5 last:border-0"
+                            className="w-full text-left px-4 py-3 hover:bg-bg-page flex items-center justify-between border-b border-border-color last:border-0 text-text-main"
                         >
                             <span className="font-medium">{loc.name}, {loc.country}</span>
                             {loc.isCurrentLocation && <Icon name="my_location" className="text-xs text-blue-500" />}
@@ -823,44 +825,44 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           {climateData.length > 0 && (
               <>
                 {/* Temp Chart */}
-                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color mb-6">
                     <Line data={chartData} options={chartOptions} />
                 </div>
 
                 {/* Rain Chart */}
-                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color mb-6">
                     <Bar data={rainChartData} options={rainChartOptions} />
                 </div>
 
                 {/* Wind/Sun Chart */}
-                <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 mb-6">
+                <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color mb-6">
                     <Line data={otherChartData} options={otherChartOptions} />
                 </div>
 
 
 
                 {/* Table */}
-                <div className="bg-white dark:bg-card-dark rounded-3xl overflow-hidden shadow-sm border border-slate-100 dark:border-white/5">
+                <div className="bg-bg-card rounded-3xl overflow-hidden shadow-sm border border-border-color">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
+                            <thead className="bg-bg-page border-b border-border-color">
                                 <tr>
 
-                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">
+                                    <th className="p-4 font-semibold text-text-muted">
                                         {`${t('climate.period')} (10 jaar)`}
                                     </th>
-                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.max')}</th>
-                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.min')}</th>
-                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.rain')}</th>
-                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.wind')}</th>
-                                    <th className="p-4 font-semibold text-slate-500 dark:text-slate-400">{t('climate.sun')}</th>
+                                    <th className="p-4 font-semibold text-text-muted">{t('climate.max')}</th>
+                                    <th className="p-4 font-semibold text-text-muted">{t('climate.min')}</th>
+                                    <th className="p-4 font-semibold text-text-muted">{t('climate.rain')}</th>
+                                    <th className="p-4 font-semibold text-text-muted">{t('climate.wind')}</th>
+                                    <th className="p-4 font-semibold text-text-muted">{t('climate.sun')}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                            <tbody className="divide-y divide-border-color">
                                 {climateData.map((row, i) => {
                                     const oldestYear = climateData[climateData.length - 1]?.period.split('-')[0];
                                     return (
-                                    <tr key={row.period} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${row.isForecast ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}>
+                                    <tr key={row.period} className={`hover:bg-bg-page transition-colors text-text-main ${row.isForecast ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}>
                                         <td className="p-4 font-medium">
                                             {row.period}
                                             {row.isForecast && (
@@ -877,11 +879,11 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                                </span>
                                             )}
                                             <div className="mt-1 flex flex-col gap-0.5">
-                                                <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
                                                     {row.pctMaxFirst && row.pctMaxFirst > 0 ? '+' : ''}{row.pctMaxFirst || 0}% vs {oldestYear}
                                                 </span>
                                                 {i < climateData.length - 1 && (
-                                                    <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                    <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
                                                         {row.pctMaxPrev && row.pctMaxPrev > 0 ? '+' : ''}{row.pctMaxPrev || 0}% vs vorig
                                                     </span>
                                                 )}
@@ -895,36 +897,36 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                            </span>
                                         )}
                                         <div className="mt-1 flex flex-col gap-0.5">
-                                            <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                            <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
                                                 {row.pctMinFirst && row.pctMinFirst > 0 ? '+' : ''}{row.pctMinFirst || 0}% vs {oldestYear}
                                             </span>
                                             {i < climateData.length - 1 && (
-                                                <span className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                                                <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
                                                     {row.pctMinPrev && row.pctMinPrev > 0 ? '+' : ''}{row.pctMinPrev || 0}% vs vorig
                                                 </span>
                                             )}
                                         </div>
                                     </td>
                                     <td className="p-4 text-blue-400 font-bold">
-                                        {row.rain}<span className="text-xs font-normal text-slate-400 ml-0.5">{getRainUnitLabel(settings.precipUnit)}</span>
+                                        {row.rain}<span className="text-xs font-normal text-text-muted ml-0.5">{getRainUnitLabel(settings.precipUnit)}</span>
                                         {row.isForecast ? (
                                            <span className="block text-[10px] text-blue-300 font-normal">
                                               {row.diffRain > 0 ? '+' : ''}{row.diffRain}
                                            </span>
                                         ) : (
-                                            <span className={`block text-[10px] font-normal ${row.pctRain && row.pctRain > 0 ? 'text-blue-500' : 'text-slate-400'}`}>
+                                            <span className={`block text-[10px] font-normal ${row.pctRain && row.pctRain > 0 ? 'text-blue-500' : 'text-text-muted'}`}>
                                                {row.pctRain && row.pctRain > 0 ? '+' : ''}{row.pctRain || 0}% <span className="text-[9px] opacity-70">(vs {oldestYear})</span>
                                             </span>
                                         )}
                                     </td>
-                                    <td className="p-4 text-slate-500 font-bold">
-                                        {row.wind}<span className="text-xs font-normal text-slate-400 ml-0.5">{getWindUnitLabel(settings.windUnit)}</span>
+                                    <td className="p-4 text-text-muted font-bold">
+                                        {row.wind}<span className="text-xs font-normal text-text-muted ml-0.5">{getWindUnitLabel(settings.windUnit)}</span>
                                         {row.isForecast ? (
-                                           <span className="block text-[10px] text-slate-400 font-normal">
+                                           <span className="block text-[10px] text-text-muted font-normal">
                                               {row.diffWind > 0 ? '+' : ''}{row.diffWind}
                                            </span>
                                         ) : (
-                                            <span className={`block text-[10px] font-normal ${row.pctWind && row.pctWind > 0 ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            <span className={`block text-[10px] font-normal ${row.pctWind && row.pctWind > 0 ? 'text-text-muted' : 'text-text-muted'}`}>
                                                {row.pctWind && row.pctWind > 0 ? '+' : ''}{row.pctWind || 0}% <span className="text-[9px] opacity-70">(vs {oldestYear})</span>
                                             </span>
                                         )}
@@ -936,7 +938,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                               {row.diffSun > 0 ? '+' : ''}{row.diffSun}%
                                            </span>
                                         ) : (
-                                            <span className={`block text-[10px] font-normal ${row.pctSun && row.pctSun > 0 ? 'text-yellow-600' : 'text-slate-400'}`}>
+                                            <span className={`block text-[10px] font-normal ${row.pctSun && row.pctSun > 0 ? 'text-yellow-600' : 'text-text-muted'}`}>
                                                {row.pctSun && row.pctSun > 0 ? '+' : ''}{row.pctSun || 0}% <span className="text-[9px] opacity-70">(vs {oldestYear})</span>
                                             </span>
                                         )}

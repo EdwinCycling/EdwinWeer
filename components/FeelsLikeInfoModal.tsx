@@ -27,7 +27,7 @@ export const FeelsLikeInfoModal: React.FC<Props> = ({ isOpen, onClose, settings 
             title={t('feels_like.modal.title')}
             className="!w-full !max-w-[80%]"
         >
-            <div className="space-y-6 text-slate-600 dark:text-white/80 leading-relaxed">
+            <div className="space-y-6 text-text-muted leading-relaxed">
                 <section>
                     <p>
                         {t('feels_like.modal.intro')}
@@ -35,7 +35,7 @@ export const FeelsLikeInfoModal: React.FC<Props> = ({ isOpen, onClose, settings 
                 </section>
 
                 <section>
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-text-main mb-2 flex items-center gap-2">
                         <Icon name="air" className="text-blue-500" />
                         {t('feels_like.modal.windchill_title')}
                     </h3>
@@ -43,7 +43,7 @@ export const FeelsLikeInfoModal: React.FC<Props> = ({ isOpen, onClose, settings 
                         {t('feels_like.modal.windchill_text1')}
                     </p>
                     <p className="mb-3" dangerouslySetInnerHTML={{ __html: t('feels_like.modal.windchill_text2') }} />
-                    <div className="bg-slate-100 dark:bg-white/10 p-4 rounded-xl border border-slate-200 dark:border-white/10 mb-3 font-mono text-sm">
+                    <div className="bg-bg-page p-4 rounded-xl border border-border-color mb-3 font-mono text-sm">
                         <p className="font-bold mb-1">{t('feels_like.modal.formula_title')}</p>
                         <p>G = 13,12 + 0,6215 × T - 11,37 × (W^0,16) + 0,3965 × T × (W^0,16)</p>
                         <p className="text-xs mt-2 opacity-70" dangerouslySetInnerHTML={{ __html: t('feels_like.modal.formula_note') }} />
@@ -54,7 +54,7 @@ export const FeelsLikeInfoModal: React.FC<Props> = ({ isOpen, onClose, settings 
                 </section>
 
                 <section>
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-text-main mb-2 flex items-center gap-2">
                         <Icon name="water_drop" className="text-blue-400" />
                         {t('feels_like.modal.humidity_title')}
                     </h3>
@@ -70,7 +70,7 @@ export const FeelsLikeInfoModal: React.FC<Props> = ({ isOpen, onClose, settings 
                 </section>
 
                 <section>
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-text-main mb-2 flex items-center gap-2">
                         <Icon name="wb_sunny" className="text-orange-500" />
                         {t('feels_like.modal.sun_title')}
                     </h3>

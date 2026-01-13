@@ -4,7 +4,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, de
 
 interface AuditLog {
     userId: string;
-    action: 'login' | 'logout' | 'session_start';
+    action: 'login' | 'logout' | 'session_start' | 'account_delete';
     timestamp: any; // FieldValue
     ip?: string;
     userAgent: string;
@@ -23,7 +23,7 @@ const getIpAddress = async (): Promise<string | undefined> => {
     }
 };
 
-export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 'session_start') => {
+export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 'session_start' | 'account_delete') => {
     if (!db) {
         console.error("Audit Log Failed: Database not initialized");
         return;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState, AppSettings, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { ScheduleConfig } from '../components/ScheduleConfig';
@@ -85,13 +85,13 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
+    <div className="flex flex-col min-h-screen bg-bg-page pb-24 animate-in fade-in slide-in-from-bottom-4 text-text-main transition-colors duration-300">
       {/* Header */}
-      <div className="flex flex-col sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
+      <div className="flex flex-col sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors">
         <div className="flex items-center p-4">
           <button 
             onClick={() => onNavigate(ViewState.CURRENT)} 
-            className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2"
+            className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2"
           >
             <Icon name="arrow_back_ios_new" />
           </button>
@@ -102,14 +102,14 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
       <div className="p-4 flex-grow flex flex-col items-center max-w-lg mx-auto w-full space-y-6">
         
         {/* Intro Card */}
-        <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+        <div className="bg-bg-card w-full p-6 rounded-2xl shadow-sm border border-border-color">
           <div className="flex items-center gap-4 mb-4">
-            <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+            <div className="size-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
               <Icon name="send" className="text-2xl" />
             </div>
             <div>
               <h2 className="font-bold text-lg">{t('messenger.intro.title')}</h2>
-              <p className="text-sm text-slate-500 dark:text-white/60">{t('messenger.intro.subtitle')}</p>
+              <p className="text-sm text-text-muted">{t('messenger.intro.subtitle')}</p>
             </div>
           </div>
           
@@ -117,7 +117,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
             <p>
                 {t('messenger.intro.body1')}
             </p>
-            <p className="text-slate-500 dark:text-white/60 text-xs bg-slate-50 dark:bg-white/5 p-3 rounded-lg">
+            <p className="text-text-muted text-xs bg-bg-page p-3 rounded-lg">
                 <strong>{t('messenger.intro.body2_bold')}</strong><br/>
                 {t('messenger.intro.body2_text')}
             </p>
@@ -129,7 +129,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
             </div>
           ) : loading ? (
             <div className="flex justify-center p-4">
-              <Icon name="sync" className="animate-spin text-slate-400" />
+              <Icon name="sync" className="animate-spin text-text-muted" />
             </div>
           ) : telegramChatId ? (
             <div className="space-y-4">
@@ -151,7 +151,7 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
               href={`https://t.me/AskBaroBot?start=${user.uid}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3 px-4 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 font-bold"
+              className="w-full py-3 px-4 bg-accent-primary hover:bg-accent-hover text-text-inverse rounded-xl shadow-lg shadow-accent-primary/20 transition-all flex items-center justify-center gap-2 font-bold"
             >
               <Icon name="send" />
               {t('messenger.action.connect')}
@@ -161,18 +161,18 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
 
         {/* Feature List */}
         <div className="grid grid-cols-1 gap-4 w-full">
-           <div className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-             <Icon name="schedule" className="text-slate-400 mt-1" />
+           <div className="flex items-start gap-3 p-4 bg-bg-page rounded-xl">
+             <Icon name="schedule" className="text-text-muted mt-1" />
              <div>
                <h3 className="font-bold text-sm">{t('messenger.feature.daily_update')}</h3>
-               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">{t('messenger.feature.daily_update_desc')}</p>
+               <p className="text-xs text-text-muted mt-1">{t('messenger.feature.daily_update_desc')}</p>
              </div>
            </div>
         </div>
 
         {/* Messenger Schedule Config */}
         {telegramChatId && settings && onUpdateSettings && profiles.length > 0 && (
-            <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
+            <div className="w-full space-y-4 pt-6 border-t border-border-color">
                 <h3 className="font-bold text-lg px-1">{t('messenger.schedule.title')}</h3>
 
                 {baroCredits <= 0 ? (
@@ -190,15 +190,15 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
                     </div>
                 ) : (
                     <>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-4 flex items-center justify-between">
-                            <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                        <div className="bg-accent-primary/10 p-3 rounded-xl border border-accent-primary/20 mb-4 flex items-center justify-between">
+                            <span className="text-sm text-accent-primary font-medium">
                                 {t('messenger.credits.available')} <strong>{baroCredits}</strong>
                             </span>
                         </div>
                 
                         {/* Profile Selector */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
+                            <label className="block text-sm font-medium text-text-main mb-2 px-1">
                                 {t('messenger.profile.select')}
                             </label>
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
@@ -208,8 +208,8 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
                                         onClick={() => setSelectedProfileId(p.id)}
                                         className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
                                             selectedProfileId === p.id
-                                                ? 'bg-primary border-primary text-white shadow-md'
-                                                : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
+                                                ? 'bg-accent-primary border-accent-primary text-text-inverse shadow-md'
+                                                : 'bg-bg-card border-border-color text-text-muted hover:border-accent-primary/50'
                                         }`}
                                     >
                                         {p.name}

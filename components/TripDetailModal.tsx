@@ -9,6 +9,7 @@ import { reverseGeocode } from '../services/geoService';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import L from 'leaflet';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface Props {
     isOpen: boolean;
@@ -38,6 +39,7 @@ interface RoutePoint {
 }
 
 export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, gpxRoute, gpxName, settings, forecast, speedKmH }) => {
+    const colors = useThemeColors();
     const t = (key: string) => getTranslation(key, settings.language);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<any>(null);
@@ -256,7 +258,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
             
             const num = i + 1;
             const icon = L.divIcon({
-                html: `<div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background-color: white; border: 2px solid #0ea5e9; border-radius: 50%; font-size: 12px; font-weight: bold; color: #1e293b; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${num}</div>`,
+                html: `<div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background-color: ${colors.bgCard}; border: 2px solid ${colors.accentPrimary}; border-radius: 50%; font-size: 12px; font-weight: bold; color: ${colors.textMain}; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${num}</div>`,
                 className: 'location-marker-icon',
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
@@ -264,14 +266,14 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
             
             L.marker([pt.lat, pt.lon], { icon }).addTo(layer);
         });
-    }, [locationNames, routePoints]);
+    }, [locationNames, routePoints, colors]);
 
     const handleShare = async () => {
         if (!contentRef.current) return;
         try {
             const blob = await toPng(contentRef.current, { 
                 cacheBust: true, 
-                backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc'
+                backgroundColor: colors.bgPage
             });
             
             if (navigator.share) {
@@ -297,7 +299,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
         try {
             const blob = await toPng(contentRef.current, { 
                 cacheBust: true, 
-                backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc'
+                backgroundColor: colors.bgPage
             });
             const item = new ClipboardItem({ 'image/png': await (await fetch(blob)).blob() });
             await navigator.clipboard.write([item]);
@@ -313,7 +315,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
         try {
             const dataUrl = await toPng(contentRef.current, { 
                 cacheBust: true, 
-                backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc'
+                backgroundColor: colors.bgPage
             });
             const pdf = new jsPDF({
                 orientation: 'portrait',
@@ -332,15 +334,15 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[1000] flex flex-col bg-white/30 dark:bg-black/30 backdrop-blur-md animate-in fade-in duration-200 max-h-screen">
+        <div className="fixed inset-0 z-[1000] flex flex-col bg-bg-page/30 backdrop-blur-md animate-in fade-in duration-200 max-h-screen">
             {toast && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2000] bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-4">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2000] bg-bg-card text-text-main border border-border-color px-4 py-2 rounded-full shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-4">
                     {toast}
                 </div>
             )}
-            <div className="bg-white dark:bg-[#101d22] border-b border-slate-200 dark:border-white/5 p-4 flex items-center justify-between shadow-md z-20 shrink-0">
+            <div className="bg-bg-card border-b border-border-color p-4 flex items-center justify-between shadow-md z-20 shrink-0">
                 <div>
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-white/60">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-text-muted">
                         <span>{tripOption.day === 'today' ? t('today') : t('tomorrow')}</span>
                         <span>•</span>
                         <span>{tripOption.startTime} - {tripOption.endTime}</span>
@@ -349,47 +351,47 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                         <span className={`text-xl font-bold ${tripOption.score >= 8 ? 'text-green-600 dark:text-green-400' : tripOption.score >= 6 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
                             {tripOption.score}/10
                         </span>
-                        <span className="text-lg font-bold text-slate-800 dark:text-white truncate max-w-[200px]">
+                        <span className="text-lg font-bold text-text-main truncate max-w-[200px]">
                             {gpxName || t('trip_planner.location')}
                         </span>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
+                <button onClick={onClose} className="p-2 hover:bg-bg-page rounded-full transition-colors text-text-main">
                     <Icon name="close" className="text-2xl" />
                 </button>
             </div>
 
-            <div ref={contentRef} className="flex-1 overflow-y-auto bg-slate-50 dark:bg-background-dark p-4 space-y-6 min-h-0">
+            <div ref={contentRef} className="flex-1 overflow-y-auto bg-bg-page p-4 space-y-6 min-h-0">
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('temp')}</div>
-                        <div className="text-lg font-bold">{Math.round(tripOption.avgTemp)}°</div>
+                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
+                        <div className="text-xs text-text-muted uppercase font-bold">{t('temp')}</div>
+                        <div className="text-lg font-bold text-text-main">{Math.round(tripOption.avgTemp)}°</div>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('wind')}</div>
-                        <div className="text-lg font-bold">
+                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
+                        <div className="text-xs text-text-muted uppercase font-bold">{t('wind')}</div>
+                        <div className="text-lg font-bold text-text-main">
                             {convertWind(tripOption.maxWind, settings.windUnit || 'kmh')} <span className="text-xs">{settings.windUnit || 'km/h'}</span>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('rain')}</div>
-                        <div className="text-lg font-bold">{tripOption.maxRain}%</div>
+                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
+                        <div className="text-xs text-text-muted uppercase font-bold">{t('rain')}</div>
+                        <div className="text-lg font-bold text-text-main">{tripOption.maxRain}%</div>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <div className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('sun')}</div>
-                        <div className="text-lg font-bold">{Math.round(tripOption.avgSunChance)}%</div>
+                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
+                        <div className="text-xs text-text-muted uppercase font-bold">{t('sun')}</div>
+                        <div className="text-lg font-bold text-text-main">{Math.round(tripOption.avgSunChance)}%</div>
                     </div>
                 </div>
 
-                <div className="h-64 rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-white/5 relative z-0">
-                     <div ref={mapContainerRef} className="h-full w-full bg-slate-100 dark:bg-slate-800" />
+                <div className="h-64 rounded-2xl overflow-hidden shadow-lg border border-border-color relative z-0">
+                     <div ref={mapContainerRef} className="h-full w-full bg-bg-page" />
                 </div>
 
-                <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
+                <div className="bg-bg-card rounded-2xl border border-border-color overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-slate-500 dark:text-white/50 uppercase bg-slate-50 dark:bg-white/5">
+                            <thead className="text-xs text-text-muted uppercase bg-bg-page">
                                 <tr>
                                     <th className="px-4 py-3">{t('dist')} / {t('time')}</th>
                                     <th className="px-4 py-3">{t('wind_direction')}</th>
@@ -400,24 +402,24 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                                     <th className="px-4 py-3">{t('sun')}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                            <tbody className="divide-y divide-border-color text-text-main">
                                 {routePoints.map((pt, i) => (
                                     <React.Fragment key={i}>
                                         {locationNames[i] && (
-                                            <tr className="bg-slate-100 dark:bg-white/10">
-                                                <td colSpan={7} className="px-4 py-2 font-bold text-xs text-slate-700 dark:text-slate-200 uppercase tracking-wider">
+                                            <tr className="bg-bg-page">
+                                                <td colSpan={7} className="px-4 py-2 font-bold text-xs text-text-main uppercase tracking-wider">
                                                     <div className="flex items-center flex-wrap gap-3">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="flex items-center justify-center w-5 h-5 bg-primary/10 text-primary rounded-full text-[10px] font-bold border border-primary/20">
+                                                            <div className="flex items-center justify-center w-5 h-5 bg-accent-primary/10 text-accent-primary rounded-full text-[10px] font-bold border border-accent-primary/20">
                                                                 {Object.keys(locationNames).map(Number).sort((a,b)=>a-b).indexOf(i) + 1}
                                                             </div>
                                                             <span>📍</span> 
                                                             <span>{locationNames[i]}</span>
-                                                            <span className="text-slate-400 dark:text-white/40 font-normal ml-1">
+                                                            <span className="text-text-muted font-normal ml-1">
                                                                 (± {pt.time})
                                                             </span>
                                                         </div>
-                                                        <div className="hidden md:flex items-center gap-3 text-slate-500 dark:text-slate-400 font-normal normal-case border-l border-slate-300 dark:border-white/20 pl-3">
+                                                        <div className="hidden md:flex items-center gap-3 text-text-muted font-normal normal-case border-l border-border-color pl-3">
                                                             <div className="flex items-center gap-1"><Icon name="thermostat" className="text-xs" /> {Math.round(pt.temp)}°</div>
                                                             <div className="flex items-center gap-1"><Icon name="air" className="text-xs" /> {convertWind(pt.windSpeed, settings.windUnit || 'kmh')} <span className="text-[10px]">{settings.windUnit || 'km/h'}</span></div>
                                                             <div className="flex items-center gap-1"><Icon name="water_drop" className="text-xs" /> {pt.precip > 0 ? `${pt.precip}%` : '0%'}</div>
@@ -427,10 +429,10 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                                                 </td>
                                             </tr>
                                         )}
-                                        <tr className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                        <tr className="hover:bg-bg-page transition-colors">
                                             <td className="px-4 py-3 font-medium">
                                                 <div>{pt.dist} km</div>
-                                                <div className="text-xs text-slate-400 font-normal">{pt.time}</div>
+                                                <div className="text-xs text-text-muted font-normal">{pt.time}</div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
@@ -438,7 +440,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                                                         className={`px-2 py-1 rounded text-xs font-bold ${
                                                             pt.relativeWind === 'tail' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' :
                                                             pt.relativeWind === 'head' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' :
-                                                            'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300'
+                                                            'bg-bg-page text-text-muted'
                                                         }`}
                                                     >
                                                         {pt.relativeWind === 'tail' ? t('wind.tail') : pt.relativeWind === 'head' ? t('wind.head') : t('wind.side')}
@@ -451,7 +453,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                                             <td className="px-4 py-3 font-bold">
                                                 {convertWind(pt.windSpeed, settings.windUnit || 'kmh')}
                                             </td>
-                                            <td className="px-4 py-3 font-bold text-slate-500 dark:text-slate-400">
+                                            <td className="px-4 py-3 font-bold text-text-muted">
                                                 {(() => {
                                                     const unit = settings.windUnit || 'kmh';
                                                     const val = convertWind(pt.windGusts, unit);
@@ -481,17 +483,17 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
 
             </div>
 
-            <div className="p-4 bg-white dark:bg-[#101d22] border-t border-slate-200 dark:border-white/5 flex gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] shrink-0">
-                <button onClick={handleShare} className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+            <div className="p-4 bg-bg-card border-t border-border-color flex gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] shrink-0">
+                <button onClick={handleShare} className="flex-1 bg-bg-page hover:bg-border-color text-text-main py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
                     <Icon name="share" /> {t('share')}
                 </button>
-                <button onClick={handleCopy} className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+                <button onClick={handleCopy} className="flex-1 bg-bg-page hover:bg-border-color text-text-main py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
                     <Icon name="content_copy" /> {t('copy')}
                 </button>
-                <button onClick={handlePDF} className="flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-800 dark:text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+                <button onClick={handlePDF} className="flex-1 bg-bg-page hover:bg-border-color text-text-main py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
                     <Icon name="picture_as_pdf" /> {t('pdf')}
                 </button>
-                 <button onClick={onClose} className="w-16 bg-slate-800 dark:bg-white text-white dark:text-slate-900 py-3 rounded-xl font-bold transition-colors flex items-center justify-center">
+                 <button onClick={onClose} className="w-16 bg-text-main text-bg-card py-3 rounded-xl font-bold transition-colors flex items-center justify-center">
                     <Icon name="close" />
                 </button>
             </div>

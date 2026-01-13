@@ -1285,8 +1285,8 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
   const btnClass = (enabled: boolean) => 
     `col-span-1 py-4 rounded-xl font-bold text-sm shadow-sm transition-all flex flex-col items-center justify-center gap-1 
     ${enabled 
-        ? 'bg-primary text-white hover:shadow-lg hover:bg-primary-dark cursor-pointer' 
-        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`;
+        ? 'bg-accent-primary text-text-inverse hover:shadow-lg hover:bg-accent-hover cursor-pointer' 
+        : 'bg-bg-subtle text-text-muted cursor-not-allowed'}`;
 
   const cleanCanvas = () => {
       setViewSettings(prev => {
@@ -1306,10 +1306,10 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white pb-32">
+    <div className="flex flex-col min-h-screen bg-bg-page text-text-main pb-32">
         {/* Header */}
-        <div className="flex items-center p-4 pt-8 sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
+        <div className="flex items-center p-4 pt-8 sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2">
                 <Icon name="arrow_back_ios_new" />
             </button>
             <h1 className="text-lg font-bold">{t('share.title')}</h1>
@@ -1336,10 +1336,10 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             <div className="flex-1 space-y-6">
                 
                 {/* 1. Upload */}
-                <div className="bg-white dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+                <div className="bg-bg-card p-6 rounded-2xl shadow-sm border border-border-color">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold flex items-center gap-2">
-                            <Icon name="add_a_photo" className="text-primary" /> {t('share.upload')}
+                            <Icon name="add_a_photo" className="text-accent-primary" /> {t('share.upload')}
                         </h3>
                         <button 
                             onClick={cleanCanvas}
@@ -1353,18 +1353,18 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                         type="file" 
                         accept="image/*" 
                         onChange={handleFileUpload}
-                        className="block w-full text-sm text-slate-500
+                        className="block w-full text-sm text-text-muted
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-full file:border-0
                         file:text-sm file:font-semibold
-                        file:bg-primary/10 file:text-primary
-                        hover:file:bg-primary/20
+                        file:bg-accent-primary/10 file:text-accent-primary
+                        hover:file:bg-accent-primary/20
                         cursor-pointer mb-6"
                     />
 
                     {/* Style Selection */}
                     <div className="mt-6">
-                        <label className="text-sm font-bold text-slate-500 dark:text-white/50 mb-2 block">{t('share.style')}</label>
+                        <label className="text-sm font-bold text-text-muted mb-2 block">{t('share.style')}</label>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                             {(['classic', 'insta', 'data', 'news', 'minimal', 'badge', 'frame', 'cinematic', 'post', 'bubble'] as const).map(tpl => (
                                 <button
@@ -1372,8 +1372,8 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     onClick={() => applyTemplate(tpl)}
                                     className={`py-2 px-1 rounded-lg text-xs font-bold border transition-all ${
                                         viewSettings.template === tpl 
-                                        ? 'bg-primary text-white border-primary' 
-                                        : 'bg-slate-100 dark:bg-white/5 border-transparent hover:border-primary/50'
+                                        ? 'bg-accent-primary text-text-inverse border-accent-primary' 
+                                        : 'bg-bg-page border-transparent hover:border-accent-primary/50'
                                     }`}
                                 >
                                     {t(`share.template.${tpl}`)}
@@ -1549,41 +1549,41 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </div>
 
                 {/* 2. Data Selection */}
-                <div className="bg-white dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 relative z-10">
+                <div className="bg-bg-card p-6 rounded-2xl shadow-sm border border-border-color relative z-10">
                     <h3 className="font-bold mb-4 flex items-center gap-2">
-                        <Icon name="edit" className="text-primary" /> {t('share.date_time_title')}
+                        <Icon name="edit" className="text-accent-primary" /> {t('share.date_time_title')}
                     </h3>
                     
                     <div className="space-y-3">
                         {/* Location Row */}
                         <div className="relative">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">{t('share.location')}</label>
+                            <label className="text-[10px] font-bold text-text-muted uppercase mb-1 block">{t('share.location')}</label>
                             <div className="relative">
                                 <input 
                                     type="text" 
                                     value={searchQuery || customLocation} 
                                     onChange={(e) => handleSearch(e.target.value)}
                                     placeholder={t('share.search_location') || "Search Location..."}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
+                                    className="w-full p-2 text-sm bg-bg-page rounded-lg border border-border-color"
                                 />
                                 {loadingSearch && (
                                     <div className="absolute right-3 top-2.5">
-                                        <div className="animate-spin size-4 border-2 border-primary border-t-transparent rounded-full" />
+                                        <div className="animate-spin size-4 border-2 border-accent-primary border-t-transparent rounded-full" />
                                     </div>
                                 )}
                             </div>
                             
                             {/* Search Results Dropdown */}
                             {showSearchResults && searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 max-h-48 overflow-y-auto z-50">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color max-h-48 overflow-y-auto z-50">
                                     {searchResults.map((res, idx) => (
                                         <button
                                             key={`${res.name}-${idx}`}
                                             onClick={() => selectLocation(res)}
-                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-100 dark:border-white/5 last:border-0"
+                                            className="w-full text-left px-4 py-3 hover:bg-bg-page border-b border-border-color last:border-0"
                                         >
                                             <div className="font-bold">{res.name}</div>
-                                            <div className="text-xs text-slate-500">{res.country}</div>
+                                            <div className="text-xs text-text-muted">{res.country}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -1594,23 +1594,23 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                             {/* Date Picker */}
                             <div className="col-span-1">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">{t('share.fields.date')}</label>
+                                <label className="text-[10px] font-bold text-text-muted uppercase mb-1 block">{t('share.fields.date')}</label>
                                 <input 
                                     type="date" 
                                     value={customDate} 
                                     onChange={(e) => setCustomDate(e.target.value)}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
+                                    className="w-full p-2 text-sm bg-bg-page rounded-lg border border-border-color"
                                 />
                             </div>
 
                             {/* Date Format */}
                             <div className="col-span-2">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">{t('share.fields.date')}</label>
+                                <label className="text-[10px] font-bold text-text-muted uppercase mb-1 block">{t('share.fields.date')}</label>
                                 <div className="flex gap-2">
                                     <select 
                                         value={viewSettings.content.dateFormat} 
                                         onChange={(e) => updateContent({ dateFormat: e.target.value as any })}
-                                        className="flex-1 p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
+                                        className="flex-1 p-2 text-sm bg-bg-page rounded-lg border border-border-color"
                                     >
                                         <option value="short">{getSampleDate('short')}</option>
                                         <option value="medium">{getSampleDate('medium')}</option>
@@ -1618,7 +1618,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     </select>
                                     <button 
                                         onClick={() => updateContent({ showDayName: !viewSettings.content.showDayName })}
-                                        className={`px-3 rounded-lg border text-sm font-bold transition-colors ${viewSettings.content.showDayName ? 'bg-primary text-white border-primary' : 'bg-slate-100 dark:bg-white/5 border-transparent'}`}
+                                        className={`px-3 rounded-lg border text-sm font-bold transition-colors ${viewSettings.content.showDayName ? 'bg-accent-primary text-text-inverse border-accent-primary' : 'bg-bg-page border-transparent'}`}
                                     >
                                         {t('tab.day')}
                                     </button>
@@ -1627,12 +1627,12 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
 
                             {/* Time Picker */}
                             <div className="col-span-1">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">{t('share.fields.time')}</label>
+                                <label className="text-[10px] font-bold text-text-muted uppercase mb-1 block">{t('share.fields.time')}</label>
                                 <select 
                                     value={customTime} 
                                     onChange={(e) => setCustomTime(e.target.value)}
                                     disabled={viewSettings.content.displayMode !== 'current'}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10 disabled:opacity-50"
+                                    className="w-full p-2 text-sm bg-bg-page rounded-lg border border-border-color disabled:opacity-50"
                                 >
                                     {Array.from({length: 24}).map((_, i) => {
                                         const h = i.toString().padStart(2, '0');
@@ -1643,11 +1643,11 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
 
                             {/* Display Mode */}
                             <div className="col-span-1">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">{t('share.display')}</label>
+                                <label className="text-[10px] font-bold text-text-muted uppercase mb-1 block">{t('share.display')}</label>
                                 <select 
                                     value={viewSettings.content.displayMode} 
                                     onChange={(e) => updateContent({ displayMode: e.target.value as any })}
-                                    className="w-full p-2 text-sm bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/10"
+                                    className="w-full p-2 text-sm bg-bg-page rounded-lg border border-border-color"
                                 >
                                     <option value="current">Current Temp</option>
                                     <option value="max">Max Temp</option>
@@ -1659,14 +1659,14 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </div>
 
                 {/* 3. Checkbox Options */}
-                <div className="bg-white dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+                <div className="bg-bg-card p-6 rounded-2xl shadow-sm border border-border-color">
                      <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold flex items-center gap-2">
-                            <Icon name="check_circle" className="text-primary" /> {t('share.options_title')}
+                            <Icon name="check_circle" className="text-accent-primary" /> {t('share.options_title')}
                         </h3>
                         <button 
                             onClick={toggleAll}
-                            className="text-xs font-bold text-primary hover:underline"
+                            className="text-xs font-bold text-accent-primary hover:underline"
                         >
                             Toggle All
                         </button>
@@ -1675,17 +1675,17 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
                         {Object.keys(viewSettings.visibleFields).map(key => {
                             const isAvailable = dataAvailability[key] !== false; 
                             return (
-                                <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border border-slate-100 dark:border-white/5 transition-colors ${
+                                <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border border-border-color transition-colors ${
                                     isAvailable 
-                                    ? 'hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer' 
-                                    : 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-white/5'
+                                    ? 'hover:bg-bg-page cursor-pointer' 
+                                    : 'opacity-50 cursor-not-allowed bg-bg-page'
                                 }`}>
                                     <input 
                                         type="checkbox"
                                         checked={viewSettings.visibleFields[key as keyof VisibleFields]}
                                         disabled={!isAvailable}
                                         onChange={(e) => updateSettings({ visibleFields: {...viewSettings.visibleFields, [key]: e.target.checked} })}
-                                        className="rounded text-primary focus:ring-primary size-4"
+                                        className="rounded text-accent-primary focus:ring-accent-primary size-4"
                                     />
                                     <span className="text-xs font-medium truncate">{t(`share.fields.${key}`)}</span>
                                 </label>
@@ -1722,7 +1722,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             </div>
 
             {/* Preview */}
-            <div className="flex-1 flex items-start justify-center bg-slate-100 dark:bg-slate-800 rounded-3xl p-8 border border-dashed border-slate-300 dark:border-white/10 overflow-hidden">
+            <div className="flex-1 flex items-start justify-center bg-bg-subtle rounded-3xl p-8 border border-dashed border-border-color overflow-hidden">
                 <canvas 
                     ref={canvasRef} 
                     width={canvasSize.w} 

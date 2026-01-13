@@ -395,10 +395,22 @@ export const handler = async (event) => {
     };
   } catch (error) {
     console.error('Gemini Error:', error);
+    const statusCode = error.status || 500;
+    const errorMessage = error.message || 'Failed to generate report';
+    
+    // Log the full error for debugging
+    if (error.errorDetails) {
+      console.error('Error Details:', JSON.stringify(error.errorDetails, null, 2));
+    }
+
     return {
-      statusCode: 500,
+      statusCode,
       headers,
-      body: JSON.stringify({ error: 'Failed to generate report' })
+      body: JSON.stringify({ 
+        error: errorMessage,
+        details: error.errorDetails || null,
+        status: statusCode
+      })
     };
   }
 };

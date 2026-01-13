@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppSettings, Location, OpenMeteoResponse } from '../types';
 import { Icon } from '../components/Icon';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { fetchHistoricalFull, fetchHistorical, fetchHistoricalDaily, convertTemp } from '../services/weatherService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import { getTranslation } from '../services/translations';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings, onClose }) => {
+  const colors = useThemeColors();
   const [weatherData, setWeatherData] = useState<OpenMeteoResponse | null>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [yearData, setYearData] = useState<any[]>([]);
@@ -149,21 +151,21 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
 
   if (loading) {
       return (
-        <div className="fixed inset-0 z-50 bg-background-dark flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-bg-page flex items-center justify-center">
             <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
       );
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background-dark overflow-y-auto text-white animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-50 bg-bg-page overflow-y-auto text-text-main animate-in slide-in-from-bottom duration-300">
       
-      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background-dark/90 z-0 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-black/20 to-bg-page/90 z-0 pointer-events-none" />
 
       {/* Close Button */}
       <button 
         onClick={onClose} 
-        className="fixed top-4 right-4 z-50 bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full text-white transition-all"
+        className="fixed top-4 right-4 z-50 bg-bg-card/20 hover:bg-bg-card/40 backdrop-blur-md p-2 rounded-full text-text-main transition-all"
       >
         <Icon name="close" className="text-2xl" />
       </button>
@@ -176,25 +178,25 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                 <Icon name="location_on" className="text-primary" />
                 {location.name}
             </h2>
-            <p className="text-white/80 text-sm font-medium mt-1">
+            <p className="text-text-muted text-sm font-medium mt-1">
                 {date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
         </div>
 
         {/* Dashboard Content */}
-        <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-t-[40px] border-t border-slate-200 dark:border-white/10 p-6 pb-32 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] text-slate-800 dark:text-white transition-colors flex-1">
+        <div className="bg-bg-card/90 backdrop-blur-2xl rounded-t-[40px] border-t border-border-color p-6 pb-32 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] text-text-main transition-colors flex-1">
             
             {/* 1. Trend Graph (-10 to +10 days) */}
             {trendData.length > 0 && (
                 <div className="mb-8">
                     <h3 className="text-lg font-bold mb-4">{t('historical.temp_trend')} {t('historical.trend_range')}</h3>
-                    <div className="h-[250px] w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-2 border border-slate-200 dark:border-white/5">
+                    <div className="h-[250px] w-full bg-bg-page rounded-2xl p-2 border border-border-color">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <CartesianGrid vertical={false} stroke="rgba(128,128,128,0.1)" />
+                                <CartesianGrid vertical={false} stroke={colors.borderColor} />
                                 <XAxis 
                                     dataKey="date" 
-                                    tick={{fill: '#888', fontSize: 10}} 
+                                    tick={{fill: colors.textMuted, fontSize: 10}} 
                                     tickLine={false} 
                                     axisLine={false} 
                                     tickFormatter={(val) => {
@@ -204,9 +206,11 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                                     interval={0}
                                     minTickGap={0}
                                 />
-                                <YAxis width={45} tick={{fill: '#888', fontSize: 11}} tickLine={false} axisLine={false} />
+                                <YAxis width={45} tick={{fill: colors.textMuted, fontSize: 11}} tickLine={false} axisLine={false} />
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: settings.theme === 'dark' ? '#1d2b32' : '#ffffff', border: '1px solid rgba(128,128,128,0.1)', borderRadius: '8px' }}
+                                    contentStyle={{ backgroundColor: colors.bgCard, border: `1px solid ${colors.borderColor}`, borderRadius: '8px' }}
+                                    itemStyle={{ color: colors.textMain }}
+                                    labelStyle={{ color: colors.textMuted }}
                                 />
                                 <Legend />
                                 <ReferenceLine x={getDateString(date)} stroke="#ef4444" strokeDasharray="3 3" />
@@ -229,22 +233,24 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                     <h3 className="text-lg font-bold mb-1">
                         {t('historical.year_comparison')} {t('historical.year_range')}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-white/50 mb-3">
-                        {date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                    <p className="text-xs text-text-muted mb-3">
+                        {date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { month: 'long', day: 'numeric' })}
                     </p>
-                    <div className="h-[250px] w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-2 border border-slate-200 dark:border-white/5">
+                    <div className="h-[250px] w-full bg-bg-page rounded-2xl p-2 border border-border-color">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={yearData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <CartesianGrid vertical={false} stroke="rgba(128,128,128,0.1)" />
+                                <CartesianGrid vertical={false} stroke={colors.borderColor} />
                                 <XAxis 
                                     dataKey="year" 
-                                    tick={{fill: '#888', fontSize: 10}} 
+                                    tick={{fill: colors.textMuted, fontSize: 10}} 
                                     tickLine={false} 
                                     axisLine={false} 
                                 />
-                                <YAxis width={45} tick={{fill: '#888', fontSize: 11}} tickLine={false} axisLine={false} />
+                                <YAxis width={45} tick={{fill: colors.textMuted, fontSize: 11}} tickLine={false} axisLine={false} />
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: settings.theme === 'dark' ? '#1d2b32' : '#ffffff', border: '1px solid rgba(128,128,128,0.1)', borderRadius: '8px' }}
+                                    contentStyle={{ backgroundColor: colors.bgCard, border: `1px solid ${colors.borderColor}`, borderRadius: '8px' }}
+                                    itemStyle={{ color: colors.textMain }}
+                                    labelStyle={{ color: colors.textMuted }}
                                 />
                                 <Legend />
                                 <ReferenceLine x={date.getFullYear()} stroke="#ef4444" strokeDasharray="3 3" />

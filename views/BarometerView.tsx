@@ -219,7 +219,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-black transition-colors overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-bg-page transition-colors overflow-x-hidden">
        <style>{`
           @media print {
             .no-print { display: none !important; }
@@ -230,7 +230,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
        
        {/* --- Top Navigation Buttons (Fixed) --- */}
        <div className="fixed top-4 left-4 z-50 no-print">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-text-main hover:bg-bg-card/50 transition-all shadow-sm">
                 <Icon name="arrow_back_ios_new" />
             </button>
        </div>
@@ -241,7 +241,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
           {/* Location Header */}
           <div className="relative z-10 w-full max-w-md mx-auto mb-6 px-4">
                 <div className="flex items-center justify-center relative">
-                    <button onClick={() => cycleFavorite('prev')} className="absolute left-0 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <button onClick={() => cycleFavorite('prev')} className="absolute left-0 p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-text-main hover:bg-bg-card/50 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                         <Icon name="chevron_left" className="text-3xl" />
                     </button>
 
@@ -250,11 +250,11 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
                         ) : (
                             <div className="flex flex-col items-center">
-                                <h2 className="text-xl font-bold leading-tight flex items-center gap-1 drop-shadow-md text-slate-800 dark:text-white">
+                                <h2 className="text-xl font-bold leading-tight flex items-center gap-1 drop-shadow-md text-text-main">
                                     {location.name}, {location.country}
                                 </h2>
                                 {localTime && (
-                                    <p className="text-slate-500 dark:text-white/80 text-xs font-medium mt-1 flex items-center gap-1">
+                                    <p className="text-text-muted text-xs font-medium mt-1 flex items-center gap-1">
                                         <Icon name="schedule" className="text-[10px]" />
                                         {localTime}
                                     </p>
@@ -263,7 +263,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                         )}
                     </div>
 
-                    <button onClick={() => cycleFavorite('next')} className="absolute right-0 p-2 rounded-full bg-white/30 dark:bg-black/20 backdrop-blur-md text-slate-700 dark:text-white/90 hover:bg-white/50 dark:hover:bg-black/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                    <button onClick={() => cycleFavorite('next')} className="absolute right-0 p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-text-main hover:bg-bg-card/50 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                         <Icon name="chevron_right" className="text-3xl" />
                     </button>
                 </div>
@@ -290,21 +290,21 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
 
                 {/* Detailed Info Box */}
                 <div className="w-full max-w-md px-6">
-                    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200 dark:border-white/10 p-5">
-                        <h3 className="text-center text-lg font-bold text-slate-800 dark:text-white mb-1">
+                    <div className="bg-bg-card/90 backdrop-blur-md rounded-2xl shadow-xl border border-border-color p-5">
+                        <h3 className="text-center text-lg font-bold text-text-main mb-1">
                             {details.title}
                         </h3>
-                        <p className="text-center text-slate-600 dark:text-slate-300 text-sm mb-4">
+                        <p className="text-center text-text-muted text-sm mb-4">
                             {details.desc}
                         </p>
                         
-                        <div className="grid grid-cols-2 gap-4 border-t border-slate-200 dark:border-white/10 pt-4">
+                        <div className="grid grid-cols-2 gap-4 border-t border-border-color pt-4">
                             <div className="flex flex-col items-center">
-                                <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold">{t('today')}</span>
-                                <span className="text-xl font-bold text-slate-800 dark:text-white font-mono">{currentPressure} <span className="text-xs font-normal">hPa</span></span>
+                                <span className="text-xs text-text-muted uppercase font-bold">{t('today')}</span>
+                                <span className="text-xl font-bold text-text-main font-mono">{currentPressure} <span className="text-xs font-normal">hPa</span></span>
                             </div>
-                            <div className="flex flex-col items-center border-l border-slate-200 dark:border-white/10">
-                                <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold text-center">{t('reference')}</span>
+                            <div className="flex flex-col items-center border-l border-border-color">
+                                <span className="text-xs text-text-muted uppercase font-bold text-center">{t('reference')}</span>
                                 <span className="text-xl font-bold text-amber-600 dark:text-amber-500 font-mono">{yesterdayPressure} <span className="text-xs font-normal">hPa</span></span>
                             </div>
                         </div>
@@ -316,24 +316,24 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                     <div className="grid grid-cols-3 gap-3">
                         <button 
                             onClick={handleDownload}
-                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="flex flex-col items-center justify-center p-3 bg-bg-card rounded-xl hover:bg-bg-card/80 transition-colors"
                         >
                             <Icon name="download" className="text-xl mb-1 text-blue-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Download</span>
+                            <span className="text-xs font-medium text-text-main">Download</span>
                         </button>
                         <button 
                             onClick={handleShare}
-                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="flex flex-col items-center justify-center p-3 bg-bg-card rounded-xl hover:bg-bg-card/80 transition-colors"
                         >
                             <Icon name="share" className="text-xl mb-1 text-green-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('share')}</span>
+                            <span className="text-xs font-medium text-text-main">{t('share')}</span>
                         </button>
                         <button 
                             onClick={handlePrint}
-                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="flex flex-col items-center justify-center p-3 bg-bg-card rounded-xl hover:bg-bg-card/80 transition-colors"
                         >
                             <Icon name="print" className="text-xl mb-1 text-purple-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('print')}</span>
+                            <span className="text-xs font-medium text-text-main">{t('print')}</span>
                         </button>
                     </div>
                 </div>
@@ -344,7 +344,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
 
         {/* Search Modal */}
         {isSearchOpen && (
-            <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-3 backdrop-blur-md">
+            <div className="fixed top-20 right-6 z-[60] w-[340px] max-w-[90vw] bg-bg-card border border-border-color rounded-2xl shadow-xl p-3 backdrop-blur-md">
                 <div className="flex gap-2">
                     <input
                         ref={searchInputRef}
@@ -356,12 +356,12 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && searchCities()}
                         placeholder={t('search')}
-                        className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-slate-800 dark:text-white placeholder-slate-600 dark:placeholder-white/30 focus:outline-none focus:border-primary"
+                        className="flex-1 bg-bg-page border border-border-color rounded-xl px-3 py-2 text-text-main placeholder-text-muted focus:outline-none focus:border-primary"
                     />
                     <button
                         onClick={searchCities}
                         disabled={loadingSearch || !searchQuery.trim()}
-                        className="px-3 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
+                        className="px-3 rounded-xl bg-bg-page text-text-main hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                     >
                         <Icon name={loadingSearch ? 'hourglass_empty' : 'arrow_forward'} />
                     </button>
@@ -371,10 +371,10 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                         <button
                             key={`${res.name}-${idx}`}
                             onClick={() => handleSelectSearchResult(res)}
-                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-left"
+                            className="w-full flex items-center justify-between px-2 py-2 rounded-lg hover:bg-bg-page text-left"
                         >
-                            <span className="text-sm font-medium text-slate-800 dark:text-white">{res.name}, {res.country}</span>
-                            <Icon name="chevron_right" className="text-xs text-slate-400" />
+                            <span className="text-sm font-medium text-text-main">{res.name}, {res.country}</span>
+                            <Icon name="chevron_right" className="text-xs text-text-muted" />
                         </button>
                     ))}
                 </div>

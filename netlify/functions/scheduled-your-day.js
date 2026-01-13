@@ -2,6 +2,7 @@ import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Brevo from '@getbrevo/brevo';
 import fetch from 'node-fetch';
+import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -148,7 +149,7 @@ async function generateReport(weatherData, event, diff, profileName, userName, l
 
     } catch (e) {
         console.error("Error generating report:", e);
-        return language === 'nl' ? "Kon geen weerbericht genereren." : "Could not generate weather report.";
+        return `Error: ${e.message || (language === 'nl' ? "Kon geen weerbericht genereren." : "Could not generate weather report.")}`;
     }
 }
 

@@ -723,34 +723,34 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
   };
 
   return (
-    <div className="w-full min-h-screen pb-80 p-4 md:p-6 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white">
+    <div className="w-full min-h-screen pb-80 p-4 md:p-6 bg-bg-page text-text-main">
       {/* Header */}
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-4 shadow-sm mb-6 flex items-center gap-3 border border-slate-100 dark:border-white/5">
-        <button onClick={() => onNavigate(ViewState.CURRENT)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors">
-            <Icon name="arrow_back" className="text-xl text-slate-600 dark:text-slate-300" />
+      <div className="bg-bg-card rounded-2xl p-4 shadow-sm mb-6 flex items-center gap-3 border border-border-color">
+        <button onClick={() => onNavigate(ViewState.CURRENT)} className="p-2 hover:bg-bg-page rounded-full transition-colors">
+            <Icon name="arrow_back" className="text-xl text-text-muted hover:text-text-main" />
         </button>
         <div className="flex items-center gap-3">
-            <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+            <div className="size-10 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
                 <Icon name="search" className="text-xl" />
             </div>
             <div>
                 <h1 className="text-xl font-bold">Vind de Dag</h1>
-                <p className="text-xs text-slate-500 dark:text-white/60">Zoek in 25 jaar weerhistorie</p>
+                <p className="text-xs text-text-muted">Zoek in 25 jaar weerhistorie</p>
             </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Location Picker */}
-        <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 relative z-20">
+        <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color relative z-20">
              <h3 className="font-bold mb-3 flex items-center gap-2">
-                 <Icon name="location_on" className="text-purple-500" />
+                 <Icon name="location_on" className="text-accent-primary" />
                  Locatie
              </h3>
              
              <div className="relative">
-                 <div className="flex items-center bg-slate-100 dark:bg-white/5 rounded-xl px-3 border border-slate-200 dark:border-white/10 focus-within:border-purple-500 transition-colors">
-                     <Icon name="search" className="text-slate-400" />
+                 <div className="flex items-center bg-bg-page rounded-xl px-3 border border-border-color focus-within:border-accent-primary transition-colors">
+                     <Icon name="search" className="text-text-muted" />
                      <input 
                          type="text" 
                          value={isSearchOpen ? searchQuery : (location ? `${location.name}, ${location.country}` : '')}
@@ -759,18 +759,18 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                              setIsSearchOpen(true);
                          }}
                          placeholder="Zoek een locatie..."
-                         className="w-full bg-transparent border-none p-3 focus:ring-0 outline-none font-medium"
+                         className="w-full bg-transparent border-none p-3 focus:ring-0 outline-none font-medium text-text-main placeholder:text-text-muted"
                      />
-                     {loading && <Icon name="sync" className="animate-spin text-purple-500" />}
+                     {loading && <Icon name="sync" className="animate-spin text-accent-primary" />}
                  </div>
 
                  {isSearchOpen && searchResults.length > 0 && (
-                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden z-50">
+                     <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color overflow-hidden z-50">
                          {searchResults.map((loc, idx) => (
                              <button
                                  key={`${loc.lat}-${idx}`}
                                  onClick={() => handleSelectLocation(loc)}
-                                 className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-50 dark:border-white/5 last:border-0"
+                                 className="w-full text-left px-4 py-3 hover:bg-bg-page flex items-center justify-between border-b border-border-color last:border-0 text-text-main"
                              >
                                  <span>{loc.name}, {loc.country}</span>
                              </button>
@@ -783,9 +783,9 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
         {/* Scenarios */}
         <div className="space-y-6">
             {scenarios.map((scenario, sIdx) => (
-                <div key={scenario.id} className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 relative">
+                <div key={scenario.id} className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color relative">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-lg">Scenario {sIdx + 1}</h3>
+                        <h3 className="font-bold text-lg text-text-main">Scenario {sIdx + 1}</h3>
                         {scenarios.length > 1 && (
                             <button onClick={() => removeScenario(scenario.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors">
                                 <Icon name="delete" />
@@ -795,11 +795,11 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
 
                     <div className="space-y-3">
                         {scenario.rules.map((rule) => (
-                            <div key={rule.id} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-slate-50 dark:bg-white/5 p-3 rounded-xl">
+                            <div key={rule.id} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-bg-page p-3 rounded-xl">
                                 <select 
                                     value={rule.parameter}
                                     onChange={(e) => updateRule(scenario.id, rule.id, 'parameter', e.target.value)}
-                                    className="bg-white dark:bg-slate-800 border-none rounded-lg p-2 text-sm w-full md:w-auto focus:ring-2 focus:ring-purple-500"
+                                    className="bg-bg-card border-none rounded-lg p-2 text-sm w-full md:w-auto focus:ring-2 focus:ring-accent-primary text-text-main"
                                 >
                                     {Object.entries(PARAM_LABELS).map(([key, label]) => (
                                         <option key={key} value={key}>{label}</option>
@@ -809,7 +809,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                 <select 
                                     value={rule.operator}
                                     onChange={(e) => updateRule(scenario.id, rule.id, 'operator', e.target.value)}
-                                    className="bg-white dark:bg-slate-800 border-none rounded-lg p-2 text-sm w-full md:w-auto focus:ring-2 focus:ring-purple-500"
+                                    className="bg-bg-card border-none rounded-lg p-2 text-sm w-full md:w-auto focus:ring-2 focus:ring-accent-primary text-text-main"
                                 >
                                     <option value=">">Meer dan</option>
                                     <option value="<">Minder dan</option>
@@ -822,24 +822,24 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                         type="number"
                                         value={rule.value}
                                         onChange={(e) => updateRule(scenario.id, rule.id, 'value', parseFloat(e.target.value))}
-                                        className="bg-white dark:bg-slate-800 border-none rounded-lg p-2 text-sm w-24 focus:ring-2 focus:ring-purple-500"
+                                        className="bg-bg-card border-none rounded-lg p-2 text-sm w-24 focus:ring-2 focus:ring-accent-primary text-text-main"
                                     />
                                     {rule.operator === 'between' && (
                                         <>
-                                            <span className="text-sm">en</span>
+                                            <span className="text-sm text-text-main">en</span>
                                             <input 
                                                 type="number"
                                                 value={rule.value2 || rule.value + 1}
                                                 onChange={(e) => updateRule(scenario.id, rule.id, 'value2', parseFloat(e.target.value))}
-                                                className="bg-white dark:bg-slate-800 border-none rounded-lg p-2 text-sm w-24 focus:ring-2 focus:ring-purple-500"
+                                                className="bg-bg-card border-none rounded-lg p-2 text-sm w-24 focus:ring-2 focus:ring-accent-primary text-text-main"
                                             />
                                         </>
                                     )}
-                                    <span className="text-sm font-bold text-slate-500">{getUnitLabel(rule.parameter, settings)}</span>
+                                    <span className="text-sm font-bold text-text-muted">{getUnitLabel(rule.parameter, settings)}</span>
                                 </div>
 
                                 {scenario.rules.length > 1 && (
-                                    <button onClick={() => removeRule(scenario.id, rule.id)} className="text-slate-400 hover:text-red-500">
+                                    <button onClick={() => removeRule(scenario.id, rule.id)} className="text-text-muted hover:text-red-500">
                                         <Icon name="close" />
                                     </button>
                                 )}
@@ -847,34 +847,34 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                         ))}
                     </div>
 
-                    <button onClick={() => addRule(scenario.id)} className="mt-4 text-sm font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1">
+                    <button onClick={() => addRule(scenario.id)} className="mt-4 text-sm font-bold text-accent-primary hover:text-accent-hover flex items-center gap-1">
                         <Icon name="add" />
                         Regel toevoegen
                     </button>
                     
                     {sIdx < scenarios.length - 1 && (
-                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 z-10">
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-border-color px-3 py-1 rounded-full text-xs font-bold text-text-muted z-10">
                             OF
                         </div>
                     )}
                 </div>
             ))}
 
-            <button onClick={addScenario} className="w-full py-3 border-2 border-dashed border-slate-300 dark:border-white/10 rounded-2xl text-slate-500 font-bold hover:border-purple-500 hover:text-purple-500 transition-colors flex items-center justify-center gap-2">
+            <button onClick={addScenario} className="w-full py-3 border-2 border-dashed border-border-color rounded-2xl text-text-muted font-bold hover:border-accent-primary hover:text-accent-primary transition-colors flex items-center justify-center gap-2">
                 <Icon name="add_circle_outline" />
                 Nieuw Scenario (OF)
             </button>
         </div>
 
         {/* Min Probability Setting */}
-        <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5">
-            <h3 className="font-bold mb-3 flex items-center gap-2">
-                <Icon name="timeline" className="text-purple-500" />
+        <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color">
+            <h3 className="font-bold mb-3 flex items-center gap-2 text-text-main">
+                <Icon name="timeline" className="text-accent-primary" />
                 Voorspelling Instellingen
             </h3>
             <div className="flex items-center gap-4">
                 <div className="flex-1">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-sm font-medium text-text-muted mb-1">
                         Minimale Kans (%)
                     </label>
                     <input 
@@ -884,10 +884,10 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                         step="5"
                         value={minProbability}
                         onChange={(e) => setMinProbability(parseInt(e.target.value))}
-                        className="w-full accent-purple-500"
+                        className="w-full accent-accent-primary"
                     />
                 </div>
-                <div className="bg-slate-100 dark:bg-white/5 px-4 py-2 rounded-xl font-bold min-w-[3rem] text-center">
+                <div className="bg-bg-page px-4 py-2 rounded-xl font-bold min-w-[3rem] text-center text-text-main">
                     {minProbability}%
                 </div>
             </div>
@@ -897,7 +897,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
         <button 
             onClick={handleSearch}
             disabled={loading || !location}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-purple-500/30 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-accent-primary hover:bg-accent-hover text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-accent-primary/30 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
             {loading ? <Icon name="sync" className="animate-spin" /> : <Icon name="search" />}
             Zoek Dagen
@@ -915,15 +915,15 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
             <div className="space-y-8 animate-fade-in">
                 {/* Predictions Section */}
                 <div className="space-y-4">
-                    <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
-                        <Icon name="calendar_month" className="text-purple-500" />
+                    <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-text-main">
+                        <Icon name="calendar_month" className="text-accent-primary" />
                         Komende Kansen
                     </h3>
                     
                     {predictions.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {predictions.map((pred, idx) => (
-                                <div key={idx} className={`relative overflow-hidden rounded-2xl p-5 border ${pred.bonus ? 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-700' : 'bg-white dark:bg-card-dark border-slate-100 dark:border-white/5'} shadow-sm`}>
+                                <div key={idx} className={`relative overflow-hidden rounded-2xl p-5 border ${pred.bonus ? 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-700' : 'bg-bg-card border-border-color'} shadow-sm`}>
                                     {pred.bonus && (
                                         <div className="absolute top-0 right-0 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
                                             BONUS: VAAK REEKS
@@ -931,16 +931,16 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                     )}
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
-                                            <div className="font-bold text-lg text-slate-800 dark:text-white">
+                                            <div className="font-bold text-lg text-text-main">
                                                 {pred.startDate}
                                             </div>
                                             {pred.endDate && (
-                                                <div className="text-sm text-slate-500 dark:text-slate-400">
+                                                <div className="text-sm text-text-muted">
                                                     tot {pred.endDate}
                                                 </div>
                                             )}
                                         </div>
-                                        <div className={`px-3 py-1 rounded-full text-sm font-bold ${pred.probability > 75 ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : pred.probability > 50 ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'}`}>
+                                        <div className={`px-3 py-1 rounded-full text-sm font-bold ${pred.probability > 75 ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : pred.probability > 50 ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-bg-page text-text-muted'}`}>
                                             {pred.probability}%
                                         </div>
                                     </div>
@@ -956,7 +956,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                             ))}
                         </div>
                     ) : (
-                        <div className="p-8 text-center bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 text-slate-500">
+                        <div className="p-8 text-center bg-bg-page rounded-2xl border border-border-color text-text-muted">
                             <Icon name="search_off" className="text-4xl mb-2 mx-auto opacity-50" />
                             <p>Geen toekomstige dagen gevonden met &gt;{minProbability}% kans op basis van historie.</p>
                             <p className="text-sm mt-1">Probeer de minimale kans te verlagen.</p>
@@ -969,21 +969,21 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                     <div className="space-y-6 mb-10">
                         {/* Summary & Extremes Cards - Now above the chart */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
+                            <div className="bg-bg-card p-6 rounded-3xl border border-border-color shadow-sm">
+                                <h3 className="text-sm font-bold text-text-main flex items-center gap-2 mb-4">
                                     <Icon name="history" className="text-purple-500" />
                                     Historische Markpunten
                                 </h3>
                                 <div className="space-y-4">
-                                    <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
-                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Vroegste match ooit</p>
-                                        <p className="text-sm font-bold text-slate-700 dark:text-white">
+                                    <div className="p-3 bg-bg-page rounded-xl border border-border-color">
+                                        <p className="text-[10px] uppercase tracking-wider text-text-muted font-bold mb-1">Vroegste match ooit</p>
+                                        <p className="text-sm font-bold text-text-main">
                                             {milestones.earliest ? formatDateToMilestone(milestones.earliest.date) : '-'}
                                         </p>
                                     </div>
-                                    <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
-                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Laatste match ooit</p>
-                                        <p className="text-sm font-bold text-slate-700 dark:text-white">
+                                    <div className="p-3 bg-bg-page rounded-xl border border-border-color">
+                                        <p className="text-[10px] uppercase tracking-wider text-text-muted font-bold mb-1">Laatste match ooit</p>
+                                        <p className="text-sm font-bold text-text-main">
                                             {milestones.latest ? formatDateToMilestone(milestones.latest.date) : '-'}
                                         </p>
                                     </div>
@@ -1249,9 +1249,9 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
 
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-slate-900/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-slate-900 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10 dark:border-slate-200">
-                <Icon name="check_circle" className="text-green-400 dark:text-green-600" />
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="bg-text-main/90 backdrop-blur-md text-bg-page px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10">
+                <Icon name="check_circle" className="text-green-400" />
                 <span className="font-bold text-sm">{toast}</span>
             </div>
         </div>

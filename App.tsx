@@ -40,18 +40,23 @@ const BaroTimeMachineView = React.lazy(() => import('./views/BaroTimeMachineView
 const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView').then(module => ({ default: module.BaroStorytellerView })));
 const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(module => ({ default: module.SongWriterView })));
 import { ViewState, AppSettings } from './types';
-import pkg from './package.json';
+const appVersion = '0.9260112.7';
 import { loadSettings, saveSettings } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import { useTheme } from './contexts/ThemeContext';
 import { LimitReachedModal } from './components/LimitReachedModal';
 import { useScrollLock } from './hooks/useScrollLock';
 import { LoginToast } from './components/LoginToast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
+  console.log("App: Component rendering started");
   const { user, loading, logout, sessionExpiry } = useAuth();
+  const { theme, setTheme } = useTheme();
+
+  console.log("App: Auth state", { user: user?.uid, loading });
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       // Check if returning from Stripe payment
       const params = new URLSearchParams(window.location.search);
@@ -64,7 +69,18 @@ const App: React.FC = () => {
   const [viewParams, setViewParams] = useState<any>(null);
 
   // Load Settings
-  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    console.log("App: Initializing settings");
+    return loadSettings();
+  });
+
+  // Sync ThemeContext with Settings state (Context -> Settings)
+  useEffect(() => {
+    if (theme && theme !== settings.theme) {
+        setSettings(prev => ({ ...prev, theme }));
+    }
+  }, [theme]);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [extraMenuOpen, setExtraMenuOpen] = useState(false);
   const [baroMenuOpen, setBaroMenuOpen] = useState(false);
@@ -88,24 +104,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
       saveSettings(settings);
-      
-      // Apply Theme
-      const html = document.documentElement;
-      html.classList.remove('dark', 'neuro', 'iceland', 'retro'); // Fix: remove retro too
-
-      if (settings.theme === 'dark') {
-          html.classList.add('dark');
-      } else if (settings.theme === 'neuro') {
-          html.classList.add('dark', 'neuro');
-      } else if (settings.theme === 'iceland') {
-          html.classList.add('iceland');
-      } else if (settings.theme === 'retro') {
-          html.classList.add('dark', 'retro');
-      } else {
-          // Explicitly handle light mode if needed, though removing classes does it for default
-          // Ensure no residual dark mode
-          html.classList.remove('dark');
-      }
+      // Theme application is now handled by ThemeContext
   }, [settings]);
 
   // PWA Logic
@@ -769,7 +768,7 @@ const App: React.FC = () => {
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 relative text-xs font-medium text-slate-500 dark:text-white/40">
                          <button onClick={() => setModal('disclaimer')} className="hover:text-primary transition-colors hover:underline">{t('footer.disclaimer')}</button>
                          <button onClick={() => setModal('cookies')} className="hover:text-primary transition-colors hover:underline">{t('footer.cookies')}</button>
-                         <span className="md:absolute md:right-0 md:top-0">v{pkg.version}</span>
+                         <span className="md:absolute md:right-0 md:top-0">v{appVersion}</span>
                     </div>
                 </div>
             </div>

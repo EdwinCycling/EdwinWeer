@@ -211,9 +211,9 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
         const result = await model.generateContent(prompt);
         const response = await result.response;
         return response.text();
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error generating text:", e);
-        return language === 'nl' ? "Geen weerbericht beschikbaar." : "No weather report available.";
+        return `Error: ${e.message || (language === 'nl' ? "Geen weerbericht beschikbaar." : "No weather report available.")}`;
     }
 }
 

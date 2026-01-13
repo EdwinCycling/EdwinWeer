@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ViewState, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getUsage, UsageStats, getLimit, resetDailyUsage } from '../services/usageService';
 import { API_LIMITS } from '../services/apiConfig';
 import { getTranslation } from '../services/translations';

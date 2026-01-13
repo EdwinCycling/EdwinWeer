@@ -19,10 +19,18 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+console.log("Firebase: Initializing with config", {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain
+});
 const app = initializeApp(firebaseConfig);
+console.log("Firebase: App initialized");
 export const auth = getAuth(app);
+console.log("Firebase: Auth initialized");
 export const db = getFirestore(app);
+console.log("Firebase: Firestore initialized");
 export const messaging = getMessaging(app);
+console.log("Firebase: Messaging initialized");
 export const googleProvider = new GoogleAuthProvider();
 export const twitterProvider = new TwitterAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();

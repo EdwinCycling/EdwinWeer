@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ViewState, AppSettings, ActivityType, ActivityPlannerSettings, Location, BaroProfile } from '../types';
 import { Icon } from '../components/Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getTranslation } from '../services/translations';
@@ -188,13 +188,13 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
   const enabledCount = Object.values(plannerSettings).filter((s: any) => s.enabled).length;
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 text-slate-800 dark:text-white transition-colors duration-300">
+    <div className="flex flex-col min-h-screen bg-bg-page pb-24 text-text-main transition-colors duration-300">
       {/* Header */}
-      <div className="flex flex-col sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
+      <div className="flex flex-col sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors">
         <div className="flex items-center p-4">
           <button 
             onClick={() => onNavigate(ViewState.CURRENT)} 
-            className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2"
+            className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2"
           >
             <Icon name="arrow_back_ios_new" />
           </button>
@@ -205,31 +205,31 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
       <div className="p-4 flex-grow flex flex-col items-center max-w-lg mx-auto w-full space-y-6">
         
         {/* Intro Box */}
-        <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+        <div className="bg-bg-card w-full p-6 rounded-2xl shadow-sm border border-border-color">
           <div className="flex items-center gap-4 mb-4">
-            <div className="size-12 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-500">
+            <div className="size-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
               <Icon name="event_available" className="text-2xl" />
             </div>
             <div>
               <h2 className="font-bold text-lg">{t('planner.subtitle')}</h2>
-              <p className="text-sm text-slate-500 dark:text-white/60">{t('planner.intro')}</p>
+              <p className="text-sm text-text-muted">{t('planner.intro')}</p>
             </div>
           </div>
-          <p className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg font-medium">
+          <p className="text-xs text-accent-primary bg-accent-primary/10 p-3 rounded-lg font-medium">
              <Icon name="info" className="inline text-sm mr-1" />
              {t('planner.intro.note')}
           </p>
         </div>
 
         {baroCredits <= 0 && (
-            <div className="bg-red-50 dark:bg-red-900/20 w-full p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
-                <p className="text-red-800 dark:text-red-200 font-bold mb-2">{t('planner.no_credits_title')}</p>
-                <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+            <div className="bg-red-500/10 w-full p-4 rounded-xl border border-red-500/20 text-center">
+                <p className="text-red-500 font-bold mb-2">{t('planner.no_credits_title')}</p>
+                <p className="text-sm text-red-500/80 mb-4">
                     {t('planner.no_credits_desc')}
                 </p>
                 <button
                     onClick={() => onNavigate(ViewState.PRICING)}
-                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold transition-colors"
                 >
                     {t('planner.buy_credits')}
                 </button>
@@ -237,15 +237,15 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
         )}
 
         {/* Location Selection */}
-        <div className="w-full bg-white dark:bg-card-dark p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 relative z-30">
+        <div className="w-full bg-bg-card p-4 rounded-2xl shadow-sm border border-border-color relative z-30">
              <h3 className="font-bold mb-3 flex items-center gap-2">
-                 <Icon name="location_on" className="text-indigo-500" />
+                 <Icon name="location_on" className="text-accent-primary" />
                  {t('planner.location_label')} <span className="text-red-500">*</span>
              </h3>
              
              <div className="relative">
-                 <div className="flex items-center bg-slate-100 dark:bg-white/5 rounded-xl px-3 border border-slate-200 dark:border-white/10 focus-within:border-indigo-500 transition-colors">
-                     <Icon name="search" className="text-slate-400" />
+                 <div className="flex items-center bg-bg-input rounded-xl px-3 border border-border-color focus-within:border-accent-primary transition-colors">
+                     <Icon name="search" className="text-text-muted" />
                      <input 
                          ref={searchInputRef}
                          type="text" 
@@ -279,12 +279,12 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                          placeholder={t('planner.search_placeholder')}
                          className="w-full bg-transparent border-none py-3 px-2 outline-none text-sm font-medium"
                      />
-                     {loadingSearch && <Icon name="sync" className="animate-spin text-indigo-500" />}
+                     {loadingSearch && <Icon name="sync" className="animate-spin text-accent-primary" />}
                  </div>
 
                  {/* Search Results Dropdown */}
                  {isSearchOpen && searchResults.length > 0 && (
-                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1e293b] rounded-xl shadow-xl border border-slate-200 dark:border-white/10 max-h-[200px] overflow-y-auto z-50">
+                     <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color max-h-[200px] overflow-y-auto z-50">
                          {searchResults.map((res, i) => (
                              <button
                                  key={i}
@@ -293,12 +293,12 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                      setIsSearchOpen(false);
                                      setSearchQuery('');
                                  }}
-                                 className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-100 dark:border-white/5 last:border-0 flex items-center gap-2"
+                                 className="w-full text-left px-4 py-3 hover:bg-bg-page border-b border-border-color last:border-0 flex items-center gap-2"
                              >
-                                 <Icon name="location_on" className="text-slate-400" />
+                                 <Icon name="location_on" className="text-text-muted" />
                                  <div>
                                      <p className="font-bold text-sm">{res.name}</p>
-                                     <p className="text-xs text-slate-500">{res.country} {res.admin1}</p>
+                                     <p className="text-xs text-text-muted">{res.country} {res.admin1}</p>
                                  </div>
                              </button>
                          ))}
@@ -318,13 +318,13 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
 
         {/* Telegram Warning */}
         {!telegramConnected && !loading && (
-             <div className="bg-red-50 dark:bg-red-900/20 w-full p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-red-700 dark:text-red-300 text-sm font-medium flex items-start gap-3">
+             <div className="bg-red-500/10 w-full p-4 rounded-xl border border-red-500/20 text-red-500 text-sm font-medium flex items-start gap-3">
                 <Icon name="warning" className="text-xl mt-0.5" />
                 <div>
                     {t('planner.warning.telegram')}
                     <button 
                         onClick={() => onNavigate(ViewState.MESSENGER)}
-                        className="block mt-2 text-red-800 dark:text-red-200 underline"
+                        className="block mt-2 text-red-500 underline"
                     >
                         {t('planner.goto_messenger')}
                     </button>
@@ -333,7 +333,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
         )}
 
         {/* Limit Info */}
-        <div className="flex justify-between w-full px-2 text-xs font-bold uppercase text-slate-400">
+        <div className="flex justify-between w-full px-2 text-xs font-bold uppercase text-text-muted">
             <span>{t('settings.activities_title')}</span>
             <span className={enabledCount > 1 ? 'text-red-500' : 'text-green-500'}>
                 {enabledCount}/1 Actief
@@ -347,16 +347,16 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                 const isEnabled = config.enabled;
 
                 return (
-                    <div key={activity} className={`w-full bg-white dark:bg-card-dark rounded-xl border transition-all duration-300 overflow-hidden ${
+                    <div key={activity} className={`w-full bg-bg-card rounded-xl border transition-all duration-300 overflow-hidden ${
                         isEnabled 
-                            ? 'border-indigo-500 dark:border-indigo-500 shadow-md ring-1 ring-indigo-500/20' 
-                            : 'border-slate-200 dark:border-white/5 opacity-80'
+                            ? 'border-accent-primary shadow-md ring-1 ring-accent-primary/20' 
+                            : 'border-border-color opacity-80'
                     }`}>
                         {/* Header Row */}
-                        <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5">
+                        <div className="flex items-center justify-between p-4 bg-bg-page/50">
                             <div className="flex items-center gap-3">
                                 <div className={`size-10 rounded-full flex items-center justify-center transition-colors ${
-                                    isEnabled ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-white/40'
+                                    isEnabled ? 'bg-accent-primary/10 text-accent-primary' : 'bg-bg-page text-text-muted/40'
                                 }`}>
                                     <Icon name={getActivityIcon(activity)} />
                                 </div>
@@ -365,7 +365,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                             <button 
                                 onClick={() => handleToggle(activity)}
                                 className={`w-12 h-7 rounded-full transition-colors relative ${
-                                    isEnabled ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-white/20'
+                                    isEnabled ? 'bg-accent-primary' : 'bg-text-muted/20'
                                 }`}
                             >
                                 <div className={`absolute top-1 size-5 bg-white rounded-full shadow transition-transform duration-200 ${
@@ -382,7 +382,7 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                 <div>
                                     <div className="flex justify-between mb-2">
                                         <label className="text-sm font-medium">{t('planner.min_score')}</label>
-                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{config.min_score}/10</span>
+                                        <span className="font-bold text-accent-primary">{config.min_score}/10</span>
                                     </div>
                                     <input 
                                         type="range" 
@@ -391,9 +391,9 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                         step="1"
                                         value={config.min_score}
                                         onChange={(e) => handleUpdate(activity, { min_score: parseInt(e.target.value) })}
-                                        className="w-full accent-indigo-500 h-2 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
+                                        className="w-full accent-accent-primary h-2 bg-bg-page rounded-lg appearance-none cursor-pointer"
                                     />
-                                    <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                                    <div className="flex justify-between text-[10px] text-text-muted mt-1">
                                         <span>1 ({t('planner.score_bad')})</span>
                                         <span>10 ({t('planner.score_perfect')})</span>
                                     </div>
@@ -411,8 +411,8 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                                     onClick={() => toggleDay(activity, day.val)}
                                                     className={`flex-1 h-10 rounded-lg text-xs font-bold transition-all ${
                                                         active 
-                                                            ? 'bg-indigo-500 text-white shadow-md' 
-                                                            : 'bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 hover:bg-slate-50 dark:hover:bg-white/10'
+                                                            ? 'bg-accent-primary text-text-inverse shadow-md' 
+                                                            : 'bg-bg-card border border-border-color text-text-muted hover:bg-bg-page'
                                                     }`}
                                                 >
                                                     {day.label}

@@ -167,7 +167,7 @@ async function generateAIReport(weatherData, profile, userName) {
 
     } catch (e) {
         console.error("Error generating report:", e);
-        return "Kon geen weerbericht genereren op dit moment.";
+        return `Error: ${e.message || "Kon geen weerbericht genereren op dit moment."}`;
     }
 }
 

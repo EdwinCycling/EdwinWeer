@@ -364,10 +364,15 @@ export const handler = async (event: any, context: any) => {
         };
     } catch (error: any) {
         console.error("Gemini Error:", error);
+        const statusCode = error.status || 500;
         return {
-            statusCode: 500,
+            statusCode,
             headers,
-            body: JSON.stringify({ error: "Failed to generate newspaper: " + error.message })
+            body: JSON.stringify({ 
+                error: error.message || "Failed to generate newspaper",
+                details: error.errorDetails || null,
+                status: statusCode
+            })
         };
     }
 };

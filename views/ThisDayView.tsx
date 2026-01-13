@@ -10,6 +10,7 @@ import { searchCityByName } from '../services/geoService';
 import { loadClimateData, saveClimateData } from '../services/storageService';
 import { convertTempPrecise, convertWind, convertPrecip, throttledFetch } from '../services/weatherService';
 import { getUsage, trackCall } from '../services/usageService';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -38,6 +39,7 @@ interface TopStats {
 }
 
 export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, onUpdateSettings }) => {
+  const colors = useThemeColors();
   const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
       return settings.favorites.length > 0 ? settings.favorites[0] : {
           name: 'Utrecht', country: 'NL', lat: 52.09, lon: 5.12, isCurrentLocation: false
@@ -338,7 +340,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       plugins: {
           legend: {
               position: 'top' as const,
-              labels: { color: settings.theme === 'dark' ? '#fff' : '#333' }
+              labels: { color: colors.textMain }
           },
           title: {
               display: false,
@@ -346,6 +348,11 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           tooltip: {
               mode: 'index' as const,
               intersect: false,
+              backgroundColor: colors.bgCard,
+              titleColor: colors.textMain,
+              bodyColor: colors.textMain,
+              borderColor: colors.borderColor,
+              borderWidth: 1
           }
       },
       animation: {
@@ -409,23 +416,23 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
           y: {
               ticks: { 
                   stepSize: 1,
-                  color: settings.theme === 'dark' ? '#ccc' : '#666' 
+                  color: colors.textMuted
               },
               grid: {
                   color: (context: any) => {
                       if (context.tick.value % 5 === 0) {
-                          return settings.theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
+                          return colors.borderColor;
                       }
-                      return settings.theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                      return 'transparent';
                   },
                   lineWidth: (context: any) => {
-                      if (context.tick.value % 5 === 0) return 5;
-                      return 1;
+                      if (context.tick.value % 5 === 0) return 1;
+                      return 0;
                   }
               }
           },
           x: {
-              ticks: { color: settings.theme === 'dark' ? '#ccc' : '#666' },
+              ticks: { color: colors.textMuted },
               grid: { display: false }
           }
       }
@@ -485,8 +492,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
         const currentYear = new Date().getFullYear();
         
         return (
-            <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{title}</h3>
+            <div className="bg-bg-card rounded-xl p-3 border border-border-color shadow-sm">
+                <h3 className="text-xs font-bold uppercase text-text-muted mb-2">{title}</h3>
                 <div className="space-y-2">
                     {stats.map((s, i) => {
                         let val = 0;
@@ -515,7 +522,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                         return (
                             <div 
                                 key={i} 
-                                className="flex justify-between items-center text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 p-1 rounded transition-colors"
+                                className="flex justify-between items-center text-sm cursor-pointer hover:bg-bg-page p-1 rounded transition-colors text-text-main"
                                 onClick={() => {
                                     // Navigate to Historical View with specific date
                                     const targetDate = new Date(s.year, month - 1, day);
@@ -527,7 +534,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                                 }}
                             >
                                 <span className="font-bold">{valStr}</span>
-                                <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                                <div className="flex items-center gap-1 text-xs text-text-muted">
                                     <span>{s.year}</span>
                                     <span>({currentYear - s.year}j)</span>
                                 </div>
@@ -540,18 +547,18 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
     };
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="h-full flex flex-col relative bg-bg-page">
       {/* Header - Copied from ClimateChangeView */}
-      <div className="flex-none p-4 space-y-4 relative z-40 bg-slate-50 dark:bg-slate-900 transition-colors duration-300 shadow-sm">
+      <div className="flex-none p-4 space-y-4 relative z-40 bg-bg-page transition-colors duration-300 shadow-sm">
           <div className="flex items-center justify-center mb-4">
-              <h1 className="text-2xl font-bold">Deze Dag in de Geschiedenis</h1>
+              <h1 className="text-2xl font-bold text-text-main">Deze Dag in de Geschiedenis</h1>
           </div>
 
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10 space-y-4">
+          <div className="bg-bg-card rounded-2xl p-4 shadow-sm border border-border-color space-y-4">
               {/* Location Search */}
               <div className="relative z-50">
-                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
-                      <Icon name="search" className="text-slate-400" />
+                  <div className="flex items-center bg-bg-page rounded-xl px-3 py-2 border border-border-color">
+                      <Icon name="search" className="text-text-muted" />
                       <input
                         type="text"
                         value={searchQuery}
@@ -562,42 +569,42 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                             }
                         }}
                         placeholder={t('search_placeholder')}
-                        className="bg-transparent border-none outline-none ml-2 w-full text-slate-800 dark:text-white placeholder-slate-400"
+                        className="bg-transparent border-none outline-none ml-2 w-full text-text-main placeholder-text-muted"
                         onFocus={() => setShowFavorites(true)}
                     />
                       {searchQuery && (
                           <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="p-1">
-                              <Icon name="close" className="text-slate-400" />
+                              <Icon name="close" className="text-text-muted" />
                           </button>
                       )}
                   </div>
 
                   {/* Dropdown Results */}
                   {(isSearching || (showFavorites && !searchQuery && settings.favorites.length > 0) || searchResults.length > 0) && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 overflow-hidden max-h-60 overflow-y-auto z-50">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color overflow-hidden max-h-60 overflow-y-auto z-50">
                           {searchResults.length > 0 ? (
                               searchResults.map((loc, i) => (
                                   <button
                                       key={i}
                                       onClick={() => selectLocation(loc)}
-                                      className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-100 dark:border-white/5 last:border-0"
+                                      className="w-full text-left px-4 py-3 hover:bg-bg-page flex items-center justify-between border-b border-border-color last:border-0 text-text-main"
                                   >
                                       <span className="font-medium">{loc.name}, {loc.country}</span>
-                                      <span className="text-xs text-slate-400">
+                                      <span className="text-xs text-text-muted">
                                           {Math.round(loc.lat*10)/10}, {Math.round(loc.lon*10)/10}
                                       </span>
                                   </button>
                               ))
                           ) : showFavorites && settings.favorites.length > 0 ? (
                               <>
-                                  <div className="px-4 py-2 text-xs font-bold uppercase text-slate-400 bg-slate-50 dark:bg-white/5">
+                                  <div className="px-4 py-2 text-xs font-bold uppercase text-text-muted bg-bg-page">
                                       {t('favorites')}
                                   </div>
                                   {settings.favorites.map((loc, i) => (
                                       <button
                                           key={i}
                                           onClick={() => selectLocation(loc)}
-                                          className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-b border-slate-100 dark:border-white/5 last:border-0"
+                                          className="w-full text-left px-4 py-3 hover:bg-bg-page flex items-center justify-between border-b border-border-color last:border-0 text-text-main"
                                       >
                                           <span className="font-medium">{loc.name}</span>
                                       </button>
@@ -611,26 +618,26 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
               {/* Controls */}
               <div className="flex flex-wrap items-end gap-4">
                   <div className="flex-1 min-w-[120px]">
-                      <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">
+                      <label className="text-xs font-medium text-text-muted mb-1 block">
                           {t('tab.day')}
                       </label>
                       <div className="flex items-center gap-2">
                           <select 
                               value={day} 
                               onChange={(e) => setDay(parseInt(e.target.value))}
-                              className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 w-20 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="bg-bg-page text-text-main border border-border-color rounded-lg px-3 py-2 w-20 outline-none focus:ring-2 focus:ring-accent-primary"
                           >
                               {Array.from({length: 31}, (_, i) => i + 1).map(d => (
-                                  <option key={d} value={d}>{d}</option>
+                                  <option key={d} value={d} className="bg-bg-page text-text-main">{d}</option>
                               ))}
                           </select>
                           <select 
                               value={month} 
                               onChange={(e) => setMonth(parseInt(e.target.value))}
-                              className="bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 flex-1 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="bg-bg-page text-text-main border border-border-color rounded-lg px-3 py-2 flex-1 outline-none focus:ring-2 focus:ring-accent-primary"
                           >
                               {months.slice(1).map((m, i) => (
-                                  <option key={i} value={i + 1}>{m}</option>
+                                  <option key={i} value={i + 1} className="bg-bg-page text-text-main">{m}</option>
                               ))}
                           </select>
                       </div>
@@ -639,7 +646,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                   <button 
                       onClick={calculateStats}
                       disabled={loading}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-accent-primary hover:opacity-90 text-text-inverse px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       {loading ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -676,18 +683,18 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                                   else if (val.startsWith('decade-')) setSelectedRange(val);
                                   else setSelectedRange(Number(val));
                               }}
-                              className="bg-white dark:bg-slate-800 dark:text-white text-sm border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="bg-bg-card text-text-main text-sm border border-border-color rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                              <option value="all" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{t('history.range_all')} (1950 - Nu)</option>
+                              <option value="all" className="bg-bg-card text-text-main">{t('history.range_all')} (1950 - Nu)</option>
                               {Array.from({length: 7}, (_, i) => {
                                   const years = (i + 1) * 10;
                                   return (
-                                      <option key={years} value={years} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{t('history.range_last')} {years} {t('history.range_years')}</option>
+                                      <option key={years} value={years} className="bg-bg-card text-text-main">{t('history.range_last')} {years} {t('history.range_years')}</option>
                                   );
                               }).reverse()}
-                              <option disabled className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">──────────</option>
+                              <option disabled className="bg-bg-card text-text-main">──────────</option>
                               {decades.map(d => (
-                                  <option key={d} value={`decade-${d}`} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{t('history.range_decade')} {d.toString().slice(2)} ({d}-{d+9})</option>
+                                  <option key={d} value={`decade-${d}`} className="bg-bg-card text-text-main">{t('history.range_decade')} {d.toString().slice(2)} ({d}-{d+9})</option>
                               ))}
                           </select>
                       </div>
@@ -697,8 +704,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {/* Averages Card */}
                       {averageStats && (
-                          <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('history.averages_chance')}</h3>
+                          <div className="bg-bg-card rounded-xl p-3 border border-border-color shadow-sm">
+                              <h3 className="text-xs font-bold uppercase text-text-muted mb-2">{t('history.averages_chance')}</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
                                       <span>{t('history.avg_max')}</span>
@@ -718,8 +725,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
                       {/* Heat Chances Card */}
                       {averageStats && (
-                          <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('history.heat_chance')}</h3>
+                          <div className="bg-bg-card rounded-xl p-3 border border-border-color shadow-sm">
+                              <h3 className="text-xs font-bold uppercase text-text-muted mb-2">{t('history.heat_chance')}</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
                                       <span>Max {'>'} {averageStats.heatThresholds[0]}°</span>
@@ -739,8 +746,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
                       {/* Cold & Wind Chances Card */}
                       {averageStats && (
-                          <div className="bg-white dark:bg-white/5 rounded-xl p-3 border border-slate-200 dark:border-white/10 shadow-sm">
-                              <h3 className="text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('history.cold_wind')}</h3>
+                          <div className="bg-bg-card rounded-xl p-3 border border-border-color shadow-sm">
+                              <h3 className="text-xs font-bold uppercase text-text-muted mb-2">{t('history.cold_wind')}</h3>
                               <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm p-1">
                                       <span>{t('history.min_lt_0')}</span>
@@ -770,7 +777,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                   <div className="flex justify-center">
                       <button 
                           onClick={() => setShowHistoryTable(true)}
-                          className="bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-white/10 px-6 py-3 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
+                          className="bg-bg-card hover:bg-bg-page text-blue-600 dark:text-blue-400 border border-border-color px-6 py-3 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
                       >
                           <Icon name="list" />
                           <span>{t('history.overview_button')}</span>
@@ -778,34 +785,34 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                   </div>
 
                   {/* Chart */}
-                  <div className="bg-white dark:bg-white/5 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-white/10">
+                  <div className="bg-bg-card rounded-2xl p-4 shadow-sm border border-border-color">
                       <div className="h-[400px]">
                           <Bar data={chartData} options={chartOptions} />
                       </div>
                       
                       {/* Chart Controls */}
-                      <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                      <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-border-color">
                           <button 
                               onClick={() => setChartView('all')}
-                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${chartView === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
+                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${chartView === 'all' ? 'bg-blue-600 text-white' : 'bg-bg-page text-text-muted hover:bg-bg-card'}`}
                           >
                               Alles
                           </button>
 
                           <button 
                               onClick={() => setChartView('paged')}
-                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${chartView === 'paged' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20'}`}
+                              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${chartView === 'paged' ? 'bg-blue-600 text-white' : 'bg-bg-page text-text-muted hover:bg-bg-card'}`}
                           >
                               10 Jaar
                           </button>
                           
-                          <div className="w-px h-6 bg-slate-200 dark:bg-white/10" />
+                          <div className="w-px h-6 bg-border-color" />
                           
                           <div className="flex items-center gap-2">
                               <button 
                                   onClick={() => { setChartView('paged'); setPageIndex(prev => prev + 1); }} 
                                   disabled={filteredYearData.length === 0 || (filteredYearData[0] && filteredYearData[0].year <= 1950)}
-                                  className={`p-2 rounded-lg transition-colors ${chartView === 'paged' ? 'bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20' : 'opacity-30'}`}
+                                  className={`p-2 rounded-lg transition-colors ${chartView === 'paged' ? 'bg-bg-page hover:bg-bg-card' : 'opacity-30'}`}
                               >
                                   <Icon name="chevron_left" />
                               </button>
@@ -817,7 +824,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                               <button 
                                   onClick={() => { setChartView('paged'); setPageIndex(prev => Math.max(0, prev - 1)); }} 
                                   disabled={pageIndex === 0}
-                                  className={`p-2 rounded-lg transition-colors ${chartView === 'paged' ? 'bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20' : 'opacity-30'}`}
+                                  className={`p-2 rounded-lg transition-colors ${chartView === 'paged' ? 'bg-bg-page hover:bg-bg-card' : 'opacity-30'}`}
                               >
                                   <Icon name="chevron_right" />
                               </button>
@@ -831,8 +838,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       {/* Loading Modal */}
       <Modal isOpen={loading && !showLimitModal} onClose={() => {}} title="Even geduld">
           <div className="flex flex-col items-center justify-center p-8 space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-              <p className="text-center text-slate-600 dark:text-slate-300">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent-primary border-t-transparent"></div>
+              <p className="text-center text-text-muted">
                   {loadingProgress}
               </p>
           </div>
@@ -842,8 +849,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
       {showLimitModal && (
           <Modal isOpen={true} onClose={() => setShowLimitModal(false)} title="Limiet Bereikt">
              <div className="p-4">
-                  <p>U heeft de dagelijkse limiet voor data-aanvragen bereikt. Probeer het morgen opnieuw.</p>
-                  <button onClick={() => setShowLimitModal(false)} className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg">{t('close')}</button>
+                  <p className="text-text-main">U heeft de dagelijkse limiet voor data-aanvragen bereikt. Probeer het morgen opnieuw.</p>
+                  <button onClick={() => setShowLimitModal(false)} className="mt-4 w-full bg-accent-primary text-text-inverse py-2 rounded-lg">{t('close')}</button>
              </div>
           </Modal>
       )}

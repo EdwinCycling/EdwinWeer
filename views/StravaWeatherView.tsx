@@ -8,6 +8,7 @@ import { ResponsiveContainer, ComposedChart, Area, Line, Bar, XAxis, Tooltip, YA
 import { fetchHistorical, convertTemp, convertWind, convertPrecip } from '../services/weatherService';
 import { getUsage, trackCall } from '../services/usageService';
 import { LimitReachedModal } from '../components/LimitReachedModal';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -60,6 +61,7 @@ const CustomWindArrow = (props: any) => {
 };
 
 export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
+  const colors = useThemeColors();
   const [rideData, setRideData] = useState<ExtendedRideData | null>(null);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
     if (!exportRef.current) return;
     try {
         const dataUrl = await toPng(exportRef.current, { 
-            backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
+            backgroundColor: colors.bgPage, 
             cacheBust: true,
             pixelRatio: 2,
         });
@@ -103,7 +105,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
     if (!exportRef.current) return;
     try {
         const blob = await toBlob(exportRef.current, { 
-            backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
+            backgroundColor: colors.bgPage, 
             cacheBust: true,
             pixelRatio: 2,
         });
@@ -131,7 +133,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
     if (!exportRef.current) return;
     try {
         const dataUrl = await toPng(exportRef.current, { 
-            backgroundColor: settings.theme === 'dark' ? '#0f172a' : '#f8fafc', 
+            backgroundColor: colors.bgPage, 
             cacheBust: true,
             pixelRatio: 2,
         });
@@ -244,20 +246,20 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
         if (!point.lat || !point.lon) return;
 
         const tempHtml = showMapTemp
-            ? `<div style="font-size: 12px; font-weight: bold; color: ${settings.theme === 'dark' ? '#fff' : '#333'}; line-height: 1.2;">${Math.round(point.temp)}°</div>`
+            ? `<div style="font-size: 12px; font-weight: bold; color: ${colors.textMain}; line-height: 1.2;">${Math.round(point.temp)}°</div>`
             : '';
 
         const windHtml = showMapWind
             ? `
-                <div style="font-size: 10px; color: ${settings.theme === 'dark' ? '#ccc' : '#666'}; ${showMapTemp ? 'margin-bottom: 2px;' : 'margin-bottom: 0px;'}">${Math.round(point.wind)}${settings.windUnit}</div>
+                <div style="font-size: 10px; color: ${colors.textMuted}; ${showMapTemp ? 'margin-bottom: 2px;' : 'margin-bottom: 0px;'}">${Math.round(point.wind)}${settings.windUnit}</div>
                 <div style="transform: rotate(${point.windDir + 180}deg); display: inline-block; width: 12px; height: 12px;">
-                    <svg viewBox="0 0 24 24" fill="${settings.theme === 'dark' ? '#38bdf8' : '#0ea5e9'}"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" /></svg>
+                    <svg viewBox="0 0 24 24" fill="${colors.accentPrimary}"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" /></svg>
                 </div>
             `
             : '';
 
         const iconHtml = `
-            <div style="background: ${settings.theme === 'dark' ? '#1e293b' : 'white'}; padding: 4px; border-radius: 8px; border: 2px solid ${settings.theme === 'dark' ? '#fff' : '#666'}; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; text-align: center; min-width: 56px;">
+            <div style="background: ${colors.bgCard}; padding: 4px; border-radius: 8px; border: 2px solid ${colors.textMain}; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; text-align: center; min-width: 56px;">
                 ${tempHtml}
                 ${windHtml}
             </div>
@@ -277,8 +279,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             marker.addTo(mapInstanceRef.current);
         }
     });
-
-  }, [chartData, settings.theme, settings.windUnit, isRouteOnly, showMapTemp, showMapWind]);
+  }, [chartData, settings.theme, settings.windUnit, isRouteOnly, showMapTemp, showMapWind, colors]);
 
   // Separate Effect to handle re-init when view switches back to dashboard
   useEffect(() => {
@@ -744,7 +745,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 />
                                 
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: settings.theme === 'dark' ? '#1d2b32' : 'white', borderRadius: '12px', border: '1px solid rgba(128,128,128,0.1)', fontSize: '12px' }}
+                                    contentStyle={{ backgroundColor: colors.bgCard, borderRadius: '12px', border: `1px solid ${colors.borderColor}`, fontSize: '12px', color: colors.textMain }}
                                     formatter={(value: any, name: string, props: any) => {
                                         if (props?.dataKey === 'windKmh') {
                                             return [`${value} km/h (${getWindCardinal(props.payload.windDir)})`, name];

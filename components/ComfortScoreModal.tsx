@@ -32,20 +32,20 @@ export const ComfortScoreModal: React.FC<Props> = ({ isOpen, onClose, settings }
         onClick={onClose} 
       />
       
-      <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-white/10">
+      <div className="relative bg-bg-card rounded-2xl p-6 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto shadow-2xl border border-border-color">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full bg-bg-page hover:bg-bg-page/80 transition-colors"
         >
-          <Icon name="close" className="text-slate-600 dark:text-white" />
+          <Icon name="close" className="text-text-main" />
         </button>
 
         <div className="pr-8">
-          <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
+          <h2 className="text-2xl font-bold mb-4 text-text-main">
             {t('comfort.modal.title')}
           </h2>
           
-          <div className="space-y-4 text-slate-700 dark:text-white/80">
+          <div className="space-y-4 text-text-muted">
             <p className="text-lg">
               {t('comfort.modal.intro')}
             </p>
@@ -105,7 +105,7 @@ export const ComfortScoreModal: React.FC<Props> = ({ isOpen, onClose, settings }
               </div>
             </div>
             
-            <p className="text-lg font-medium text-center bg-slate-100 dark:bg-slate-700 rounded-lg p-3">
+            <p className="text-lg font-medium text-center bg-bg-page rounded-lg p-3">
               {t('comfort.modal.summary')}
             </p>
           </div>

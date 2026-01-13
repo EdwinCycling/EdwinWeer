@@ -7,8 +7,20 @@
   --color-card-dark: #1e293b;
   --color-strava: #FC4C02;
   --font-display: "Space Grotesk", sans-serif;
+
+  /* New Global CSS Variables Mapped to Tailwind */
+  --color-bg-page: var(--bg-page);
+  --color-bg-card: var(--bg-card);
+  --color-bg-input: var(--bg-input);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  --color-border-color: var(--border-color);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-hover: var(--accent-hover);
 }
 
+/* 1. STANDAARD (Light Mode & Base Variables) */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -16,8 +28,23 @@
 
   /* Default to light mode settings */
   color-scheme: light;
-  color: #1e293b; /* slate-800 */
-  background-color: #f6f8f8; /* background-light */
+  
+  --bg-page: #f8f9fa;       /* Achtergrond van de hele app */
+  --bg-card: #ffffff;       /* Achtergrond van kaartjes/blokken */
+  --bg-input: #ffffff;      /* Achtergrond van invulvelden */
+  
+  --text-main: #1a1a1a;     /* Hoofdtekst (bijna zwart) */
+  --text-muted: #6c757d;    /* Subtekst (grijs) */
+  --text-inverse: #ffffff;  /* Tekst op knoppen */
+  
+  --border-color: #e9ecef;  /* Lichte lijntjes */
+  
+  --accent-primary: #007bff; /* De hoofdkleur (Baro Blauw) */
+  --accent-hover: #0056b3;
+
+  /* Legacy fallbacks */
+  color: var(--text-main); 
+  background-color: var(--bg-page); 
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -25,65 +52,95 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark Mode Overrides */
-:root.dark {
+/* 2. DARK MODE (Override) */
+[data-theme='dark'] {
   color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0f172a; /* background-dark */
+  
+  --bg-page: #121212;       /* Diep donkergrijs (niet puur zwart) */
+  --bg-card: #1e1e1e;       /* Iets lichter voor contrast */
+  --bg-input: #2c2c2c;
+  
+  --text-main: #e0e0e0;     /* Off-white (leest fijner) */
+  --text-muted: #a0a0a0;
+  --text-inverse: #000000;
+  
+  --border-color: #333333;
+  
+  --accent-primary: #4dabf7; /* Iets lichter blauw voor contrast op donker */
+  --accent-hover: #007bff;
 }
 
-/* Neuro Theme (Dark Base) */
-:root.neuro {
-  --color-primary: #ff8e3c; /* Orange/Coral from image */
-  --color-background-dark: #0f2e2e; /* Deep Teal */
-  --color-card-dark: #134e4a; /* Teal 900 */
-  
-  /* Force dark mode behavior */
+/* 3. OPTIONELE EXTRA THEMA'S */
+[data-theme='forest'] {
   color-scheme: dark;
-  color: #ccfbf1; /* Teal 100 */
-  background-color: var(--color-background-dark);
+  --bg-page: #1a2f1a;
+  --bg-card: #2f4f2f;
+  --bg-input: #3a5a3a;
+  --text-main: #f0fff0;
+  --text-muted: #a0c0a0;
+  --text-inverse: #000000;
+  --border-color: #406040;
+  --accent-primary: #4caf50;
+  --accent-hover: #388e3c;
 }
 
-/* Iceland Theme (Light Base) */
-:root.iceland {
-  --color-primary: #0ea5e9; /* Sky Blue */
-  --color-background-light: #f0f9ff; /* Sky 50 */
-  --color-background-dark: #0c4a6e; /* Sky 900 (if they switch to dark in iceland? maybe separate) */
-  
-  /* Force light mode behavior */
+[data-theme='neuro'] {
+  color-scheme: dark;
+  --bg-page: #0f2e2e;
+  --bg-card: #134e4a;
+  --bg-input: #1a5e5a;
+  --text-main: #ccfbf1;
+  --text-muted: #5eead4;
+  --text-inverse: #000000;
+  --border-color: #115e59;
+  --accent-primary: #ff8e3c;
+  --accent-hover: #f97316;
+}
+
+[data-theme='iceland'] {
   color-scheme: light;
-  color: #0c4a6e; /* Sky 900 */
-  background-color: var(--color-background-light);
+  --bg-page: #f0f9ff;
+  --bg-card: #ffffff;
+  --bg-input: #e0f2fe;
+  --text-main: #0c4a6e;
+  --text-muted: #0369a1;
+  --text-inverse: #ffffff;
+  --border-color: #bae6fd;
+  --accent-primary: #0ea5e9;
+  --accent-hover: #0284c7;
 }
 
-/* Retro Theme (Gradient/Colorful) */
-:root.retro {
-  --color-primary: #ffffff; /* White Text as Primary or maybe #1DB954 */
-  --color-background-dark: #121212; /* Spotify Dark */
-  --color-card-dark: #2a2a2a; /* Slightly lighter for cards */
-  
-  /* Force dark mode behavior */
+[data-theme='retro'] {
   color-scheme: dark;
-  color: #ffffff;
-  background-color: var(--color-background-dark);
+  --bg-page: #121212;
+  --bg-card: #2a2a2a;
+  --bg-input: #3a3a3a;
+  --text-main: #ffffff;
+  --text-muted: #b3b3b3;
+  --text-inverse: #000000;
+  --border-color: #404040;
+  --accent-primary: #1db954;
+  --accent-hover: #1ed760;
 }
 
-/* Specific Retro Gradients - Using Tailwind classes or global override */
-.retro .bg-background-dark {
-    background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%); /* Example Gradient */
-    /* Wait, the image is Spotify Orange/Pink */
-    background: linear-gradient(to bottom right, #ffafbd, #ffc3a0); 
-    background: radial-gradient(circle at top left, #f9a8d4, transparent 50%),
-                radial-gradient(circle at top right, #fb923c, transparent 50%),
-                radial-gradient(circle at bottom, #fde047, transparent 50%),
-                #121212; /* Fallback */
+/* Specific Retro Background */
+[data-theme='retro'] body {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
     background-attachment: fixed;
 }
-/* Static Retro Background */
-.retro body {
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-    background-size: cover;
-    background-attachment: fixed;
+
+@keyframes gradient {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
+
+/* Zorg dat dropdowns ALTIJD boven de Leaflet map (z-index ~400-1000) liggen */
+.dropdown-menu, .mat-menu-panel, .select-options, select, option {
+    z-index: 9999 !important;
+    position: relative; /* Soms nodig voor stacking context */
 }
 
 body {

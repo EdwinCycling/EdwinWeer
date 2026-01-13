@@ -782,7 +782,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 icon: 'device_thermostat',
                 title: isNL ? 'Temperatuur' : 'Temperature',
                 desc: isNL ? 'De temperatuur is nagenoeg gelijk op beide dagen.' : 'Temperatures are very similar on both days.',
-                color: 'text-slate-500'
+                color: 'text-text-muted'
             });
         }
 
@@ -831,14 +831,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 desc: isNL 
                     ? `Het waaide aanzienlijk ${windDiff > 0 ? 'harder' : 'minder hard'} op ${d1Name}.`
                     : `Wind was significantly ${windDiff > 0 ? 'stronger' : 'weaker'} on ${d1Name}.`,
-                color: 'text-slate-600'
+                color: 'text-text-muted'
             });
         } else {
             insights.push({
                 icon: 'air',
                 title: isNL ? 'Wind' : 'Wind',
                 desc: isNL ? 'Vergelijkbare windkracht op beide dagen.' : 'Similar wind speeds.',
-                color: 'text-slate-400'
+                color: 'text-text-muted/70'
             });
         }
 
@@ -923,7 +923,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 icon: 'thermostat',
                 title: isNL ? 'Geen Extremen' : 'No Extremes',
                 desc: isNL ? 'Geen vorst of tropische hitte op deze dagen.' : 'No frost or tropical heat.',
-                color: 'text-slate-500'
+                color: 'text-text-muted'
             });
         }
 
@@ -1400,7 +1400,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
             {/* Date 2 Card */}
             <div 
-                className="w-full relative rounded-xl p-3 flex flex-col gap-1 border transition-colors cursor-pointer group" 
+                className="w-full relative rounded-xl p-3 flex flex-col gap-1 border transition-colors cursor-pointer group bg-bg-page border-border-color" 
                 style={{ 
                     backgroundColor: date2Color + '10', 
                     borderColor: date2Color + '50' 
@@ -1416,7 +1416,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                     <div className="flex items-center gap-1">
                         <button 
                             onClick={(e) => { e.stopPropagation(); setIsMapOpen(true); }}
-                            className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                            className="size-6 flex items-center justify-center rounded-full hover:bg-bg-page/80"
                             style={{ color: date2Color }}
                             title={t('tooltip.map')}
                         >
@@ -1424,7 +1424,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                         </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setPickerOpen('date2'); }}
-                            className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                            className="size-6 flex items-center justify-center rounded-full hover:bg-bg-page/80"
                             style={{ color: date2Color }}
                             title={t('tooltip.edit')}
                         >
@@ -1432,7 +1432,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                         </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setDashboardOpen({date: date2, location: location2}); }}
-                            className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                            className="size-6 flex items-center justify-center rounded-full hover:bg-bg-page/80"
                             style={{ color: date2Color }}
                             title={t('tooltip.dashboard')}
                         >
@@ -1443,7 +1443,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 <div className="flex items-center justify-between">
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleShiftSingle('date2', -1); }} 
-                        className="size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all"
+                        className="size-6 flex items-center justify-center rounded-full hover:bg-bg-page/80 active:scale-90 transition-all"
                         style={{ color: date2Color }}
                     >
                         <Icon name="chevron_left" className="text-lg" />
@@ -1452,7 +1452,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                     <button 
                         onClick={(e) => { e.stopPropagation(); handleShiftSingle('date2', 1); }} 
                         disabled={!canShiftNext('date2')}
-                        className={`size-6 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all ${!canShiftNext('date2') ? 'opacity-20 cursor-not-allowed' : ''}`}
+                        className={`size-6 flex items-center justify-center rounded-full hover:bg-bg-page/80 active:scale-90 transition-all ${!canShiftNext('date2') ? 'opacity-20 cursor-not-allowed' : ''}`}
                         style={{ color: date2Color }}
                     >
                         <Icon name="chevron_right" className="text-lg" />
@@ -1464,7 +1464,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                     </div>
                     <div 
                         onClick={(e) => { e.stopPropagation(); setSyncDates(!syncDates); }}
-                        className="flex items-center justify-center p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                        className="flex items-center justify-center p-1 rounded hover:bg-bg-page/80"
                     >
                          <Icon name={syncDates ? "check_box" : "check_box_outline_blank"} className="text-sm" style={{ color: date2Color }} />
                     </div>
@@ -1477,20 +1477,20 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
       {historicalMode === 'compare' && (
         <div className="px-4">
           <div className="flex justify-end gap-2">
-              <button onClick={() => { const d = new Date(); d.setDate(d.getDate() - 1); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30">{t('quick.yesterday')}</button>
-              <button onClick={() => { const d = new Date(); d.setMonth(d.getMonth() - 1); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30">{t('quick.last_month')}</button>
-              <button onClick={() => { const d = new Date(); d.setFullYear(d.getFullYear() - 1); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30">{t('quick.last_year')}</button>
-              <button onClick={() => { const d = new Date(); d.setFullYear(d.getFullYear() - 10); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30">{t('quick.ten_years')}</button>
+              <button onClick={() => { const d = new Date(); d.setDate(d.getDate() - 1); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-bg-card border border-border-color hover:border-primary/30 text-text-main">{t('quick.yesterday')}</button>
+              <button onClick={() => { const d = new Date(); d.setMonth(d.getMonth() - 1); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-bg-card border border-border-color hover:border-primary/30 text-text-main">{t('quick.last_month')}</button>
+              <button onClick={() => { const d = new Date(); d.setFullYear(d.getFullYear() - 1); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-bg-card border border-border-color hover:border-primary/30 text-text-main">{t('quick.last_year')}</button>
+              <button onClick={() => { const d = new Date(); d.setFullYear(d.getFullYear() - 10); setDate2(d); }} className="px-3 py-1.5 rounded-full text-xs bg-bg-card border border-border-color hover:border-primary/30 text-text-main">{t('quick.ten_years')}</button>
           </div>
         </div>
       )}
 
       {pickerOpen && (
         <div className="px-4 py-2">
-          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl p-4 shadow-sm">
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-4 mb-4">
               <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-white/50 mb-1">{t('historical.year')}</p>
+                <p className="text-xs font-bold text-text-muted mb-1">{t('historical.year')}</p>
                 <input type="range" min={1900} max={new Date().getFullYear() + 1} step={1} value={(pendingDate||new Date()).getFullYear()} onInput={(e) => {
                   const cur = pendingDate || new Date();
                   const newYear = parseInt((e.target as HTMLInputElement).value);
@@ -1510,7 +1510,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 }} className="w-full" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-white/50 mb-1">{t('historical.month')}</p>
+                <p className="text-xs font-bold text-text-muted mb-1">{t('historical.month')}</p>
                 <input type="range" min={1} max={12} step={1} value={(pendingDate||new Date()).getMonth()+1} onInput={(e) => {
                   const cur = pendingDate || new Date();
                   const newMonth = parseInt((e.target as HTMLInputElement).value) - 1;
@@ -1530,7 +1530,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 }} className="w-full" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 dark:text-white/50 mb-1">{t('historical.day')}</p>
+                <p className="text-xs font-bold text-text-muted mb-1">{t('historical.day')}</p>
                 <input type="range" min={1} max={new Date((pendingDate||new Date()).getFullYear(), (pendingDate||new Date()).getMonth()+1, 0).getDate()} step={1} value={(pendingDate||new Date()).getDate()} onInput={(e) => {
                   const d = new Date(pendingDate||new Date());
                   d.setDate(parseInt((e.target as HTMLInputElement).value));
@@ -1544,20 +1544,20 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             </div>
 
             <div className="text-center mb-4">
-              <p className="text-2xl font-bold">{pendingDate ? formatUnderSlider(pendingDate) : ''}</p>
+              <p className="text-2xl font-bold text-text-main">{pendingDate ? formatUnderSlider(pendingDate) : ''}</p>
               {pendingDate && isTooFarFuture(pendingDate) && (
                   <p className="text-xs text-red-500 font-bold mt-1">{t('historical.error_date_too_far_future')}</p>
               )}
             </div>
 
             <div className="flex items-center gap-2 mb-3">
-              <Icon name="search" />
-              <input value={searchQuery} onChange={async (e) => { setSearchQuery(e.target.value); try { const res = await searchCityByName(e.target.value); setSearchResults(res); } catch { setSearchResults([]); } }} className="flex-1 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg px-2 py-1 text-sm" placeholder={t('historical.search_city')} />
+              <Icon name="search" className="text-text-muted" />
+              <input value={searchQuery} onChange={async (e) => { setSearchQuery(e.target.value); try { const res = await searchCityByName(e.target.value); setSearchResults(res); } catch { setSearchResults([]); } }} className="flex-1 bg-bg-card border border-border-color rounded-lg px-2 py-1 text-sm text-text-main" placeholder={t('historical.search_city')} />
             </div>
             {searchResults.length>0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                 {searchResults.map((loc, i) => (
-                  <button key={i} onClick={() => { setPendingLocation(loc); setSearchQuery(''); setSearchResults([]); }} className={`p-2 rounded-lg text-left border ${pendingLocation?.name===loc.name ? 'bg-primary/10 border-primary text-primary' : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/10'}`}>
+                  <button key={i} onClick={() => { setPendingLocation(loc); setSearchQuery(''); setSearchResults([]); }} className={`p-2 rounded-lg text-left border ${pendingLocation?.name===loc.name ? 'bg-primary/10 border-primary text-primary' : 'bg-bg-card border-border-color hover:bg-bg-page/50 text-text-main'}`}>
                     {loc.name}{loc.country?`, ${loc.country}`:''}
                   </button>
                 ))}
@@ -1565,20 +1565,20 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
             )}
 
             {pendingLocation && (
-              <div className="mb-3 text-xs text-slate-600 dark:text-white/70">
+              <div className="mb-3 text-xs text-text-muted">
                 <span className="font-bold">{t('historical.selected')}</span> {pendingLocation.name}{pendingLocation.country?`, ${pendingLocation.country}`:''}
               </div>
             )}
 
             <div className="mt-3">
-              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-white/70">
+              <label className="flex items-center gap-2 text-sm text-text-muted">
                 <input type="checkbox" checked={syncLocation} onChange={(e) => setSyncLocation(e.target.checked)} />
                 {t('sync_location')}
               </label>
             </div>
 
             <div className="mt-4 flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setPickerOpen(null)} className="px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10">{t('discard')}</button>
+              <button type="button" onClick={() => setPickerOpen(null)} className="px-4 py-2 rounded-lg border border-border-color text-text-main">{t('discard')}</button>
               <button 
                 type="button" 
                 onClick={(ev) => { 
@@ -1613,7 +1613,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
       <div className="px-4 py-2 min-h-[300px]">
         {loading ? (
-             <div className="h-[250px] w-full flex items-center justify-center border border-dashed border-slate-300 dark:border-white/10 rounded-2xl">
+             <div className="h-[250px] w-full flex items-center justify-center border border-dashed border-border-color rounded-2xl">
                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
              </div>
         ) : (
@@ -1623,7 +1623,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                     <div className="flex items-center gap-2">
                       <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
                       <div>
-                        <p className="text-xs text-slate-500 dark:text-white/60 font-medium">{formatLegendDate(date1)}</p>
+                        <p className="text-xs text-text-muted font-medium">{formatLegendDate(date1)}</p>
                         <p className="text-2xl font-bold" style={{ color: date1Color }}>{stats.currentAvg.toFixed(1)}°</p>
                       </div>
                     </div>
@@ -1631,7 +1631,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                       <div className="flex items-center gap-2">
                         <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
                         <div>
-                          <p className="text-xs text-slate-500 dark:text-white/60 font-medium">{formatLegendDate(date2)}</p>
+                          <p className="text-xs text-text-muted font-medium">{formatLegendDate(date2)}</p>
                           <p className="text-2xl font-bold" style={{ color: date2Color }}>{stats.pastAvg.toFixed(1)}°</p>
                         </div>
                       </div>
@@ -1639,7 +1639,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   </div>
                   {historicalMode === 'compare' && (
                     <div>
-                      <p className="text-slate-500 dark:text-white/60 text-xs font-medium">{t('temp_diff')}</p>
+                      <p className="text-text-muted text-xs font-medium">{t('temp_diff')}</p>
                       <p className={`text-xl font-bold ${stats.diff >= 0 ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>{stats.diff > 0 ? '+' : ''}{stats.diff.toFixed(1)}°</p>
                     </div>
                   )}
@@ -1653,9 +1653,9 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                                 <XAxis dataKey="hour" tick={{fill: '#888', fontSize: 10}} tickLine={false} axisLine={false} interval={3} />
                                 <YAxis tick={{fill: '#888', fontSize: 10}} tickLine={false} axisLine={false} ticks={yTicks} domain={yDomain} interval={0} />
                                 <Tooltip 
-                                    contentStyle={{ backgroundColor: settings.theme === 'dark' ? '#1d2b32' : '#ffffff', border: '1px solid rgba(128,128,128,0.1)', borderRadius: '8px', color: settings.theme === 'dark' ? '#fff' : '#000' }}
+                                    contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)' }}
                                     itemStyle={{ fontSize: '12px' }}
-                                    labelStyle={{ color: '#aaa', marginBottom: '4px', fontSize: '12px' }}
+                                    labelStyle={{ color: 'var(--text-muted)', marginBottom: '4px', fontSize: '12px' }}
                                 />
                                 <Legend wrapperStyle={{ fontSize: '10px' }} />
                                 <Line type="monotone" dataKey="temp1_solid" name={`${t('temp')} (${formatLegendDate(date1)})`} stroke={date1Color} strokeWidth={3} dot={false} connectNulls={false} />
@@ -1678,14 +1678,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 <div className="flex gap-2 mt-2">
                     <button
                         onClick={() => setDashboardOpen({date: date1, location: location1})}
-                        className={`bg-slate-100 dark:bg-white/5 p-2 rounded-xl text-xs font-bold text-center border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors ${historicalMode === 'compare' ? 'w-1/2' : 'w-full'}`}
+                        className={`bg-bg-page p-2 rounded-xl text-xs font-bold text-center border border-border-color hover:bg-bg-card transition-colors text-text-main ${historicalMode === 'compare' ? 'w-1/2' : 'w-full'}`}
                     >
                         {historicalMode === 'single' ? t('dashboard_date') : t('dashboard_date_1')}
                     </button>
                     {historicalMode === 'compare' && (
                         <button
                             onClick={() => setDashboardOpen({date: date2, location: location2})}
-                            className="w-1/2 bg-slate-100 dark:bg-white/5 p-2 rounded-xl text-xs font-bold text-center border border-slate-200 dark:border-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="w-1/2 bg-bg-page p-2 rounded-xl text-xs font-bold text-center border border-border-color hover:bg-bg-card transition-colors text-text-main"
                         >
                             {t('dashboard_date_2')}
                         </button>
@@ -1693,12 +1693,12 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                 </div>
                 {/* ... Rest of stats ... */}
                 {noDataInfo1 && (
-                  <div className="mt-3 text-xs text-slate-600 dark:text-white/70">
+                  <div className="mt-3 text-xs text-text-muted">
                     <span className="font-bold">{t('no_data_available')}</span> • {t('date_1')}: {t('data_from_year').replace('{year}', String(noDataInfo1))}
                   </div>
                 )}
                 {historicalMode === 'compare' && noDataInfo2 && (
-                  <div className="mt-1 text-xs text-slate-600 dark:text-white/70">
+                  <div className="mt-1 text-xs text-text-muted">
                     <span className="font-bold">{t('no_data_available')}</span> • {t('date_2')}: {t('data_from_year').replace('{year}', String(noDataInfo2))}
                   </div>
                 )}
@@ -1756,14 +1756,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   )}
 
                   {/* ... Cards ... */}
-                  <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                    <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('weather')}</p>
+                  <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                    <p className="text-xs text-text-muted uppercase font-bold mb-2">{t('weather')}</p>
                     <div className={historicalMode === 'single' ? 'flex items-center justify-start' : 'flex items-center justify-between'}>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date1)}</span>
                         <div className="flex items-center gap-3">
                             <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex items-center gap-2 text-sm text-text-main">
                             <span className="material-symbols-outlined" style={{ color: date1Color }}>{mapWmoCodeToIcon(detail.code1)}</span>
                             <span>{detail.codeText1}</span>
                             </div>
@@ -1771,10 +1771,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                       </div>
                       {historicalMode === 'compare' && (
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                          <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date2)}</span>
                           <div className="flex items-center gap-3">
                               <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                              <div className="flex items-center gap-2 text-sm">
+                              <div className="flex items-center gap-2 text-sm text-text-main">
                               <span className="material-symbols-outlined" style={{ color: date2Color }}>{mapWmoCodeToIcon(detail.code2)}</span>
                               <span>{detail.codeText2}</span>
                               </div>
@@ -1784,14 +1784,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                     </div>
                   </div>
                   {/* ... Temp Card ... */}
-                   <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                   <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('temp')}</p>
+                   <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                   <p className="text-xs text-text-muted uppercase font-bold mb-2">{t('temp')}</p>
                     <div className={historicalMode === 'single' ? 'flex items-center justify-start' : 'flex items-center justify-between'}>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date1)}</span>
                         <div className="flex items-center gap-3">
                             <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                            <div className="text-sm">
+                            <div className="text-sm text-text-main">
                             <div>{t('historical.avg')} <b>{detail.tempAvg1}°</b></div>
                             <div>{t('historical.min')} <b>{detail.tempMin1}°</b></div>
                             <div>{t('historical.max')} <b>{detail.tempMax1}°</b></div>
@@ -1800,10 +1800,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                       </div>
                       {historicalMode === 'compare' && (
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                          <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date2)}</span>
                           <div className="flex items-center gap-3">
                               <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                              <div className="text-sm">
+                              <div className="text-sm text-text-main">
                               <div>{t('historical.avg')} <b>{detail.tempAvg2}°</b></div>
                               <div>{t('historical.min')} <b>{detail.tempMin2}°</b></div>
                               <div>{t('historical.max')} <b>{detail.tempMax2}°</b></div>
@@ -1815,14 +1815,14 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   </div>
 
                   {/* ... Wind Card ... */}
-                   <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                   <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('wind')}</p>
+                   <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                   <p className="text-xs text-text-muted uppercase font-bold mb-2">{t('wind')}</p>
                     <div className={historicalMode === 'single' ? 'flex items-center justify-start' : 'flex items-center justify-between'}>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date1)}</span>
                         <div className="flex items-center gap-3">
                             <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                            <div className="text-sm">
+                            <div className="text-sm text-text-main">
                             <div>{t('historical.max')} <b>{detail.windMax1} {settings.windUnit}</b></div>
                             <div>{t('historical.dir')} <b>{getWindCardinal(detail.windDirAvg1)}</b></div>
                             </div>
@@ -1830,10 +1830,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                       </div>
                       {historicalMode === 'compare' && (
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                          <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date2)}</span>
                           <div className="flex items-center gap-3">
                               <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                              <div className="text-sm">
+                              <div className="text-sm text-text-main">
                               <div>{t('historical.max')} <b>{detail.windMax2} {settings.windUnit}</b></div>
                               <div>{t('historical.dir')} <b>{getWindCardinal(detail.windDirAvg2)}</b></div>
                               </div>
@@ -1844,24 +1844,24 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   </div>
 
                   {/* ... Rain Card ... */}
-                   <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                   <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('rain')}</p>
+                   <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                   <p className="text-xs text-text-muted uppercase font-bold mb-2">{t('rain')}</p>
                     <div className={historicalMode === 'single' ? 'flex items-center justify-start' : 'flex items-center justify-between'}>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date1)}</span>
                         <div className="flex items-center gap-3">
                             <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                            <div className="text-sm">
+                            <div className="text-sm text-text-main">
                             <div>{t('historical.total')} <b>{detail.rainSum1} {settings.precipUnit}</b></div>
                             </div>
                         </div>
                       </div>
                       {historicalMode === 'compare' && (
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                          <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date2)}</span>
                           <div className="flex items-center gap-3">
                               <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                              <div className="text-sm">
+                              <div className="text-sm text-text-main">
                               <div>{t('historical.total')} <b>{detail.rainSum2} {settings.precipUnit}</b></div>
                               </div>
                           </div>
@@ -1871,16 +1871,16 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                   </div>
 
                   {/* ... Sun Card ... */}
-                   <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                   <p className="text-xs text-slate-500 dark:text-white/60 uppercase font-bold mb-2">{t('sunshine')}</p>
+                   <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                   <p className="text-xs text-text-muted uppercase font-bold mb-2">{t('sunshine')}</p>
                     <div className={historicalMode === 'single' ? 'flex items-center justify-start' : 'flex items-center justify-between'}>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date1)}</span>
+                        <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date1)}</span>
                         <div className="flex items-center gap-3">
                             <span className="size-3 rounded-full" style={{ backgroundColor: date1Color }}></span>
-                            <div className="text-sm">
+                            <div className="text-sm text-text-main">
                             <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal1)}</b></div>
-                            <div className="text-[10px] text-slate-500 dark:text-white/40">
+                            <div className="text-[10px] text-text-muted">
                               {Math.round((detail.sunTotal1 / (detail.daylightTotal1 || 1)) * 100)}% {settings.language === 'nl' ? 'van de dag was zonnig' : 'of the day was sunny'}
                             </div>
                             </div>
@@ -1888,12 +1888,12 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                       </div>
                       {historicalMode === 'compare' && (
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium ml-4">{formatLegendDate(date2)}</span>
+                          <span className="text-[10px] text-text-muted font-medium ml-4">{formatLegendDate(date2)}</span>
                           <div className="flex items-center gap-3">
                               <span className="size-3 rounded-full" style={{ backgroundColor: date2Color }}></span>
-                              <div className="text-sm">
+                              <div className="text-sm text-text-main">
                               <div>{t('historical.total')} <b>{formatDuration(detail.sunTotal2)}</b></div>
-                              <div className="text-[10px] text-slate-500 dark:text-white/40">
+                              <div className="text-[10px] text-text-muted">
                                 {Math.round((detail.sunTotal2 / (detail.daylightTotal2 || 1)) * 100)}% {settings.language === 'nl' ? 'van de dag was zonnig' : 'of the day was sunny'}
                               </div>
                               </div>
@@ -1910,13 +1910,13 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
       {historicalMode === 'compare' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 mt-4">
               {insightsList.map((insight, idx) => (
-                  <div key={idx} className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                      <div className={`size-12 rounded-full flex items-center justify-center bg-slate-50 dark:bg-white/5 ${insight.color}`}>
+                  <div key={idx} className="bg-bg-card border border-border-color rounded-2xl p-4 flex items-center gap-4 shadow-sm">
+                      <div className={`size-12 rounded-full flex items-center justify-center bg-bg-page ${insight.color}`}>
                           <Icon name={insight.icon} />
                       </div>
                       <div className="flex-1">
-                          <p className="text-xs uppercase font-bold text-slate-700 dark:text-white/60 mb-1">{insight.title}</p>
-                          <p className="text-sm leading-snug">
+                          <p className="text-xs uppercase font-bold text-text-muted mb-1">{insight.title}</p>
+                          <p className="text-sm leading-snug text-text-main">
                               {insight.desc}
                           </p>
                       </div>
@@ -1952,11 +1952,11 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
       {isMapOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-              <div className="w-full max-w-4xl h-[80vh] bg-white dark:bg-slate-900 rounded-3xl overflow-hidden relative shadow-2xl flex flex-col">
+              <div className="w-full max-w-4xl h-[80vh] bg-bg-card rounded-3xl overflow-hidden relative shadow-2xl flex flex-col">
                   <div className="absolute top-4 right-4 z-[500]">
                       <button 
                           onClick={() => setIsMapOpen(false)}
-                          className="p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:scale-110 transition-transform text-slate-800 dark:text-white"
+                          className="p-2 bg-bg-page rounded-full shadow-lg hover:scale-110 transition-transform text-text-main"
                       >
                           <Icon name="close" />
                       </button>

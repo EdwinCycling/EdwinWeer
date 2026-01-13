@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { BaroProfile, ActivityType, Location, AppLanguage, EmailScheduleDay } from '../types';
 import { Icon } from './Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { searchCityByName } from '../services/geoService';
 import { getTranslation } from '../services/translations';
 

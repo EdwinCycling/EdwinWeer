@@ -4,6 +4,7 @@ import { auth, googleProvider } from '../services/firebase';
 import { setStorageUserId, loadRemoteData } from '../services/storageService';
 import { setUsageUserId, loadRemoteUsage } from '../services/usageService';
 import { logAuthEvent } from '../services/auditService';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const SESSION_DURATION_DAYS = 30;
 
@@ -17,7 +18,7 @@ interface AuthContextType {
   deleteAccount: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -25,7 +26,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [sessionExpiry, setSessionExpiry] = useState<Date | null>(null);
 
   useEffect(() => {
+    console.log("AuthContext: Setting up onAuthStateChanged");
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log("AuthContext: onAuthStateChanged fired", currentUser?.uid || "no user");
       if (currentUser) {
         // Check stored expiration
         const storedExpiry = localStorage.getItem('session_expiry');
@@ -35,6 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const expiryDate = new Date(storedExpiry);
             if (expiryDate < now) {
                 // Session expired
+                console.log("AuthContext: Session expired");
                 await signOut(auth);
                 setStorageUserId(null);
                 setUsageUserId(null);
@@ -65,12 +69,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             sessionStorage.setItem(sessionKey, 'true');
         }
 
-        // Load remote data (settings, usage)
-        // We wait for this so the app renders with correct settings
-        await Promise.all([
-            loadRemoteData(currentUser.uid),
-            loadRemoteUsage(currentUser.uid)
-        ]);
+        try {
+          console.log("AuthContext: Loading remote data for", currentUser.uid);
+          // Load remote data (settings, usage)
+          // We wait for this so the app renders with correct settings
+          await Promise.all([
+              loadRemoteData(currentUser.uid),
+              loadRemoteUsage(currentUser.uid)
+          ]);
+          console.log("AuthContext: Remote data loaded");
+        } catch (error) {
+          console.error("AuthContext: Error loading remote data", error);
+        }
 
         setUser(currentUser);
       } else {
@@ -81,6 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('session_expiry');
       }
       setLoading(false);
+      console.log("AuthContext: loading set to false");
     });
     return () => unsubscribe();
   }, []);
@@ -129,17 +140,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      if (user) {
+        await logAuthEvent(user.uid, 'account_delete');
+        await user.delete();
+        setStorageUserId(null);
+        setUsageUserId(null);
+        localStorage.removeItem('session_expiry');
+        setSessionExpiry(null);
+      }
+    } catch (error) {
+      console.error("Error deleting account", error);
+      throw error;
+    }
+  };
+
+  console.log("AuthContext: Rendering provider", { loading });
   return (
-    <AuthContext.Provider value={{ user, loading, sessionExpiry, signInWithGoogle, signInWithProvider, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, loading, sessionExpiry, signInWithGoogle, signInWithProvider, logout, deleteAccount }}>
+      {loading ? <LoadingSpinner /> : children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

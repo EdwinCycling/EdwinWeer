@@ -135,7 +135,7 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
     return (
         <div className="flex flex-col h-full w-full gap-4">
             {/* Kaart weergave */}
-            <div className="flex-1 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-inner bg-slate-100 dark:bg-slate-900 relative">
+            <div className="flex-1 rounded-2xl overflow-hidden border border-border-color shadow-inner bg-bg-page relative">
                 <iframe 
                     src={mapUrl}
                     className="w-full h-full border-none"
@@ -145,18 +145,18 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
             </div>
 
             {/* Controls Toolbar - Now under the map */}
-            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-slate-200 dark:border-white/10 flex flex-col gap-3 w-full">
+            <div className="bg-bg-card/90 backdrop-blur-md p-3 rounded-xl shadow-lg border border-border-color flex flex-col gap-3 w-full">
                 
                 {/* Type Selection */}
-                <div className="flex bg-slate-100 dark:bg-slate-700/50 rounded-lg p-1">
+                <div className="flex bg-bg-page rounded-lg p-1">
                     {(['vind', 'temperatur'] as MapType[]).map((type) => (
                         <button
                             key={type}
                             onClick={() => setMapType(type)}
                             className={`flex-1 py-2 px-3 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                                 mapType === type 
-                                    ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-300' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                    ? 'bg-bg-card shadow-sm text-primary' 
+                                    : 'text-text-muted hover:text-text-main'
                             }`}
                         >
                             <Icon name={
@@ -172,19 +172,19 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 px-2">
                     {/* Zoom Controls */}
                     <div className="flex items-center justify-between sm:justify-start gap-3">
-                        <span className="text-[10px] uppercase font-bold text-slate-400">Zoom</span>
-                        <div className="flex items-center bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+                        <span className="text-[10px] uppercase font-bold text-text-muted">Zoom</span>
+                        <div className="flex items-center bg-bg-page rounded-lg">
                             <button 
                                 onClick={handleZoomOut}
-                                className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors"
+                                className="p-2 hover:bg-bg-card rounded-lg transition-colors text-text-main"
                                 title="Uitzoomen (-)"
                             >
                                 <Icon name="remove" className="text-sm" />
                             </button>
-                            <div className="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+                            <div className="w-px h-4 bg-border-color"></div>
                             <button 
                                 onClick={handleZoomIn}
-                                className="p-2 hover:bg-white dark:hover:bg-slate-600 rounded-lg transition-colors"
+                                className="p-2 hover:bg-bg-card rounded-lg transition-colors text-text-main"
                                 title="Inzoomen (+)"
                             >
                                 <Icon name="add" className="text-sm" />
@@ -194,8 +194,8 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
 
                     {/* Speed Control */}
                     <div className="flex items-center gap-3 flex-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-400">Snelheid</span>
-                        <div className="flex items-center gap-2 flex-1">
+                        <span className="text-[10px] uppercase font-bold text-text-muted">Snelheid</span>
+                        <div className="flex items-center gap-2 flex-1 text-text-main">
                             <span className="text-xs">🐢</span>
                             <input 
                                 type="range" 
@@ -204,7 +204,7 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
                                 step="1"
                                 value={animationSpeed}
                                 onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-                                className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-primary"
                             />
                             <span className="text-xs">🐇</span>
                         </div>
@@ -212,7 +212,7 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
                 </div>
             </div>
             
-            <div className="text-center text-[10px] text-slate-400 mt-1 pb-2">
+            <div className="text-center text-[10px] text-text-muted mt-1 pb-2">
                 Data provided by YR.no (MET Norway)
             </div>
         </div>

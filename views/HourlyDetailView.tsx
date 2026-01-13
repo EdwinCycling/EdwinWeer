@@ -108,10 +108,10 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       
       return (
-        <div className="bg-white dark:bg-card-dark p-2 border border-slate-200 dark:border-white/10 rounded-lg shadow-lg z-50 text-slate-800 dark:text-white">
+        <div className="bg-bg-card p-2 border border-border-color rounded-lg shadow-lg z-50 text-text-main">
           <p className="text-xs font-bold mb-1">{dataPoint.time}</p>
           {mode === 'history' && diffHours > 0 && (
-            <p className="text-[10px] text-slate-500 dark:text-white/60 mb-1">
+            <p className="text-[10px] text-text-muted mb-1">
               {t('time.hours_ago').replace('{count}', diffHours.toString())}
             </p>
           )}
@@ -166,14 +166,14 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 overflow-y-auto text-slate-800 dark:text-white transition-colors">
-      <div className="flex items-center p-4 pt-8 fixed top-0 left-0 right-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-50 border-b border-slate-200 dark:border-white/5">
-        <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
+    <div className="flex flex-col min-h-screen bg-bg-page pb-24 overflow-y-auto text-text-main transition-colors">
+      <div className="flex items-center p-4 pt-8 fixed top-0 left-0 right-0 bg-bg-card/95 backdrop-blur z-50 border-b border-border-color">
+        <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2">
             <Icon name="arrow_back_ios_new" />
         </button>
         <div>
             <h1 className="text-lg font-bold">{title}</h1>
-            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-text-muted">{subtitle}</p>}
             <div className="flex items-center gap-1 text-xs opacity-50">
                  <Icon name="location_on" className="text-xs" /> {location.name}
             </div>
@@ -191,7 +191,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                 <div className="min-w-[600px] md:min-w-full flex flex-col gap-8 pr-4">
                     
                     {/* Temperature Graph */}
-                    <div className="h-96 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-96 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="thermostat" className="text-primary" />
                             <span className="text-sm font-bold">{t('temp')}</span>
@@ -247,7 +247,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
 
                     {/* Feels Like Graph (Conditional) */}
                     {showFeelsLike && (
-                        <div className="h-64 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                        <div className="h-64 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                             <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                                 <Icon name="thermostat" className="text-orange-400" />
                                 <span className="text-sm font-bold">{t('feels_like')}</span>
@@ -302,7 +302,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     )}
 
                     {/* Precipitation Graph */}
-                    <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-48 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="umbrella" className="text-blue-500" />
                             <span className="text-sm font-bold">
@@ -371,7 +371,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     </div>
 
                     {/* Sunshine Percentage Graph (New) */}
-                    <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-48 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="wb_sunny" className="text-yellow-500" />
                             <span className="text-sm font-bold">{t('sunshine')} (%)</span>
@@ -408,7 +408,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     </div>
 
                     {/* Wind Speed (Beaufort) */}
-                    <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-48 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="air" className="text-green-500" />
                             <span className="text-sm font-bold">{t('wind')} (Bft)</span>
@@ -439,9 +439,9 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     </div>
 
                     {/* Wind Direction Graph (New) */}
-                    <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-48 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
-                            <Icon name="explore" className="text-slate-500 dark:text-slate-300" />
+                            <Icon name="explore" className="text-text-muted" />
                             <span className="text-sm font-bold">{t('wind_direction') || 'Windrichting'}</span>
                         </div>
                         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -481,7 +481,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                                         if (active && payload && payload.length) {
                                             const d = payload[0].payload;
                                             return (
-                                                <div className="bg-white dark:bg-card-dark p-2 border border-slate-200 dark:border-white/10 rounded-lg shadow-lg z-50 text-slate-800 dark:text-white">
+                                                <div className="bg-bg-card p-2 border border-border-color rounded-lg shadow-lg z-50 text-text-main">
                                                     <p className="text-xs font-bold mb-1">{d.time}</p>
                                                     <p className="text-sm flex items-center gap-1">
                                                         <Icon name="navigation" className="text-xs" style={{ transform: `rotate(${d.windDir}deg)` }} />
@@ -499,7 +499,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     </div>
 
                     {/* Humidity */}
-                    <div className="h-48 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-48 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                          <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="humidity_percentage" className="text-blue-400" />
                             <span className="text-sm font-bold">{t('humidity')} (%)</span>
@@ -536,7 +536,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     </div>
 
                     {/* Pressure */}
-                    <div className="h-32 bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 relative shadow-sm w-full">
+                    <div className="h-32 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">
                         <div className="flex items-center gap-2 mb-4 absolute top-4 left-4 z-10">
                             <Icon name="compress" className="text-purple-400" />
                             <span className="text-sm font-bold">{t('pressure')} ({settings.pressureUnit})</span>

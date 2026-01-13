@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getUsage, loadRemoteUsage } from '../services/usageService';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';

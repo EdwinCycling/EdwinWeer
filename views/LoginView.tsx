@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { Icon } from '../components/Icon';
 import { FlagIcon } from '../components/FlagIcon';
 import { Modal } from '../components/Modal';
@@ -119,16 +119,16 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white overflow-x-hidden selection:bg-blue-500 selection:text-white font-sans">
+    <div className="min-h-screen bg-bg-page text-text-main overflow-x-hidden selection:bg-accent-primary selection:text-text-inverse font-sans">
       
       {/* Navbar */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-bg-page/90 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img src="/icons/baro-icon-192.png" alt="Baro Logo" className="size-10 rounded-xl shadow-lg shadow-blue-500/30 transform hover:rotate-12 transition-transform duration-300" />
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300">
+              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-text-main to-text-muted">
                 Baro
               </span>
             </div>
@@ -138,7 +138,7 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
               <div className="relative">
                 <button 
                   onClick={() => setLangOpen(!langOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-sm font-medium border border-transparent hover:border-slate-300 dark:hover:border-white/20"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-bg-card hover:bg-bg-card/80 transition-all text-sm font-medium border border-transparent hover:border-border-color"
                 >
                   <FlagIcon countryCode={lang} className="w-6 h-4 rounded-sm shadow-sm" />
                   <span>{lang.toUpperCase()}</span>
@@ -146,7 +146,7 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
                 </button>
                 
                 {langOpen && (
-                    <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 p-2 min-w-[150px] z-50 animate-fade-in-up">
+                    <div className="absolute top-full right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color p-2 min-w-[150px] z-50 animate-fade-in-up">
                         {languages.map(l => (
                             <button 
                                 key={l.code}
@@ -156,11 +156,11 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
                                     saveSettings({ ...currentSettings, language: l.code });
                                     setLangOpen(false);
                                 }}
-                                className={`flex items-center gap-3 w-full p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-left transition-colors ${lang === l.code ? 'bg-slate-50 dark:bg-white/5' : ''}`}
+                                className={`flex items-center gap-3 w-full p-2 hover:bg-bg-page rounded-lg text-left transition-colors ${lang === l.code ? 'bg-bg-page' : ''}`}
                             >
                                 <FlagIcon countryCode={l.code} className="w-6 h-4 rounded-sm shadow-sm" />
-                                <span className="font-medium text-slate-700 dark:text-white">{l.label}</span>
-                                {lang === l.code && <Icon name="check" className="ml-auto text-blue-500 text-sm" />}
+                                <span className="font-medium text-text-main">{l.label}</span>
+                                {lang === l.code && <Icon name="check" className="ml-auto text-accent-primary text-sm" />}
                             </button>
                         ))}
                     </div>
@@ -169,7 +169,7 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
               
               <button 
                 onClick={handleLogin}
-                className="hidden md:flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2.5 rounded-full font-bold hover:opacity-90 transition-all hover:shadow-lg hover:scale-105 active:scale-95"
+                className="hidden md:flex items-center gap-2 bg-accent-primary text-text-inverse px-6 py-2.5 rounded-full font-bold hover:opacity-90 transition-all hover:shadow-lg hover:scale-105 active:scale-95"
               >
                 <Icon name="login" />
                 {t('landing.login_google')}
@@ -191,12 +191,12 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-8 leading-tight animate-fade-in-up">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 dark:from-white dark:via-blue-200 dark:to-white">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-text-main via-accent-primary to-text-main">
                 {t('landing.hero_title')}
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-12 leading-relaxed animate-fade-in-up delay-100">
+          <p className="text-xl md:text-2xl text-text-muted max-w-3xl mx-auto mb-12 leading-relaxed animate-fade-in-up delay-100">
             {t('landing.hero_desc')}
           </p>
 

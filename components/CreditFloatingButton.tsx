@@ -42,7 +42,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings }) 
         <>
             <button
                 onClick={() => setShowPopup(!showPopup)}
-                className="fixed bottom-24 right-4 z-40 bg-white dark:bg-slate-800 text-slate-800 dark:text-white p-2 rounded-full shadow-lg border border-slate-200 dark:border-white/10 flex items-center gap-2 hover:scale-105 transition-transform"
+                className="fixed bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"
             >
                 {hasCredits ? (
                     <>
@@ -54,7 +54,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings }) 
                         </span>
                     </>
                 ) : (
-                    <div className="bg-primary/10 text-primary dark:text-white rounded-full p-1">
+                    <div className="bg-primary/10 text-primary dark:text-text-main rounded-full p-1">
                         <Icon name="shopping_cart" className="text-lg" />
                     </div>
                 )}
@@ -66,12 +66,12 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings }) 
                         className="fixed inset-0 z-40 bg-transparent" 
                         onClick={() => setShowPopup(false)}
                     />
-                    <div className="fixed bottom-36 right-4 z-50 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 w-64 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                    <div className="fixed bottom-36 right-4 z-50 bg-bg-card p-4 rounded-xl shadow-xl border border-border-color w-64 animate-in fade-in slide-in-from-bottom-4 duration-200">
                         <div className="flex justify-between items-start mb-3">
-                             <h4 className="font-bold text-sm text-slate-800 dark:text-white">
+                             <h4 className="font-bold text-sm text-text-main">
                                 {hasCredits ? t('credits.title') : t('credits.popup.title_upgrade')}
                              </h4>
-                             <button onClick={() => setShowPopup(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                             <button onClick={() => setShowPopup(false)} className="text-text-muted hover:text-text-main">
                                 <Icon name="close" className="text-base" />
                              </button>
                         </div>
@@ -79,30 +79,30 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings }) 
                         {hasCredits ? (
                             <>
                                 {stats.weatherCredits > 0 && (
-                                    <div className="flex justify-between items-center mb-2 text-sm text-slate-600 dark:text-slate-300">
+                                    <div className="flex justify-between items-center mb-2 text-sm text-text-muted">
                                         <span>{t('credits.weather')}</span>
-                                        <span className="font-bold text-slate-800 dark:text-white">{stats.weatherCredits}</span>
+                                        <span className="font-bold text-text-main">{stats.weatherCredits}</span>
                                     </div>
                                 )}
                                 
                                 {stats.baroCredits > 0 && (
-                                    <div className="flex justify-between items-center mb-4 text-sm text-slate-600 dark:text-slate-300">
+                                    <div className="flex justify-between items-center mb-4 text-sm text-text-muted">
                                         <span>{t('credits.baro')}</span>
-                                        <span className="font-bold text-slate-800 dark:text-white">{stats.baroCredits}</span>
+                                        <span className="font-bold text-text-main">{stats.baroCredits}</span>
                                     </div>
                                 )}
                             </>
                         ) : (
                             <ul className="space-y-2 mb-4">
-                                <li className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                <li className="flex items-center gap-2 text-xs text-text-muted">
                                     <Icon name="check_circle" className="text-green-500 text-sm" />
                                     {t('credits.popup.point1')}
                                 </li>
-                                <li className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                <li className="flex items-center gap-2 text-xs text-text-muted">
                                     <Icon name="check_circle" className="text-green-500 text-sm" />
                                     {t('credits.popup.point2')}
                                 </li>
-                                <li className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                <li className="flex items-center gap-2 text-xs text-text-muted">
                                     <Icon name="check_circle" className="text-green-500 text-sm" />
                                     {t('credits.popup.point3')}
                                 </li>
