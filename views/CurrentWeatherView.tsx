@@ -1031,7 +1031,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             {/* 48h Forecast Link (Now also on Mobile) */}
                             <div 
                                 onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                                className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
                             >
                                 <Icon name="schedule" className="text-lg md:text-xl text-text-main" />
                                 <span className="text-base md:text-lg font-bold text-text-main">48u</span>
@@ -1041,7 +1041,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             {/* Past 24h Link (Terugblik) (Now also on Mobile) */}
                             <div 
                                 onClick={() => onNavigate(ViewState.HOURLY_DETAIL, { mode: 'history', title: t('past_24h'), subtitle: '24 uur' })}
-                                className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                                className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
                             >
                                 <Icon name="history" className="text-lg md:text-xl text-text-main" />
                                 <span className="text-base md:text-lg font-bold text-text-main">24u</span>
@@ -1050,7 +1050,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                             {/* Today's Extremes (Min/Max with time) */}
                             {todayExtremes && (
-                                <div className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px]">
+                                <div className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px]">
                                     <div className="flex flex-col items-center gap-1 w-full">
                                         <div className="flex flex-col w-full px-1">
                                             <div className="flex items-center justify-between w-full">

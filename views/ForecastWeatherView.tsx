@@ -502,14 +502,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                     
                     <div className="flex gap-3">
                         {feelsLike < 10 ? (
-                            <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
+                            <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                                 <Icon name="thermostat" className="text-xl text-blue-500 dark:text-blue-300" />
                                 <span className="text-lg font-bold text-text-main">{Math.round(feelsLike)}°</span>
                                 <span className="text-[9px] uppercase text-text-muted">{t('feels_like')}</span>
                             </div>
                         ) : (
                             heatIndex > currentTemp && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                                     <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
                                     <span className="text-lg font-bold text-text-main">{Math.round(heatIndex)}°</span>
                                     <span className="text-[9px] uppercase text-text-muted">{t('heat_index')}</span>
@@ -523,7 +523,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 className="min-w-[70px] w-auto"
                             />
                         )}
-                        <div onClick={() => setShowMapModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
+                        <div onClick={() => setShowMapModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                              <Icon name="public" className="text-3xl text-green-500 dark:text-green-300 mb-1" />
                              <span className="text-[9px] font-bold uppercase text-text-muted text-center leading-tight">Interactieve<br/>Kaart</span>
                         </div>

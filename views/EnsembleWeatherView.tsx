@@ -1013,10 +1013,10 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     </h1>
                     
                     {currentWeather.current.temperature_2m < 10 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl p-2 border border-slate-200 dark:border-white/10 shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
                             <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
                             <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
-                            <span className="text-[9px] uppercase text-slate-500 dark:text-white/60 leading-none mt-1">{t('feels_like')}</span>
+                            <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('feels_like')}</span>
                         </div>
                     )}
                     

@@ -40,7 +40,7 @@ const BaroTimeMachineView = React.lazy(() => import('./views/BaroTimeMachineView
 const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView').then(module => ({ default: module.BaroStorytellerView })));
 const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(module => ({ default: module.SongWriterView })));
 import { ViewState, AppSettings } from './types';
-const appVersion = '0.9260112.8';
+const appVersion = '0.9260113.1';
 import { loadSettings, saveSettings } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';

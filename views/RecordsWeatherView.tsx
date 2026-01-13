@@ -1432,7 +1432,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
                   location.isCurrentLocation 
                     ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' 
-                    : 'bg-bg-card/60 text-text-main hover:bg-bg-card dark:hover:bg-accent-primary/20 hover:text-accent-primary dark:hover:text-accent-primary border-border-color'
+                    : 'bg-bg-card text-text-main hover:bg-bg-card dark:hover:bg-accent-primary/20 hover:text-accent-primary dark:hover:text-accent-primary border-border-color'
                 }`}
               >
                 <Icon name="my_location" className="text-sm" />
@@ -1464,7 +1464,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </h1>
                     
                     {currentWeather.current.temperature_2m < 10 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
                             <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
                             <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
                             <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('feels_like')}</span>
