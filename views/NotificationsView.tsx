@@ -279,13 +279,13 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
+    <div className="flex flex-col min-h-screen bg-bg-page pb-24 animate-in fade-in slide-in-from-bottom-4 text-text-main transition-colors duration-300">
       {/* Header */}
-      <div className="flex flex-col sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
+      <div className="flex flex-col sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors">
         <div className="flex items-center p-4">
           <button 
             onClick={() => onNavigate(ViewState.CURRENT)} 
-            className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2"
+            className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2"
           >
             <Icon name="arrow_back_ios_new" />
           </button>
@@ -296,14 +296,14 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
       <div className="p-4 flex-grow flex flex-col items-center max-w-lg mx-auto w-full space-y-6">
         
         {/* Intro Card */}
-        <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+        <div className="bg-bg-card w-full p-6 rounded-2xl shadow-sm border border-border-color">
           <div className="flex items-center gap-4 mb-4">
-            <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+            <div className="size-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
               <Icon name="notifications" className="text-2xl" />
             </div>
             <div>
               <h2 className="font-bold text-lg">{t('notifications.intro.title') || 'Mis nooit meer een update!'}</h2>
-              <p className="text-sm text-slate-500 dark:text-white/60">{t('notifications.intro.subtitle') || 'Ontvang dagelijks weerberichten.'}</p>
+              <p className="text-sm text-text-muted">{t('notifications.intro.subtitle') || 'Ontvang dagelijks weerberichten.'}</p>
             </div>
           </div>
           
@@ -314,11 +314,11 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
           </div>
 
           {!user ? (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/50 text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="bg-yellow-500/10 p-4 rounded-xl border border-yellow-500/20 text-sm text-yellow-600">
               {t('notifications.login_required') || 'Je moet ingelogd zijn om meldingen te ontvangen.'}
             </div>
           ) : !isMobile ? (
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50 text-sm text-blue-800 dark:text-blue-200">
+            <div className="bg-accent-primary/10 p-4 rounded-xl border border-accent-primary/20 text-sm text-accent-primary">
                 <div className="flex items-center gap-2 mb-2 font-bold">
                     <Icon name="info" />
                     <span>{t('notifications.mobile_only') || 'Alleen op mobiel'}</span>
@@ -327,18 +327,18 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
             </div>
           ) : loading ? (
             <div className="flex justify-center p-4">
-              <Icon name="sync" className="animate-spin text-slate-400" />
+              <Icon name="sync" className="animate-spin text-text-muted" />
             </div>
           ) : fcmToken ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
+              <div className="flex items-center gap-2 text-green-600 font-medium bg-green-500/10 p-4 rounded-xl border border-green-500/20">
                 <Icon name="check_circle" />
                 <span>{t('notifications.active') || 'Meldingen staan aan!'}</span>
               </div>
               
               <button 
                 onClick={handleDisableNotifications}
-                className="w-full py-3 px-4 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-bold flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl border border-red-500/20 text-red-600 hover:bg-red-500/10 transition-colors text-sm font-bold flex items-center justify-center gap-2"
               >
                 <Icon name="notifications_off" />
                 {t('notifications.disable') || 'Meldingen uitzetten'}
@@ -346,7 +346,7 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
               
               <button 
                 onClick={handleTestNotification}
-                className="w-full py-3 px-4 rounded-xl border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm font-bold flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl border border-accent-primary/20 text-accent-primary hover:bg-accent-primary/10 transition-colors text-sm font-bold flex items-center justify-center gap-2"
               >
                 <Icon name="send" />
                 Stuur test bericht
@@ -355,7 +355,7 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
           ) : (
             <button 
               onClick={handleEnableNotifications}
-              className="w-full py-3 px-4 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 font-bold"
+              className="w-full py-3 px-4 bg-accent-primary hover:bg-accent-hover text-text-inverse rounded-xl shadow-lg shadow-accent-primary/20 transition-all flex items-center justify-center gap-2 font-bold"
             >
               <Icon name="notifications_active" />
               {t('notifications.enable') || '🔔 Zet Meldingen Aan'}
@@ -365,24 +365,24 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
 
         {/* Feature List */}
         <div className="grid grid-cols-1 gap-4 w-full">
-           <div className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl">
-             <Icon name="schedule" className="text-slate-400 mt-1" />
+           <div className="flex items-start gap-3 p-4 bg-bg-page rounded-xl">
+             <Icon name="schedule" className="text-text-muted mt-1" />
              <div>
                <h3 className="font-bold text-sm">{t('notifications.feature.daily') || 'Dagelijkse Update'}</h3>
-               <p className="text-xs text-slate-500 dark:text-white/60 mt-1">{t('notifications.feature.daily_desc') || 'Ontvang meldingen zelfs als de browser gesloten is.'}</p>
+               <p className="text-xs text-text-muted mt-1">{t('notifications.feature.daily_desc') || 'Ontvang meldingen zelfs als de browser gesloten is.'}</p>
              </div>
            </div>
         </div>
 
         {/* Notification Schedule Config */}
         {fcmToken && settings && onUpdateSettings && currentProfile && (
-            <div className="w-full space-y-4 pt-6 border-t border-slate-200 dark:border-white/10">
+            <div className="w-full space-y-4 pt-6 border-t border-border-color">
                 <h3 className="font-bold text-lg px-1">{t('notifications.schedule.title') || 'Melding Schema'}</h3>
                 
                 {baroCredits <= 0 ? (
-                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center">
-                        <p className="text-red-800 dark:text-red-200 font-bold mb-2">Geen Baro Credits beschikbaar</p>
-                        <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                    <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-center">
+                        <p className="text-red-600 font-bold mb-2">Geen Baro Credits beschikbaar</p>
+                        <p className="text-sm text-red-500 mb-4">
                             Je hebt Baro credits nodig om een schema te maken en weerberichten te ontvangen.
                         </p>
                         <button
@@ -393,15 +393,15 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
                     </div>
                 ) : (
                     <>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-4 flex items-center justify-between">
-                            <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                        <div className="bg-accent-primary/10 p-3 rounded-xl border border-accent-primary/20 mb-4 flex items-center justify-between">
+                            <span className="text-sm text-accent-primary font-medium">
                                 Beschikbare Baro Credits: <strong>{baroCredits}</strong>
                             </span>
                         </div>
 
                         {/* Location Selector (Only for notifications view) */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2 px-1">
+                            <label className="block text-sm font-medium text-text-main mb-2 px-1">
                                 {t('notifications.select_location') || 'Selecteer Locatie'}
                             </label>
                             {locations.length > 0 ? (
@@ -412,8 +412,8 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                             onClick={() => updateLocation(loc.name)}
                                             className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
                                                 selectedLocationName === loc.name
-                                                    ? 'bg-primary border-primary text-white shadow-md'
-                                                    : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
+                                                    ? 'bg-accent-primary border-accent-primary text-text-inverse shadow-md'
+                                                    : 'bg-bg-card border-border-color text-text-muted hover:border-accent-primary/50'
                                             }`}
                                         >
                                             {loc.name}
@@ -421,7 +421,7 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-500 italic px-1">
+                                <p className="text-sm text-text-muted italic px-1">
                                     {t('notifications.no_locations') || 'Geen favoriete locaties gevonden.'}
                                 </p>
                             )}
@@ -434,7 +434,7 @@ export const NotificationsView: React.FC<Props> = ({ onNavigate, settings, onUpd
                             language={settings.language}
                         />
                         
-                        <p className="text-xs text-slate-400 dark:text-white/40 px-1 mt-2">
+                        <p className="text-xs text-text-muted px-1 mt-2">
                             {t('notifications.platform_note') || 'Je ontvangt meldingen op dit apparaat.'}
                         </p>
                     </>

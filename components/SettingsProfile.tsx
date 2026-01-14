@@ -285,7 +285,7 @@ export const SettingsProfile: React.FC<Props> = ({
     return (
         <section className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-slate-600 dark:text-white/50 text-xs font-bold uppercase tracking-wider mb-3">
+                <h2 className="text-text-muted text-xs font-bold uppercase tracking-wider mb-3">
                     {t('profile.section.personal')}
                 </h2>
                 {profiles && profiles.length > 0 && (
@@ -296,8 +296,8 @@ export const SettingsProfile: React.FC<Props> = ({
                                 onClick={() => onSelectProfile && onSelectProfile(prof)}
                                 className={`px-3 py-1 text-xs rounded-lg transition-colors border ${
                                     prof.id === localProfile.id 
-                                    ? 'bg-primary text-white border-primary' 
-                                    : 'bg-transparent text-slate-500 dark:text-white/50 border-slate-200 dark:border-white/10'
+                                    ? 'bg-accent-primary text-text-inverse border-accent-primary' 
+                                    : 'bg-transparent text-text-muted border-border-color'
                                 }`}
                             >
                                 {prof.id === localProfile.id ? (localProfile.name || 'Naamloos') : (prof.name || 'Naamloos')}
@@ -306,7 +306,7 @@ export const SettingsProfile: React.FC<Props> = ({
                         {canCreateProfile && onCreateProfile && (
                             <button
                                 onClick={onCreateProfile}
-                                className="px-3 py-1 text-xs rounded-lg bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
+                                className="px-3 py-1 text-xs rounded-lg bg-bg-input text-text-main hover:bg-bg-page transition-colors"
                             >
                                 + Nieuw
                             </button>
@@ -315,11 +315,11 @@ export const SettingsProfile: React.FC<Props> = ({
                 )}
             </div>
             
-            <div className="bg-white dark:bg-card-dark border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm p-4 space-y-6">
+            <div className="bg-bg-card border border-border-color rounded-2xl overflow-hidden shadow-sm p-4 space-y-6">
                 
                 {/* Profile Name (Mandatory) */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                         {t('profile.name.label')} <span className="text-red-400">*</span>
                     </label>
                     <div className="flex gap-2">
@@ -329,7 +329,7 @@ export const SettingsProfile: React.FC<Props> = ({
                             onChange={(e) => handleChange('name', e.target.value)}
                             onBlur={handleBlur}
                             placeholder={t('profile.name.placeholder')}
-                            className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-primary outline-none"
+                            className="flex-1 bg-bg-input rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-accent-primary outline-none text-text-main"
                         />
                         {profiles && profiles.length > 1 && onDeleteProfile && (
                             <button 
@@ -345,7 +345,7 @@ export const SettingsProfile: React.FC<Props> = ({
 
                 {/* Location */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                         {t('profile.location.label')} <span className="text-red-400">*</span>
                     </label>
                     <div className="flex gap-2 relative">
@@ -356,25 +356,25 @@ export const SettingsProfile: React.FC<Props> = ({
                                 onChange={(e) => handleLocationSearch(e.target.value)}
                                 onBlur={handleBlur}
                                 placeholder={t('profile.location.placeholder')}
-                                className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-primary outline-none"
+                                className="w-full bg-bg-input rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-accent-primary outline-none text-text-main"
                             />
                             {loadingCity && (
                                 <div className="absolute right-3 top-3">
-                                    <Icon name="sync" className="animate-spin text-slate-400" />
+                                    <Icon name="sync" className="animate-spin text-text-muted" />
                                 </div>
                             )}
                             
                             {/* Dropdown */}
                             {showDropdown && searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-bg-card border border-border-color rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
                                     {searchResults.map((city, index) => (
                                         <button
                                             key={`${city.name}-${city.country}-${index}`}
                                             onClick={() => selectCity(city)}
-                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 text-sm border-b border-slate-100 dark:border-white/5 last:border-0"
+                                            className="w-full text-left px-4 py-3 hover:bg-bg-page text-sm border-b border-border-color last:border-0"
                                         >
-                                            <span className="font-bold block text-slate-800 dark:text-white">{city.name}</span>
-                                            <span className="text-xs text-slate-500 dark:text-white/50">{city.country}</span>
+                                            <span className="font-bold block text-text-main">{city.name}</span>
+                                            <span className="text-xs text-text-muted">{city.country}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -384,7 +384,7 @@ export const SettingsProfile: React.FC<Props> = ({
                         {currentLocationName && (
                             <button
                                 onClick={() => handleChange('location', currentLocationName, true)}
-                                className="bg-slate-100 dark:bg-slate-800 px-4 rounded-xl text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                className="bg-bg-input px-4 rounded-xl text-text-muted hover:bg-bg-page transition-colors"
                                 title={t('profile.location.current')}
                             >
                                 <Icon name="my_location" />
@@ -395,10 +395,10 @@ export const SettingsProfile: React.FC<Props> = ({
 
                 {/* Length Report */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                         {t('profile.report_length.label')}
                     </label>
-                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 w-fit">
+                    <div className="flex bg-bg-input rounded-xl p-1 w-fit">
                         {([
                             { id: 'factual', label: t('profile.report_length.factual') },
                             { id: 'standard', label: t('profile.report_length.standard') },
@@ -409,15 +409,15 @@ export const SettingsProfile: React.FC<Props> = ({
                                 onClick={() => handleChange('reportLength', opt.id, true)}
                                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
                                     (localProfile.reportLength || 'standard') === opt.id
-                                        ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm'
-                                        : 'text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white'
+                                        ? 'bg-bg-card text-text-main shadow-sm'
+                                        : 'text-text-muted hover:text-text-main'
                                 }`}
                             >
                                 {opt.label}
                             </button>
                         ))}
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-white/40 mt-1">
+                    <p className="text-xs text-text-muted mt-1">
                         {(localProfile.reportLength || 'standard') === 'factual' && t('profile.report_length.desc.factual')}
                         {(localProfile.reportLength || 'standard') === 'standard' && t('profile.report_length.desc.standard')}
                         {(localProfile.reportLength || 'standard') === 'extended' && t('profile.report_length.desc.extended')}
@@ -425,20 +425,20 @@ export const SettingsProfile: React.FC<Props> = ({
                 </div>
 
                 {/* General Report Checkbox */}
-                <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-3 bg-bg-page p-3 rounded-xl border border-border-color">
                     <button
                         onClick={() => handleChange('isGeneralReport', !localProfile.isGeneralReport, true)}
                         className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
                             localProfile.isGeneralReport 
-                                ? 'bg-primary text-white' 
-                                : 'bg-white dark:bg-slate-700 border border-slate-300 dark:border-white/20'
+                                ? 'bg-accent-primary text-text-inverse' 
+                                : 'bg-bg-card border border-border-color'
                         }`}
                     >
                         {localProfile.isGeneralReport && <Icon name="check" className="text-sm" />}
                     </button>
                     <div className="flex-1">
-                        <span className="text-sm font-medium text-slate-800 dark:text-white block">{t('profile.general_report')}</span>
-                        <span className="text-xs text-slate-500 dark:text-white/50 block">{t('profile.general_report_desc')}</span>
+                        <span className="text-sm font-medium text-text-main block">{t('profile.general_report')}</span>
+                        <span className="text-xs text-text-muted block">{t('profile.general_report_desc')}</span>
                     </div>
                 </div>
 
@@ -446,7 +446,7 @@ export const SettingsProfile: React.FC<Props> = ({
                     <>
                         {/* Activities (Toggles) */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('profile.activities.label')}
                             </label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -458,8 +458,8 @@ export const SettingsProfile: React.FC<Props> = ({
                                         onClick={() => toggleActivity(activity)}
                                         className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all border ${
                                             isActivitySelected(activity)
-                                                ? 'bg-primary/10 border-primary text-primary'
-                                                : 'bg-slate-50 dark:bg-slate-800/50 border-transparent text-slate-500 dark:text-white/50 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                ? 'bg-accent-primary/10 border-accent-primary text-accent-primary'
+                                                : 'bg-bg-page border-transparent text-text-muted hover:bg-bg-input'
                                         }`}
                                     >
                                         <Icon name={activityIcons[activity]} className="text-2xl mb-2" />
@@ -471,7 +471,7 @@ export const SettingsProfile: React.FC<Props> = ({
 
                         {/* Time of Day */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('profile.time_of_day.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -481,8 +481,8 @@ export const SettingsProfile: React.FC<Props> = ({
                                         onClick={() => toggleArrayItem('timeOfDay', tVal)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                             localProfile.timeOfDay?.includes(tVal)
-                                                ? 'bg-primary text-white'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                ? 'bg-accent-primary text-text-inverse'
+                                                : 'bg-bg-input text-text-muted hover:bg-bg-page'
                                         }`}
                                     >
                                         {tVal === 'ochtend' && t('profile.time.morning')}
@@ -496,7 +496,7 @@ export const SettingsProfile: React.FC<Props> = ({
 
                         {/* Transport */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('profile.transport.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -506,8 +506,8 @@ export const SettingsProfile: React.FC<Props> = ({
                                         onClick={() => toggleArrayItem('transport', tVal)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                             localProfile.transport?.includes(tVal)
-                                                ? 'bg-primary text-white'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                ? 'bg-accent-primary text-text-inverse'
+                                                : 'bg-bg-input text-text-muted hover:bg-bg-page'
                                         }`}
                                     >
                                         {tVal === 'lopen' && t('profile.transport.walk')}
@@ -523,7 +523,7 @@ export const SettingsProfile: React.FC<Props> = ({
 
                         {/* Report Style */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('profile.style.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -533,8 +533,8 @@ export const SettingsProfile: React.FC<Props> = ({
                                         onClick={() => toggleArrayItem('reportStyle', s)}
                                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                                             localProfile.reportStyle?.includes(s)
-                                                ? 'bg-primary text-white'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                ? 'bg-accent-primary text-text-inverse'
+                                                : 'bg-bg-input text-text-muted hover:bg-bg-page'
                                         }`}
                                     >
                                         {t(styleDisplayMap[s] || s)}
@@ -545,7 +545,7 @@ export const SettingsProfile: React.FC<Props> = ({
 
                         {/* Health */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('profile.health.label')}
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -553,8 +553,8 @@ export const SettingsProfile: React.FC<Props> = ({
                                     onClick={() => handleChange('hayFever', !localProfile.hayFever, true)}
                                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                                         localProfile.hayFever
-                                            ? 'bg-primary text-white'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white/60 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                            ? 'bg-accent-primary text-text-inverse'
+                                            : 'bg-bg-input text-text-muted hover:bg-bg-page'
                                     }`}
                                 >
                                     <Icon name="grain" className="text-lg" />
@@ -565,7 +565,7 @@ export const SettingsProfile: React.FC<Props> = ({
 
                         {/* Other Instructions */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('profile.instructions.label')}
                             </label>
                             <textarea
@@ -573,7 +573,7 @@ export const SettingsProfile: React.FC<Props> = ({
                                 onChange={(e) => handleChange('otherInstructions', e.target.value)}
                                 onBlur={handleBlur}
                                 placeholder={t('profile.instructions.placeholder')}
-                                className="w-full bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-primary outline-none min-h-[60px]"
+                                className="w-full bg-bg-input rounded-xl px-4 py-3 text-sm border-none focus:ring-2 focus:ring-accent-primary outline-none min-h-[60px] text-text-main"
                             />
                         </div>
                     </>
@@ -581,18 +581,18 @@ export const SettingsProfile: React.FC<Props> = ({
 
                 {/* Days Ahead */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-text-main mb-2">
                         {t('profile.days_ahead.label')}
                     </label>
-                    <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 w-fit">
+                    <div className="flex bg-bg-input rounded-xl p-1 w-fit">
                         {[1, 2, 3, 7, 14].map(d => (
                             <button
                                 key={d}
                                 onClick={() => handleChange('daysAhead', d, true)}
                                 className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
                                     localProfile.daysAhead === d
-                                        ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-white shadow-sm'
-                                        : 'text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white'
+                                        ? 'bg-bg-card text-text-main shadow-sm'
+                                        : 'text-text-muted hover:text-text-main'
                                 }`}
                             >
                                 {d}
@@ -603,24 +603,24 @@ export const SettingsProfile: React.FC<Props> = ({
 
                 {/* Email Schedule */}
                 {showScheduleConfig && (
-                <div className="border-t border-slate-200 dark:border-white/5 pt-6 mt-6">
+                <div className="border-t border-border-color pt-6 mt-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h3 className="text-sm font-medium text-slate-800 dark:text-white">
+                            <h3 className="text-sm font-medium text-text-main">
                                 {t('profile.schedule.title')}
                             </h3>
-                            <p className="text-xs text-slate-500 dark:text-white/50">
+                            <p className="text-xs text-text-muted">
                                 {t('profile.schedule.max_limit')}
                             </p>
                         </div>
                         <button
                             onClick={() => handleChange('emailSchedule', { ...schedule, enabled: !schedule.enabled }, true)}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                schedule.enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
+                                schedule.enabled ? 'bg-accent-primary' : 'bg-bg-input'
                             }`}
                         >
                             <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                className={`inline-block h-4 w-4 transform rounded-full bg-bg-card transition-transform ${
                                     schedule.enabled ? 'translate-x-6' : 'translate-x-1'
                                 }`}
                             />
@@ -630,7 +630,7 @@ export const SettingsProfile: React.FC<Props> = ({
                     {schedule.enabled && schedule.days && (
                         <div className="space-y-3">
                             {/* Header */}
-                            <div className="grid grid-cols-4 gap-2 text-xs font-medium text-slate-500 dark:text-white/50 mb-2">
+                            <div className="grid grid-cols-4 gap-2 text-xs font-medium text-text-muted mb-2">
                                 <div>{t('profile.schedule.days')}</div>
                                 <div className="text-center">🥞 {t('profile.schedule.breakfast_short')}</div>
                                 <div className="text-center">🥪 {t('profile.schedule.lunch_short')}</div>
@@ -640,7 +640,7 @@ export const SettingsProfile: React.FC<Props> = ({
                             {/* Days */}
                             {schedule.days.map((day, index) => (
                                 <div key={day.day} className="grid grid-cols-4 gap-2 items-center">
-                                    <div className="text-sm text-slate-700 dark:text-white capitalize">
+                                    <div className="text-sm text-text-main capitalize">
                                         {t(`days.${day.day}`) === `days.${day.day}` ? day.day : t(`days.${day.day}`)}
                                     </div>
                                     {['breakfast', 'lunch', 'dinner'].map((slot) => {
@@ -653,10 +653,10 @@ export const SettingsProfile: React.FC<Props> = ({
                                                     disabled={disabled}
                                                     className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
                                                         isChecked 
-                                                            ? 'bg-primary border-primary text-white' 
+                                                            ? 'bg-accent-primary border-accent-primary text-text-inverse' 
                                                             : disabled
-                                                                ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed'
-                                                                : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-white/20 hover:border-primary'
+                                                                ? 'bg-bg-input border-border-color opacity-50 cursor-not-allowed'
+                                                                : 'bg-bg-card border-border-color hover:border-accent-primary'
                                                     }`}
                                                 >
                                                     {isChecked && <Icon name="check" className="text-xs" />}
@@ -668,7 +668,7 @@ export const SettingsProfile: React.FC<Props> = ({
                             ))}
 
                             <div className="pt-2 text-right">
-                                <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-slate-500 dark:text-white/50'}`}>
+                                <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-text-muted'}`}>
                                     {t('profile.schedule.total')}: {totalScheduled}/7
                                 </span>
                             </div>

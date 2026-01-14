@@ -80,24 +80,24 @@ export const ScheduleConfig: React.FC<Props> = ({
     };
 
     return (
-        <div className="bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 shadow-sm">
+        <div className="bg-bg-card rounded-2xl p-4 border border-border-color shadow-sm">
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                    <h3 className="text-sm font-bold text-text-main">
                         {title || t('profile.schedule.title')}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-white/50">
+                    <p className="text-xs text-text-muted">
                         {t('profile.schedule.max_limit')}
                     </p>
                 </div>
                 <button
                     onClick={toggleEnabled}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        schedule.enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'
+                        schedule.enabled ? 'bg-accent-primary' : 'bg-bg-input'
                     }`}
                 >
                     <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        className={`inline-block h-4 w-4 transform rounded-full bg-bg-card transition-transform ${
                             schedule.enabled ? 'translate-x-6' : 'translate-x-1'
                         }`}
                     />
@@ -107,7 +107,7 @@ export const ScheduleConfig: React.FC<Props> = ({
             {schedule.enabled && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header */}
-                    <div className="grid grid-cols-4 gap-2 text-xs font-medium text-slate-500 dark:text-white/50 mb-2">
+                    <div className="grid grid-cols-4 gap-2 text-xs font-medium text-text-muted mb-2">
                         <div>{t('profile.schedule.days')}</div>
                         <div className="text-center">🥞 {t('profile.schedule.breakfast').split(' ')[0]}</div>
                         <div className="text-center">🥪 {t('profile.schedule.lunch').split(' ')[0]}</div>
@@ -117,7 +117,7 @@ export const ScheduleConfig: React.FC<Props> = ({
                     {/* Days */}
                     {schedule.days.map((day, index) => (
                         <div key={day.day} className="grid grid-cols-4 gap-2 items-center">
-                            <div className="text-sm text-slate-700 dark:text-white capitalize">
+                            <div className="text-sm text-text-main capitalize">
                                 {t(`days.${day.day}`) === `days.${day.day}` ? day.day : t(`days.${day.day}`)}
                             </div>
                             {['breakfast', 'lunch', 'dinner'].map((slot) => {
@@ -130,10 +130,10 @@ export const ScheduleConfig: React.FC<Props> = ({
                                             disabled={disabled}
                                             className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
                                                 isChecked 
-                                                    ? 'bg-primary border-primary text-white' 
+                                                    ? 'bg-accent-primary border-accent-primary text-text-inverse' 
                                                     : disabled
-                                                        ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed'
-                                                        : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-white/20 hover:border-primary'
+                                                        ? 'bg-bg-input border-border-color opacity-50 cursor-not-allowed'
+                                                        : 'bg-bg-card border-border-color hover:border-accent-primary'
                                             }`}
                                         >
                                             {isChecked && <Icon name="check" className="text-xs" />}
@@ -145,7 +145,7 @@ export const ScheduleConfig: React.FC<Props> = ({
                     ))}
 
                     <div className="pt-2 text-right">
-                        <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-slate-500 dark:text-white/50'}`}>
+                        <span className={`text-xs font-medium ${isLimitReached ? 'text-red-500' : 'text-text-muted'}`}>
                             {t('profile.schedule.total')}: {totalScheduled}/7
                         </span>
                     </div>

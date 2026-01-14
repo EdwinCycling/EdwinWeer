@@ -456,6 +456,11 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                      {t('planner.saving')}
                  </div>
              </div>
+             
+             {/* Auto Save Text */}
+             <div className="text-center text-[10px] text-text-muted opacity-60">
+                {t('common.autosave')}
+             </div>
         </div>
 
       </div>

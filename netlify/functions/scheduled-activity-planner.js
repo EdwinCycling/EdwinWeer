@@ -514,16 +514,37 @@ export const handler = async (event, context) => {
 
             // Determine User Local Time
             const userTimezone = userData.settings?.timezone || 'Europe/Amsterdam';
-            const userTimeStr = now.toLocaleString('en-US', { timeZone: userTimezone });
-            const userTime = new Date(userTimeStr);
-            const userHour = userTime.getHours();
+            
+            // Robust time checking using Intl.DateTimeFormat
+            let userHour;
+            try {
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: userTimezone,
+                    hour: 'numeric',
+                    hour12: false
+                });
+                userHour = parseInt(formatter.format(now));
+            } catch (e) {
+                console.error(`Timezone error for user ${userId}: ${userTimezone}`, e);
+                // Fallback to Amsterdam if timezone is invalid
+                 const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Europe/Amsterdam',
+                    hour: 'numeric',
+                    hour12: false
+                });
+                userHour = parseInt(formatter.format(now));
+            }
 
             // Check if it's 04:00 (allow 04:00-06:59 window for uitloop)
+            // Log for debugging (remove in production if too noisy)
+            // console.log(`User ${userId} local hour: ${userHour} (${userTimezone})`);
+
             if (userHour < 4 || userHour > 6) continue;
 
             // Check Day (Tomorrow)
             // Notification is sent TODAY (at 04:00) for TOMORROW.
-            // So we check if TOMORROW is in the enabled days.
+            const userTimeStr = now.toLocaleString('en-US', { timeZone: userTimezone });
+            const userTime = new Date(userTimeStr);
             const tomorrow = new Date(userTime);
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowDay = tomorrow.getDay(); // 0=Sun, 1=Mon...
@@ -597,7 +618,12 @@ ${safeAiText}
 <a href="https://askbaro.com">Open App</a>
             `;
 
-            await sendTelegramNotification(userData.telegramChatId, message);
+            try {
+                await sendTelegramNotification(userData.telegramChatId, message);
+                console.log(`Sent Activity Planner to ${userId} (${activityKey})`);
+            } catch (e) {
+                console.error(`Failed to send Telegram to ${userId}`, e);
+            }
 
             // Deduct Credit
             await usersRef.doc(userId).update({

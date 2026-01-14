@@ -124,21 +124,77 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const checkAlerts = () => {
       if (!weatherData) return;
       const currentHour = getLocationTime().getHours();
-      const next48 = weatherData.hourly.temperature_2m.slice(currentHour, currentHour + 48);
       
+      // Frost check
+      const next48 = weatherData.hourly.temperature_2m.slice(currentHour, currentHour + 48);
       const hasFrost = next48.some(temp => temp < 0);
       setFrostWarning(hasFrost);
 
-      const next48Rain = weatherData.hourly.precipitation.slice(currentHour, currentHour + 48);
-      const firstRainIndex = next48Rain.findIndex(p => p > 0);
-      
-      if (firstRainIndex !== -1) {
-          const rainTime = getLocationTime();
-          rainTime.setHours(currentHour + firstRainIndex);
+      // Rain check with high precision using minutely_15 if available
+      let rainFound = false;
+      let foundInHours = 0;
+      let foundAmount = 0;
+      let foundTime = "";
+
+      // 1. Try Minutely Data (High Precision for near-term)
+      if (weatherData.minutely_15) {
+          const d = getLocationTime();
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          // Match current hour (e.g. "2023-10-27T14")
+          const nowIsoPrefix = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
+          
+          let startIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIsoPrefix));
+          
+          if (startIndex !== -1) {
+              // Look ahead 16 intervals (4 hours) for high precision
+              for (let i = 0; i < 16; i++) {
+                  const idx = startIndex + i;
+                  if (idx >= weatherData.minutely_15.precipitation.length) break;
+                  
+                  const precip = weatherData.minutely_15.precipitation[idx];
+                  if (precip > 0) {
+                      const timeStr = weatherData.minutely_15.time[idx];
+                      const rainDate = new Date(timeStr);
+                      
+                      // Calculate hours diff
+                      const diffMs = rainDate.getTime() - d.getTime();
+                      const diffHours = diffMs / (1000 * 60 * 60);
+                      
+                      // Skip if it's significantly in the past (> 15 mins ago)
+                      if (diffHours < -0.25) continue;
+
+                      rainFound = true;
+                      // Round hours. If < 0.5, it's 0 (now).
+                      foundInHours = Math.max(0, Math.round(diffHours));
+                      foundAmount = convertPrecip(precip, settings.precipUnit);
+                      foundTime = rainDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h'});
+                      break;
+                  }
+              }
+          }
+      }
+
+      // 2. Fallback to Hourly if not found in minutely
+      if (!rainFound) {
+          const next48Rain = weatherData.hourly.precipitation.slice(currentHour, currentHour + 48);
+          const firstRainIndex = next48Rain.findIndex(p => p > 0);
+          
+          if (firstRainIndex !== -1) {
+              rainFound = true;
+              foundInHours = firstRainIndex;
+              foundAmount = convertPrecip(next48Rain[firstRainIndex], settings.precipUnit);
+              
+              const rainTime = getLocationTime();
+              rainTime.setHours(currentHour + firstRainIndex);
+              foundTime = rainTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h'});
+          }
+      }
+
+      if (rainFound) {
           setRainAlert({
-              inHours: firstRainIndex,
-              amount: convertPrecip(next48Rain[firstRainIndex], settings.precipUnit),
-              time: rainTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h'})
+              inHours: foundInHours,
+              amount: foundAmount,
+              time: foundTime
           });
       } else {
           setRainAlert(null);
@@ -674,6 +730,20 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       // Safe access to hourly probability, fallback to 0 if missing
       const precipProb = weatherData.hourly.precipitation_probability ? weatherData.hourly.precipitation_probability[currentHour] : 0;
       
+      // Extract today's hourly precipitation for score logic
+      // We need 00:00 to 23:00 of the current day to evaluate "before 8:00" logic correctly
+      const now = getLocationTime();
+      // Format YYYY-MM-DD in local time
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const todayDateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      
+      const todayStartIndex = weatherData.hourly.time.findIndex(t => t.startsWith(todayDateStr));
+      let hourlyPrecip: number[] | undefined;
+      
+      if (todayStartIndex !== -1) {
+          hourlyPrecip = weatherData.hourly.precipitation.slice(todayStartIndex, todayStartIndex + 24);
+      }
+
       const activityData = {
           tempFeelsLike: weatherData.current.apparent_temperature,
           windKmh: weatherData.current.wind_speed_10m,
@@ -683,7 +753,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           weatherCode: weatherData.current.weather_code,
           sunChance: 100 - weatherData.current.cloud_cover,
           cloudCover: weatherData.current.cloud_cover,
-          visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000
+          visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000,
+          hourlyPrecip // Pass hourly data
       };
 
       const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'running', 'padel', 'tennis', 'field_sports'];
@@ -976,9 +1047,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <>
                 <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main">
                     <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
-                        <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
-                            {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
-                        </h1>
+                        <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
+                            <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                                {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
+                            </h1>
+                        </div>
                         <div className="grid grid-cols-3 gap-2 md:flex md:flex-row">
                             {weatherData.current.temperature_2m < 10 && (
                                 <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
@@ -1072,25 +1145,27 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             )}
                         </div>
                     </div>
-                    <p className="text-2xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
-                         <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
-                        {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
-                    </p>
-                    <button 
-                        onClick={() => onNavigate(ViewState.FORECAST)}
-                        className="text-text-main/90 text-lg font-normal drop-shadow-md mt-1 hover:scale-105 transition-transform cursor-pointer flex items-center gap-1"
-                    >
-                        H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70" />
-                    </button>
-                    <p className="text-text-muted text-sm font-normal drop-shadow-md mt-2">
-                        {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            day: 'numeric',
-                            month: 'short',
-                            hour12: settings.timeFormat === '12h'
-                        }) : t('no_data_available')}
-                    </p>
+                    <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
+                        <p className="text-2xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                             <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
+                            {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
+                        </p>
+                        <button 
+                            onClick={() => onNavigate(ViewState.FORECAST)}
+                            className="text-white/90 text-lg font-normal drop-shadow-md mt-1 hover:scale-105 transition-transform cursor-pointer flex items-center gap-1"
+                        >
+                            H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70" />
+                        </button>
+                        <p className="text-white/70 text-sm font-normal drop-shadow-md mt-2">
+                            {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                day: 'numeric',
+                                month: 'short',
+                                hour12: settings.timeFormat === '12h'
+                            }) : t('no_data_available')}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="bg-bg-page backdrop-blur-2xl rounded-t-[40px] border-t border-border-color p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom duration-500 text-text-main transition-colors">
@@ -1124,7 +1199,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     
                     {/* Rain Graph */}
                     {rainGraph && rainGraph.totalRain > 0 && (
-                        <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200 dark:border-blue-500/20">
+                        <div className="mb-8 p-4 bg-bg-card rounded-2xl border border-border-color shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-1 sm:gap-4">
                                 <h3 className="text-blue-600 dark:text-blue-200 text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center gap-2">
                                     <Icon name="rainy" /> {t('precip_forecast')}
@@ -1163,24 +1238,24 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                              {frostWarning && (
                                  <div 
                                     onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                    className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                                    className="bg-black/20 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-black/30 transition-colors shadow-lg"
                                  >
-                                     <Icon name="ac_unit" className="text-red-400 dark:text-red-300 text-xl" />
+                                     <Icon name="ac_unit" className="text-white text-xl" />
                                      <div>
-                                         <p className="text-red-600 dark:text-red-200 font-bold text-sm">{t('frost_warning')}</p>
-                                         <p className="text-red-500 dark:text-red-200/60 text-xs">{t('frost_desc')}</p>
+                                         <p className="text-white font-bold text-sm">{t('frost_warning')}</p>
+                                         <p className="text-white/70 text-xs">{t('frost_desc')}</p>
                                      </div>
                                  </div>
                              )}
                              {rainAlert && (
                                  <div 
                                     onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                    className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-500/10 transition-colors"
+                                    className="bg-black/20 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-black/30 transition-colors shadow-lg"
                                  >
-                                     <Icon name="rainy" className="text-blue-400 dark:text-blue-300 text-xl" />
+                                     <Icon name="rainy" className="text-white text-xl" />
                                      <div>
-                                        <p className="text-blue-600 dark:text-blue-200 font-bold text-sm">{t('rain_expected')}</p>
-                                        <p className="text-blue-500 dark:text-blue-200/60 text-xs">
+                                        <p className="text-white font-bold text-sm">{t('rain_expected')}</p>
+                                        <p className="text-white/70 text-xs">
                                             {rainAlert.inHours === 0 
                                                 ? t('rain.raining_now')
                                                 : t('rain_desc').replace('{hours}', rainAlert.inHours.toString()).replace('{time}', rainAlert.time).replace('{amount}', rainAlert.amount.toString() + settings.precipUnit)

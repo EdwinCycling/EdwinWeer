@@ -454,7 +454,7 @@ const App: React.FC = () => {
 
         {/* Baro Weerman Menu Overlay */}
         {baroMenuOpen && (
-            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
+            <div className="fixed inset-0 z-[1500] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
                 <div 
                     className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -562,7 +562,7 @@ const App: React.FC = () => {
 
         {/* Extra Menu Overlay */}
         {extraMenuOpen && (
-            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
+            <div className="fixed inset-0 z-[1500] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
                 <div 
                     className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-white dark:bg-card-dark rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-slate-200 dark:border-white/10 shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -706,7 +706,7 @@ const App: React.FC = () => {
 
         {/* Hamburger Menu Overlay */}
         {menuOpen && (
-            <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
+            <div className="fixed inset-0 z-[1500] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
                 <div 
                     className="absolute bottom-0 left-0 right-0 bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}

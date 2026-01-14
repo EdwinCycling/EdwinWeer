@@ -61,16 +61,23 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                         </p>
                          <p className="text-text-muted text-xs bg-bg-page p-3 rounded-lg">
                             <strong>{t('profile.info.credits')}</strong>
+                            {baroCredits > 0 && (
+                                <span className="block mt-1 text-accent-primary font-bold">
+                                    {t('email.credits.available')} {baroCredits}
+                                </span>
+                            )}
                         </p>
                     </div>
 
-                    <button 
-                        onClick={() => onNavigate(ViewState.PRICING)}
-                        className="w-full py-3 px-4 bg-accent-primary hover:bg-accent-hover text-text-inverse rounded-xl shadow-lg shadow-accent-primary/20 transition-all flex items-center justify-center gap-2 font-bold"
-                    >
-                        <Icon name="payments" />
-                        {t('profile.info.pricing_link')}
-                    </button>
+                    {baroCredits <= 0 && (
+                        <button 
+                            onClick={() => onNavigate(ViewState.PRICING)}
+                            className="w-full py-3 px-4 bg-accent-primary hover:bg-accent-hover text-text-inverse rounded-xl shadow-lg shadow-accent-primary/20 transition-all flex items-center justify-center gap-2 font-bold"
+                        >
+                            <Icon name="payments" />
+                            {t('profile.info.pricing_link')}
+                        </button>
+                    )}
                 </div>
 
                 <SettingsProfile 
@@ -152,6 +159,10 @@ export const ProfilesView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                     currentLocationName={settings.favorites.find(f => f.isCurrentLocation)?.name || settings.favorites[0]?.name}
                     language={settings.language}
                 />
+                
+                <p className="text-center text-xs text-text-muted mt-6 italic">
+                    {t('common.autosave')}
+                </p>
             </div>
         </div>
     );

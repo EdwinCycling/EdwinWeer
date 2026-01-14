@@ -23,13 +23,46 @@ export interface ActivityWeatherData {
     moonPhaseText?: string; // e.g. 'Nieuwe Maan'
     humidity?: number;     // %
     precip24h?: number;    // mm (past 24h)
+    hourlyPrecip?: number[]; // mm per hour (0-23)
 }
 
 export const calculateActivityScore = (w: ActivityWeatherData, activity: ActivityType, lang: AppLanguage = 'nl'): ActivityScore => {
     let score = 10;
     let reasons: string[] = [];
+    
+    // Extra Check: Rain timing
+    // If we have hourly data, we can adjust logic
+    let isRainBefore8Only = false;
+    let isRainMostlyNight = false;
+
+    if (w.hourlyPrecip && w.hourlyPrecip.length >= 24) {
+        const totalRain = w.hourlyPrecip.reduce((a, b) => a + b, 0);
+        
+        if (totalRain > 0) {
+            const rainBefore8 = w.hourlyPrecip.slice(0, 8).reduce((a, b) => a + b, 0);
+            const rainAfter8 = totalRain - rainBefore8;
+            
+            // Scenario 1: Rain ONLY before 8:00 (rest of day dry)
+            if (rainAfter8 < 0.2) {
+                isRainBefore8Only = true;
+            }
+            
+            // Scenario 2: Rain mostly before 9:00 OR after 20:00 AND daytime chance is low
+            const rainDay = w.hourlyPrecip.slice(9, 20).reduce((a, b) => a + b, 0);
+            // Low daytime chance? We use precipProb as proxy or need hourly prob
+            // Assuming "regenkansen overdag klein" means total rain during day is minimal
+            if (rainDay < 0.5 && w.precipProb < 50) {
+                isRainMostlyNight = true;
+            }
+        }
+    }
 
     const penalize = (points: number, reasonKey: string) => {
+        // If rain penalty AND isRainBefore8Only -> Skip
+        if (isRainBefore8Only && (reasonKey === 'reason.rain' || reasonKey === 'reason.rain_chance' || reasonKey === 'reason.rainy' || reasonKey === 'reason.wet_shoes' || reasonKey === 'reason.working_rain' || reasonKey === 'reason.risk_wet_gear' || reasonKey === 'reason.wet_court' || reasonKey === 'reason.damp_court' || reasonKey === 'reason.wet_field' || reasonKey === 'reason.damp_field' || reasonKey === 'reason.court_unplayable' || reasonKey === 'reason.wet_lines')) {
+             return;
+        }
+
         if (points > 0) {
             score -= points;
             reasons.push(getTranslation(reasonKey, lang));
@@ -367,6 +400,18 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
         penalize(2, 'reason.feels_like_subzero');
     }
 
-    score = Math.max(1, Math.min(10, score));
-    return { score10: score, stars: score / 2, text: reasons[0] || getTranslation('reason.perfect', lang), reasons };
+    // Final Adjustments
+    if (isRainBefore8Only) {
+        reasons.push(lang === 'nl' ? "Regen valt vroeg (voor 8:00)" : "Rain falls early (before 8:00)");
+    } else if (isRainMostlyNight) {
+        score += 1; // Compensate for night rain
+        // reasons.push(lang === 'nl' ? "Regen valt 's nachts" : "Rain falls at night");
+    }
+
+    return {
+        score10: Math.max(1, Math.min(10, Math.round(score * 10) / 10)), // Round to 1 decimal, clamp 1-10
+        stars: Math.max(0.5, Math.min(5, Math.round(score) / 2)),
+        text: reasons[0] || getTranslation('activity.perfect', lang),
+        reasons
+    };
 };

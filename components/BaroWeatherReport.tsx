@@ -128,6 +128,17 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
 
                 if (activities.length > 0) {
                     for (let i = 0; i < Math.min(daysAhead, forecast.daily.time.length); i++) {
+                        // Find hourly data for this day to enable more precise rain calculations
+                        const dateStr = forecast.daily.time[i];
+                        let hourlyPrecip: number[] | undefined;
+                        
+                        if (forecast.hourly && forecast.hourly.time && forecast.hourly.precipitation) {
+                            const hourlyIndex = forecast.hourly.time.findIndex((t: string) => t.startsWith(dateStr));
+                            if (hourlyIndex !== -1) {
+                                hourlyPrecip = forecast.hourly.precipitation.slice(hourlyIndex, hourlyIndex + 24);
+                            }
+                        }
+
                         // Map forecast daily data to ActivityWeatherData
                         // Note: This is an approximation based on daily aggregates
                         const dailyData: ActivityWeatherData = {
@@ -139,7 +150,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                             weatherCode: forecast.daily.weather_code[i],
                             sunChance: 50, // Default, hard to calc from daily only without sunshine_duration normalized
                             cloudCover: 50,
-                            visibility: 10000
+                            visibility: 10000,
+                            hourlyPrecip // Pass hourly data for advanced rain checks
                         };
 
                         // If sunshine_duration is available (seconds)

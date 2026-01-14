@@ -4,6 +4,7 @@ import { ViewState, AppSettings, Location, OpenMeteoResponse } from '../types';
 import { fetchForecast, convertTemp, convertWind, convertPressure, getBeaufort, getWindDirection } from '../services/weatherService';
 import { loadCurrentLocation } from '../services/storageService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, BarChart, Bar, ReferenceLine, ScatterChart, Scatter, Line } from 'recharts';
+import { CompactHourlyChart } from '../components/CompactHourlyChart';
 import { getTranslation } from '../services/translations';
 
 interface Props {
@@ -17,6 +18,18 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFeelsLike, setShowFeelsLike] = useState(false);
+  const [viewMode, setViewMode] = useState<'details' | 'compact'>(() => {
+      if (typeof window !== 'undefined') {
+          return (localStorage.getItem('hourlyViewMode') as 'details' | 'compact') || 'details';
+      }
+      return 'details';
+  });
+
+  useEffect(() => {
+      if (typeof window !== 'undefined') {
+          localStorage.setItem('hourlyViewMode', viewMode);
+      }
+  }, [viewMode]);
   
   const t = (key: string) => getTranslation(key, settings.language);
   const mode = initialParams?.mode || 'forecast';
@@ -67,6 +80,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                     time: date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }),
                     timestamp: date.getTime(), // Use timestamp for unique XAxis key
                     fullDate: date, // Keep full date for day detection
+                    weatherCode: forecast.hourly.weather_code[idx], // Added for Compact Chart
                     temp: convertTemp(forecast.hourly.temperature_2m[idx], settings.tempUnit),
                     feelsLike: convertTemp(forecast.hourly.apparent_temperature[idx], settings.tempUnit),
                     humidity: forecast.hourly.relative_humidity_2m[idx],
@@ -178,6 +192,30 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                  <Icon name="location_on" className="text-xs" /> {location.name}
             </div>
         </div>
+        
+        {/* View Toggle */}
+        <div className="ml-auto flex bg-bg-card rounded-lg p-1 border border-border-color">
+            <button
+                onClick={() => setViewMode('details')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    viewMode === 'details' 
+                        ? 'bg-primary text-white shadow-sm' 
+                        : 'text-text-muted hover:bg-bg-page'
+                }`}
+            >
+                Details
+            </button>
+            <button
+                onClick={() => setViewMode('compact')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    viewMode === 'compact' 
+                        ? 'bg-primary text-white shadow-sm' 
+                        : 'text-text-muted hover:bg-bg-page'
+                }`}
+            >
+                Compact
+            </button>
+        </div>
       </div>
 
       {loading ? (
@@ -185,6 +223,15 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
            </div>
       ) : (
+        viewMode === 'compact' ? (
+            <div className="pt-28 pb-4 px-4">
+                 <div className="bg-bg-card rounded-xl p-4 border border-border-color overflow-x-auto shadow-sm">
+                    <div className="min-w-[800px] md:min-w-full">
+                        <CompactHourlyChart data={data} settings={settings} />
+                    </div>
+                 </div>
+            </div>
+        ) : (
         <div className="flex flex-col gap-8 p-4 pt-28">
             
             <div className="w-full overflow-x-auto pb-4">
@@ -570,6 +617,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
             </div>
             
         </div>
+        )
       )}
     </div>
   );

@@ -180,7 +180,7 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+        <div className="flex flex-col h-full bg-bg-page overflow-y-auto">
             {/* Header */}
             <div className="flex-none p-4 md:p-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 flex items-center gap-4 sticky top-0 z-10 shadow-sm">
                 <button 

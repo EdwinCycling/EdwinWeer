@@ -212,6 +212,11 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
           // Activity Scores (Only for first 7 days)
           let activityScores: any[] = [];
           if (i <= 6) {
+              // Extract hourly precip for this day
+              // weatherData.hourly.precipitation is a flat array. 
+              // We need indices for this day.
+              const hourlyPrecip = hourlyIndices.map(idx => weatherData.hourly.precipitation[idx] || 0);
+
               const activityData = {
                   tempFeelsLike: feelsLikeRaw,
                   windKmh: weatherData.daily.wind_speed_10m_max?.[i] || 0,
@@ -224,7 +229,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                   visibility,
                   humidity,
                   moonPhaseText,
-                  precip24h
+                  precip24h,
+                  hourlyPrecip // Pass the hourly precip array
               };
 
               const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'sailing', 'running', 'beach', 'gardening', 'stargazing', 'golf', 'padel', 'field_sports', 'tennis'];
@@ -496,9 +502,11 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
         {weatherData && (
             <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
-                        {currentTemp}°
-                    </h1>
+                    <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
+                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                            {currentTemp}°
+                        </h1>
+                    </div>
                     
                     <div className="flex gap-3">
                         {feelsLike < 10 ? (
@@ -529,13 +537,18 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         </div>
                     </div>
                 </div>
-                <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2 text-white">
-                        <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-2xl" />
-                    {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
-                </p>
-                <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
-                    H:{highTemp}° L:{lowTemp}°
-                </p>
+                <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
+                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                            <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-2xl" />
+                        {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
+                    </p>
+                    <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                        H:{highTemp}° L:{lowTemp}°
+                    </p>
+                    <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
+                        {formatDateTime()}
+                    </p>
+                </div>
             </div>
         )}
 

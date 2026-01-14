@@ -1,6 +1,7 @@
 import { Dictionary } from '../../types';
 
 export const es: Dictionary = {
+    'common.autosave': 'Guardamos automáticamente aquí...',
     'optional': 'Opcional',
     'upload_gpx_short': 'Subir GPX',
     'select_gpx': 'Seleccionar archivo GPX',

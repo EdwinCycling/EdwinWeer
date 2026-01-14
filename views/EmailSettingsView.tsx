@@ -41,13 +41,13 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark pb-24 animate-in fade-in slide-in-from-bottom-4 text-slate-800 dark:text-white transition-colors duration-300">
+        <div className="flex flex-col min-h-screen bg-bg-page pb-24 animate-in fade-in slide-in-from-bottom-4 text-text-main transition-colors duration-300">
             {/* Header */}
-            <div className="flex flex-col sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
+            <div className="flex flex-col sticky top-0 bg-bg-card/95 backdrop-blur z-20 border-b border-border-color transition-colors">
                 <div className="flex items-center p-4">
                     <button 
                         onClick={() => onNavigate(ViewState.CURRENT)} 
-                        className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2"
+                        className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2"
                     >
                         <Icon name="arrow_back_ios_new" />
                     </button>
@@ -58,14 +58,14 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
             <div className="p-4 max-w-lg mx-auto w-full space-y-6">
                 
                 {/* Intro Card */}
-                <div className="bg-white dark:bg-card-dark w-full p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
+                <div className="bg-bg-card w-full p-6 rounded-2xl shadow-sm border border-border-color">
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="size-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+                        <div className="size-12 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
                             <Icon name="mail" className="text-2xl" />
                         </div>
                         <div>
                             <h2 className="font-bold text-lg">{t('email.intro.title')}</h2>
-                            <p className="text-sm text-slate-500 dark:text-white/60">{t('email.intro.subtitle')}</p>
+                            <p className="text-sm text-text-muted">{t('email.intro.subtitle')}</p>
                         </div>
                     </div>
 
@@ -73,7 +73,7 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                         <p>
                             {t('email.intro.body1')}
                         </p>
-                        <p className="text-slate-500 dark:text-white/60 text-xs bg-slate-50 dark:bg-white/5 p-3 rounded-lg">
+                        <p className="text-text-muted text-xs bg-bg-page p-3 rounded-lg">
                             <strong>{t('email.intro.body2_bold')}</strong><br />
                             {t('email.intro.body2_text')}
                         </p>
@@ -81,11 +81,11 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                 </div>
 
                 {profiles.length === 0 && (
-                    <div className="text-center p-8 text-slate-500 dark:text-white/50">
+                    <div className="text-center p-8 text-text-muted">
                         <p>{t('email.no_profiles')}</p>
                         <button 
                             onClick={() => onNavigate(ViewState.PROFILES)}
-                            className="mt-4 text-primary font-bold hover:underline"
+                            className="mt-4 text-accent-primary font-bold hover:underline"
                         >
                             {t('email.create_profile')}
                         </button>
@@ -95,9 +95,9 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                 {profiles.length > 0 && (
                     <>
                         {baroCredits <= 0 ? (
-                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/50 text-center mb-6">
-                                <p className="text-red-800 dark:text-red-200 font-bold mb-2">{t('messenger.schedule.no_credits_title')}</p>
-                                <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                            <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-center mb-6">
+                                <p className="text-red-600 font-bold mb-2">{t('messenger.schedule.no_credits_title')}</p>
+                                <p className="text-sm text-red-500 mb-4">
                                     {t('messenger.schedule.no_credits_desc')}
                                 </p>
                                 <button
@@ -108,8 +108,8 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                                 </button>
                             </div>
                         ) : (
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 mb-6 flex items-center justify-between">
-                                <span className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                            <div className="bg-accent-primary/10 p-3 rounded-xl border border-accent-primary/20 mb-6 flex items-center justify-between">
+                                <span className="text-sm text-accent-primary font-medium">
                                     {t('email.credits.available')} <strong>{baroCredits}</strong>
                                 </span>
                             </div>
@@ -117,7 +117,7 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
 
                          {/* Profile Selector */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-2">
+                            <label className="block text-sm font-medium text-text-main mb-2">
                                 {t('email.profile.select')}
                             </label>
                             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -127,8 +127,8 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                                         onClick={() => setSelectedProfileId(p.id)}
                                         className={`px-4 py-2 rounded-xl whitespace-nowrap transition-colors border ${
                                             selectedProfileId === p.id
-                                                ? 'bg-primary border-primary text-white shadow-md'
-                                                : 'bg-white dark:bg-card-dark border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:border-primary/50'
+                                                ? 'bg-accent-primary border-accent-primary text-text-inverse shadow-md'
+                                                : 'bg-bg-card border-border-color text-text-muted hover:border-accent-primary/50'
                                         }`}
                                     >
                                         {p.name}
@@ -149,6 +149,10 @@ export const EmailSettingsView: React.FC<Props> = ({ settings, onUpdateSettings,
                         )}
                     </>
                 )}
+                
+                <p className="text-center text-xs text-text-muted mt-6 italic">
+                    {t('common.autosave')}
+                </p>
             </div>
         </div>
     );

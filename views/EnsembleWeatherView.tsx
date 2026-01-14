@@ -1008,9 +1008,11 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         {currentWeather && (
             <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display">
-                        {currentTemp}°
-                    </h1>
+                    <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
+                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                            {currentTemp}°
+                        </h1>
+                    </div>
                     
                     {currentWeather.current.temperature_2m < 10 && (
                         <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
@@ -1036,13 +1038,24 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         />
                     )}
                 </div>
-                <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
-                        <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
-                    {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
-                </p>
-                <p className="text-slate-500 dark:text-white/80 text-base font-normal drop-shadow-md mt-1">
-                    H:{highTemp}° L:{lowTemp}°
-                </p>
+                <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
+                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                            <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
+                        {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
+                    </p>
+                    <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                        H:{highTemp}° L:{lowTemp}°
+                    </p>
+                    <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
+                        {new Date(currentWeather.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            day: 'numeric',
+                            month: 'short',
+                            hour12: settings.timeFormat === '12h'
+                        })}
+                    </p>
+                </div>
             </div>
         )}
 

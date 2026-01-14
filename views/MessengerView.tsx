@@ -232,6 +232,10 @@ export const MessengerView: React.FC<Props> = ({ onNavigate, settings, onUpdateS
                 )}
             </div>
         )}
+        
+        <p className="text-center text-xs text-text-muted mt-6 italic">
+            {t('common.autosave')}
+        </p>
 
       </div>
     </div>

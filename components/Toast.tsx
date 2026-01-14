@@ -32,7 +32,7 @@ export const Toast: React.FC<ToastProps> = ({
             : 'info';
 
     return (
-        <div className="fixed bottom-24 left-6 right-6 md:left-auto md:right-6 md:w-80 z-[100] animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-24 left-6 right-6 md:left-auto md:right-6 md:w-80 z-[3000] animate-in slide-in-from-bottom-4 duration-300">
             <div className={`${bgClass} shadow-2xl rounded-2xl p-4 flex items-center gap-3 border border-white/10`}>
                 <Icon name={iconName} className="text-xl" />
                 <p className="text-sm font-bold flex-1">{message}</p>

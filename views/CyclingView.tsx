@@ -87,23 +87,23 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+        <div className="flex flex-col h-full bg-bg-page overflow-y-auto text-text-main">
             {/* Header */}
-            <div className="flex-none p-4 md:p-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 flex items-center gap-4 sticky top-0 z-10 shadow-sm">
+            <div className="flex-none p-4 md:p-6 bg-bg-card border-b border-border-color flex items-center gap-4 sticky top-0 z-10 shadow-sm">
                 <button 
                     onClick={() => onNavigate(ViewState.CURRENT)}
-                    className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-slate-500 dark:text-white/60"
+                    className="p-2 -ml-2 rounded-full hover:bg-bg-page transition-colors text-text-muted"
                 >
                     <Icon name="arrow_back" />
                 </button>
                 <div className="flex-1">
-                    <h1 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <h1 className="text-xl font-bold text-text-main flex items-center gap-2">
                         <span className="text-2xl">🚴</span> {t('cycling.title')}
                     </h1>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-full border border-indigo-100 dark:border-indigo-500/20">
-                    <Icon name="token" className="text-indigo-600 dark:text-indigo-400 text-sm" />
-                    <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-accent-primary/10 rounded-full border border-accent-primary/20">
+                    <Icon name="token" className="text-accent-primary text-sm" />
+                    <span className="text-sm font-bold text-accent-primary">
                         {baroCredits} {t('cycling.credits')}
                     </span>
                 </div>
@@ -112,19 +112,19 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
             <div className="flex-1 p-4 md:p-6 max-w-3xl mx-auto w-full space-y-6">
                 
                 {/* Intro Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm">
-                    <h2 className="text-lg font-bold mb-4 text-slate-800 dark:text-white">{t('cycling.intro.title')}</h2>
-                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm">
+                    <h2 className="text-lg font-bold mb-4 text-text-main">{t('cycling.intro.title')}</h2>
+                    <p className="text-text-muted leading-relaxed">
                         {t('cycling.intro.description')}
                     </p>
                 </div>
 
                 {/* Settings Form */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm space-y-6">
+                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm space-y-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="font-bold text-slate-800 dark:text-white">{t('cycling.receive_updates')}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                            <h3 className="font-bold text-text-main">{t('cycling.receive_updates')}</h3>
+                            <p className="text-sm text-text-muted">
                                 {t('cycling.cost_info')}
                             </p>
                         </div>
@@ -138,39 +138,39 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                     handleSave(!enabled, channel);
                                 }}
                                 disabled={loading}
-                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                                    enabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${
+                                    enabled ? 'bg-accent-primary' : 'bg-text-muted/20'
                                 }`}
                             >
                                 <span
                                     className={`${
                                         enabled ? 'translate-x-7' : 'translate-x-1'
-                                    } inline-block h-6 w-6 transform rounded-full bg-white transition-transform`}
+                                    } inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform`}
                                 />
                             </button>
                         </div>
                     </div>
 
                     {enabled && (
-                        <div className="pt-4 border-t border-slate-100 dark:border-white/5">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                        <div className="pt-4 border-t border-border-color">
+                            <label className="block text-sm font-medium text-text-muted mb-3">
                                 {t('cycling.channel_select')}
                             </label>
                             <div className="grid grid-cols-2 gap-3">
-                                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${channel === 'email' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${channel === 'email' ? 'bg-accent-primary/10 border-accent-primary/30' : 'border-border-color hover:bg-bg-page'}`}>
                                     <input
                                         type="radio"
                                         name="channel"
                                         value="email"
                                         checked={channel === 'email'}
                                         onChange={() => handleSave(enabled, 'email')}
-                                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                        className="w-4 h-4 text-accent-primary focus:ring-accent-primary border-gray-300"
                                     />
                                     <span className="text-xl">📨</span>
-                                    <span className="font-medium text-slate-700 dark:text-slate-200">{t('cycling.settings.channel_email')}</span>
+                                    <span className="font-medium text-text-main">{t('cycling.settings.channel_email')}</span>
                                 </label>
 
-                                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!telegramLinked ? 'opacity-50 cursor-not-allowed' : ''} ${channel === 'telegram' ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/10 dark:border-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!telegramLinked ? 'opacity-50 cursor-not-allowed' : ''} ${channel === 'telegram' ? 'bg-accent-primary/10 border-accent-primary/30' : 'border-border-color hover:bg-bg-page'}`}>
                                     <input
                                         type="radio"
                                         name="channel"
@@ -178,11 +178,11 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
                                         checked={channel === 'telegram'}
                                         onChange={() => handleSave(enabled, 'telegram')}
                                         disabled={!telegramLinked}
-                                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                        className="w-4 h-4 text-accent-primary focus:ring-accent-primary border-gray-300"
                                     />
                                     <span className="text-xl">✈️</span>
                                     <div className="flex-1 min-w-0">
-                                        <span className="font-medium text-slate-700 dark:text-slate-200 block truncate">{t('cycling.settings.channel_telegram')}</span>
+                                        <span className="font-medium text-text-main block truncate">{t('cycling.settings.channel_telegram')}</span>
                                     </div>
                                 </label>
                             </div>
@@ -198,8 +198,9 @@ export const CyclingView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
 
                 </div>
 
-                <div className="text-center text-xs text-slate-400 dark:text-slate-600">
+                <div className="text-center text-xs text-text-muted">
                     <p>{t('cycling.only_if_race')}</p>
+                    <p className="mt-4 opacity-60">{t('common.autosave')}</p>
                 </div>
 
             </div>

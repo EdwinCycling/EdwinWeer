@@ -349,9 +349,15 @@ export const handler = async (event, context) => {
             }
             
             // Optional: Send Telegram notification that email is ready (or simplified version)
-            if (settings.channel === 'telegram' && userData.telegramChatId) {
-                await sendTelegram(userData.telegramChatId, html);
-                sent = true; // Mark as sent if at least one channel worked
+            // Force send if channel is telegram OR if email is missing but telegram is linked
+            if ((settings.channel === 'telegram' || !email) && userData.telegramChatId) {
+                try {
+                    await sendTelegram(userData.telegramChatId, html);
+                    sent = true; // Mark as sent if at least one channel worked
+                    console.log(`Sent Baro Weerman Telegram to ${userId}`);
+                } catch (e) {
+                    console.error(`Failed to send Telegram to ${userId}`, e);
+                }
             }
 
             if (sent) {
