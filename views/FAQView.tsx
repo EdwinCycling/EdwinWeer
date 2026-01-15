@@ -150,7 +150,7 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
         </div>
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto p-4 space-y-6">
+      <div className="relative z-10 w-[90%] md:w-full max-w-3xl mx-auto p-4 space-y-6">
         {/* Search & Categories */}
         <div className={`backdrop-blur-md rounded-2xl p-4 shadow-sm border sticky top-[73px] z-20 ${
             isLandingV2 

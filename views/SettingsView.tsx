@@ -42,6 +42,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     const [searchResults, setSearchResults] = useState<Location[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+    const [localFavorites, setLocalFavorites] = useState<Location[]>(settings.favorites);
     
     // Tab State
     const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records'>('general');
@@ -55,6 +56,13 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     React.useEffect(() => {
         setUsageStats(getUsage());
     }, []);
+
+    // Sync local favorites when settings change (unless dragging)
+    useEffect(() => {
+        if (draggedItemIndex === null) {
+            setLocalFavorites(settings.favorites);
+        }
+    }, [settings.favorites, draggedItemIndex]);
 
     const t = (key: string) => getTranslation(key, settings.language);
 
@@ -242,7 +250,20 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     };
 
     const handleDragEnd = () => {
+        if (draggedItemIndex !== null) {
+            updateSetting('favorites', localFavorites);
+        }
         setDraggedItemIndex(null);
+    };
+
+    const moveFavorite = (index: number, direction: 'up' | 'down') => {
+        const newFavs = [...settings.favorites];
+        if (direction === 'up' && index > 0) {
+            [newFavs[index], newFavs[index - 1]] = [newFavs[index - 1], newFavs[index]];
+        } else if (direction === 'down' && index < newFavs.length - 1) {
+            [newFavs[index], newFavs[index + 1]] = [newFavs[index + 1], newFavs[index]];
+        }
+        updateSetting('favorites', newFavs);
     };
 
     const tabs = [
@@ -328,10 +349,10 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
 
                             {/* Favorites List */}
                             <div className="space-y-2">
-                                {settings.favorites.length === 0 ? (
+                                {localFavorites.length === 0 ? (
                                     <p className="text-center text-text-muted text-sm py-4">{t('settings.no_favs')}</p>
                                 ) : (
-                                    settings.favorites.map((fav, index) => (
+                                    localFavorites.map((fav, index) => (
                                         <div 
                                             key={`${fav.name}-${index}`}
                                             draggable
@@ -347,12 +368,30 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                                     <div className="text-xs text-text-muted">{fav.country}</div>
                                                 </div>
                                             </div>
-                                            <button 
-                                                onClick={() => removeFavorite(index)}
-                                                className="text-text-muted hover:text-red-500 transition-colors p-2"
-                                            >
-                                                <Icon name="delete" />
-                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                <div className="flex flex-col mr-2">
+                                                    <button 
+                                                        onClick={() => moveFavorite(index, 'up')} 
+                                                        disabled={index === 0}
+                                                        className="text-text-muted hover:text-text-main disabled:opacity-30 p-0.5"
+                                                    >
+                                                        <Icon name="keyboard_arrow_up" className="text-lg" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => moveFavorite(index, 'down')} 
+                                                        disabled={index === localFavorites.length - 1}
+                                                        className="text-text-muted hover:text-text-main disabled:opacity-30 p-0.5"
+                                                    >
+                                                        <Icon name="keyboard_arrow_down" className="text-lg" />
+                                                    </button>
+                                                </div>
+                                                <button 
+                                                    onClick={() => removeFavorite(index)}
+                                                    className="text-text-muted hover:text-red-500 transition-colors p-2"
+                                                >
+                                                    <Icon name="delete" />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))
                                 )}

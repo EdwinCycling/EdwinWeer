@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { CurrentWeatherView } from './views/CurrentWeatherView';
-import { LoginView } from './views/LoginView';
 import { FAQView } from './views/FAQView';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
@@ -256,10 +255,7 @@ const App: React.FC = () => {
     if (currentView === ViewState.FAQ) {
         return <FAQView onNavigate={navigate} settings={settings} isLandingV2={true} />;
     }
-    if (currentView === ViewState.LANDING_V2) {
-        return <LandingPageV2 onNavigate={navigate} />;
-    }
-    return <LoginView onNavigate={navigate} />;
+    return <LandingPageV2 onNavigate={navigate} />;
   }
 
   const renderView = () => {

@@ -643,9 +643,6 @@ export const es: Dictionary = {
     'profile.teaser.desc': 'Deja que baro escriba un informe meteorológico único para ti basado en tus actividades y horarios favoritos.',
     'profile.teaser.upgrade': 'Ver paquetes pro',
     'profile.teaser.pro_only': 'Disponible para usuarios pro',
-    'landing.feature_personalized': 'Informes meteorológicos personalizados',
-    'landing.feature_personalized_desc': 'Reciba informes meteorológicos únicos escritos por ia, adaptados exactamente a su ubicación, fecha y perfil de actividad personal.',
-    'landing.view_preview': 'Ver ejemplo',
 
     // Months
     'month.jan': 'January',
@@ -1051,9 +1048,6 @@ export const es: Dictionary = {
     'landing.ready_desc': 'Únete a miles de personas que planifican mejor su día con baro.',
     'landing.start_free': 'Empezar ahora gratis',
     'landing.view_preview': 'Ver vista previa',
-    'landing.copyright': '© 2024 Baro Weather. Todos los derechos reservados.',
-    'landing.v2_preview': 'Vista previa v2',
-        'detail_title': 'Funciones detalladas',
     'landing.hero_title_1': 'Inteligencia meteorológica',
     'landing.hero_title_2': 'reinventada',
     'landing.hero_subtitle': 'Experimenta el pronóstico del tiempo como nunca antes. Con visualizaciones impresionantes, conocimientos inteligentes de IA y un diseño que cobra vida. Y gratis para usar sin publicidad.',

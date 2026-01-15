@@ -3,6 +3,7 @@ import React, { useState } from "react";
 interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
+  className?: string;
 }
 
 export function ImageWithFallback({ src, alt, ...props }: ImageWithFallbackProps) {
