@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => {
           registerType: 'prompt',
           includeAssets: ['icons/baro.ico', 'icons/baro-icon-192.png'],
           workbox: {
+            cleanupOutdatedCaches: true,
             maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
             navigateFallbackDenylist: [/^\/\.netlify\/functions/],
             runtimeCaching: [

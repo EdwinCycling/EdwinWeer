@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 function ReloadPrompt() {
@@ -17,6 +18,25 @@ function ReloadPrompt() {
     setNeedRefresh(false);
   };
 
+  const handleUpdate = () => {
+    console.log('Updating service worker and reloading...');
+    updateServiceWorker(true);
+    
+    // Fallback: als de hook niet automatisch herlaadt binnen 2 seconden, doen we het handmatig
+    setTimeout(() => {
+      if (needRefresh) {
+        console.log('Fallback reload triggered');
+        window.location.reload();
+      }
+    }, 2000);
+  };
+
+  useEffect(() => {
+    if (needRefresh) {
+      console.log('PWA Update available!');
+    }
+  }, [needRefresh]);
+
   if (!needRefresh) return null;
 
   return (
@@ -27,7 +47,7 @@ function ReloadPrompt() {
       <div className="pwa-buttons">
         <button
           className="pwa-update-btn"
-          onClick={() => updateServiceWorker(true)}
+          onClick={handleUpdate}
         >
           Update Nu ↻
         </button>
