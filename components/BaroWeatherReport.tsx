@@ -17,6 +17,7 @@ interface Props {
     profiles?: BaroProfile[];
     onNavigate: (view: ViewState, params?: any) => void;
     language?: AppLanguage;
+    isLimitReached?: boolean;
 }
 
 interface DayScore {
@@ -24,7 +25,7 @@ interface DayScore {
     scores: { type: ActivityType; score: ActivityScore }[];
 }
 
-export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData, profile, profiles, onNavigate, language }) => {
+export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData, profile, profiles, onNavigate, language, isLimitReached = false }) => {
     const { user } = useAuth();
     const t = (key: string) => getTranslation(key, language || 'nl');
     const [report, setReport] = useState<string | null>(null);
@@ -337,7 +338,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                                     <button
                                                         key={p.id || index}
                                                         onClick={() => handleGenerate(p)}
-                                                        className="px-4 py-2 bg-bg-page hover:bg-accent-primary/10 text-text-main rounded-xl text-xs font-bold transition-all border border-border-color hover:border-accent-primary/50"
+                                                        disabled={isLimitReached}
+                                                        className={`px-4 py-2 bg-bg-page hover:bg-accent-primary/10 text-text-main rounded-xl text-xs font-bold transition-all border border-border-color hover:border-accent-primary/50 ${isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                     >
                                                         {p.name}
                                                     </button>
@@ -346,7 +348,8 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
                                         ) : (
                                             <button
                                                 onClick={() => profile && handleGenerate(profile)}
-                                                className="px-6 py-2 bg-accent-primary/10 text-accent-primary rounded-xl font-bold text-sm hover:bg-accent-primary/20 transition-colors"
+                                                disabled={!profile || isLimitReached}
+                                                className={`px-6 py-2 bg-accent-primary/10 text-accent-primary rounded-xl font-bold text-sm hover:bg-accent-primary/20 transition-colors ${isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 {t('baro.regenerate')}
                                             </button>

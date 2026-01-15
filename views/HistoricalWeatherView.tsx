@@ -19,9 +19,10 @@ interface Props {
   settings: AppSettings;
   onUpdateSettings?: (settings: AppSettings) => void;
   initialParams?: { date1?: Date; date2?: Date; location?: Location };
+  isLimitReached?: boolean;
 }
 
-export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
+export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams, isLimitReached = false }) => {
   const [location1, setLocation1] = useState<Location>(() => initialParams?.location || loadCurrentLocation());
   const [location2, setLocation2] = useState<Location>(() => initialParams?.location || loadCurrentLocation());
   
@@ -50,7 +51,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   const [showNewspaper, setShowNewspaper] = useState(false);
   const [newspaperData, setNewspaperData] = useState<any>(null);
   const [isGeneratingNewspaper, setIsGeneratingNewspaper] = useState(false);
-  const [apiLimitReached, setApiLimitReached] = useState(false);
   const [baroCredits, setBaroCredits] = useState(0);
 
   // Cache for first available years to save API calls
@@ -123,7 +123,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   };
 
   useEffect(() => {
-    setApiLimitReached(false); // Reset on changes
     saveCurrentLocation(location1);
     saveHistoricalLocation(location2);
     fetchData();
@@ -654,9 +653,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
     } catch (e: any) {
         console.error("Error fetching historical comparison", e);
-        if (e.message?.includes('limit exceeded')) {
-            setApiLimitReached(true);
-        }
     } finally {
         setLoading(false);
     }
@@ -670,9 +666,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
       const res = await fetchHistorical(loc.lat, loc.lon, ds, ds);
       return !!(res?.hourly?.temperature_2m?.length);
     } catch (e: any) {
-      if (e.message?.includes('limit exceeded')) {
-        setApiLimitReached(true);
-      }
       return false;
     }
   };
@@ -1278,12 +1271,8 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
   return (
     <div className="flex flex-col min-h-screen pb-24 bg-background-light dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
-      {/* API Limit Warning */}
-      {apiLimitReached && (
-        <div className="bg-amber-500 text-white px-4 py-2 text-center text-sm font-medium animate-in slide-in-from-top duration-300">
-          {t('usage.limit_reached_daily')}
-        </div>
-      )}
+      {/* API Limit Warning - Handled globally in App.tsx */}
+
 
       <div className="relative flex items-center justify-center p-4 pt-8 mb-2">
           {/* Title & Navigation */}
@@ -1706,7 +1695,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
                                       </p>
                                       <button 
                                           onClick={handleGenerateNewspaper}
-                                          disabled={isGeneratingNewspaper}
+                                          disabled={isGeneratingNewspaper || isLimitReached}
                                           className="w-full md:w-auto px-6 py-2 bg-white text-indigo-600 hover:bg-white/90 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg"
                                       >
                                           {isGeneratingNewspaper ? (

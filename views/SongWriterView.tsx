@@ -13,9 +13,10 @@ interface SongWriterViewProps {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
     onUpdateSettings: (settings: AppSettings) => void;
+    isLimitReached?: boolean;
 }
 
-export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, settings }) => {
+export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, settings, isLimitReached = false }) => {
     const { user } = useAuth();
     const t = (key: string) => getTranslation(key, settings.language);
 
@@ -623,9 +624,9 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
 
                 <button
                     onClick={handleSubmit}
-                    disabled={!canGenerate || !date || !location || !protagonist}
+                    disabled={!canGenerate || !date || !location || !protagonist || isLimitReached}
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-                        canGenerate && date && location && protagonist
+                        canGenerate && date && location && protagonist && !isLimitReached
                             ? 'bg-accent-primary text-text-inverse hover:bg-accent-hover shadow-lg shadow-accent-primary/25'
                             : 'bg-bg-subtle text-text-muted cursor-not-allowed'
                     }`}

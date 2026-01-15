@@ -13,12 +13,13 @@ interface BaroStorytellerViewProps {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
     onUpdateSettings: (settings: AppSettings) => void;
+    isLimitReached?: boolean;
 }
 
 type StoryLength = 'short' | 'medium' | 'long';
 type StoryTone = 'emotional' | 'humorous' | 'formal' | 'fairytale' | 'adventurous' | 'poetic';
 
-export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavigate, settings }) => {
+export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavigate, settings, isLimitReached = false }) => {
     const { user } = useAuth();
     const t = (key: string) => getTranslation(key, settings.language);
 
@@ -528,9 +529,9 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
 
                 <button
                     onClick={handleSubmit}
-                    disabled={!canGenerate || !date || !location || !protagonist}
+                    disabled={!canGenerate || !date || !location || !protagonist || isLimitReached}
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-                        canGenerate && date && location && protagonist
+                        canGenerate && date && location && protagonist && !isLimitReached
                             ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/25'
                             : 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
                     }`}

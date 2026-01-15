@@ -3,15 +3,17 @@ import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        port: 3000,
+        port: 3010,
         strictPort: true,
         host: '0.0.0.0',
         watch: {
@@ -31,10 +33,41 @@ export default defineConfig(({ mode }) => {
       plugins: [
         react(),
         VitePWA({
-          registerType: 'autoUpdate',
+          registerType: 'prompt',
           includeAssets: ['icons/baro.ico', 'icons/baro-icon-192.png'],
           workbox: {
-            maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
+            maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+            navigateFallbackDenylist: [/^\/\.netlify\/functions/],
+            runtimeCaching: [
+              {
+                urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+                handler: 'CacheFirst',
+                options: {
+                  cacheName: 'google-fonts-cache',
+                  expiration: {
+                    maxEntries: 10,
+                    maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                  },
+                  cacheableResponse: {
+                    statuses: [0, 200]
+                  }
+                }
+              },
+              {
+                urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+                handler: 'CacheFirst',
+                options: {
+                  cacheName: 'gstatic-fonts-cache',
+                  expiration: {
+                    maxEntries: 10,
+                    maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                  },
+                  cacheableResponse: {
+                    statuses: [0, 200]
+                  },
+                }
+              }
+            ]
           },
           manifest: {
             name: 'Baro Weer',
@@ -78,7 +111,9 @@ export default defineConfig(({ mode }) => {
           }
         })
       ],
-      define: {},
+      define: {
+        '__APP_VERSION__': JSON.stringify(packageJson.version),
+      },
       build: {
         rollupOptions: {
           output: {

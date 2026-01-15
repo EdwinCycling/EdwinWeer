@@ -12,9 +12,10 @@ interface Props {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
     onUpdateSettings: (settings: AppSettings) => void;
+    isLimitReached?: boolean;
 }
 
-export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, isLimitReached = false }) => {
     const t = (key: string) => getTranslation(key, settings.language);
     
     const [baroCredits, setBaroCredits] = useState<number>(0);
@@ -352,9 +353,9 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                 {baroCredits > 0 ? (
                     <button
                         onClick={handleGenerate}
-                        disabled={!selectedLocation || isGenerating}
+                        disabled={!selectedLocation || isGenerating || isLimitReached}
                         className={`w-full py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all shadow-xl ${
-                            !selectedLocation || isGenerating 
+                            !selectedLocation || isGenerating || isLimitReached
                             ? 'bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed shadow-none' 
                             : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98]'
                         }`}

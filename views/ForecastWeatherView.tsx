@@ -22,9 +22,10 @@ interface Props {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
   onUpdateSettings?: (settings: AppSettings) => void;
+  isLimitReached?: boolean;
 }
 
-export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, isLimitReached = false }) => {
   const colors = useThemeColors();
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
   const [showMapModal, setShowMapModal] = useState(false);
@@ -557,7 +558,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
             
             {/* AI Report Section */}
             {weatherData && (
-                <BaroWeatherReport weatherData={weatherData} profile={settings.baroProfile} profiles={settings.baroProfiles} onNavigate={onNavigate} language={settings.language} />
+                <BaroWeatherReport weatherData={weatherData} profile={settings.baroProfile} profiles={settings.baroProfiles} onNavigate={onNavigate} language={settings.language} isLimitReached={isLimitReached} />
             )}
 
             {/* Daily Forecast List */}

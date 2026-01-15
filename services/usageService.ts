@@ -1,4 +1,5 @@
 import { API_LIMITS, STORAGE_KEY } from './apiConfig';
+export { API_LIMITS };
 import { db } from "./firebase";
 import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 

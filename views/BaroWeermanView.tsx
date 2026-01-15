@@ -14,9 +14,10 @@ interface Props {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
     onUpdateSettings: (settings: AppSettings) => void;
+    isLimitReached?: boolean;
 }
 
-export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, isLimitReached }) => {
     const { user } = useAuth();
     const t = (key: string) => getTranslation(key, settings.language);
     
@@ -220,10 +221,10 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                         {/* Master Toggle */}
                         <button
                             onClick={() => handleSave(!enabled)}
-                            disabled={loading}
+                            disabled={loading || isLimitReached}
                             className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
                                 enabled ? 'bg-indigo-600' : 'bg-bg-page'
-                            }`}
+                            } ${isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <span
                                 className={`${
@@ -423,7 +424,8 @@ export const BaroWeermanView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     {enabled && (
                         <button
                             onClick={() => handleSave(true)}
-                            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                            disabled={isLimitReached}
+                            className={`w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2 ${isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <Icon name="save" />
                             {t('baro_weerman.save')}
