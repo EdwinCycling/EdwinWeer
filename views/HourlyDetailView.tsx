@@ -194,7 +194,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
         </div>
         
         {/* View Toggle */}
-        <div className="ml-auto flex bg-bg-card rounded-lg p-1 border border-border-color">
+        <div className="ml-auto flex bg-bg-card rounded-lg p-1 border border-border-color mr-2 md:mr-6">
             <button
                 onClick={() => setViewMode('details')}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
