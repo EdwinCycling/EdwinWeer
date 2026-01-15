@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        port: 3010,
+        port: 3000,
         strictPort: true,
         host: '0.0.0.0',
         watch: {
@@ -40,6 +40,10 @@ export default defineConfig(({ mode }) => {
             maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
             navigateFallbackDenylist: [/^\/\.netlify\/functions/],
             runtimeCaching: [
+              {
+                urlPattern: /^\/\.netlify\/functions\/.*/i,
+                handler: 'NetworkOnly',
+              },
               {
                 urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
                 handler: 'CacheFirst',

@@ -614,7 +614,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
 
 
   return (
-    <div className="w-full min-h-screen pb-20">
+    <div className="w-full min-h-screen pb-20 bg-bg-page text-text-main">
       {/* Header */}
       <div className="bg-bg-card rounded-2xl p-4 shadow-sm mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -750,24 +750,24 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                   
                   <div className="flex flex-col gap-3 items-end w-full md:w-auto">
 
-                      <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-2xl w-full md:w-auto justify-end">
+                      <div className="flex flex-wrap items-center gap-2 bg-bg-page p-2 rounded-2xl w-full md:w-auto justify-end">
                           <select 
                             value={day} 
                             onChange={(e) => setDay(Number(e.target.value))}
-                            className="bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-medium p-2 outline-none text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition-colors"
+                            className="bg-bg-card text-text-main font-medium p-2 outline-none text-center cursor-pointer hover:bg-bg-subtle rounded-xl transition-colors border border-border-color"
                           >
                               {Array.from({length: 31}, (_, i) => i + 1).map(d => (
-                                  <option key={d} value={d}>{d}</option>
+                                  <option key={d} value={d} className="bg-bg-card text-text-main">{d}</option>
                               ))}
                           </select>
-                          <span className="text-slate-300">|</span>
+                          <span className="text-text-muted">|</span>
                           <select 
                             value={month} 
                             onChange={(e) => setMonth(Number(e.target.value))}
-                            className="bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-medium p-2 outline-none text-center cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition-colors"
+                            className="bg-bg-card text-text-main font-medium p-2 outline-none text-center cursor-pointer hover:bg-bg-subtle rounded-xl transition-colors border border-border-color"
                           >
                               {monthNames.map((m, i) => (
-                                  <option key={m} value={i + 1}>{m}</option>
+                                  <option key={m} value={i + 1} className="bg-bg-card text-text-main">{m}</option>
                               ))}
                           </select>
                           <button 

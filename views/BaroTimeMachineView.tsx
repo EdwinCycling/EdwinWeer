@@ -189,7 +189,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
     const years = Array.from({ length: new Date().getFullYear() - 1940 + 1 }, (_, i) => (new Date().getFullYear() - i).toString());
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+        <div className="bg-bg-page min-h-screen text-text-main p-4 pb-24 flex flex-col gap-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex items-center gap-4 mb-2">
                 <button 
@@ -293,55 +293,55 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
 
                 {/* Date Selection */}
                 <div className="space-y-3">
-                    <label className="text-sm font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider px-1">{t('baro_time_machine.select_date')}</label>
+                    <label className="text-sm font-bold text-text-muted uppercase tracking-wider px-1">{t('baro_time_machine.select_date')}</label>
                     <div className="grid grid-cols-3 gap-3 md:gap-4">
                         <div className="space-y-2">
-                            <span className="text-[10px] font-bold uppercase text-slate-400 px-1">{t('baro_time_machine.day')}</span>
+                            <span className="text-[10px] font-bold uppercase text-text-muted px-1">{t('baro_time_machine.day')}</span>
                             <div className="relative">
                                 <select 
                                     value={day}
                                     onChange={(e) => setDay(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-slate-900 dark:text-white"
+                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main"
                                 >
                                     {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(d => (
-                                        <option key={d} value={d} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{d}</option>
+                                        <option key={d} value={d} className="bg-bg-page text-text-main">{d}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                                     <Icon name="expand_more" />
                                 </div>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <span className="text-[10px] font-bold uppercase text-slate-400 px-1">{t('baro_time_machine.month')}</span>
+                            <span className="text-[10px] font-bold uppercase text-text-muted px-1">{t('baro_time_machine.month')}</span>
                             <div className="relative">
                                 <select 
                                     value={month}
                                     onChange={(e) => setMonth(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-slate-900 dark:text-white"
+                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main"
                                 >
                                     {months.map(m => (
-                                        <option key={m.value} value={m.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{m.label}</option>
+                                        <option key={m.value} value={m.value} className="bg-bg-page text-text-main">{m.label}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                                     <Icon name="expand_more" />
                                 </div>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <span className="text-[10px] font-bold uppercase text-slate-400 px-1">{t('baro_time_machine.year')}</span>
+                            <span className="text-[10px] font-bold uppercase text-text-muted px-1">{t('baro_time_machine.year')}</span>
                             <div className="relative">
                                 <select 
                                     value={year}
                                     onChange={(e) => setYear(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-slate-900 dark:text-white"
+                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main"
                                 >
                                     {years.map(y => (
-                                        <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{y}</option>
+                                        <option key={y} value={y} className="bg-bg-page text-text-main">{y}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                                     <Icon name="expand_more" />
                                 </div>
                             </div>

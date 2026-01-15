@@ -331,18 +331,24 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       if (!weatherData || !weatherData.minutely_15) return null;
       const d = getLocationTime();
       const pad = (n: number) => n.toString().padStart(2, '0');
-      const nowIso = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
+      const nowIsoPrefix = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
       
-      let startIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIso));
-      if (startIndex === -1) {
-        // Fallback: try to find the closest time if exact match fails
-        // But minutely_15 is usually every 15 min.
-        // If we are at 21:10, we want 21:00 or 21:15.
-        // The startWith logic matches 21:xx.
-        // So it finds the first entry with 21h.
-        // If the array starts at 22:00 (past data missing?), we might return -1.
-        startIndex = 0;
+      let hourStartIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIsoPrefix));
+      let startIndex = hourStartIndex;
+      
+      if (hourStartIndex !== -1) {
+          // Elke entry is 15 minuten. 
+          // We berekenen welk 15-minuten interval het dichtst bij de huidige tijd ligt.
+          const minutes = d.getMinutes();
+          const offset = Math.round(minutes / 15);
+          startIndex = hourStartIndex + offset;
+      } else {
+          // Fallback naar het begin als we het huidige uur niet kunnen vinden
+          startIndex = 0;
       }
+
+      // Zorg dat we niet buiten de array gaan
+      startIndex = Math.max(0, Math.min(startIndex, weatherData.minutely_15.precipitation.length - 1));
 
       const rainData = weatherData.minutely_15.precipitation.slice(startIndex, startIndex + 8);
       
@@ -942,7 +948,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </button>
             </div>
 
-            <div className="w-full overflow-x-auto scrollbar-hide pl-4">
+            <div className="w-full overflow-x-auto scrollbar-hide pl-4" ref={scrollContainerRef}>
                 <div className="flex gap-3 pr-4">
                     <button 
                          onClick={() => {
@@ -979,21 +985,28 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                  });
                              }
                          }}
+                         data-active={location.isCurrentLocation}
                          className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${location.isCurrentLocation ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color'}`}
                     >
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
                     </button>
-                    {settings.favorites.map((fav, i) => (
-                        <button 
-                            key={i}
-                            data-active={location.name === fav.name && !location.isCurrentLocation}
-                            onClick={() => setLocation(fav)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-accent-primary text-text-inverse font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card/80 border-border-color'}`}
-                        >
-                            {fav.name}
-                        </button>
-                    ))}
+                    {settings.favorites.map((fav, i) => {
+                        const isActive = !location.isCurrentLocation && 
+                                        location.name === fav.name && 
+                                        Math.abs(location.lat - fav.lat) < 0.01 && 
+                                        Math.abs(location.lon - fav.lon) < 0.01;
+                        return (
+                            <button 
+                                key={i}
+                                data-active={isActive}
+                                onClick={() => setLocation(fav)}
+                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${isActive ? 'bg-accent-primary text-text-inverse font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card/80 border-border-color'}`}
+                            >
+                                {fav.name}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

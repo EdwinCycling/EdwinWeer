@@ -402,10 +402,10 @@ export const calculateActivityScore = (w: ActivityWeatherData, activity: Activit
 
     // Final Adjustments
     if (isRainBefore8Only) {
-        reasons.push(lang === 'nl' ? "Regen valt vroeg (voor 8:00)" : "Rain falls early (before 8:00)");
+        reasons.push(getTranslation('reason.rain_early', lang));
     } else if (isRainMostlyNight) {
         score += 1; // Compensate for night rain
-        // reasons.push(lang === 'nl' ? "Regen valt 's nachts" : "Rain falls at night");
+        reasons.push(getTranslation('reason.rain_night', lang));
     }
 
     return {

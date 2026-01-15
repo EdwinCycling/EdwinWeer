@@ -539,15 +539,15 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
   })() : [];
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-slate-800 dark:text-white bg-slate-50 dark:bg-background-dark transition-colors duration-300">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300">
         
         {/* Header */}
         <div className="flex flex-col pt-8 pb-4 relative z-10">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => onNavigate(ViewState.CURRENT)} className="absolute left-6 text-slate-400 dark:text-white/60 hover:text-slate-800 dark:hover:text-white transition-colors p-2">
+                <button onClick={() => onNavigate(ViewState.CURRENT)} className="absolute left-6 text-text-muted hover:text-text-main transition-colors p-2">
                     <Icon name="arrow_back_ios_new" />
                 </button>
-                <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md dark:drop-shadow-md text-slate-800 dark:text-white">
+                <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-md text-text-main">
                     <Icon name="flight" className="text-primary" />
                     {t('holiday_report.page_title')}
                 </h2>
@@ -562,27 +562,27 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                     </div>
                 )}
                 {!reportData ? (
-                <div className="bg-white dark:bg-[#1e293b]/90 backdrop-blur-2xl rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-white/10">
+                <div className="bg-bg-card backdrop-blur-2xl rounded-3xl p-6 shadow-lg border border-border-color">
                     <div className="flex flex-col gap-4">
                         {/* Title */}
                         <div>
-                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.title')}</label>
+                            <label className="text-sm font-medium text-text-muted mb-1 block">{t('holiday_report.label.title')}</label>
                             <input 
                                 type="text" 
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder={t('holiday_report.placeholder.title')}
-                                className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                                className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors text-text-main"
                             />
                         </div>
                         
                         {/* Location & Map */}
                         <div className="relative">
-                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.location')}</label>
+                            <label className="text-sm font-medium text-text-muted mb-1 block">{t('holiday_report.label.location')}</label>
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => setShowSearch(!showSearch)}
-                                    className="flex-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-left flex items-center gap-2"
+                                    className="flex-1 bg-bg-page border border-border-color rounded-xl px-4 py-3 text-left flex items-center gap-2 text-text-main"
                                 >
                                     <Icon name="location_on" className="text-primary" />
                                     <span className="truncate">{location.name}, {location.country}</span>
@@ -590,15 +590,15 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 <button
                                     type="button"
                                     onClick={() => setIsMapOpen(true)}
-                                    className="shrink-0 w-12 flex items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                                    className="shrink-0 w-12 flex items-center justify-center bg-bg-page border border-border-color rounded-xl hover:bg-bg-subtle transition-colors"
                                     title="Open Kaart"
                                 >
-                                    <Icon name="public" className="text-slate-500 dark:text-slate-400 text-xl" />
+                                    <Icon name="public" className="text-text-muted text-xl" />
                                 </button>
                             </div>
                             
                             {showSearch && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-white/10 z-50 p-2">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color z-50 p-2">
                                     <div className="flex items-center gap-2 mb-2">
                                         <input 
                                             autoFocus
@@ -606,7 +606,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Zoek stad..."
-                                            className="w-full bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-2 outline-none"
+                                            className="w-full bg-bg-page text-text-main rounded-lg px-3 py-2 outline-none"
                                         />
                                     </div>
                                     <div className="max-h-48 overflow-y-auto">
@@ -618,7 +618,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                     setShowSearch(false);
                                                     setSearchQuery('');
                                                 }}
-                                                className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg text-sm"
+                                                className="w-full text-left px-3 py-2 hover:bg-bg-page rounded-lg text-sm text-text-main"
                                             >
                                                 {loc.name}, {loc.country}
                                             </button>
@@ -631,28 +631,28 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                         {/* Dates */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.start_date')}</label>
+                                <label className="text-sm font-medium text-text-muted mb-1 block">{t('holiday_report.label.start_date')}</label>
                                 <input 
                                     type="date" 
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors dark:text-white"
+                                    className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors text-text-main"
                                 />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.end_date')}</label>
+                                <label className="text-sm font-medium text-text-muted mb-1 block">{t('holiday_report.label.end_date')}</label>
                                 <input 
                                     type="date" 
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors dark:text-white"
+                                    className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors text-text-main"
                                 />
                             </div>
                         </div>
                         
                         {/* Rain Threshold Selector */}
                         <div>
-                            <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">{t('holiday_report.label.rain_threshold')}</label>
+                            <label className="text-sm font-medium text-text-muted mb-1 block">{t('holiday_report.label.rain_threshold')}</label>
                             <div className="flex gap-2">
                                 {[1, 2, 5].map(val => (
                                     <button
@@ -661,7 +661,7 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         className={`flex-1 py-2 px-3 rounded-xl border transition-colors text-sm font-medium ${
                                             rainThreshold === val 
                                             ? 'bg-blue-500 text-white border-blue-500' 
-                                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                                            : 'bg-bg-page border-border-color text-text-muted hover:bg-bg-subtle'
                                         }`}
                                     >
                                         &gt; {val}mm

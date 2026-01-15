@@ -241,10 +241,10 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
 
     if (step === 'loading') {
         return (
-            <div className="min-h-screen pt-24 pb-32 px-4 flex flex-col items-center justify-center text-center">
+            <div className="bg-bg-page min-h-screen pt-24 pb-32 px-4 flex flex-col items-center justify-center text-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mb-6"></div>
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t('songwriter.form.generating')}</h2>
-                <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                <h2 className="text-2xl font-bold text-text-main mb-2">{t('songwriter.form.generating')}</h2>
+                <p className="text-text-muted max-w-md mx-auto">
                     {t('songwriter.subtitle')}
                 </p>
             </div>
@@ -253,11 +253,11 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
 
     if (step === 'view' && song) {
         return (
-            <div className="min-h-screen pt-20 pb-32 px-4 md:px-8">
+            <div className="bg-bg-page min-h-screen pt-20 pb-32 px-4 md:px-8">
                 {/* Back Button */}
                 <button 
                     onClick={() => setStep('form')}
-                    className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+                    className="mb-6 flex items-center gap-2 text-text-muted hover:text-text-main transition-colors"
                 >
                     <Icon name="arrow_back" />
                     {t('back')}
@@ -443,7 +443,7 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
     }
 
     return (
-        <div className="pt-24 pb-32 px-4 max-w-2xl mx-auto">
+        <div className="bg-bg-page min-h-screen text-text-main pt-24 pb-32 px-4 max-w-2xl mx-auto">
             <div className="mb-8 text-center">
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl mb-4">
                     <Icon name="music_note" className="text-3xl" />
@@ -455,7 +455,7 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
             </div>
 
             {/* Credit Info */}
-            <div className="bg-bg-page rounded-2xl p-4 mb-8 flex items-center justify-between border border-border-color">
+            <div className="bg-bg-card rounded-2xl p-4 mb-8 flex items-center justify-between border border-border-color">
                 <div className="flex items-center gap-3">
                     <div className="bg-amber-100 dark:bg-amber-500/20 p-2 rounded-lg text-amber-600 dark:text-amber-400">
                         <Icon name="monetization_on" />

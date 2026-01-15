@@ -6,6 +6,7 @@ import { getTranslation } from '../services/translations';
 import { useAuth } from '../hooks/useAuth';
 import { API_LIMITS } from '../services/apiConfig';
 import { getUsage, UsageStats, loadRemoteUsage } from '../services/usageService';
+import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -114,20 +115,33 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background-dark p-6 pb-24 text-slate-800 dark:text-white overflow-y-auto">
+    <div className="relative min-h-screen flex flex-col pb-24 overflow-y-auto text-text-main bg-bg-page transition-colors duration-300">
+       {/* Background Layer */}
+       <div className="absolute top-0 left-0 right-0 h-[50vh] z-0 overflow-hidden rounded-b-[3rem]">
+           <StaticWeatherBackground 
+               weatherCode={0} 
+               isDay={1} 
+               className="absolute inset-0 w-full h-full"
+           />
+           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-page" />
+       </div>
+
+       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
+
+       <div className="relative z-10 p-6">
        {/* Success Modal */}
        {showSuccess && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-xl text-center">
+                <div className="bg-bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-xl text-center border border-border-color">
                     <div className="p-8">
                         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Icon name="check" className="text-3xl" />
                         </div>
                         
-                        <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Bedankt voor je aankoop!</h3>
-                        <p className="text-slate-600 dark:text-slate-300 mb-6">
+                        <h3 className="text-2xl font-bold text-text-main mb-2">Bedankt voor je aankoop!</h3>
+                        <p className="text-text-muted mb-6">
                             Je betaling is succesvol verwerkt. De credits worden toegevoegd aan je account.<br/>
-                            <span className="text-xs text-slate-400">Dit kan enkele seconden duren...</span>
+                            <span className="text-xs text-text-muted/60">Dit kan enkele seconden duren...</span>
                         </p>
 
                         <div className="space-y-3">
@@ -136,7 +150,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     setShowSuccess(false);
                                     window.location.reload();
                                 }}
-                                className="w-full py-3 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
+                                className="w-full py-3 px-4 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
                             >
                                 Sluiten & Verversen
                             </button>
@@ -146,7 +160,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                                     await loadRemoteUsage(user?.uid || '');
                                     setUsageStats(getUsage());
                                 }}
-                                className="w-full py-2 px-4 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium"
+                                className="w-full py-2 px-4 text-sm text-text-muted hover:text-text-main font-medium"
                             >
                                 Status handmatig checken
                             </button>
@@ -159,15 +173,15 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
         {/* Confirmation Modal */}
         {confirmModal.show && confirmModal.priceId && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
+                <div className="bg-bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-xl border border-border-color">
                     <div className="p-6">
-                        <h3 className="text-xl font-bold mb-4">
+                        <h3 className="text-xl font-bold mb-4 text-text-main">
                             {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER 
                                 ? t('pricing.confirm.title_weather') 
                                 : t('pricing.confirm.title_baro')}
                         </h3>
                         
-                        <p className="text-slate-600 dark:text-slate-300 mb-4">
+                        <p className="text-text-muted mb-4">
                             {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER 
                                 ? t('pricing.confirm.desc_weather', { amount: '10.000' })
                                 : t('pricing.confirm.desc_baro', { amount: '500' })}
@@ -181,7 +195,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                             </div>
                         )}
 
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 flex items-start gap-2">
+                        <p className="text-xs text-text-muted/60 mb-6 flex items-start gap-2">
                              <Icon name="lock" className="text-sm shrink-0 mt-0.5" />
                              {t('pricing.confirm.stripe_info')}
                         </p>
@@ -189,7 +203,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setConfirmModal({ show: false, priceId: null })}
-                                className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                className="flex-1 py-3 px-4 bg-bg-subtle text-text-main rounded-xl font-bold hover:bg-bg-subtle/80 transition-colors"
                             >
                                 {t('pricing.confirm.cancel')}
                             </button>
@@ -208,51 +222,51 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
 
        <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-bg-card/50 backdrop-blur text-text-main hover:bg-bg-card transition-colors">
                 <Icon name="arrow_back_ios_new" />
             </button>
-            <h1 className="text-3xl font-bold">{t('pricing.title')}</h1>
+            <h1 className="text-3xl font-bold text-text-main drop-shadow-md">{t('pricing.title')}</h1>
         </div>
 
         <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">{t('pricing.subtitle')}</h2>
+            <h2 className="text-4xl font-bold mb-4 text-text-main drop-shadow-sm">{t('pricing.subtitle')}</h2>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Tier */}
-            <div className="bg-white dark:bg-card-dark rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden flex flex-col">
-                <h3 className="text-2xl font-bold mb-2">{t('pricing.free_name')}</h3>
-                <p className="text-slate-500 dark:text-white/60 mb-2">{t('pricing.free_description')}</p>
-                <div className="text-4xl font-bold mb-8">
+            <div className="bg-bg-card/80 backdrop-blur-md rounded-3xl p-8 border border-border-color shadow-sm relative overflow-hidden flex flex-col">
+                <h3 className="text-2xl font-bold mb-2 text-text-main">{t('pricing.free_name')}</h3>
+                <p className="text-text-muted mb-2">{t('pricing.free_description')}</p>
+                <div className="text-4xl font-bold mb-8 text-text-main">
                     $0
-                    <span className="text-lg font-normal text-slate-400">{t('pricing.per_month')}</span>
+                    <span className="text-lg font-normal text-text-muted/60">{t('pricing.per_month')}</span>
                 </div>
 
                 <ul className="space-y-4 mb-8">
-                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <li className="flex items-center gap-3 text-sm text-text-muted">
                         <Icon name="check" className="text-green-500" />
                         <span>{t('pricing.free_daily_limit', { limit: API_LIMITS.FREE.DAY })}</span>
                     </li>
-                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <li className="flex items-center gap-3 text-sm text-text-muted">
                         <Icon name="calendar_month" className="text-green-500" />
                         <span>{t('pricing.free_monthly_limit', { limit: API_LIMITS.FREE.MONTH })}</span>
                     </li>
-                    <li className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <li className="flex items-center gap-3 text-sm text-text-muted">
                         <Icon name="check" className="text-green-500" />
                         <span>{t('pricing.free_feature_traffic')}</span>
                     </li>
                 </ul>
 
                 {!hasProCredits && (
-                    <button className="w-full py-3 rounded-xl bg-slate-100 dark:bg-white/10 font-bold text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors mt-auto">
+                    <button className="w-full py-3 rounded-xl bg-bg-subtle font-bold text-text-main hover:bg-bg-subtle/80 transition-colors mt-auto">
                         {t('pricing.free_button')}
                     </button>
                 )}
             </div>
 
             {/* Pro Tier */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-3xl p-8 border border-slate-200 dark:border-white/10 shadow-xl relative overflow-hidden text-white flex flex-col">
-                <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-3xl p-8 border border-white/10 shadow-xl relative overflow-hidden text-white flex flex-col">
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider text-white">
                     {t('pricing.pro_badge')}
                 </div>
                 
@@ -299,7 +313,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
 
             {/* Baro Tier */}
             <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 border border-purple-500/30 shadow-2xl relative overflow-hidden text-white flex flex-col transform md:-translate-y-4">
-                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-400 to-pink-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-400 to-pink-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider text-white">
                     BARO POWERED
                 </div>
                 
@@ -348,12 +362,13 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
             </div>
         </div>
 
-        <div className="mt-12 text-center border-t border-slate-200 dark:border-white/10 pt-8">
-            <p className="text-slate-500 dark:text-white/40 text-sm flex items-center justify-center gap-2">
+        <div className="mt-12 text-center border-t border-border-color pt-8">
+            <p className="text-text-muted text-sm flex items-center justify-center gap-2">
                 <Icon name="lock" className="text-base" />
                 {t('pricing.stripe_secure')}
             </p>
         </div>
+      </div>
       </div>
     </div>
   );

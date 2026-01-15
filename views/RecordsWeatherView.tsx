@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, WindUnit } from '../types';
 import { Icon } from '../components/Icon';
 import { fetchHistorical, convertTemp, convertTempPrecise, convertWind, convertPrecip, fetchForecast, fetchYearData, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore, calculateJagTi, calculateHeatIndex } from '../services/weatherService';
@@ -151,6 +151,16 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+        const activeBtn = scrollContainerRef.current.querySelector('[data-active="true"]');
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+  }, [location]);
   const [maxTempHigh, setMaxTempHigh] = useState<RecordEntry[]>([]);
   const [maxTempLow, setMaxTempLow] = useState<RecordEntry[]>([]);
   const [minTempHigh, setMinTempHigh] = useState<RecordEntry[]>([]);
@@ -1394,7 +1404,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </button>
             </div>
 
-          <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 transition-colors duration-300">
+          <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 transition-colors duration-300 no-swipe" data-no-swipe="true" ref={scrollContainerRef}>
             <div className="flex gap-3 pr-4">
               <button
                 onClick={() => {
@@ -1429,28 +1439,36 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     );
                   }
                 }}
+                data-active={location.isCurrentLocation}
                 className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
                   location.isCurrentLocation 
-                    ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' 
-                    : 'bg-bg-card text-text-main hover:bg-bg-card dark:hover:bg-accent-primary/20 hover:text-accent-primary dark:hover:text-accent-primary border-border-color'
+                    ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary shadow-md' 
+                    : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color'
                 }`}
               >
                 <Icon name="my_location" className="text-sm" />
                 <span className="text-sm font-medium">{t('my_location')}</span>
               </button>
-              {settings.favorites.map((fav, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocation(fav)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${
-                    location.name === fav.name
-                      ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary'
-                      : 'bg-bg-card/60 text-text-main hover:bg-bg-card dark:hover:bg-accent-primary/20 border-border-color'
-                  }`}
-                >
-                  {fav.name}
-                </button>
-              ))}
+              {settings.favorites.map((fav, i) => {
+                const isActive = !location.isCurrentLocation && 
+                                 location.name === fav.name && 
+                                 Math.abs(location.lat - fav.lat) < 0.01 && 
+                                 Math.abs(location.lon - fav.lon) < 0.01;
+                return (
+                  <button
+                    key={i}
+                    data-active={isActive}
+                    onClick={() => setLocation(fav)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${
+                      isActive
+                        ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary shadow-md'
+                        : 'bg-bg-card/60 text-text-main hover:bg-bg-card/80 border-border-color'
+                    }`}
+                  >
+                    {fav.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

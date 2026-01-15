@@ -133,6 +133,13 @@ export const LoginView: React.FC<Props> = ({ onNavigate }) => {
               </span>
             </div>
 
+            <button 
+                onClick={() => onNavigate(ViewState.LANDING_V2)} 
+                className="ml-4 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30 border border-indigo-400/30"
+            >
+                v2 Preview
+            </button>
+
             {/* Right Side Actions */}
             <div className="flex items-center gap-4">
               <div className="relative">

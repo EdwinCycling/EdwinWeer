@@ -688,7 +688,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     }
 
     while (cur <= end) {
-      if (apiLimitReached) break;
+      if (isLimitReached) break;
       const ok = await hasDataFor(loc, cur, monthIndex, dayNum);
       if (ok) { found = cur; break; }
       cur += step;
@@ -698,7 +698,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
     
     let low = Math.max(start, found - step);
     for (let y = low; y < found; y++) {
-      if (apiLimitReached) break;
+      if (isLimitReached) break;
       const ok = await hasDataFor(loc, y, monthIndex, dayNum);
       if (ok) { 
         availYearCache[cacheKey] = y;
@@ -1270,11 +1270,12 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
    const insightsList = getInsights();
 
   return (
-    <div className="flex flex-col min-h-screen pb-24 bg-background-light dark:bg-background-dark overflow-y-auto text-slate-800 dark:text-white transition-colors">
+    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300">
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
       {/* API Limit Warning - Handled globally in App.tsx */}
 
 
-      <div className="relative flex items-center justify-center p-4 pt-8 mb-2">
+      <div className="relative z-10 flex items-center justify-center p-4 pt-8 mb-2">
           {/* Title & Navigation */}
           <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
               <h1 className="text-xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">

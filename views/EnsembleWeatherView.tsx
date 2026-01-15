@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, EnsembleModel, TempUnit } from '../types';
 import { Icon } from '../components/Icon';
 import { 
@@ -94,6 +94,16 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
   const [error, setError] = useState('');
   
   const [isMobile, setIsMobile] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+        const activeBtn = scrollContainerRef.current.querySelector('[data-active="true"]');
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+  }, [location]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -921,7 +931,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         </div>
       )}
 
-      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-background-dark/90 z-0 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
       
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
@@ -947,59 +957,71 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
 
             {/* Favorite Cities Selector */}
-            <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 no-swipe" data-no-swipe="true">
+            <div className="w-full overflow-x-auto scrollbar-hide pl-4 mt-2 no-swipe" data-no-swipe="true" ref={scrollContainerRef}>
                 <div className="flex gap-3 pr-4">
                     <button 
-                         onClick={() => {
-                             const geo = navigator.geolocation;
-                             if (geo) {
-                                 setLoading(true);
-                                 geo.getCurrentPosition(async (pos) => {
-                                     const lat = pos.coords.latitude;
-                                     const lon = pos.coords.longitude;
-                                     let name = t('my_location');
-                                     
-                                     try {
-                                         const cityName = await reverseGeocode(lat, lon);
-                                         if (cityName) {
-                                             name = cityName;
-                                         }
-                                     } catch (e) {
-                                         console.error(e);
-                                     }
+                        onClick={() => {
+                            const geo = navigator.geolocation;
+                            if (geo) {
+                                setLoading(true);
+                                geo.getCurrentPosition(async (pos) => {
+                                    const lat = pos.coords.latitude;
+                                    const lon = pos.coords.longitude;
+                                    let name = t('my_location');
+                                    
+                                    try {
+                                        const cityName = await reverseGeocode(lat, lon);
+                                        if (cityName) {
+                                            name = cityName;
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
 
-                                     setLocation({
-                                         name: name, 
-                                         country: "", 
-                                         lat: lat, 
-                                         lon: lon,
-                                         isCurrentLocation: true
+                                    setLocation({
+                                        name: name, 
+                                        country: "", 
+                                        lat: lat, 
+                                        lon: lon,
+                                        isCurrentLocation: true
                                      });
-                                     setLoading(false);
-                                 }, (err) => {
-                                     console.error(err);
-                                     setLoading(false);
-                                 });
-                             }
-                         }}
-                         className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
-                             location.isCurrentLocation 
-                                 ? 'bg-primary text-white dark:bg-bg-card dark:text-text-main font-bold border-primary dark:border-border-color' 
-                                 : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-primary border-border-color'
-                         }`}
+                                    setLoading(false);
+                                }, (err) => {
+                                    console.error(err);
+                                    setLoading(false);
+                                });
+                            }
+                        }}
+                        data-active={location.isCurrentLocation}
+                        className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${
+                            location.isCurrentLocation 
+                                ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary shadow-md' 
+                                : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color'
+                        }`}
                     >
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
                     </button>
-                    {settings.favorites.map((fav, i) => (
-                        <button 
-                            key={i}
-                            onClick={() => setLocation(fav)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${location.name === fav.name ? 'bg-primary text-white dark:bg-bg-card dark:text-text-main font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card border-border-color'}`}
-                        >
-                            {fav.name}
-                        </button>
-                    ))}
+                    {settings.favorites.map((fav, i) => {
+                        const isActive = !location.isCurrentLocation && 
+                                        location.name === fav.name && 
+                                        Math.abs(location.lat - fav.lat) < 0.01 && 
+                                        Math.abs(location.lon - fav.lon) < 0.01;
+                        return (
+                            <button 
+                                key={i}
+                                data-active={isActive}
+                                onClick={() => setLocation(fav)}
+                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${
+                                    isActive 
+                                        ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary shadow-md' 
+                                        : 'bg-bg-card/60 text-text-main hover:bg-bg-card border-border-color'
+                                }`}
+                            >
+                                {fav.name}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

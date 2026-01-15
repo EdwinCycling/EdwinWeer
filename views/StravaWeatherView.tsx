@@ -518,15 +518,15 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
   };
 
   return (
-    <div className={`flex flex-col min-h-screen bg-slate-50 dark:bg-background-dark text-slate-800 dark:text-white transition-colors duration-300 ${isFullScreenMap ? 'fixed inset-0 z-[100]' : 'pb-24 overflow-y-auto'}`}>
+    <div className={`flex flex-col min-h-screen bg-bg-page text-text-main transition-colors duration-300 ${isFullScreenMap ? 'fixed inset-0 z-[100]' : 'pb-24 overflow-y-auto'}`}>
       
       {/* Header - Only visible when NOT full screen */}
       {!isFullScreenMap && (
-        <div className="flex items-center p-4 pt-8 sticky top-0 bg-white/95 dark:bg-[#101d22]/95 backdrop-blur z-20 border-b border-slate-200 dark:border-white/5 transition-colors">
-            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 mr-2">
+        <div className="flex items-center p-4 pt-8 sticky top-0 bg-bg-page/95 backdrop-blur z-20 border-b border-border-color transition-colors">
+            <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-subtle mr-2 text-text-main">
                 <Icon name="arrow_back_ios_new" />
             </button>
-            <h1 className="text-lg font-bold">{t('strava.ride_with_weather')}</h1>
+            <h1 className="text-lg font-bold text-text-main">{t('strava.ride_with_weather')}</h1>
         </div>
       )}
 
@@ -564,14 +564,14 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
         {/* Results Dashboard */}
         {rideData && !showLimitModal && (
             <>
-                <div ref={exportRef} className="flex flex-col gap-6 bg-slate-50 dark:bg-background-dark p-2 rounded-xl">
+                <div ref={exportRef} className="flex flex-col gap-6 bg-bg-subtle p-2 rounded-xl">
                 {/* 1. Map Container - Responsive & Full Screen Capable */}
-                <div className={`relative bg-white dark:bg-card-dark rounded-2xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-sm transition-all duration-300 ${isFullScreenMap ? 'h-full rounded-none border-none' : ''}`}>
+                <div className={`relative bg-bg-card rounded-2xl overflow-hidden border border-border-color shadow-sm transition-all duration-300 ${isFullScreenMap ? 'h-full rounded-none border-none' : ''}`}>
                    
                    {/* Full Screen Toggle Button - Always visible on map */}
                    <button 
                         onClick={() => setIsFullScreenMap(!isFullScreenMap)}
-                        className="absolute top-4 left-4 z-[1001] bg-white dark:bg-[#1e293b] text-slate-800 dark:text-white p-2 rounded-lg shadow-md border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                        className="absolute top-4 left-4 z-[1001] bg-bg-card text-text-main p-2 rounded-lg shadow-md border border-border-color hover:bg-bg-subtle transition-colors"
                         title={isFullScreenMap ? t('close_full_screen') : t('full_screen')}
                    >
                         <Icon name={isFullScreenMap ? "close_fullscreen" : "open_in_full"} />
@@ -630,30 +630,30 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                 {/* 2. Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('distance')}</p>
+                    <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                        <p className="text-xs text-text-muted uppercase font-bold">{t('distance')}</p>
                         <p className="text-xl font-bold">{rideData.distance} km</p>
                     </div>
-                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('time')}</p>
+                    <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                        <p className="text-xs text-text-muted uppercase font-bold">{t('time')}</p>
                         <p className="text-xl font-bold">{rideData.time}</p>
                     </div>
-                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('elevation')}</p>
+                    <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                        <p className="text-xs text-text-muted uppercase font-bold">{t('elevation')}</p>
                         <p className="text-xl font-bold">{rideData.elevation} m</p>
                     </div>
-                    <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                        <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('avg_speed')}</p>
+                    <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                        <p className="text-xs text-text-muted uppercase font-bold">{t('avg_speed')}</p>
                         <p className="text-xl font-bold">{rideData.avgSpeed} km/h</p>
                     </div>
                      {!isRouteOnly && (
                         <>
-                             <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                                <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('start_time')}</p>
+                             <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                                <p className="text-xs text-text-muted uppercase font-bold">{t('start_time')}</p>
                                 <p className="text-lg font-bold">{rideData.startTimeStr}</p>
                             </div>
-                            <div className="bg-white dark:bg-card-dark p-3 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                                <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('end_time')}</p>
+                            <div className="bg-bg-card p-3 rounded-2xl border border-border-color shadow-sm">
+                                <p className="text-xs text-text-muted uppercase font-bold">{t('end_time')}</p>
                                 <p className="text-lg font-bold">{rideData.endTimeStr}</p>
                             </div>
                         </>
@@ -785,31 +785,31 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     <div className="grid grid-cols-3 gap-3">
                         <button 
                             onClick={handleDownload}
-                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="flex flex-col items-center justify-center p-3 bg-bg-card rounded-xl hover:bg-bg-subtle transition-colors border border-border-color shadow-sm"
                         >
                             <Icon name="download" className="text-xl mb-1 text-blue-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('download')}</span>
+                            <span className="text-xs font-medium text-text-main">{t('download')}</span>
                         </button>
                         <button 
                             onClick={handleShare}
-                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="flex flex-col items-center justify-center p-3 bg-bg-card rounded-xl hover:bg-bg-subtle transition-colors border border-border-color shadow-sm"
                         >
                             <Icon name="share" className="text-xl mb-1 text-green-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('share')}</span>
+                            <span className="text-xs font-medium text-text-main">{t('share')}</span>
                         </button>
                         <button 
                             onClick={handlePrint}
-                            className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-white/5 rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="flex flex-col items-center justify-center p-3 bg-bg-card rounded-xl hover:bg-bg-subtle transition-colors border border-border-color shadow-sm"
                         >
-                            <Icon name="print" className="text-xl mb-1 text-purple-500" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{t('print')}</span>
+                            <Icon name="print" className="text-xl mb-1 text-text-muted" />
+                            <span className="text-xs font-medium text-text-main">{t('newspaper.print')}</span>
                         </button>
                     </div>
                 </div>
 
                 <button 
                     onClick={() => { setRideData(null); setChartData([]); setRouteCoordinates([]); }}
-                    className="w-full py-4 rounded-xl border border-dashed border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/40 hover:text-slate-600 dark:hover:text-white hover:border-slate-400 transition-colors font-medium flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-xl border border-dashed border-border-color text-text-muted hover:text-text-main hover:border-text-main transition-colors font-medium flex items-center justify-center gap-2"
                 >
                     <Icon name="add_circle" /> {t('new_upload')}
                 </button>

@@ -232,10 +232,10 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
 
     if (step === 'loading') {
         return (
-            <div className="min-h-screen pt-24 pb-32 px-4 flex flex-col items-center justify-center text-center">
+            <div className="bg-bg-page min-h-screen pt-24 pb-32 px-4 flex flex-col items-center justify-center text-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mb-6"></div>
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t('storyteller.form.generating')}</h2>
-                <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                <h2 className="text-2xl font-bold text-text-main mb-2">{t('storyteller.form.generating')}</h2>
+                <p className="text-text-muted max-w-md mx-auto">
                     {t('storyteller.subtitle')}
                 </p>
             </div>
@@ -248,7 +248,7 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                 {/* Back Button */}
                 <button 
                     onClick={() => setStep('form')}
-                    className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+                    className="mb-6 flex items-center gap-2 text-text-muted hover:text-text-main transition-colors"
                 >
                     <Icon name="arrow_back" />
                     {t('back')}
@@ -367,26 +367,26 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
     }
 
     return (
-        <div className="pt-24 pb-32 px-4 max-w-2xl mx-auto">
+        <div className="bg-bg-page min-h-screen text-text-main pt-24 pb-32 px-4 max-w-2xl mx-auto">
             <div className="mb-8 text-center">
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl mb-4">
                     <Icon name="auto_stories" className="text-3xl" />
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{t('storyteller.title')}</h1>
-                <p className="text-slate-500 dark:text-slate-400">
+                <h1 className="text-3xl font-bold text-text-main mb-2">{t('storyteller.title')}</h1>
+                <p className="text-text-muted">
                     {t('storyteller.subtitle')}
                 </p>
             </div>
 
             {/* Credit Info */}
-            <div className="bg-slate-50 dark:bg-white/5 rounded-2xl p-4 mb-8 flex items-center justify-between border border-slate-200 dark:border-white/5">
+            <div className="bg-bg-card rounded-2xl p-4 mb-8 flex items-center justify-between border border-border-color">
                 <div className="flex items-center gap-3">
                     <div className="bg-amber-100 dark:bg-amber-500/20 p-2 rounded-lg text-amber-600 dark:text-amber-400">
                         <Icon name="monetization_on" />
                     </div>
                     <div>
-                        <p className="font-bold text-slate-800 dark:text-white">Baro Credits</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Saldo: {baroCredits}</p>
+                        <p className="font-bold text-text-main">Baro Credits</p>
+                        <p className="text-xs text-text-muted">Saldo: {baroCredits}</p>
                     </div>
                 </div>
                 {!canGenerate && (
@@ -399,30 +399,30 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                 )}
             </div>
 
-            <div className="space-y-6 bg-white dark:bg-card-dark p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5">
+            <div className="space-y-6 bg-bg-card p-6 rounded-3xl shadow-sm border border-border-color">
                 
                 {/* Event */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.event')}
                     </label>
                     <select 
                         value={event} 
                         onChange={e => setEvent(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="birth" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.birth')}</option>
-                        <option value="wedding" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.wedding')}</option>
-                        <option value="anniversary" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.anniversary')}</option>
-                        <option value="first_date" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.first_date')}</option>
-                        <option value="vacation" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.vacation')}</option>
-                        <option value="other" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.event.other')}</option>
+                        <option value="birth" className="bg-bg-card text-text-main">{t('storyteller.event.birth')}</option>
+                        <option value="wedding" className="bg-bg-card text-text-main">{t('storyteller.event.wedding')}</option>
+                        <option value="anniversary" className="bg-bg-card text-text-main">{t('storyteller.event.anniversary')}</option>
+                        <option value="first_date" className="bg-bg-card text-text-main">{t('storyteller.event.first_date')}</option>
+                        <option value="vacation" className="bg-bg-card text-text-main">{t('storyteller.event.vacation')}</option>
+                        <option value="other" className="bg-bg-card text-text-main">{t('storyteller.event.other')}</option>
                     </select>
                 </div>
 
                 {/* Protagonist */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.protagonist')}
                     </label>
                     <input 
@@ -431,13 +431,13 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                         onChange={e => setProtagonist(e.target.value.slice(0, 40))}
                         placeholder="Bijv. Paul Jansen"
                         maxLength={40}
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 {/* Date */}
                 <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.date')}
                     </label>
                     <input 
@@ -446,37 +446,37 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                         onChange={e => setDate(e.target.value)}
                         max={new Date().toISOString().split('T')[0]}
                         min="1950-01-01"
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
                 {/* Location Search */}
                 <div className="relative">
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    <label className="block text-sm font-bold text-text-main mb-2">
                         {t('storyteller.form.location')}
                     </label>
                     <div className="relative">
-                        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             placeholder={t('storyteller.form.location')}
-                            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full bg-bg-page border border-border-color rounded-xl pl-10 pr-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                     </div>
                     {isSearchOpen && searchResults.length > 0 && (
-                        <div className="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-white/5 max-h-60 overflow-y-auto">
+                        <div className="absolute z-50 left-0 right-0 mt-2 bg-bg-card rounded-xl shadow-xl border border-border-color max-h-60 overflow-y-auto">
                             {searchResults.map((res, i) => (
                                 <button
                                     key={i}
                                     onClick={() => handleSelectLocation(res)}
-                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-100 dark:border-white/5 last:border-0 flex items-center gap-2 text-slate-800 dark:text-white"
+                                    className="w-full text-left px-4 py-3 hover:bg-bg-page border-b border-border-color last:border-0 flex items-center gap-2 text-text-main"
                                 >
-                                    <Icon name="location_on" className="text-slate-400" />
+                                    <Icon name="location_on" className="text-text-muted" />
                                     <div>
                                         <p className="font-bold text-sm">{res.name}</p>
-                                        <p className="text-xs text-slate-500">{res.country} {res.admin1}</p>
+                                        <p className="text-xs text-text-muted">{res.country} {res.admin1}</p>
                                     </div>
                                 </button>
                             ))}
@@ -487,36 +487,36 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                 <div className="grid grid-cols-2 gap-4">
                     {/* Tone */}
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                        <label className="block text-sm font-bold text-text-main mb-2">
                             {t('storyteller.form.tone')}
                         </label>
                         <select 
                             value={tone} 
                             onChange={e => setTone(e.target.value as StoryTone)}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                            <option value="emotional" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.tone.emotional')}</option>
-                            <option value="humorous" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.tone.humorous')}</option>
-                            <option value="formal" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.tone.formal')}</option>
-                            <option value="fairytale" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.tone.fairytale')}</option>
-                            <option value="adventurous" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.tone.adventurous')}</option>
-                            <option value="poetic" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.tone.poetic')}</option>
+                            <option value="emotional" className="bg-bg-card text-text-main">{t('storyteller.tone.emotional')}</option>
+                            <option value="humorous" className="bg-bg-card text-text-main">{t('storyteller.tone.humorous')}</option>
+                            <option value="formal" className="bg-bg-card text-text-main">{t('storyteller.tone.formal')}</option>
+                            <option value="fairytale" className="bg-bg-card text-text-main">{t('storyteller.tone.fairytale')}</option>
+                            <option value="adventurous" className="bg-bg-card text-text-main">{t('storyteller.tone.adventurous')}</option>
+                            <option value="poetic" className="bg-bg-card text-text-main">{t('storyteller.tone.poetic')}</option>
                         </select>
                     </div>
 
                     {/* Length */}
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                        <label className="block text-sm font-bold text-text-main mb-2">
                             {t('storyteller.form.length')}
                         </label>
                         <select 
                             value={length} 
                             onChange={e => setLength(e.target.value as StoryLength)}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full bg-bg-page border border-border-color rounded-xl px-4 py-3 text-text-main focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
-                            <option value="short" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.length.short')}</option>
-                            <option value="medium" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.length.medium')}</option>
-                            <option value="long" className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{t('storyteller.length.long')}</option>
+                            <option value="short" className="bg-bg-card text-text-main">{t('storyteller.length.short')}</option>
+                            <option value="medium" className="bg-bg-card text-text-main">{t('storyteller.length.medium')}</option>
+                            <option value="long" className="bg-bg-card text-text-main">{t('storyteller.length.long')}</option>
                         </select>
                     </div>
                 </div>
@@ -533,7 +533,7 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                     className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
                         canGenerate && date && location && protagonist && !isLimitReached
                             ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/25'
-                            : 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-not-allowed'
+                            : 'bg-bg-subtle text-text-muted cursor-not-allowed'
                     }`}
                 >
                     {canGenerate ? t('storyteller.form.generate') : t('storyteller.form.insufficient_credits')}

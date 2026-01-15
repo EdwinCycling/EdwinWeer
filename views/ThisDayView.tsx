@@ -645,8 +645,8 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
 
                   <button 
                       onClick={calculateStats}
-                      disabled={loading}
-                      className="bg-accent-primary hover:opacity-90 text-text-inverse px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={loading || (searchQuery.length > 0 && searchQuery !== `${selectedLocation.name}, ${selectedLocation.country}`)}
+                      className={`bg-accent-primary text-text-inverse px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 ${loading || (searchQuery.length > 0 && searchQuery !== `${selectedLocation.name}, ${selectedLocation.country}`) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
                   >
                       {loading ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -780,7 +780,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                           className="bg-bg-card hover:bg-bg-page text-blue-600 dark:text-blue-400 border border-border-color px-6 py-3 rounded-xl font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95"
                       >
                           <Icon name="list" />
-                          <span>{t('history.overview_button')}</span>
+                          <span>{t('history.overview')}</span>
                       </button>
                   </div>
 

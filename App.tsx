@@ -39,6 +39,7 @@ const BaroWeermanView = React.lazy(() => import('./views/BaroWeermanView').then(
 const BaroTimeMachineView = React.lazy(() => import('./views/BaroTimeMachineView').then(module => ({ default: module.BaroTimeMachineView })));
 const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView').then(module => ({ default: module.BaroStorytellerView })));
 const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(module => ({ default: module.SongWriterView })));
+const LandingPageV2 = React.lazy(() => import('./src/views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
 import { ViewState, AppSettings } from './types';
 import packageJson from './package.json';
 const appVersion = packageJson.version;
@@ -253,7 +254,10 @@ const App: React.FC = () => {
 
   if (!user) {
     if (currentView === ViewState.FAQ) {
-        return <FAQView onNavigate={navigate} settings={settings} />;
+        return <FAQView onNavigate={navigate} settings={settings} isLandingV2={true} />;
+    }
+    if (currentView === ViewState.LANDING_V2) {
+        return <LandingPageV2 onNavigate={navigate} />;
     }
     return <LoginView onNavigate={navigate} />;
   }
@@ -298,6 +302,8 @@ const App: React.FC = () => {
         return <ActivityPlannerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.NOTIFICATIONS:
         return <NotificationsView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.LANDING_V2:
+        return <LandingPageV2 onNavigate={navigate} />;
       case ViewState.PROFILES:
         return <ProfilesView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.CYCLING:
