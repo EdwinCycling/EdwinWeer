@@ -265,6 +265,23 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               uv_index: weatherData.daily.uv_index_max?.[i] || 0
           });
 
+          // Day part icons
+          const getIconForHour = (hour: number) => {
+              const targetTime = `${ts}T${hour.toString().padStart(2, '0')}:00`;
+              const idx = weatherData.hourly.time.indexOf(targetTime);
+              if (idx !== -1) {
+                  return mapWmoCodeToIcon(weatherData.hourly.weather_code[idx]);
+              }
+              return mapWmoCodeToIcon(code);
+          };
+
+          const dayParts = {
+              night: getIconForHour(3),
+              morning: getIconForHour(9),
+              afternoon: getIconForHour(15),
+              evening: getIconForHour(21)
+          };
+
           let color = 'from-yellow-400 to-amber-400';
 
           return {
@@ -280,7 +297,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               windMax,
               windDir,
               activityScores,
-              comfort
+              comfort,
+              dayParts
           };
       });
   };
@@ -664,11 +682,101 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             >
                                 Grafiek
                             </button>
+                             <button  
+                                onClick={() => setViewMode('table')}
+                                className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'table' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                            >
+                                Tabel
+                            </button>
                         </div>
                     </div>
                 </div>
                 
-                {viewMode === 'graph' ? (
+                {viewMode === 'table' ? (
+                    <div className="flex flex-col w-full mt-4 overflow-x-auto scrollbar-hide">
+                        <table className="w-full text-left border-separate border-spacing-y-2 px-1">
+                            <thead>
+                                <tr className="text-text-muted text-[10px] sm:text-xs uppercase tracking-wider">
+                                    <th className="px-2 py-1 font-medium">{t('weather_rating')}</th>
+                                    <th className="px-2 py-1 font-medium">{t('day')}</th>
+                                    <th className="px-2 py-1 font-medium text-center">{t('night')}</th>
+                                    <th className="px-2 py-1 font-medium text-center">{t('morning')}</th>
+                                    <th className="px-2 py-1 font-medium text-center">{t('afternoon')}</th>
+                                    <th className="px-2 py-1 font-medium text-center">{t('evening')}</th>
+                                    <th className="px-2 py-1 font-medium text-center">Temp.</th>
+                                    <th className="px-2 py-1 font-medium text-center">{t('precip')}</th>
+                                    <th className="px-2 py-1 font-medium text-right">{t('wind')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {dailyForecast.map((d, i) => (
+                                    <tr key={i} onClick={() => setSelectedDayIndex(i)} className="bg-bg-card/50 hover:bg-bg-card rounded-xl transition-colors cursor-pointer group shadow-sm border border-border-color">
+                                        <td className="px-2 py-3 first:rounded-l-xl border-y border-l border-border-color/30">
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-bold text-sm sm:text-base shadow-sm ${d.comfort.colorClass}`}>
+                                                {d.comfort.score}
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 border-y border-border-color/30">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs sm:text-sm font-bold text-text-main whitespace-nowrap">{d.day.split(' ')[0]}</span>
+                                                <span className="text-[10px] text-text-muted whitespace-nowrap">{d.day.split(' ').slice(1).join(' ')}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center border-y border-border-color/30">
+                                            <div className="flex justify-center">
+                                                <Icon name={d.dayParts.night} className="text-xl sm:text-2xl text-text-main" />
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center border-y border-border-color/30">
+                                            <div className="flex justify-center">
+                                                <Icon name={d.dayParts.morning} className="text-xl sm:text-2xl text-text-main" />
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center border-y border-border-color/30">
+                                            <div className="flex justify-center">
+                                                <Icon name={d.dayParts.afternoon} className="text-xl sm:text-2xl text-text-main" />
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center border-y border-border-color/30">
+                                            <div className="flex justify-center">
+                                                <Icon name={d.dayParts.evening} className="text-xl sm:text-2xl text-text-main" />
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center whitespace-nowrap border-y border-border-color/30">
+                                            <div className="flex items-center justify-center gap-1 font-bold text-xs sm:text-sm">
+                                                <span className="text-red-500">{Math.round(d.max)}°</span>
+                                                <span className="text-text-muted">/</span>
+                                                <span className="text-blue-500">{Math.round(d.min)}°</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-2 py-3 text-center whitespace-nowrap border-y border-border-color/30">
+                                            {d.precipAmount > 0 ? (
+                                                <span className="text-blue-500 text-[10px] sm:text-xs font-bold">{d.precipAmount} {settings.precipUnit}</span>
+                                            ) : (
+                                                <span className="text-text-muted text-[10px] sm:text-xs">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-2 py-3 text-right last:rounded-r-xl border-y border-r border-border-color/30 whitespace-nowrap">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <span className="text-xs sm:text-sm font-bold text-text-main">{d.windMax} {settings.windUnit}</span>
+                                                <span className="text-[10px] text-text-muted font-medium uppercase">{d.windDir}</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        
+                        <div className="flex justify-center mt-4">
+                             <button 
+                                onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : 7)}
+                                className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
+                            >
+                                {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
+                            </button>
+                        </div>
+                    </div>
+                ) : viewMode === 'graph' ? (
                     <div className="flex flex-col w-full mt-4">
                         <div 
                             className="w-full h-[400px] select-none pr-2 overflow-x-auto scrollbar-hide no-swipe"

@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        port: 3010,
+        port: 3000,
         strictPort: true,
         host: '0.0.0.0',
         watch: {
@@ -131,7 +131,7 @@ export default defineConfig(({ mode }) => {
             }
           }
         },
-        chunkSizeWarningLimit: 1000
+        chunkSizeWarningLimit: 1200
       },
       resolve: {
         alias: {

@@ -421,7 +421,7 @@ export const loadForecastActivitiesMode = (): 'none' | 'positive' | 'all' => {
     return (localStorage.getItem(KEY_FORECAST_ACTIVITIES_MODE) as 'none' | 'positive' | 'all') || 'all';
 };
 
-export type ForecastViewMode = 'compact' | 'expanded' | 'graph';
+export type ForecastViewMode = 'compact' | 'expanded' | 'graph' | 'table';
 
 export const saveForecastViewMode = (mode: ForecastViewMode) => {
     if (typeof window !== "undefined") {

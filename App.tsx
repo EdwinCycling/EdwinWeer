@@ -887,7 +887,7 @@ const App: React.FC = () => {
         )}
 
         {/* Limit Reached Modal - Replaced by Banner */}
-        <ReloadPrompt />
+        {import.meta.env.PROD && <ReloadPrompt />}
     </div>
   );
 };

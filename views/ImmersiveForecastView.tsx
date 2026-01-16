@@ -116,39 +116,42 @@ export const ImmersiveForecastView: React.FC<Props> = ({ onNavigate, settings })
           </div>
        </header>
 
+       <div className="hidden md:block fixed inset-0 z-50 pointer-events-none">
+            <div className="relative w-full max-w-5xl mx-auto h-full pointer-events-none">
+                <div className="absolute top-32 right-0 flex flex-col gap-4 pointer-events-auto">
+                    <button
+                        onClick={() => setSidePanel(sidePanel === 'outlook' ? null : 'outlook')}
+                        className={`flex flex-col items-center justify-center w-36 h-24 rounded-l-2xl backdrop-blur-md border border-r-0 shadow-[-10px_0_20px_rgba(0,0,0,0.4)] transition-all duration-300 group ${
+                            sidePanel === 'outlook' 
+                            ? 'bg-slate-900/95 border-white/20 text-white translate-x-0' 
+                            : 'bg-black/80 border-white/10 text-white/70 hover:bg-slate-900 hover:text-white translate-x-2 hover:translate-x-0'
+                        }`}
+                    >
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 group-hover:scale-105 transition-transform">{getTranslation('immersive.outlook', settings.language)}</span>
+                        <Icon name="bar_chart" className="text-2xl group-hover:scale-110 transition-transform" />
+                    </button>
+
+                    <button
+                        onClick={() => setSidePanel(sidePanel === 'history' ? null : 'history')}
+                        className={`flex flex-col items-center justify-center w-36 h-24 rounded-l-2xl backdrop-blur-md border border-r-0 shadow-[-10px_0_20px_rgba(0,0,0,0.4)] transition-all duration-300 group ${
+                            sidePanel === 'history' 
+                            ? 'bg-purple-900/90 border-purple-500/30 text-white translate-x-0' 
+                            : 'bg-black/80 border-white/10 text-white/70 hover:bg-slate-900 hover:text-white translate-x-2 hover:translate-x-0'
+                        }`}
+                    >
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 group-hover:scale-105 transition-transform">{getTranslation('immersive.history', settings.language)}</span>
+                        <Icon name="history" className="text-2xl group-hover:scale-110 transition-transform" />
+                    </button>
+                </div>
+            </div>
+       </div>
+
        {/* Side Panel (Drawer) with Attached Tabs */}
        <div 
             className={`fixed inset-y-0 right-0 z-40 w-[75vw] bg-slate-900/95 backdrop-blur-xl border-l border-white/10 shadow-2xl transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform overflow-visible ${
                 sidePanel ? 'translate-x-0' : 'translate-x-full'
             }`}
        >
-            {/* Attached Side Buttons (Tabs) */}
-            <div className="hidden md:flex flex-col gap-4 absolute top-32 right-full pointer-events-auto">
-                <button
-                    onClick={() => setSidePanel(sidePanel === 'outlook' ? null : 'outlook')}
-                    className={`flex flex-col items-center justify-center w-36 h-24 rounded-l-2xl backdrop-blur-md border border-r-0 shadow-[-10px_0_20px_rgba(0,0,0,0.4)] transition-all duration-300 group ${
-                        sidePanel === 'outlook' 
-                        ? 'bg-slate-900/95 border-white/20 text-white translate-x-0' 
-                        : 'bg-black/80 border-white/10 text-white/70 hover:bg-slate-900 hover:text-white translate-x-1 hover:translate-x-0'
-                    }`}
-                >
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 group-hover:scale-105 transition-transform">{getTranslation('immersive.outlook', settings.language)}</span>
-                    <Icon name="bar_chart" className="text-2xl group-hover:scale-110 transition-transform" />
-                </button>
-
-                <button
-                    onClick={() => setSidePanel(sidePanel === 'history' ? null : 'history')}
-                    className={`flex flex-col items-center justify-center w-36 h-24 rounded-l-2xl backdrop-blur-md border border-r-0 shadow-[-10px_0_20px_rgba(0,0,0,0.4)] transition-all duration-300 group ${
-                        sidePanel === 'history' 
-                        ? 'bg-purple-900/90 border-purple-500/30 text-white translate-x-0' 
-                        : 'bg-black/80 border-white/10 text-white/70 hover:bg-slate-900 hover:text-white translate-x-1 hover:translate-x-0'
-                    }`}
-                >
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 group-hover:scale-105 transition-transform">{getTranslation('immersive.history', settings.language)}</span>
-                    <Icon name="history" className="text-2xl group-hover:scale-110 transition-transform" />
-                </button>
-            </div>
-
             <div className="flex flex-col h-full pt-24 pb-8 px-6">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">
@@ -222,4 +225,3 @@ function getCurrentHourIndex(data: OpenMeteoResponse): number {
     }
     return index;
 }
-

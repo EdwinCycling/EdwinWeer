@@ -5,6 +5,21 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './index.css';
 
+if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  try {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => registration.unregister());
+    }).catch(() => {});
+  } catch {}
+  if ('caches' in window) {
+    try {
+      caches.keys().then(keys => {
+        keys.forEach(key => caches.delete(key));
+      }).catch(() => {});
+    } catch {}
+  }
+}
+
 console.log("index.tsx: Starting render");
 const rootElement = document.getElementById('root');
 if (!rootElement) {

@@ -195,7 +195,7 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-between items-end mt-8 border-t border-white/20 pt-4 bg-gradient-to-t from-black/40 to-transparent -mx-6 -mb-6 px-6 pb-6">
+                <div className="flex justify-between items-end mt-8 border-t border-white/20 pt-4 bg-gradient-to-t from-black/40 to-transparent -mx-6 -mb-10 px-6 pb-10">
                     <div className="flex flex-col min-w-[150px]">
                         <span className="text-4xl font-bold drop-shadow-md">{timeStr}</span>
                         <span className="text-sm opacity-90 uppercase tracking-widest mb-2">{dateStr}</span>

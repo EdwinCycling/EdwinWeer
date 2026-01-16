@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Label, ReferenceDot } from 'recharts';
-import { AppSettings } from '../types';
+import { AppSettings, WindUnit } from '../types';
 import { Icon } from './Icon';
 import { mapWmoCodeToIcon } from '../services/weatherService';
 
@@ -68,37 +68,37 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
     const rainTicks = rainMaxY <= 5 ? [0, 1, 2, 3, 4, 5] : undefined;
 
     const windMaxData = Math.max(...chartData.map(d => d.wind || 0));
-    const getWindMax = (unit: string) => {
-        switch(unit) {
-            case 'bft': return 0; // Allow dynamic scaling (was 12)
-            case 'm/s': return 33; // 12 Bft upper bound
-            case 'mph': return 74; // 12 Bft upper bound
-            case 'knots': return 64; // 12 Bft upper bound
-            default: return 118; // km/h 12 Bft upper bound
+    const getWindMax = (unit: WindUnit) => {
+        switch (unit) {
+            case WindUnit.BFT: return 12;
+            case WindUnit.MS: return 33;
+            case WindUnit.MPH: return 74;
+            case WindUnit.KNOTS: return 64;
+            case WindUnit.KMH:
+            default: return 118;
         }
     };
     const windTargetMax = getWindMax(settings.windUnit);
     let windMaxY = Math.max(windMaxData, windTargetMax);
     
-    // Ensure minimum scale for Bft so 0 or 1 doesn't look like storm
-    if (settings.windUnit === 'bft') {
-        let max = Math.max(windMaxData, 4);
-        // Round up to next even number for nice ticks
-        if (max % 2 !== 0) max += 1;
-        windMaxY = max;
+    // Ensure minimum scale for Bft
+    if (settings.windUnit === WindUnit.BFT) {
+        // User requested max 12 Bft
+        windMaxY = Math.max(windMaxData, 12);
     }
 
     // Dynamic ticks for Bft
     let windTicks: number[] | undefined = undefined;
-    if (settings.windUnit === 'bft') {
-        // Create ticks: 0, 2, 4, ... up to windMaxY
+    if (settings.windUnit === WindUnit.BFT) {
+        // Create ticks: 0, 1, 2, ... up to windMaxY (User requested whole Bfts)
         windTicks = [];
-        for (let i = 0; i <= windMaxY; i += 2) {
+        for (let i = 0; i <= windMaxY; i += 1) {
             windTicks.push(i);
         }
     }
 
-    const midnightIndices = chartData.filter(d => d.isMidnight).map(d => d.index);
+    // Use isNewDay for vertical lines to be more robust than just hour 0
+    const dayBoundaryIndices = chartData.filter(d => d.dayLabel).map(d => d.index);
 
     const CustomIconTick = (props: any) => {
         const { x, y, index } = props;
@@ -204,7 +204,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                         />
                         
                         {/* Midnight Reference Lines - Duidelijk aangeven wanneer er een nieuwe dag begint */}
-                        {midnightIndices.map(idx => (
+                        {dayBoundaryIndices.map(idx => (
                             <ReferenceLine 
                                 key={`midnight-${idx}`} 
                                 x={idx} 
@@ -214,7 +214,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 xAxisId="wind"
                             >
                                 <Label 
-                                    value={settings.language === 'nl' ? 'Nieuwe dag 00:00' : 'New day 00:00'} 
+                                    value={settings.language === 'nl' ? 'Nieuwe dag' : 'New day'} 
                                     position="insideTopLeft" 
                                     fill="#1e293b" 
                                     fontSize={11} 

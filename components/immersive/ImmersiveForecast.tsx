@@ -152,20 +152,20 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
         });
 
     const enrichedHours = hoursData.map((h, idx) => {
-        // Calculate Trends
-        let tempTrend: 'up' | 'down' | 'stable' = 'stable';
+        let tempTrend: 'up' | 'down' | undefined = undefined;
         let pressureTrend: 'up' | 'down' | 'stable' = 'stable';
         
         if (idx > 0) {
             const prev = hoursData[idx - 1];
             
-            // Temp Trend
-            if (h.temp > prev.temp) tempTrend = 'up';
-            else if (h.temp < prev.temp) tempTrend = 'down';
+            const prevRounded = Math.round(prev.temp);
+            const currRounded = Math.round(h.temp);
+            if (currRounded > prevRounded) tempTrend = 'up';
+            else if (currRounded < prevRounded) tempTrend = 'down';
             
-            // Pressure Trend
-            if (h.pressure > prev.pressure) pressureTrend = 'up';
-            else if (h.pressure < prev.pressure) pressureTrend = 'down';
+            // Pressure Trend - Only change if difference is at least 1 hPa
+            if (h.pressure - prev.pressure >= 1) pressureTrend = 'up';
+            else if (prev.pressure - h.pressure >= 1) pressureTrend = 'down';
         }
 
         return {
@@ -231,7 +231,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                         {currentIndex > 0 && (
                             <button 
                                 onClick={() => navigate('prev')}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
+                                className="absolute left-4 top-[65%] -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
                             >
                                 <Icon name="arrow_back_ios" className="text-white text-2xl group-hover:-translate-x-1 transition-transform" />
                                 <span className="text-[10px] text-white/70 font-bold uppercase">{formatTime(enrichedHours[currentIndex - 1].time)}</span>
@@ -240,7 +240,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                         {currentIndex < enrichedHours.length - 1 && (
                             <button 
                                 onClick={() => navigate('next')}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
+                                className="absolute right-4 top-[65%] -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
                             >
                                 <Icon name="arrow_forward_ios" className="text-white text-2xl group-hover:translate-x-1 transition-transform pl-1" />
                                 <span className="text-[10px] text-white/70 font-bold uppercase">{formatTime(enrichedHours[currentIndex + 1].time)}</span>

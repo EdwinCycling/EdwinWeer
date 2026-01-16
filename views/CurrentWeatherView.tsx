@@ -952,7 +952,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </button>
             </div>
 
-            <div className="w-full overflow-x-auto scrollbar-hide pl-4" ref={scrollContainerRef}>
+            <div className="w-full overflow-x-auto scrollbar-hide pl-4" ref={scrollContainerRef} data-no-swipe="true">
                 <div className="flex gap-3 pr-4">
                     <button 
                          onClick={() => {
