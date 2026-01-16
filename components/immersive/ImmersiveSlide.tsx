@@ -3,6 +3,7 @@ import React from 'react';
 import { AppSettings } from '../../types';
 import { ImmersiveBackground } from './ImmersiveBackground';
 import { Icon } from '../Icon';
+import { getTranslation } from '../../services/translations';
 
 interface HourData {
     time: string;
@@ -45,17 +46,17 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
     const getWeatherDescription = (code: number) => {
         let desc = "";
         // Basic mapping
-        if (code === 0) desc = settings.language === 'nl' ? "Helder" : "Clear";
+        if (code === 0) desc = getTranslation('immersive.weather.clear', settings.language);
         else if (code <= 3) {
-            const base = settings.language === 'nl' ? "Bewolkt" : "Cloudy";
+            const base = getTranslation('immersive.weather.cloudy', settings.language);
             desc = `${base} (${Math.round(data.cloudCover)}%)`;
         }
-        else if (code <= 48) desc = settings.language === 'nl' ? "Mist" : "Fog";
-        else if (code <= 67) desc = settings.language === 'nl' ? "Regen" : "Rain";
-        else if (code <= 77) desc = settings.language === 'nl' ? "Sneeuw" : "Snow";
-        else if (code <= 82) desc = settings.language === 'nl' ? "Buien" : "Showers";
-        else if (code <= 86) desc = settings.language === 'nl' ? "Sneeuwbuien" : "Snow Showers";
-        else if (code <= 99) desc = settings.language === 'nl' ? "Onweer" : "Thunderstorm";
+        else if (code <= 48) desc = getTranslation('immersive.weather.fog', settings.language);
+        else if (code <= 67) desc = getTranslation('immersive.weather.rain', settings.language);
+        else if (code <= 77) desc = getTranslation('immersive.weather.snow', settings.language);
+        else if (code <= 82) desc = getTranslation('immersive.weather.showers', settings.language);
+        else if (code <= 86) desc = getTranslation('immersive.weather.snow_showers', settings.language);
+        else if (code <= 99) desc = getTranslation('immersive.weather.thunderstorm', settings.language);
         
         return desc;
     };
@@ -105,18 +106,19 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
                         </div>
                         {showFeelsLike && (
                             <span className="text-lg opacity-80 font-medium drop-shadow-md pl-1">
-                                {settings.language === 'nl' 
-                                    ? (Math.round(data.feelsLike) > 25 ? 'Hitte-index' : 'Voelt als') 
-                                    : (Math.round(data.feelsLike) > 25 ? 'Heat Index' : 'Feels like')} {Math.round(data.feelsLike)}°
+                                {Math.round(data.feelsLike) > 25 
+                                    ? getTranslation('immersive.heat_index', settings.language)
+                                    : getTranslation('immersive.feels_like', settings.language)} {Math.round(data.feelsLike)}°
                             </span>
                         )}
+
                     </div>
 
                     {/* Sun/Moon Visual - Moved BELOW Temp */}
                     <div className="relative w-48 h-24 bg-black/10 backdrop-blur-sm rounded-t-full border-t border-l border-r border-white/20 shadow-lg overflow-hidden mt-2">
                         <div className="absolute bottom-0 w-full h-px bg-white/40" />
-                        <div className="absolute bottom-1 left-3 text-[10px] text-white/70 font-medium">{settings.language === 'nl' ? 'Op' : 'Rise'}</div>
-                        <div className="absolute bottom-1 right-3 text-[10px] text-white/70 font-medium">{settings.language === 'nl' ? 'Onder' : 'Set'}</div>
+                        <div className="absolute bottom-1 left-3 text-[10px] text-white/70 font-medium">{getTranslation('immersive.rise', settings.language)}</div>
+                        <div className="absolute bottom-1 right-3 text-[10px] text-white/70 font-medium">{getTranslation('immersive.set', settings.language)}</div>
                         {data.sunAltitude > -10 && (
                             <div 
                                 className="absolute w-6 h-6 bg-yellow-400 rounded-full shadow-[0_0_20px_rgba(255,215,0,0.8)] transition-all duration-1000 flex items-center justify-center text-[8px] text-yellow-900 font-bold z-10"
@@ -186,7 +188,7 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
                             <span className="text-xl">💧</span>
                             <div className="flex flex-col items-start">
                                 <span className="font-bold">{data.precip} mm</span>
-                                <span className="text-xs opacity-80">{settings.language === 'nl' ? 'Neerslag' : 'Precip'}</span>
+                                <span className="text-xs opacity-80">{getTranslation('immersive.precip', settings.language)}</span>
                             </div>
                         </div>
                     )}
@@ -205,12 +207,12 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
                                 <div className="flex flex-col gap-0.5">
                                     {data.sunrise && (
                                         <span className="text-xs opacity-70 flex items-center gap-1">
-                                            <Icon name="wb_twilight" className="text-sm text-yellow-300"/> <span className="text-[10px]">Op</span> {data.sunrise}
+                                            <Icon name="wb_twilight" className="text-sm text-yellow-300"/> <span className="text-[10px]">{getTranslation('immersive.rise', settings.language)}</span> {data.sunrise}
                                         </span>
                                     )}
                                     {data.sunset && (
                                         <span className="text-xs opacity-70 flex items-center gap-1">
-                                            <Icon name="wb_twilight" className="text-sm text-orange-400"/> <span className="text-[10px]">Onder</span> {data.sunset}
+                                            <Icon name="wb_twilight" className="text-sm text-orange-400"/> <span className="text-[10px]">{getTranslation('immersive.set', settings.language)}</span> {data.sunset}
                                         </span>
                                     )}
                                 </div>
@@ -221,12 +223,12 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
                                 <div className="flex flex-col gap-0.5 border-l border-white/10 pl-4">
                                     {data.moonrise && (
                                         <span className="text-xs opacity-70 flex items-center gap-1">
-                                            <Icon name="dark_mode" className="text-sm text-gray-300"/> <span className="text-[10px]">Op</span> {data.moonrise}
+                                            <Icon name="dark_mode" className="text-sm text-gray-300"/> <span className="text-[10px]">{getTranslation('immersive.rise', settings.language)}</span> {data.moonrise}
                                         </span>
                                     )}
                                     {data.moonset && (
                                         <span className="text-xs opacity-70 flex items-center gap-1">
-                                            <Icon name="dark_mode" className="text-sm text-gray-400"/> <span className="text-[10px]">Onder</span> {data.moonset}
+                                            <Icon name="dark_mode" className="text-sm text-gray-400"/> <span className="text-[10px]">{getTranslation('immersive.set', settings.language)}</span> {data.moonset}
                                         </span>
                                     )}
                                 </div>

@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { OpenMeteoResponse, AppSettings } from '../../types';
 import { ImmersiveSlide } from './ImmersiveSlide';
+import { Icon } from '../Icon';
 import { convertWind } from '../../services/weatherService';
 
 interface Props {

@@ -1,5 +1,5 @@
 
-import { WeatherData, TempUnit, WindUnit, PrecipUnit, PressureUnit, AppLanguage, EnsembleModel } from "../types";
+import { WeatherData, TempUnit, WindUnit, PrecipUnit, PressureUnit, AppLanguage, EnsembleModel, AppSettings } from "../types";
 import { checkLimit, trackCall } from "./usageService";
 import * as Astronomy from "astronomy-engine";
 

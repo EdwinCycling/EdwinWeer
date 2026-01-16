@@ -429,14 +429,17 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 stroke="#fff"
                                 strokeWidth={2}
                                 isFront={true}
-                                label={({ x, y }: any) => (
-                                    <g transform={`translate(${x},${y})`}>
-                                        <rect x="-20" y="-32" width="40" height="22" rx="6" fill="#ef4444" stroke="#fff" strokeWidth={2} />
-                                        <text x="0" y="-17" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
-                                            {maxTempPoint.temp}°
-                                        </text>
-                                    </g>
-                                )}
+                                label={({ x, y }: any) => {
+                                    if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) return null;
+                                    return (
+                                        <g transform={`translate(${x},${y})`}>
+                                            <rect x="-20" y="-32" width="40" height="22" rx="6" fill="#ef4444" stroke="#fff" strokeWidth={2} />
+                                            <text x="0" y="-17" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
+                                                {maxTempPoint.temp}°
+                                            </text>
+                                        </g>
+                                    );
+                                }}
                             />
                         )}
                         {minTempPoint && (
@@ -450,14 +453,17 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 stroke="#fff"
                                 strokeWidth={2}
                                 isFront={true}
-                                label={({ x, y }: any) => (
-                                    <g transform={`translate(${x},${y})`}>
-                                        <rect x="-20" y="10" width="40" height="22" rx="6" fill="#3b82f6" stroke="#fff" strokeWidth={2} />
-                                        <text x="0" y="25" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
-                                            {minTempPoint.temp}°
-                                        </text>
-                                    </g>
-                                )}
+                                label={({ x, y }: any) => {
+                                    if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) return null;
+                                    return (
+                                        <g transform={`translate(${x},${y})`}>
+                                            <rect x="-20" y="10" width="40" height="22" rx="6" fill="#3b82f6" stroke="#fff" strokeWidth={2} />
+                                            <text x="0" y="25" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
+                                                {minTempPoint.temp}°
+                                            </text>
+                                        </g>
+                                    );
+                                }}
                             />
                         )}
 
