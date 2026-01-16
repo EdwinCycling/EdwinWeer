@@ -1,5 +1,4 @@
 import { Client } from '@notionhq/client';
-import fetch from 'node-fetch';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_MODEL } from './config/ai.js';
 
@@ -77,6 +76,7 @@ export const handler = async (event: any, context: any) => {
         let races: any[] = [];
         const cleanDbId = databaseId.trim().replace(/-/g, '');
         const url = `https://api.notion.com/v1/databases/${cleanDbId}/query`;
+        log(`Querying Notion URL: ${url}`);
         
         const fetchResponse = await fetch(url, {
             method: 'POST',

@@ -1,6 +1,5 @@
 import admin from 'firebase-admin';
 import { Client } from '@notionhq/client';
-import fetch from 'node-fetch';
 import * as Brevo from '@getbrevo/brevo';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_MODEL } from './config/ai.js';
@@ -270,7 +269,7 @@ export const handler = async (event: any, context: any) => {
         
         const cleanDbId = databaseId.trim().replace(/-/g, '');
         const url = `https://api.notion.com/v1/databases/${cleanDbId}/query`;
-        console.log(`Querying Notion URL: ${url}`); 
+        console.log(`Querying Notion URL: ${url}\n`); 
 
         const filter = {
             and: [
@@ -278,6 +277,7 @@ export const handler = async (event: any, context: any) => {
                 { property: "Eind datum", date: { on_or_after: today } }
             ]
         };
+        console.log("Notion Filter:", JSON.stringify(filter, null, 2));
 
         let response: any;
         try {

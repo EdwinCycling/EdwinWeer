@@ -1,5 +1,4 @@
 import admin from 'firebase-admin';
-import fetch from 'node-fetch';
 
 // Initialize Firebase Admin (Reuse existing logic)
 if (!admin.apps.length) {

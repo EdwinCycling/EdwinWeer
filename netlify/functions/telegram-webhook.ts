@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
-import fetch from 'node-fetch';
 
 // Initialize Firebase Admin (Reuse existing initialization pattern if possible, or import from shared)
 if (!admin.apps.length) {

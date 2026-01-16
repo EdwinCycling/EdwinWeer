@@ -2,7 +2,6 @@
 import { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import fetch from 'node-fetch';
 import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin

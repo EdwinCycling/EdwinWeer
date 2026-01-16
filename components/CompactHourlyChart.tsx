@@ -338,7 +338,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                             yAxisId="windAxis" 
                             orientation="right" 
                             hide={true}
-                            domain={[0, 'auto']}
+                            domain={[0, (dataMax: number) => Math.max(dataMax, windMaxY)]}
                         />
 
                         <Tooltip 
