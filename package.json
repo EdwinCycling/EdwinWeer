@@ -1,11 +1,11 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.9260116.1",
+  "version": "0.9260116.2",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
-    "dev:vite": "vite --port 3000",
+    "dev:vite": "vite --port 3010",
     "dev:netlify": "netlify functions:serve --port 9998",
     "build": "vite build",
     "preview": "vite preview --port 4173 --strictPort"

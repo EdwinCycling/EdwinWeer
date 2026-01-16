@@ -150,3 +150,23 @@ body {
   background-color: inherit;
   color: inherit;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 
+  Info about 'will-change':
+  The 'will-change' CSS property hints to browsers how an element is expected to change. 
+  Browsers can set up optimizations before an element is actually changed. 
+  We use 'will-change: transform' on elements that animate frequently (like the wind compass) 
+  to promote them to their own layer (compositing) and avoid layout repaints.
+*/
+.will-change-transform {
+  will-change: transform;
+}

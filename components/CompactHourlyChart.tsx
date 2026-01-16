@@ -70,7 +70,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
     const windMaxData = Math.max(...chartData.map(d => d.wind || 0));
     const getWindMax = (unit: string) => {
         switch(unit) {
-            case 'bft': return 12;
+            case 'bft': return 0; // Allow dynamic scaling (was 12)
             case 'm/s': return 33; // 12 Bft upper bound
             case 'mph': return 74; // 12 Bft upper bound
             case 'knots': return 64; // 12 Bft upper bound
@@ -78,8 +78,25 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
         }
     };
     const windTargetMax = getWindMax(settings.windUnit);
-    const windMaxY = Math.max(windMaxData, windTargetMax);
-    const windTicks = (settings.windUnit === 'bft' && windMaxY <= 12) ? [0, 2, 4, 6, 8, 10, 12] : undefined;
+    let windMaxY = Math.max(windMaxData, windTargetMax);
+    
+    // Ensure minimum scale for Bft so 0 or 1 doesn't look like storm
+    if (settings.windUnit === 'bft') {
+        let max = Math.max(windMaxData, 4);
+        // Round up to next even number for nice ticks
+        if (max % 2 !== 0) max += 1;
+        windMaxY = max;
+    }
+
+    // Dynamic ticks for Bft
+    let windTicks: number[] | undefined = undefined;
+    if (settings.windUnit === 'bft') {
+        // Create ticks: 0, 2, 4, ... up to windMaxY
+        windTicks = [];
+        for (let i = 0; i <= windMaxY; i += 2) {
+            windTicks.push(i);
+        }
+    }
 
     const midnightIndices = chartData.filter(d => d.isMidnight).map(d => d.index);
 
@@ -136,21 +153,6 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
             <text x={x} y={y} dy={16} textAnchor="start" fill="#0f172a" fontSize={13} fontWeight="bold">
                 {d.dayLabel}
             </text>
-        );
-    };
-
-    const CustomTempPopup = (props: any) => {
-        const { x, y, value, color, position } = props;
-        if (x === undefined || y === undefined) return null;
-        
-        const yOffset = position === 'top' ? -28 : 12;
-        return (
-            <g transform={`translate(${x},${y})`}>
-                <rect x="-20" y={yOffset} width="40" height="22" rx="6" fill={color} stroke="#fff" strokeWidth={2} />
-                <text x="0" y={yOffset + 15} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
-                    {value}°
-                </text>
-            </g>
         );
     };
 
@@ -382,7 +384,6 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 barSize={10} 
                                 radius={[2, 2, 0, 0]} 
                                 xAxisId="wind"
-                                minPointSize={5}
                             />
                         )}
 
@@ -428,13 +429,13 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 stroke="#fff"
                                 strokeWidth={2}
                                 isFront={true}
-                                label={(props: any) => (
-                                    <CustomTempPopup 
-                                        {...props} 
-                                        value={maxTempPoint.temp} 
-                                        color="#ef4444" 
-                                        position="top" 
-                                    />
+                                label={({ x, y }: any) => (
+                                    <g transform={`translate(${x},${y})`}>
+                                        <rect x="-20" y="-32" width="40" height="22" rx="6" fill="#ef4444" stroke="#fff" strokeWidth={2} />
+                                        <text x="0" y="-17" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
+                                            {maxTempPoint.temp}°
+                                        </text>
+                                    </g>
                                 )}
                             />
                         )}
@@ -449,13 +450,13 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 stroke="#fff"
                                 strokeWidth={2}
                                 isFront={true}
-                                label={(props: any) => (
-                                    <CustomTempPopup 
-                                        {...props} 
-                                        value={minTempPoint.temp} 
-                                        color="#3b82f6" 
-                                        position="bottom" 
-                                    />
+                                label={({ x, y }: any) => (
+                                    <g transform={`translate(${x},${y})`}>
+                                        <rect x="-20" y="10" width="40" height="22" rx="6" fill="#3b82f6" stroke="#fff" strokeWidth={2} />
+                                        <text x="0" y="25" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
+                                            {minTempPoint.temp}°
+                                        </text>
+                                    </g>
                                 )}
                             />
                         )}

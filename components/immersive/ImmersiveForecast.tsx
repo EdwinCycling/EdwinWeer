@@ -1,0 +1,315 @@
+
+import React, { useRef, useState, useEffect } from 'react';
+import * as Astronomy from "astronomy-engine";
+import { OpenMeteoResponse, AppSettings, Location } from '../../types';
+import { ImmersiveSlide } from './ImmersiveSlide';
+import { convertWind } from '../../services/weatherService';
+import { Icon } from '../Icon';
+
+interface Props {
+    data: OpenMeteoResponse;
+    settings: AppSettings;
+    location: Location;
+}
+
+export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPC, setIsPC] = useState(false);
+    const observer = new Astronomy.Observer(location.lat, location.lon, 0);
+
+    // Detect if PC (non-touch)
+    useEffect(() => {
+        const checkPC = () => {
+            setIsPC(window.innerWidth >= 1024 && !('ontouchstart' in window));
+        };
+        checkPC();
+        window.addEventListener('resize', checkPC);
+        return () => window.removeEventListener('resize', checkPC);
+    }, []);
+
+    // Filter next 48 hours starting from current hour
+    const currentHourIndex = getCurrentHourIndex(data);
+    
+    // Safety check
+    if (currentHourIndex === -1) {
+        return <div className="text-white p-10">Data niet beschikbaar voor deze periode.</div>;
+    }
+
+    const hoursData = data.hourly.time
+        .slice(currentHourIndex, currentHourIndex + 48)
+        .map((time, i) => {
+            const index = currentHourIndex + i;
+            
+            // Calculate Sun/Moon position
+            const date = new Date(time); 
+            
+            const sunEq = Astronomy.Equator(Astronomy.Body.Sun, date, observer, true, true);
+            const sunHor = Astronomy.Horizon(date, observer, sunEq.ra, sunEq.dec, 'normal');
+            
+            const moonEq = Astronomy.Equator(Astronomy.Body.Moon, date, observer, true, true);
+            const moonHor = Astronomy.Horizon(date, observer, moonEq.ra, moonEq.dec, 'normal');
+            const moonPhase = Astronomy.Illumination(Astronomy.Body.Moon, date).phase_fraction;
+
+            // Get sunrise/sunset and moonrise/moonset for this day
+            const dateStr = time.split('T')[0];
+            const dayIndex = data.daily.time.findIndex(d => d === dateStr);
+            let sunriseStr = null;
+            let sunsetStr = null;
+            let moonriseStr = null;
+            let moonsetStr = null;
+            
+            let sunProgress = 0;
+            let moonProgress = 0;
+
+            if (dayIndex !== -1) {
+                const sr = new Date(data.daily.sunrise[dayIndex]);
+                const ss = new Date(data.daily.sunset[dayIndex]);
+                sunriseStr = sr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                sunsetStr = ss.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                
+                // Calculate Sun Progress
+                const totalSunTime = ss.getTime() - sr.getTime();
+                const currentSunTime = date.getTime() - sr.getTime();
+                sunProgress = Math.max(0, Math.min(1, currentSunTime / totalSunTime));
+
+                // Robust Moon Progress Calculation
+                const nowTime = date.getTime();
+                // Get all moon events from daily data to form a timeline
+                const events: { type: 'rise' | 'set', time: number }[] = [];
+                if (data.daily.moonrise) data.daily.moonrise.forEach(t => events.push({ type: 'rise', time: new Date(t).getTime() }));
+                if (data.daily.moonset) data.daily.moonset.forEach(t => events.push({ type: 'set', time: new Date(t).getTime() }));
+                events.sort((a, b) => a.time - b.time);
+
+                // Find the active transit (Rise <= Now < NextRise)
+                // We want the Rise that is current (started before now)
+                const lastRise = events.filter(e => e.type === 'rise' && e.time <= nowTime).pop();
+                
+                if (lastRise) {
+                    // Find the set that belongs to this rise (the next set after rise)
+                    const nextSet = events.find(e => e.type === 'set' && e.time > lastRise.time);
+                    
+                    if (nextSet) {
+                        // Calculate progress based on this transit
+                        const totalDuration = nextSet.time - lastRise.time;
+                        moonProgress = (nowTime - lastRise.time) / totalDuration;
+
+                        // Use these specific times for the label
+                        const mrDate = new Date(lastRise.time);
+                        const msDate = new Date(nextSet.time);
+                        moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                        moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                    }
+                } else {
+                    const nextRise = events.find(e => e.type === 'rise' && e.time > nowTime);
+                    if (nextRise) {
+                         const nextSet = events.find(e => e.type === 'set' && e.time > nextRise.time);
+                         if (nextSet) {
+                             const totalDuration = nextSet.time - nextRise.time;
+                             moonProgress = (nowTime - nextRise.time) / totalDuration; // Will be negative
+                             
+                             const mrDate = new Date(nextRise.time);
+                             const msDate = new Date(nextSet.time);
+                             moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                             moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                         }
+                    }
+                }
+
+                // Fallback (only if no events found at all)
+                if (moonProgress === 0 && !moonriseStr && data.daily.moonrise && data.daily.moonrise[dayIndex]) {
+                    const mr = new Date(data.daily.moonrise[dayIndex]);
+                    moonriseStr = mr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                    
+                    if (data.daily.moonset && data.daily.moonset[dayIndex]) {
+                        const ms = new Date(data.daily.moonset[dayIndex]);
+                        moonsetStr = ms.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                    }
+                }
+            }
+
+            return {
+                time,
+                temp: data.hourly.temperature_2m[index],
+                code: data.hourly.weather_code[index],
+                precip: data.hourly.precipitation[index],
+                windSpeed: data.hourly.wind_speed_10m[index], // Raw value, convert later
+                windDir: data.hourly.wind_direction_10m[index],
+                feelsLike: data.hourly.apparent_temperature[index],
+                humidity: data.hourly.relative_humidity_2m[index],
+                pressure: data.hourly.pressure_msl ? data.hourly.pressure_msl[index] : (data.hourly.surface_pressure ? data.hourly.surface_pressure[index] : 0),
+                cloudCover: data.hourly.cloud_cover ? data.hourly.cloud_cover[index] : 0,
+                sunAltitude: sunHor.altitude,
+                moonAltitude: moonHor.altitude,
+                sunProgress, 
+                moonProgress, 
+                moonPhase: moonPhase,
+                sunrise: sunriseStr,
+                sunset: sunsetStr,
+                moonrise: moonriseStr,
+                moonset: moonsetStr
+            };
+        });
+
+    const enrichedHours = hoursData.map((h, idx) => {
+        // Calculate Trends
+        let tempTrend: 'up' | 'down' | 'stable' = 'stable';
+        let pressureTrend: 'up' | 'down' | 'stable' = 'stable';
+        
+        if (idx > 0) {
+            const prev = hoursData[idx - 1];
+            
+            // Temp Trend
+            if (h.temp > prev.temp) tempTrend = 'up';
+            else if (h.temp < prev.temp) tempTrend = 'down';
+            
+            // Pressure Trend
+            if (h.pressure > prev.pressure) pressureTrend = 'up';
+            else if (h.pressure < prev.pressure) pressureTrend = 'down';
+        }
+
+        return {
+            ...h,
+            isDay: isDayTime(h.time, data),
+            windSpeed: typeof convertWind === 'function' ? convertWind(h.windSpeed, settings.windUnit) : h.windSpeed,
+            tempTrend,
+            pressureTrend
+        };
+    });
+
+    const [scrollInit, setScrollInit] = React.useState(false);
+
+    useEffect(() => {
+        if (!scrollInit && containerRef.current && enrichedHours.length > 2) {
+            const slideWidth = containerRef.current.clientWidth;
+            containerRef.current.scrollLeft = slideWidth * 2;
+            setCurrentIndex(2);
+            setScrollInit(true);
+        }
+    }, [scrollInit, enrichedHours]);
+
+    const handleScroll = () => {
+        if (containerRef.current) {
+            const scrollLeft = containerRef.current.scrollLeft;
+            const width = containerRef.current.clientWidth;
+            const newIndex = Math.round(scrollLeft / width);
+            if (newIndex !== currentIndex) {
+                setCurrentIndex(newIndex);
+            }
+        }
+    };
+
+    const navigate = (direction: 'prev' | 'next') => {
+        if (containerRef.current) {
+            const width = containerRef.current.clientWidth;
+            const newIndex = direction === 'next' 
+                ? Math.min(currentIndex + 1, enrichedHours.length - 1)
+                : Math.max(currentIndex - 1, 0);
+            
+            containerRef.current.scrollTo({
+                left: newIndex * width,
+                behavior: 'smooth'
+            });
+            setCurrentIndex(newIndex);
+        }
+    };
+
+    const formatTime = (timeStr: string) => {
+        return new Date(timeStr).toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: settings.timeFormat === '12h'
+        });
+    };
+
+    return (
+        <div className="flex-1 w-full bg-black flex flex-col items-center overflow-hidden relative">
+            {/* PC Navigation Buttons */}
+            {isPC && (
+                <div className="absolute inset-0 pointer-events-none z-50">
+                    <div className="relative w-full max-w-5xl mx-auto h-full">
+                        {currentIndex > 0 && (
+                            <button 
+                                onClick={() => navigate('prev')}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
+                            >
+                                <Icon name="arrow_back_ios" className="text-white text-2xl group-hover:-translate-x-1 transition-transform" />
+                                <span className="text-[10px] text-white/70 font-bold uppercase">{formatTime(enrichedHours[currentIndex - 1].time)}</span>
+                            </button>
+                        )}
+                        {currentIndex < enrichedHours.length - 1 && (
+                            <button 
+                                onClick={() => navigate('next')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
+                            >
+                                <Icon name="arrow_forward_ios" className="text-white text-2xl group-hover:translate-x-1 transition-transform pl-1" />
+                                <span className="text-[10px] text-white/70 font-bold uppercase">{formatTime(enrichedHours[currentIndex + 1].time)}</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Centered Content Window */}
+            <div className="w-full max-w-5xl h-full relative overflow-hidden flex flex-col items-center bg-gray-900 shadow-2xl">
+                <div 
+                    ref={containerRef}
+                    onScroll={handleScroll}
+                    className="w-full h-full overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory scrollbar-hide items-center"
+                    style={{ scrollBehavior: 'smooth' }}
+                >
+                    {enrichedHours.map((hour, idx) => (
+                        <ImmersiveSlide key={hour.time} data={hour as any} settings={settings} />
+                    ))}
+                </div>
+
+                {/* Indicator Dots - Inside the window */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                    {enrichedHours.map((_, idx) => (
+                        <div 
+                            key={idx} 
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-white w-4' : 'bg-white/30'}`}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+function getCurrentHourIndex(data: OpenMeteoResponse): number {
+    // Get current UTC time
+    const now = new Date();
+    const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+    
+    // Adjust to location time
+    const locationTimeMs = utcMs + (data.utc_offset_seconds * 1000);
+    const locationDate = new Date(locationTimeMs);
+    
+    // Format to ISO string YYYY-MM-DDTHH:00 matching OpenMeteo format
+    const year = locationDate.getFullYear();
+    const month = String(locationDate.getMonth() + 1).padStart(2, '0');
+    const day = String(locationDate.getDate()).padStart(2, '0');
+    const hour = String(locationDate.getHours()).padStart(2, '0');
+    const targetTime = `${year}-${month}-${day}T${hour}:00`;
+    
+    const index = data.hourly.time.findIndex(t => t === targetTime);
+    
+    // If exact match fail, try finding closest or just start
+    if (index === -1) {
+        // Fallback: find first time that is >= targetTime
+        return Math.max(0, data.hourly.time.findIndex(t => t >= targetTime));
+    }
+    return index;
+}
+
+function isDayTime(timeStr: string, data: OpenMeteoResponse): boolean {
+    const dateStr = timeStr.split('T')[0];
+    const dayIndex = data.daily.time.findIndex(d => d === dateStr);
+    if (dayIndex === -1) return true;
+
+    const sunrise = data.daily.sunrise[dayIndex];
+    const sunset = data.daily.sunset[dayIndex];
+    
+    return timeStr >= sunrise && timeStr < sunset;
+}

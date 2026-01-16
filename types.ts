@@ -209,6 +209,7 @@ export interface AppSettings {
         enabled: boolean;
         channel: 'email' | 'telegram';
     };
+    startWithImmersive?: boolean;
 }
 
 export interface TripPlannerSettings {
@@ -297,6 +298,7 @@ export enum ViewState {
   THIS_DAY = 'THIS_DAY',
   MESSENGER = 'MESSENGER',
   NOTIFICATIONS = 'NOTIFICATIONS',
+  IMMERSIVE_FORECAST = 'IMMERSIVE_FORECAST',
   LANDING_V2 = 'LANDING_V2',
   PROFILES = 'PROFILES',
   YOUR_DAY = 'YOUR_DAY',

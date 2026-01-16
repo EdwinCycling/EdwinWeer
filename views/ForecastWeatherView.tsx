@@ -560,13 +560,16 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         </div>
                     </div>
                 </div>
-                <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
+                <div 
+                    onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
+                    className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center cursor-pointer hover:bg-black/30 transition-colors hover:scale-105 transform duration-300"
+                >
                     <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
                             <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-2xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                     </p>
                     <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
-                        H:{highTemp}° L:{lowTemp}°
+                        H:{highTemp}° L:{lowTemp}° <span className="text-xs opacity-70 ml-1">(48u)</span>
                     </p>
                     <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
                         {formatDateTime()}

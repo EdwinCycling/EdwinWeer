@@ -38,7 +38,8 @@ const BaroWeermanView = React.lazy(() => import('./views/BaroWeermanView').then(
 const BaroTimeMachineView = React.lazy(() => import('./views/BaroTimeMachineView').then(module => ({ default: module.BaroTimeMachineView })));
 const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView').then(module => ({ default: module.BaroStorytellerView })));
 const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(module => ({ default: module.SongWriterView })));
-const LandingPageV2 = React.lazy(() => import('./src/views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
+const ImmersiveForecastView = React.lazy(() => import('./views/ImmersiveForecastView').then(module => ({ default: module.ImmersiveForecastView })));
+const LandingPageV2 = React.lazy(() => import('./views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
 import { ViewState, AppSettings } from './types';
 import packageJson from './package.json';
 const appVersion = packageJson.version;
@@ -66,6 +67,13 @@ const App: React.FC = () => {
       if (params.get('success') === 'true') {
           return ViewState.PRICING;
       }
+
+      // Check for immersive startup preference
+      const savedSettings = loadSettings();
+      if (savedSettings.startWithImmersive) {
+          return ViewState.IMMERSIVE_FORECAST;
+      }
+
       return ViewState.CURRENT;
   });
   const [previousView, setPreviousView] = useState<ViewState | null>(null);
@@ -259,6 +267,7 @@ const App: React.FC = () => {
   }
 
   const renderView = () => {
+    console.debug('App: renderView called', { currentView });
     switch (currentView) {
       case ViewState.CURRENT:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
@@ -304,6 +313,8 @@ const App: React.FC = () => {
         return <ProfilesView settings={settings} onUpdateSettings={setSettings} onNavigate={navigate} />;
       case ViewState.CYCLING:
         return <CyclingView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.IMMERSIVE_FORECAST:
+        return <ImmersiveForecastView onNavigate={navigate} settings={settings} />;
       case ViewState.BARO_WEERMAN:
         return <BaroWeermanView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} isLimitReached={!!limitReached} />;
       case ViewState.BARO_TIME_MACHINE:

@@ -202,13 +202,17 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   };
 
     const loadWeather = async () => {
+    console.debug('CurrentWeatherView: loadWeather started', { location });
     setLoadingWeather(true);
     setError('');
     try {
+        console.debug('CurrentWeatherView: Fetching forecast', { lat: location.lat, lon: location.lon });
         const data = await fetchForecast(location.lat, location.lon);
+        console.debug('CurrentWeatherView: Forecast received', { data });
         
         // Check for empty data
         if (!data || !data.current || !data.hourly) {
+            console.warn('CurrentWeatherView: Data incomplete', data);
             setError(`${t('error_no_data_for_forecast')}`);
             setWeatherData(null);
             return;
@@ -216,7 +220,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
         setWeatherData(data);
     } catch (e: any) {
-        console.error(e);
+        console.error('CurrentWeatherView: Error loading weather', e);
         if (e.message && e.message.includes("limit exceeded")) {
             setLimitError(e.message);
             setShowLimitModal(true);
@@ -1092,7 +1096,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                                 {/* Rotating Arrow */}
                                 <div 
-                                    className="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out"
+                                    className="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out will-change-transform"
                                     style={{ transform: `rotate(${pastWindDir}deg)` }}
                                 >
                                     <Icon name="north" className="text-xl md:text-2xl text-red-500 absolute top-2 md:top-3" />
@@ -1158,17 +1162,19 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             )}
                         </div>
                     </div>
-                    <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
+                    <div 
+                        onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
+                        className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform group"
+                    >
                         <p className="text-2xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
                              <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                             {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                         </p>
-                        <button 
-                            onClick={() => onNavigate(ViewState.FORECAST)}
-                            className="text-white/90 text-lg font-normal drop-shadow-md mt-1 hover:scale-105 transition-transform cursor-pointer flex items-center gap-1"
+                        <div 
+                            className="text-white/90 text-lg font-normal drop-shadow-md mt-1 flex items-center gap-1"
                         >
-                            H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70" />
-                        </button>
+                            H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70 group-hover:translate-x-1 transition-transform" />
+                        </div>
                         <p className="text-white/70 text-sm font-normal drop-shadow-md mt-2">
                             {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                                 hour: '2-digit', 
@@ -1177,6 +1183,18 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 month: 'short',
                                 hour12: settings.timeFormat === '12h'
                             }) : t('no_data_available')}
+                            {weatherData && (() => {
+                                const userOffsetMin = new Date().getTimezoneOffset();
+                                const locationOffsetSec = weatherData.utc_offset_seconds;
+                                const userOffsetSec = userOffsetMin * -60;
+                                const diffHours = Math.round((locationOffsetSec - userOffsetSec) / 3600);
+                                if (diffHours === 0) return null;
+                                return (
+                                    <span className="text-xs ml-1 opacity-70">
+                                        ({diffHours > 0 ? '+' : ''}{diffHours} {settings.language === 'nl' ? 'uur' : 'h'})
+                                    </span>
+                                );
+                            })()}
                         </p>
                     </div>
                 </div>

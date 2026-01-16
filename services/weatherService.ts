@@ -404,6 +404,10 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
   return data;
 };
 
+export const fetchWeather = async (lat: number, lon: number, settings?: AppSettings) => {
+    return fetchForecast(lat, lon);
+};
+
 export const fetchHistorical = async (lat: number, lon: number, startDate: string, endDate: string) => {
   validateCoordinates(lat, lon);
   
