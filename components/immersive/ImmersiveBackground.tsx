@@ -10,7 +10,7 @@ interface Props {
     cloudCover?: number; // 0-100
 }
 
-export const ImmersiveBackground: React.FC<Props> = ({ weatherCode, isDay, precipAmount = 0, cloudCover }) => {
+export const ImmersiveBackground = React.memo(({ weatherCode, isDay, precipAmount = 0, cloudCover }: Props) => {
     
     // 1. Determine Background Gradient (Sky)
     const getSkyGradient = () => {
@@ -118,5 +118,4 @@ export const ImmersiveBackground: React.FC<Props> = ({ weatherCode, isDay, preci
             <ImmersiveWeatherEffect weatherCode={weatherCode} isDay={isDay} precipAmount={precipAmount} />
         </div>
     );
-
-};
+});

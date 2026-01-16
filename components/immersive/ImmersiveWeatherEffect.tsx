@@ -7,7 +7,7 @@ interface Props {
     precipAmount?: number;
 }
 
-export function ImmersiveWeatherEffect({ weatherCode, isDay, precipAmount = 0 }: Props) {
+export const ImmersiveWeatherEffect = React.memo(({ weatherCode, isDay, precipAmount = 0 }: Props) => {
     const isRain = [51, 53, 55, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(weatherCode);
     const isSnow = [71, 73, 75, 77, 85, 86].includes(weatherCode);
     const isThunder = [95, 96, 99].includes(weatherCode);
@@ -54,25 +54,31 @@ export function ImmersiveWeatherEffect({ weatherCode, isDay, precipAmount = 0 }:
     // Rain drops configuration
     // Light rain: fewer drops, slower, smaller opacity
     // Heavy rain: more drops, faster, higher opacity
-    const rainCount = isHeavyRain ? 200 : (isLightRain ? 40 : 100);
-    const rainDurationBase = isLightRain ? 1.5 : (isHeavyRain ? 0.4 : 0.8);
-    
-    const raindrops = Array.from({ length: rainCount }, (_, i) => ({
-        id: i,
-        left: `${Math.random() * 100}%`,
-        delay: Math.random() * 2,
-        duration: rainDurationBase + Math.random() * 0.5,
-        height: isLightRain ? 'h-8' : 'h-16', // Longer streaks for heavier rain
-        opacity: isLightRain ? 0.3 : 0.7
-    }));
+    const raindrops = React.useMemo(() => {
+        if (!isRain) return [];
+        const rainCount = isHeavyRain ? 200 : (isLightRain ? 40 : 100);
+        const rainDurationBase = isLightRain ? 1.5 : (isHeavyRain ? 0.4 : 0.8);
+        
+        return Array.from({ length: rainCount }, (_, i) => ({
+            id: i,
+            left: `${Math.random() * 100}%`,
+            delay: Math.random() * 2,
+            duration: rainDurationBase + Math.random() * 0.5,
+            height: isLightRain ? 'h-8' : 'h-16', // Longer streaks for heavier rain
+            opacity: isLightRain ? 0.3 : 0.7
+        }));
+    }, [isRain, isHeavyRain, isLightRain]);
 
     // Snowflakes
-    const snowflakes = Array.from({ length: 50 }, (_, i) => ({
-        id: i,
-        left: `${Math.random() * 100}%`,
-        delay: Math.random() * 3,
-        duration: 3 + Math.random() * 2,
-    }));
+    const snowflakes = React.useMemo(() => {
+        if (!isSnow) return [];
+        return Array.from({ length: 50 }, (_, i) => ({
+            id: i,
+            left: `${Math.random() * 100}%`,
+            delay: Math.random() * 3,
+            duration: 3 + Math.random() * 2,
+        }));
+    }, [isSnow]);
 
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
@@ -159,4 +165,4 @@ export function ImmersiveWeatherEffect({ weatherCode, isDay, precipAmount = 0 }:
             )}
         </div>
     );
-}
+});

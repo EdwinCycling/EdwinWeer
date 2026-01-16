@@ -15,167 +15,171 @@ interface Props {
 export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [isPC, setIsPC] = useState(false);
-    const observer = new Astronomy.Observer(location.lat, location.lon, 0);
+    const [isPC, setIsPC] = useState(window.innerWidth >= 768);
 
-    // Detect if PC (non-touch)
     useEffect(() => {
         const checkPC = () => {
-            setIsPC(window.innerWidth >= 1024 && !('ontouchstart' in window));
+            setIsPC(window.innerWidth >= 768);
         };
-        checkPC();
         window.addEventListener('resize', checkPC);
         return () => window.removeEventListener('resize', checkPC);
     }, []);
+    // Memoize the filtered and enriched data to prevent recalculation on every render
+    const enrichedHours = React.useMemo(() => {
+        // Filter next 48 hours starting from current hour
+        const currentHourIndex = getCurrentHourIndex(data);
+        
+        // Safety check
+        if (currentHourIndex === -1) return [];
 
-    // Filter next 48 hours starting from current hour
-    const currentHourIndex = getCurrentHourIndex(data);
-    
-    // Safety check
-    if (currentHourIndex === -1) {
-        return <div className="text-white p-10">Data niet beschikbaar voor deze periode.</div>;
-    }
+        const observer = new Astronomy.Observer(location.lat, location.lon, 0);
 
-    const hoursData = data.hourly.time
-        .slice(currentHourIndex, currentHourIndex + 48)
-        .map((time, i) => {
-            const index = currentHourIndex + i;
-            
-            // Calculate Sun/Moon position
-            const date = new Date(time); 
-            
-            const sunEq = Astronomy.Equator(Astronomy.Body.Sun, date, observer, true, true);
-            const sunHor = Astronomy.Horizon(date, observer, sunEq.ra, sunEq.dec, 'normal');
-            
-            const moonEq = Astronomy.Equator(Astronomy.Body.Moon, date, observer, true, true);
-            const moonHor = Astronomy.Horizon(date, observer, moonEq.ra, moonEq.dec, 'normal');
-            const moonPhase = Astronomy.Illumination(Astronomy.Body.Moon, date).phase_fraction;
-
-            // Get sunrise/sunset and moonrise/moonset for this day
-            const dateStr = time.split('T')[0];
-            const dayIndex = data.daily.time.findIndex(d => d === dateStr);
-            let sunriseStr = null;
-            let sunsetStr = null;
-            let moonriseStr = null;
-            let moonsetStr = null;
-            
-            let sunProgress = 0;
-            let moonProgress = 0;
-
-            if (dayIndex !== -1) {
-                const sr = new Date(data.daily.sunrise[dayIndex]);
-                const ss = new Date(data.daily.sunset[dayIndex]);
-                sunriseStr = sr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                sunsetStr = ss.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+        const hoursData = data.hourly.time
+            .slice(currentHourIndex, currentHourIndex + 48)
+            .map((time, i) => {
+                const index = currentHourIndex + i;
                 
-                // Calculate Sun Progress
-                const totalSunTime = ss.getTime() - sr.getTime();
-                const currentSunTime = date.getTime() - sr.getTime();
-                sunProgress = Math.max(0, Math.min(1, currentSunTime / totalSunTime));
-
-                // Robust Moon Progress Calculation
-                const nowTime = date.getTime();
-                // Get all moon events from daily data to form a timeline
-                const events: { type: 'rise' | 'set', time: number }[] = [];
-                if (data.daily.moonrise) data.daily.moonrise.forEach(t => events.push({ type: 'rise', time: new Date(t).getTime() }));
-                if (data.daily.moonset) data.daily.moonset.forEach(t => events.push({ type: 'set', time: new Date(t).getTime() }));
-                events.sort((a, b) => a.time - b.time);
-
-                // Find the active transit (Rise <= Now < NextRise)
-                // We want the Rise that is current (started before now)
-                const lastRise = events.filter(e => e.type === 'rise' && e.time <= nowTime).pop();
+                // Calculate Sun/Moon position
+                const date = new Date(time); 
                 
-                if (lastRise) {
-                    // Find the set that belongs to this rise (the next set after rise)
-                    const nextSet = events.find(e => e.type === 'set' && e.time > lastRise.time);
+                const sunEq = Astronomy.Equator(Astronomy.Body.Sun, date, observer, true, true);
+                const sunHor = Astronomy.Horizon(date, observer, sunEq.ra, sunEq.dec, 'normal');
+                
+                const moonEq = Astronomy.Equator(Astronomy.Body.Moon, date, observer, true, true);
+                const moonHor = Astronomy.Horizon(date, observer, moonEq.ra, moonEq.dec, 'normal');
+                const moonPhase = Astronomy.Illumination(Astronomy.Body.Moon, date).phase_fraction;
+
+                // Get sunrise/sunset and moonrise/moonset for this day
+                const dateStr = time.split('T')[0];
+                const dayIndex = data.daily.time.findIndex(d => d === dateStr);
+                let sunriseStr = null;
+                let sunsetStr = null;
+                let moonriseStr = null;
+                let moonsetStr = null;
+                
+                let sunProgress = 0;
+                let moonProgress = 0;
+
+                if (dayIndex !== -1) {
+                    const sr = new Date(data.daily.sunrise[dayIndex]);
+                    const ss = new Date(data.daily.sunset[dayIndex]);
+                    sunriseStr = sr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                    sunsetStr = ss.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
                     
-                    if (nextSet) {
-                        // Calculate progress based on this transit
-                        const totalDuration = nextSet.time - lastRise.time;
-                        moonProgress = (nowTime - lastRise.time) / totalDuration;
+                    // Calculate Sun Progress
+                    const totalSunTime = ss.getTime() - sr.getTime();
+                    const currentSunTime = date.getTime() - sr.getTime();
+                    sunProgress = Math.max(0, Math.min(1, currentSunTime / totalSunTime));
 
-                        // Use these specific times for the label
-                        const mrDate = new Date(lastRise.time);
-                        const msDate = new Date(nextSet.time);
-                        moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                        moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                    // Robust Moon Progress Calculation
+                    const nowTime = date.getTime();
+                    // Get all moon events from daily data to form a timeline
+                    const events: { type: 'rise' | 'set', time: number }[] = [];
+                    if (data.daily.moonrise) data.daily.moonrise.forEach(t => events.push({ type: 'rise', time: new Date(t).getTime() }));
+                    if (data.daily.moonset) data.daily.moonset.forEach(t => events.push({ type: 'set', time: new Date(t).getTime() }));
+                    events.sort((a, b) => a.time - b.time);
+
+                    // Find the active transit (Rise <= Now < NextRise)
+                    // We want the Rise that is current (started before now)
+                    const lastRise = events.filter(e => e.type === 'rise' && e.time <= nowTime).pop();
+                    
+                    if (lastRise) {
+                        // Find the set that belongs to this rise (the next set after rise)
+                        const nextSet = events.find(e => e.type === 'set' && e.time > lastRise.time);
+                        
+                        if (nextSet) {
+                            // Calculate progress based on this transit
+                            const totalDuration = nextSet.time - lastRise.time;
+                            moonProgress = (nowTime - lastRise.time) / totalDuration;
+
+                            // Use these specific times for the label
+                            const mrDate = new Date(lastRise.time);
+                            const msDate = new Date(nextSet.time);
+                            moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                            moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                        }
+                    } else {
+                        const nextRise = events.find(e => e.type === 'rise' && e.time > nowTime);
+                        if (nextRise) {
+                             const nextSet = events.find(e => e.type === 'set' && e.time > nextRise.time);
+                             if (nextSet) {
+                                 const totalDuration = nextSet.time - nextRise.time;
+                                 moonProgress = (nowTime - nextRise.time) / totalDuration; // Will be negative
+                                 
+                                 const mrDate = new Date(nextRise.time);
+                                 const msDate = new Date(nextSet.time);
+                                 moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                                 moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                             }
+                        }
                     }
-                } else {
-                    const nextRise = events.find(e => e.type === 'rise' && e.time > nowTime);
-                    if (nextRise) {
-                         const nextSet = events.find(e => e.type === 'set' && e.time > nextRise.time);
-                         if (nextSet) {
-                             const totalDuration = nextSet.time - nextRise.time;
-                             moonProgress = (nowTime - nextRise.time) / totalDuration; // Will be negative
-                             
-                             const mrDate = new Date(nextRise.time);
-                             const msDate = new Date(nextSet.time);
-                             moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                             moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                         }
+
+                    // Fallback (only if no events found at all)
+                    if (moonProgress === 0 && !moonriseStr && data.daily.moonrise && data.daily.moonrise[dayIndex]) {
+                        const mr = new Date(data.daily.moonrise[dayIndex]);
+                        moonriseStr = mr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                        
+                        if (data.daily.moonset && data.daily.moonset[dayIndex]) {
+                            const ms = new Date(data.daily.moonset[dayIndex]);
+                            moonsetStr = ms.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                        }
                     }
                 }
 
-                // Fallback (only if no events found at all)
-                if (moonProgress === 0 && !moonriseStr && data.daily.moonrise && data.daily.moonrise[dayIndex]) {
-                    const mr = new Date(data.daily.moonrise[dayIndex]);
-                    moonriseStr = mr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                    
-                    if (data.daily.moonset && data.daily.moonset[dayIndex]) {
-                        const ms = new Date(data.daily.moonset[dayIndex]);
-                        moonsetStr = ms.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                    }
-                }
+                return {
+                    time,
+                    temp: data.hourly.temperature_2m[index],
+                    code: data.hourly.weather_code[index],
+                    precip: data.hourly.precipitation[index],
+                    windSpeed: data.hourly.wind_speed_10m[index], // Raw value, convert later
+                    windDir: data.hourly.wind_direction_10m[index],
+                    feelsLike: data.hourly.apparent_temperature[index],
+                    humidity: data.hourly.relative_humidity_2m[index],
+                    pressure: data.hourly.pressure_msl ? data.hourly.pressure_msl[index] : (data.hourly.surface_pressure ? data.hourly.surface_pressure[index] : 0),
+                    cloudCover: data.hourly.cloud_cover ? data.hourly.cloud_cover[index] : 0,
+                    sunAltitude: sunHor.altitude,
+                    moonAltitude: moonHor.altitude,
+                    sunProgress, 
+                    moonProgress, 
+                    moonPhase: moonPhase,
+                    sunrise: sunriseStr,
+                    sunset: sunsetStr,
+                    moonrise: moonriseStr,
+                    moonset: moonsetStr
+                };
+            });
+
+        return hoursData.map((h, idx) => {
+            let tempTrend: 'up' | 'down' | undefined = undefined;
+            let pressureTrend: 'up' | 'down' | 'stable' = 'stable';
+            
+            if (idx > 0) {
+                const prev = hoursData[idx - 1];
+                
+                const prevRounded = Math.round(prev.temp);
+                const currRounded = Math.round(h.temp);
+                if (currRounded > prevRounded) tempTrend = 'up';
+                else if (currRounded < prevRounded) tempTrend = 'down';
+                
+                // Pressure Trend - Only change if difference is at least 1 hPa
+                if (h.pressure - prev.pressure >= 1) pressureTrend = 'up';
+                else if (prev.pressure - h.pressure >= 1) pressureTrend = 'down';
             }
 
             return {
-                time,
-                temp: data.hourly.temperature_2m[index],
-                code: data.hourly.weather_code[index],
-                precip: data.hourly.precipitation[index],
-                windSpeed: data.hourly.wind_speed_10m[index], // Raw value, convert later
-                windDir: data.hourly.wind_direction_10m[index],
-                feelsLike: data.hourly.apparent_temperature[index],
-                humidity: data.hourly.relative_humidity_2m[index],
-                pressure: data.hourly.pressure_msl ? data.hourly.pressure_msl[index] : (data.hourly.surface_pressure ? data.hourly.surface_pressure[index] : 0),
-                cloudCover: data.hourly.cloud_cover ? data.hourly.cloud_cover[index] : 0,
-                sunAltitude: sunHor.altitude,
-                moonAltitude: moonHor.altitude,
-                sunProgress, 
-                moonProgress, 
-                moonPhase: moonPhase,
-                sunrise: sunriseStr,
-                sunset: sunsetStr,
-                moonrise: moonriseStr,
-                moonset: moonsetStr
+                ...h,
+                isDay: isDayTime(h.time, data),
+                windSpeed: typeof convertWind === 'function' ? convertWind(h.windSpeed, settings.windUnit) : h.windSpeed,
+                tempTrend,
+                pressureTrend
             };
         });
+    }, [data, location.lat, location.lon, settings]);
 
-    const enrichedHours = hoursData.map((h, idx) => {
-        let tempTrend: 'up' | 'down' | undefined = undefined;
-        let pressureTrend: 'up' | 'down' | 'stable' = 'stable';
-        
-        if (idx > 0) {
-            const prev = hoursData[idx - 1];
-            
-            const prevRounded = Math.round(prev.temp);
-            const currRounded = Math.round(h.temp);
-            if (currRounded > prevRounded) tempTrend = 'up';
-            else if (currRounded < prevRounded) tempTrend = 'down';
-            
-            // Pressure Trend - Only change if difference is at least 1 hPa
-            if (h.pressure - prev.pressure >= 1) pressureTrend = 'up';
-            else if (prev.pressure - h.pressure >= 1) pressureTrend = 'down';
-        }
-
-        return {
-            ...h,
-            isDay: isDayTime(h.time, data),
-            windSpeed: typeof convertWind === 'function' ? convertWind(h.windSpeed, settings.windUnit) : h.windSpeed,
-            tempTrend,
-            pressureTrend
-        };
-    });
+    // Safety check
+    if (!enrichedHours.length) {
+        return <div className="text-white p-10">Data niet beschikbaar voor deze periode.</div>;
+    }
 
     const [scrollInit, setScrollInit] = React.useState(false);
 

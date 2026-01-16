@@ -33,7 +33,7 @@ interface Props {
     settings: AppSettings;
 }
 
-export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
+export const ImmersiveSlide = React.memo(({ data, settings }: Props) => {
     const date = new Date(data.time);
     const timeStr = date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
     const dateStr = date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -241,4 +241,4 @@ export const ImmersiveSlide: React.FC<Props> = ({ data, settings }) => {
             </div>
         </article>
     );
-};
+});

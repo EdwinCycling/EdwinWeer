@@ -19,7 +19,7 @@ const getIconColor = (iconName: string): string => {
     return 'text-slate-600';
 };
 
-export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
+export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
     const [showWind, setShowWind] = useState(true);
     const [showRain, setShowRain] = useState(true);
 
@@ -157,10 +157,10 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
     };
 
     return (
-        <div className="w-full select-none bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-            <div className="h-[480px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 40, right: 80, left: 20, bottom: 20 }}>
+        <div className="w-full max-w-full select-none bg-white rounded-xl p-2 md:p-4 shadow-sm border border-slate-200 overflow-hidden">
+            <div className="h-[480px] w-full min-w-0">
+                <ResponsiveContainer width="99%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 40, right: 60, left: 10, bottom: 20 }}>
                         <defs>
                             <linearGradient id="windGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
@@ -519,4 +519,4 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
             </div>
         </div>
     );
-};
+});
