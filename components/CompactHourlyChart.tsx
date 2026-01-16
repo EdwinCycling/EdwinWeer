@@ -70,16 +70,16 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
     const windMaxData = Math.max(...chartData.map(d => d.wind || 0));
     const getWindMax = (unit: string) => {
         switch(unit) {
-            case 'bft': return 10;
-            case 'm/s': return 28;
-            case 'mph': return 63;
-            case 'knots': return 55;
-            default: return 102;
+            case 'bft': return 12;
+            case 'm/s': return 33; // 12 Bft upper bound
+            case 'mph': return 74; // 12 Bft upper bound
+            case 'knots': return 64; // 12 Bft upper bound
+            default: return 118; // km/h 12 Bft upper bound
         }
     };
     const windTargetMax = getWindMax(settings.windUnit);
     const windMaxY = Math.max(windMaxData, windTargetMax);
-    const windTicks = (settings.windUnit === 'bft' && windMaxY <= 10) ? [0, 2, 4, 6, 8, 10] : undefined;
+    const windTicks = (settings.windUnit === 'bft' && windMaxY <= 12) ? [0, 2, 4, 6, 8, 10, 12] : undefined;
 
     const midnightIndices = chartData.filter(d => d.isMidnight).map(d => d.index);
 
@@ -141,11 +141,13 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
 
     const CustomTempPopup = (props: any) => {
         const { x, y, value, color, position } = props;
-        const yOffset = position === 'top' ? -25 : 10;
+        if (x === undefined || y === undefined) return null;
+        
+        const yOffset = position === 'top' ? -28 : 12;
         return (
             <g transform={`translate(${x},${y})`}>
-                <rect x="-18" y={yOffset} width="36" height="20" rx="4" fill={color} stroke="#fff" strokeWidth={1.5} />
-                <text x="0" y={yOffset + 14} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold">
+                <rect x="-20" y={yOffset} width="40" height="22" rx="6" fill={color} stroke="#fff" strokeWidth={2} />
+                <text x="0" y={yOffset + 15} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">
                     {value}°
                 </text>
             </g>
@@ -156,7 +158,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
         <div className="w-full select-none bg-white rounded-xl p-4 shadow-sm border border-slate-200">
             <div className="h-[480px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <ComposedChart data={chartData} margin={{ top: 40, right: 30, left: 20, bottom: 20 }}>
                         <defs>
                             <linearGradient id="windGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
@@ -178,7 +180,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 stroke="#cbd5e1" 
                                 strokeWidth={1} 
                                 strokeOpacity={0.3}
-                                xAxisId="hours"
+                                xAxisId="wind"
                             />
                         ))}
 
@@ -207,7 +209,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 stroke="#1e293b" 
                                 strokeWidth={2} 
                                 strokeDasharray="3 3"
-                                xAxisId="hours"
+                                xAxisId="wind"
                             >
                                 <Label 
                                     value={settings.language === 'nl' ? 'Nieuwe dag 00:00' : 'New day 00:00'} 
@@ -220,36 +222,6 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 />
                             </ReferenceLine>
                         ))}
-
-                        {/* Min/Max Temperature Popups - Rendered last to be on top */}
-                        {maxTempPoint && (
-                            <ReferenceDot
-                                yAxisId="temp"
-                                xAxisId="hours"
-                                x={maxTempPoint.index}
-                                y={maxTempPoint.temp}
-                                r={4}
-                                fill="#ef4444"
-                                stroke="#fff"
-                                strokeWidth={2}
-                                isFront={true}
-                                label={<CustomTempPopup value={maxTempPoint.temp} color="#ef4444" position="top" />}
-                            />
-                        )}
-                        {minTempPoint && (
-                            <ReferenceDot
-                                yAxisId="temp"
-                                xAxisId="hours"
-                                x={minTempPoint.index}
-                                y={minTempPoint.temp}
-                                r={4}
-                                fill="#3b82f6"
-                                stroke="#fff"
-                                strokeWidth={2}
-                                isFront={true}
-                                label={<CustomTempPopup value={minTempPoint.temp} color="#3b82f6" position="bottom" />}
-                            />
-                        )}
 
                         {/* Top 1: Day Labels */}
                         <XAxis 
@@ -431,6 +403,50 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                             xAxisId="wind"
                             activeDot={{ r: 6, strokeWidth: 0 }}
                         />
+
+                        {/* Min/Max Temperature Popups - Rendered last to be on top and correctly positioned */}
+                        {maxTempPoint && (
+                            <ReferenceDot
+                                yAxisId="temp"
+                                xAxisId="wind"
+                                x={maxTempPoint.index}
+                                y={maxTempPoint.temp}
+                                r={5}
+                                fill="#ef4444"
+                                stroke="#fff"
+                                strokeWidth={2}
+                                isFront={true}
+                                label={(props: any) => (
+                                    <CustomTempPopup 
+                                        {...props} 
+                                        value={maxTempPoint.temp} 
+                                        color="#ef4444" 
+                                        position="top" 
+                                    />
+                                )}
+                            />
+                        )}
+                        {minTempPoint && (
+                            <ReferenceDot
+                                yAxisId="temp"
+                                xAxisId="wind"
+                                x={minTempPoint.index}
+                                y={minTempPoint.temp}
+                                r={5}
+                                fill="#3b82f6"
+                                stroke="#fff"
+                                strokeWidth={2}
+                                isFront={true}
+                                label={(props: any) => (
+                                    <CustomTempPopup 
+                                        {...props} 
+                                        value={minTempPoint.temp} 
+                                        color="#3b82f6" 
+                                        position="bottom" 
+                                    />
+                                )}
+                            />
+                        )}
 
                     </ComposedChart>
                 </ResponsiveContainer>
