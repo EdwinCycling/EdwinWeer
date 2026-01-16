@@ -158,7 +158,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
         <div className="w-full select-none bg-white rounded-xl p-4 shadow-sm border border-slate-200">
             <div className="h-[480px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 40, right: 30, left: 20, bottom: 20 }}>
+                    <ComposedChart data={chartData} margin={{ top: 40, right: 80, left: 20, bottom: 20 }}>
                         <defs>
                             <linearGradient id="windGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#a855f7" stopOpacity={0.8}/>
@@ -313,27 +313,39 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                             tickLine={false}
                             domain={[0, rainMaxY]}
                             ticks={rainTicks}
-                            width={50}
+                            width={40}
                             hide={!showRain}
                         >
                             <Label 
-                                value={settings.language === 'nl' ? 'Neerslag (mm)' : 'Rain (mm)'} 
+                                value={settings.language === 'nl' ? 'Regen' : 'Rain'} 
                                 angle={90} 
                                 position="insideRight" 
-                                style={{ textAnchor: 'middle', fill: '#3b82f6', fontSize: 12, fontWeight: 'bold' }} 
-                                offset={-10}
+                                style={{ textAnchor: 'middle', fill: '#3b82f6', fontSize: 10, fontWeight: 'bold' }} 
+                                offset={10}
                             />
                         </YAxis>
 
-                        {/* Wind Axis (Right 2 - Hidden/Scaled) */}
+                        {/* Wind Axis (Right 2) */}
                         <YAxis 
                             yAxisId="windAxis" 
                             type="number"
                             orientation="right" 
-                            hide={true}
+                            tick={{ fill: '#a855f7', fontSize: 10 }} 
+                            axisLine={false} 
+                            tickLine={false}
                             domain={[0, windMaxY]}
                             ticks={windTicks}
-                        />
+                            width={40}
+                            hide={!showWind}
+                        >
+                            <Label 
+                                value={settings.language === 'nl' ? 'Wind' : 'Wind'} 
+                                angle={90} 
+                                position="insideRight" 
+                                style={{ textAnchor: 'middle', fill: '#a855f7', fontSize: 10, fontWeight: 'bold' }} 
+                                offset={10}
+                            />
+                        </YAxis>
 
                         <Tooltip 
                             contentStyle={{ 
@@ -370,7 +382,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 barSize={10} 
                                 radius={[2, 2, 0, 0]} 
                                 xAxisId="wind"
-                                minPointSize={3}
+                                minPointSize={5}
                             />
                         )}
 
@@ -387,7 +399,7 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 barSize={10} 
                                 radius={[2, 2, 0, 0]} 
                                 xAxisId="wind"
-                                minPointSize={3}
+                                minPointSize={5}
                             />
                         )}
 
