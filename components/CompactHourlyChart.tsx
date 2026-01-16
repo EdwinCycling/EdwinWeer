@@ -62,6 +62,10 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
         tempTicks.push(i);
     }
 
+    // Fixed ticks for Rain and Wind
+    const rainTicks = [0, 1, 2, 3, 4, 5];
+    const windTicks = settings.windUnit === 'bft' ? [0, 2, 4, 6, 8, 10] : undefined;
+
     const midnightIndices = chartData.filter(d => d.isMidnight).map(d => d.index);
 
     const CustomIconTick = (props: any) => {
@@ -316,11 +320,13 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                         {/* Rain Axis (Right 1) */}
                         <YAxis 
                             yAxisId="rain" 
+                            type="number"
                             orientation="right" 
                             tick={{ fill: '#3b82f6', fontSize: 10 }} 
                             axisLine={false} 
                             tickLine={false}
-                            domain={[0, 'auto']}
+                            domain={[0, (dataMax: number) => Math.max(dataMax, 5)]}
+                            ticks={rainTicks}
                             width={50}
                             hide={!showRain}
                         >
@@ -336,9 +342,11 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                         {/* Wind Axis (Right 2 - Hidden/Scaled) */}
                         <YAxis 
                             yAxisId="windAxis" 
+                            type="number"
                             orientation="right" 
                             hide={true}
                             domain={[0, (dataMax: number) => Math.max(dataMax, windMaxY)]}
+                            ticks={windTicks}
                         />
 
                         <Tooltip 
@@ -369,10 +377,12 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 yAxisId="rain" 
                                 dataKey="precipAmount" 
                                 name="Neerslag" 
-                                fill="url(#rainGradient)" 
-                                barSize={8} 
+                                fill="#3b82f6" 
+                                fillOpacity={0.6}
+                                barSize={10} 
                                 radius={[2, 2, 0, 0]} 
                                 xAxisId="hours"
+                                minPointSize={2}
                             />
                         )}
 
@@ -382,10 +392,12 @@ export const CompactHourlyChart: React.FC<Props> = ({ data, settings }) => {
                                 yAxisId="windAxis" 
                                 dataKey="wind" 
                                 name="Wind" 
-                                fill="url(#windGradient)" 
-                                barSize={8} 
+                                fill="#a855f7" 
+                                fillOpacity={0.4}
+                                barSize={10} 
                                 radius={[2, 2, 0, 0]} 
                                 xAxisId="hours"
+                                minPointSize={2}
                             />
                         )}
 
