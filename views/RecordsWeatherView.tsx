@@ -4,6 +4,8 @@ import { Icon } from '../components/Icon';
 import { fetchHistorical, convertTemp, convertTempPrecise, convertWind, convertPrecip, fetchForecast, fetchYearData, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore, calculateJagTi, calculateHeatIndex } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, DEFAULT_SETTINGS } from '../services/storageService';
 import { HeatmapComponent } from '../components/HeatmapComponent';
+import { TemperatureDistributionChart } from '../components/TemperatureDistributionChart';
+import { BaroRibbonChart } from '../components/BaroRibbonChart';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
@@ -1643,8 +1645,19 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <div className="animate-spin h-10 w-10 border-2 border-primary border-t-transparent rounded-full" />
             </div>
           ) : recordType === 'heatmap' ? (
-              <div className="px-4 pb-10 w-full max-w-5xl mx-auto">
-                 {heatmapData && <HeatmapComponent data={heatmapData} year={selectedYear} settings={settings} onDayClick={navigateToHistoricalSingle} />}
+              <div className="px-4 pb-10 w-full max-w-5xl mx-auto flex flex-col gap-8">
+                 {heatmapData && (
+                    <>
+                        <HeatmapComponent data={heatmapData} year={selectedYear} settings={settings} onDayClick={navigateToHistoricalSingle} />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                              <TemperatureDistributionChart data={heatmapData} settings={settings} />
+                              {/* Placeholder for layout balance if needed */}
+                        </div>
+
+                        <BaroRibbonChart data={heatmapData} settings={settings} onPointClick={navigateToHistoricalSingle} />
+                    </>
+                 )}
               </div>
           ) : recordType === 'monthly' ? (
               <div className="flex flex-col gap-6 px-4 pb-10 w-full max-w-4xl mx-auto">
