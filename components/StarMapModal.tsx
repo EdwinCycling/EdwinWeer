@@ -176,8 +176,18 @@ export const StarMapModal: React.FC<StarMapModalProps> = ({
                 `;
                 document.head.appendChild(style);
 
+                const container = document.getElementById('celestial-map');
+                if (!container) {
+                    setTimeout(initCelestialMap, 100);
+                    return;
+                }
+                
+                // Fix for mobile: get actual container width
+                const containerWidth = container.clientWidth || (window.innerWidth * 0.95);
+                const actualWidth = Math.min(containerWidth, 1000); // Cap at max-w
+
                 const config = { 
-                    width: 0,           
+                    width: actualWidth,           
                     projection: "airy", 
                     transform: "equatorial", 
                     center: null,       
@@ -284,11 +294,6 @@ export const StarMapModal: React.FC<StarMapModalProps> = ({
                     config.lines.constellation.show = false;
                 }                
                 
-                const container = document.getElementById('celestial-map');
-                if (!container) {
-                    setTimeout(initCelestialMap, 100);
-                    return;
-                }
                 container.innerHTML = '';
                 
                 window.Celestial.display(config);

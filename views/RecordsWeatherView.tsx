@@ -6,6 +6,9 @@ import { loadCurrentLocation, saveCurrentLocation, DEFAULT_SETTINGS } from '../s
 import { HeatmapComponent } from '../components/HeatmapComponent';
 import { TemperatureDistributionChart } from '../components/TemperatureDistributionChart';
 import { BaroRibbonChart } from '../components/BaroRibbonChart';
+import { SeasonalDistributionChart } from '../components/SeasonalDistributionChart';
+import { TemperatureFrequencyChart } from '../components/TemperatureFrequencyChart';
+import { RainProbabilityChart } from '../components/RainProbabilityChart';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
@@ -118,7 +121,27 @@ interface DiverseRecords {
     maxRise: DiverseRecord | null;
     maxDrop: DiverseRecord | null;
     maxMinToMaxRise: DiverseRecord | null;
+    maxMaxToMinDrop: DiverseRecord | null;
     extremes: ExtremesInfo | null;
+}
+
+interface PeriodRecord {
+    start: string;
+    end: string;
+    weekNr?: number;
+    avgValue: number;
+    temps: number[];
+}
+
+interface PeriodRecords {
+    warmestWeekMax: PeriodRecord | null;
+    warmestWeekMin: PeriodRecord | null;
+    coldestWeekMax: PeriodRecord | null;
+    coldestWeekMin: PeriodRecord | null;
+    warmestWeekendMax: PeriodRecord | null;
+    warmestWeekendMin: PeriodRecord | null;
+    coldestWeekendMax: PeriodRecord | null;
+    coldestWeekendMin: PeriodRecord | null;
 }
 
 interface MonthlyStats {
@@ -155,6 +178,14 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [error, setError] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const getWeekNumber = (d: Date) => {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return weekNo;
+  };
+
   useEffect(() => {
     if (scrollContainerRef.current) {
         const activeBtn = scrollContainerRef.current.querySelector('[data-active="true"]');
@@ -176,6 +207,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [frostInfo, setFrostInfo] = useState<FrostInfo | null>(null);
   const [yearlySequences, setYearlySequences] = useState<YearlySequences | null>(null);
   const [diverseRecords, setDiverseRecords] = useState<DiverseRecords | null>(null);
+  const [periodRecords, setPeriodRecords] = useState<PeriodRecords | null>(null);
   const [heatwaves, setHeatwaves] = useState<HeatwaveStreak[]>([]);
   const [showHeatwaveInfo, setShowHeatwaveInfo] = useState(false);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
@@ -661,6 +693,12 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       let maxMinToMaxRiseTemp1 = 0;
       let maxMinToMaxRiseTemp2 = 0;
 
+      let maxMaxToMinDropVal = -Infinity;
+      let maxMaxToMinDropDay1 = '';
+      let maxMaxToMinDropDay2 = '';
+      let maxMaxToMinDropTemp1 = 0;
+      let maxMaxToMinDropTemp2 = 0;
+
       for (let i = 0; i < times.length - 1; i++) {
         const tMax1 = maxTemps[i];
         const tMax2 = maxTemps[i+1];
@@ -701,12 +739,26 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 maxMinToMaxRiseTemp2 = tMax2;
             }
         }
+
+        // Max to Min Drop (Max Day 1 to Min Day 2)
+        const tMin2 = minTemps[i+1];
+        if (typeof tMax1 === 'number' && !Number.isNaN(tMax1) && typeof tMin2 === 'number' && !Number.isNaN(tMin2)) {
+            const drop = tMax1 - tMin2;
+            if (drop > maxMaxToMinDropVal) {
+                maxMaxToMinDropVal = drop;
+                maxMaxToMinDropDay1 = times[i];
+                maxMaxToMinDropDay2 = times[i+1];
+                maxMaxToMinDropTemp1 = tMax1;
+                maxMaxToMinDropTemp2 = tMin2;
+            }
+        }
       }
 
       setDiverseRecords({
           maxRise: maxRiseVal > -Infinity ? { value: maxRiseVal, day1: maxRiseDay1, day2: maxRiseDay2, temp1: maxRiseTemp1, temp2: maxRiseTemp2 } : null,
           maxDrop: maxDropVal > -Infinity ? { value: maxDropVal, day1: maxDropDay1, day2: maxDropDay2, temp1: maxDropTemp1, temp2: maxDropTemp2 } : null,
           maxMinToMaxRise: maxMinToMaxRiseVal > -Infinity ? { value: maxMinToMaxRiseVal, day1: maxMinToMaxRiseDay1, day2: maxMinToMaxRiseDay2, temp1: maxMinToMaxRiseTemp1, temp2: maxMinToMaxRiseTemp2 } : null,
+          maxMaxToMinDrop: maxMaxToMinDropVal > -Infinity ? { value: maxMaxToMinDropVal, day1: maxMaxToMinDropDay1, day2: maxMaxToMinDropDay2, temp1: maxMaxToMinDropTemp1, temp2: maxMaxToMinDropTemp2 } : null,
           extremes: null // Will be populated in yearly section if needed, or initialized here
       });
 
@@ -1104,6 +1156,98 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           niceStreak,
           coldStreak,
           iceStreak,
+        });
+
+        // Calculate Perioden (Weeks and Weekends)
+        const weekStartDay = settings.weekStartDay === 'sunday' ? 0 : settings.weekStartDay === 'saturday' ? 6 : 1;
+        
+        const weeks: { [key: string]: { maxs: number[], mins: number[], start: string, end: string, weekNr: number } } = {};
+        const weekends: { [key: string]: { maxs: number[], mins: number[], start: string, end: string } } = {};
+
+        for (let i = 0; i < times.length; i++) {
+            const date = new Date(times[i]);
+            const dayOfWeek = date.getDay();
+            const tMax = maxTemps[i];
+            const tMin = minTemps[i];
+
+            if (typeof tMax !== 'number' || Number.isNaN(tMax) || typeof tMin !== 'number' || Number.isNaN(tMin)) continue;
+
+            // Weekly grouping
+            const diff = (dayOfWeek - weekStartDay + 7) % 7;
+            const startOfWeek = new Date(date);
+            startOfWeek.setDate(date.getDate() - diff);
+            const weekKey = startOfWeek.toISOString().split('T')[0];
+
+            if (!weeks[weekKey]) {
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                weeks[weekKey] = {
+                    maxs: [],
+                    mins: [],
+                    start: weekKey,
+                    end: endOfWeek.toISOString().split('T')[0],
+                    weekNr: getWeekNumber(startOfWeek)
+                };
+            }
+            weeks[weekKey].maxs.push(tMax);
+            weeks[weekKey].mins.push(tMin);
+
+            // Weekend grouping (Saturday and Sunday only)
+            if (dayOfWeek === 6 || dayOfWeek === 0) {
+                const satDate = new Date(date);
+                if (dayOfWeek === 0) satDate.setDate(date.getDate() - 1);
+                const weekendKey = satDate.toISOString().split('T')[0];
+
+                if (!weekends[weekendKey]) {
+                    const sunDate = new Date(satDate);
+                    sunDate.setDate(satDate.getDate() + 1);
+                    weekends[weekendKey] = {
+                        maxs: [],
+                        mins: [],
+                        start: weekendKey,
+                        end: sunDate.toISOString().split('T')[0]
+                    };
+                }
+                weekends[weekendKey].maxs.push(tMax);
+                weekends[weekendKey].mins.push(tMin);
+            }
+        }
+
+        const fullWeeks = Object.values(weeks).filter(w => w.maxs.length === 7);
+        const fullWeekends = Object.values(weekends).filter(w => w.maxs.length === 2);
+
+        const findExtremePeriod = (periods: any[], type: 'max' | 'min', extreme: 'warmest' | 'coldest') => {
+            if (periods.length === 0) return null;
+            
+            let best: any = null;
+            let bestVal = extreme === 'warmest' ? -Infinity : Infinity;
+
+            periods.forEach(p => {
+                const avg = p[type + 's'].reduce((a: number, b: number) => a + b, 0) / p[type + 's'].length;
+                if (extreme === 'warmest') {
+                    if (avg > bestVal) {
+                        bestVal = avg;
+                        best = { ...p, avgValue: avg, temps: p[type + 's'] };
+                    }
+                } else {
+                    if (avg < bestVal) {
+                        bestVal = avg;
+                        best = { ...p, avgValue: avg, temps: p[type + 's'] };
+                    }
+                }
+            });
+            return best;
+        };
+
+        setPeriodRecords({
+            warmestWeekMax: findExtremePeriod(fullWeeks, 'max', 'warmest'),
+            warmestWeekMin: findExtremePeriod(fullWeeks, 'min', 'warmest'),
+            coldestWeekMax: findExtremePeriod(fullWeeks, 'max', 'coldest'),
+            coldestWeekMin: findExtremePeriod(fullWeeks, 'min', 'coldest'),
+            warmestWeekendMax: findExtremePeriod(fullWeekends, 'max', 'warmest'),
+            warmestWeekendMin: findExtremePeriod(fullWeekends, 'min', 'warmest'),
+            coldestWeekendMax: findExtremePeriod(fullWeekends, 'max', 'coldest'),
+            coldestWeekendMin: findExtremePeriod(fullWeekends, 'min', 'coldest')
         });
       }
       setLoading(false);
@@ -1652,8 +1796,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                               <TemperatureDistributionChart data={heatmapData} settings={settings} />
-                              {/* Placeholder for layout balance if needed */}
+                              <SeasonalDistributionChart data={heatmapData} settings={settings} lat={location.lat} />
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                              <TemperatureFrequencyChart data={heatmapData.maxTemps} title="Max. Temp. Frequentie" settings={settings} />
+                              <TemperatureFrequencyChart data={heatmapData.minTemps} title="Min. Temp. Frequentie" settings={settings} />
+                        </div>
+
+                        <RainProbabilityChart data={heatmapData} settings={settings} />
 
                         <BaroRibbonChart data={heatmapData} settings={settings} onPointClick={navigateToHistoricalSingle} />
                     </>
@@ -2607,6 +2758,44 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                               )}
                           </button>
 
+                          {/* Max Max to Min Drop */}
+                          <button 
+                            className="bg-bg-page rounded-xl p-4 text-left hover:bg-bg-card border border-border-color transition-colors"
+                            onClick={() => diverseRecords.maxMaxToMinDrop && navigateToHistoricalCompare(diverseRecords.maxMaxToMinDrop.day1, diverseRecords.maxMaxToMinDrop.day2)}
+                          >
+                              <span className="text-sm font-medium text-text-muted block mb-2">
+                                  {t('records.max_max_to_min_drop_title')}
+                              </span>
+                              <span className="text-[10px] text-text-muted opacity-70 block mb-2 italic">
+                                  {t('records.max_max_to_min_drop_desc')}
+                              </span>
+                              {diverseRecords.maxMaxToMinDrop ? (
+                                  <div>
+                                      <div className="text-2xl font-bold text-blue-500 mb-1">
+                                          -{formatTempValue(diverseRecords.maxMaxToMinDrop.value)}°
+                                      </div>
+                                      <div className="text-xs text-text-muted flex flex-col gap-1">
+                                          <div className="flex justify-between">
+                                              <span>{t('records.diff_day1')}:</span>
+                                              <span className="flex gap-2">
+                                                  <span>{formatDateLabel(diverseRecords.maxMaxToMinDrop.day1)}</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxMaxToMinDrop.temp1)}°)</span>
+                                              </span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                              <span>{t('records.diff_day2')}:</span>
+                                              <span className="flex gap-2">
+                                                  <span>{formatDateLabel(diverseRecords.maxMaxToMinDrop.day2)}</span>
+                                                  <span className="font-medium text-text-main">({formatTempValue(diverseRecords.maxMaxToMinDrop.temp2)}°)</span>
+                                              </span>
+                                          </div>
+                                      </div>
+                                  </div>
+                              ) : (
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
+                              )}
+                          </button>
+
                           {/* Extremes Section */}
                           {diverseRecords.extremes && (
                               <div className="grid grid-cols-1 gap-4">
@@ -2708,6 +2897,96 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   </div>
                               </>
                           )}
+                      </div>
+                  </div>
+              )}
+
+              {/* Perioden Section */}
+              {recordType === 'yearly' && periodRecords && (
+                  <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color mt-6">
+                      <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-xl font-bold flex items-center gap-2 text-text-main">
+                              <Icon name="calendar_month" className="text-text-muted" />
+                              {t('records.periods_title')}
+                          </h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                          {/* Weken */}
+                          <div className="space-y-4">
+                              <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider">{t('records.weeks_title')}</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {[
+                                      { key: 'warmestWeekMax', label: t('records.warmest_week_max'), color: 'text-red-500', avgLabel: t('records.avg_max') },
+                                      { key: 'warmestWeekMin', label: t('records.warmest_week_min'), color: 'text-orange-500', avgLabel: t('records.avg_min') },
+                                      { key: 'coldestWeekMax', label: t('records.coldest_week_max'), color: 'text-blue-400', avgLabel: t('records.avg_max') },
+                                      { key: 'coldestWeekMin', label: t('records.coldest_week_min'), color: 'text-blue-600', avgLabel: t('records.avg_min') }
+                                  ].map(item => {
+                                      const record = periodRecords[item.key as keyof PeriodRecords];
+                                      if (!record) return null;
+                                      return (
+                                          <div key={item.key} className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                              <span className="text-sm font-medium text-text-muted block mb-1">{item.label}</span>
+                                              <div className="flex items-center justify-between mb-2">
+                                                  <span className="text-xs text-text-muted">
+                                                      {new Date(record.start).toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' })} - {new Date(record.end).toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' })}
+                                                  </span>
+                                                  <span className="text-xs font-bold bg-bg-card px-2 py-0.5 rounded text-text-main">
+                                                      {t('records.week_nr')} {record.weekNr}
+                                                  </span>
+                                              </div>
+                                              <div className={`text-xl font-bold ${item.color} mb-2`}>
+                                                  {record.avgValue.toFixed(1)}° <span className="text-[10px] font-normal text-text-muted">({item.avgLabel})</span>
+                                              </div>
+                                              <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+                                                  {record.temps.map((temp, idx) => (
+                                                      <div key={idx} className="flex flex-col items-center min-w-[24px]">
+                                                          <span className="text-[9px] font-bold text-text-main">{temp.toFixed(0)}°</span>
+                                                      </div>
+                                                  ))}
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          </div>
+
+                          {/* Weekenden */}
+                          <div className="space-y-4 mt-4">
+                              <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider">{t('records.weekends_title')}</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {[
+                                      { key: 'warmestWeekendMax', label: t('records.warmest_weekend_max'), color: 'text-red-500', avgLabel: t('records.avg_max') },
+                                      { key: 'warmestWeekendMin', label: t('records.warmest_weekend_min'), color: 'text-orange-500', avgLabel: t('records.avg_min') },
+                                      { key: 'coldestWeekendMax', label: t('records.coldest_weekend_max'), color: 'text-blue-400', avgLabel: t('records.avg_max') },
+                                      { key: 'coldestWeekendMin', label: t('records.coldest_weekend_min'), color: 'text-blue-600', avgLabel: t('records.avg_min') }
+                                  ].map(item => {
+                                      const record = periodRecords[item.key as keyof PeriodRecords];
+                                      if (!record) return null;
+                                      return (
+                                          <div key={item.key} className="bg-bg-page rounded-xl p-4 border border-border-color">
+                                              <span className="text-sm font-medium text-text-muted block mb-1">{item.label}</span>
+                                              <div className="flex items-center justify-between mb-2">
+                                                  <span className="text-xs text-text-muted">
+                                                      {new Date(record.start).toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' })} - {new Date(record.end).toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' })}
+                                                  </span>
+                                              </div>
+                                              <div className={`text-xl font-bold ${item.color} mb-2`}>
+                                                  {record.avgValue.toFixed(1)}° <span className="text-[10px] font-normal text-text-muted">({item.avgLabel})</span>
+                                              </div>
+                                              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                                  {record.temps.map((temp, idx) => (
+                                                      <div key={idx} className="flex flex-col items-center min-w-[24px]">
+                                                          <span className="text-[10px] font-bold text-text-main">{temp.toFixed(1)}°</span>
+                                                          <span className="text-[8px] text-text-muted uppercase">{idx === 0 ? 'za' : 'zo'}</span>
+                                                      </div>
+                                                  ))}
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          </div>
                       </div>
                   </div>
               )}

@@ -39,10 +39,8 @@ export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }
             }
         });
 
-        // Filter out empty bins and ensure order
-        return counts
-            .filter(c => c.count > 0)
-            .sort((a, b) => a.min - b.min);
+        // Ensure all bins are present for a consistent legend
+        return counts;
     }, [data]);
 
     return (
@@ -60,6 +58,8 @@ export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }
                         outerRadius={100}
                         paddingAngle={2}
                         stroke="none"
+                        startAngle={90}
+                        endAngle={-270}
                     >
                         {chartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -80,7 +80,13 @@ export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }
                         layout="horizontal" 
                         verticalAlign="bottom" 
                         align="center"
-                        wrapperStyle={{ paddingTop: '20px' }}
+                        wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                        payload={chartData.map(item => ({
+                            value: item.label,
+                            type: 'rect',
+                            id: item.label,
+                            color: item.color
+                        }))}
                     />
                 </PieChart>
             </ResponsiveContainer>

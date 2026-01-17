@@ -488,8 +488,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-base">{p.icon}</span>
-                                            <span className="text-xs font-bold text-text-main hidden sm:inline">{p.nameNl}</span>
-                                            <span className="text-xs font-bold text-text-main sm:hidden">{p.nameNl.substring(0, 2)}</span>
+                                            <span className="text-xs font-bold text-text-main">{p.nameNl}</span>
                                         </div>
                                         <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
                                             p.status === 'visible' 

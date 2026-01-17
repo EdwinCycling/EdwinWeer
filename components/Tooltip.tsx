@@ -63,12 +63,23 @@ export const Tooltip = ({ content, children, position = 'bottom' }: TooltipProps
     updatePosition();
 
     const handle = () => updatePosition();
+    const handleOutside = (e: Event) => {
+       // Close if clicking/touching outside
+       if (targetRef.current && !targetRef.current.contains(e.target as Node)) {
+           setIsVisible(false);
+       }
+    };
+
     window.addEventListener('scroll', handle, true);
     window.addEventListener('resize', handle);
+    window.addEventListener('touchstart', handleOutside);
+    window.addEventListener('click', handleOutside);
 
     return () => {
       window.removeEventListener('scroll', handle, true);
       window.removeEventListener('resize', handle);
+      window.removeEventListener('touchstart', handleOutside);
+      window.removeEventListener('click', handleOutside);
     };
   }, [isVisible, position]);
 
