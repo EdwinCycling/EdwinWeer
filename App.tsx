@@ -382,7 +382,7 @@ const App: React.FC = () => {
                         onClick={() => navigate(ViewState.PRICING)}
                         className="text-xs bg-white/20 hover:bg-white/30 rounded px-2 py-1 font-bold transition-colors"
                     >
-                        Pro
+                        {t('nav.pricing')}
                     </button>
                     <button
                         onClick={() => verifyLimit()}

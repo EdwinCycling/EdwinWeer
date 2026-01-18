@@ -14,6 +14,7 @@ import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
+import { ClimateScoreModal } from '../components/ClimateScoreModal';
 import { getTranslation } from '../services/translations';
 import { reverseGeocode, reverseGeocodeFull } from '../services/geoService';
 import {
@@ -68,14 +69,16 @@ interface YearlyCounts {
 }
 
 interface FrostInfo {
-  firstFrost: string | null;
-  lastFrost: string | null;
+  firstFrost: DateTemp | null;
+  lastFrost: DateTemp | null;
 }
 
 interface Streak {
   length: number;
   start: string | null;
   end: string | null;
+  temps?: number[];
+  days?: string[];
 }
 
 interface HeatwaveStreak extends Streak {
@@ -89,9 +92,6 @@ interface YearlySequences {
   wet: Streak | null;
   gloomy: Streak | null;
   heatwave: HeatwaveStreak | null;
-  summerStreak: Streak | null;
-  niceStreak: Streak | null;
-  coldStreak: Streak | null;
   iceStreak: Streak | null;
   streakMaxBelowZero: Streak | null;
   streakMinBelowZero: Streak | null;
@@ -99,6 +99,21 @@ interface YearlySequences {
   streakMaxAbove25: Streak | null;
   streakMaxAbove30: Streak | null;
   streakMaxAbove35: Streak | null;
+  stableStreak: Streak | null;
+}
+
+interface ClimateSeasonStats {
+    score: number;
+    monthlyScores: { month: string; score: number }[];
+    progression?: string;
+    seasonState: 'future' | 'active' | 'finished';
+    startDate: string;
+    endDate: string;
+}
+
+interface ClimateNumbers {
+    hellmann: ClimateSeasonStats;
+    heat: ClimateSeasonStats;
 }
 
 interface DiverseRecord {
@@ -129,6 +144,9 @@ interface DiverseRecords {
     maxMinToMaxRise: DiverseRecord | null;
     maxMaxToMinDrop: DiverseRecord | null;
     extremes: ExtremesInfo | null;
+    risingStaircase: Streak | null;
+    fallingStaircase: Streak | null;
+    jojoStreak: Streak | null;
 }
 
 interface PeriodRecord {
@@ -234,8 +252,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [currentWeather, setCurrentWeather] = useState<any>(null);
+  const [climateNumbers, setClimateNumbers] = useState<ClimateNumbers | null>(null);
   const [showComfortModal, setShowComfortModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
+  const [showClimateModal, setShowClimateModal] = useState(false);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   useEffect(() => {
@@ -278,7 +298,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       }
   }, [recordType]);
 
-  const t = (key: string) => getTranslation(key, settings.language);
+  const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, settings.language, params);
 
   const currentTemp = currentWeather ? convertTemp(currentWeather.current.temperature_2m, settings.tempUnit) : 0;
   const highTemp = currentWeather ? convertTemp(currentWeather.daily.temperature_2m_max[0], settings.tempUnit) : 0;
@@ -435,11 +455,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                      daylight: data.daily.daylight_duration
                  });
              } else {
-                 setError('Geen data beschikbaar voor dit jaar.');
+                 setError(t('records.error_no_data_year'));
              }
         } catch (e) {
             console.error(e);
-            setError('Fout bij ophalen data.');
+            setError(t('records.error_fetch_data'));
         }
         setLoading(false);
         return;
@@ -888,10 +908,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           maxDrop: maxDropVal > -Infinity ? { value: maxDropVal, day1: maxDropDay1, day2: maxDropDay2, temp1: maxDropTemp1, temp2: maxDropTemp2 } : null,
           maxMinToMaxRise: maxMinToMaxRiseVal > -Infinity ? { value: maxMinToMaxRiseVal, day1: maxMinToMaxRiseDay1, day2: maxMinToMaxRiseDay2, temp1: maxMinToMaxRiseTemp1, temp2: maxMinToMaxRiseTemp2 } : null,
           maxMaxToMinDrop: maxMaxToMinDropVal > -Infinity ? { value: maxMaxToMinDropVal, day1: maxMaxToMinDropDay1, day2: maxMaxToMinDropDay2, temp1: maxMaxToMinDropTemp1, temp2: maxMaxToMinDropTemp2 } : null,
-          extremes: null // Will be populated in yearly section if needed, or initialized here
+          extremes: null,
+          risingStaircase: null,
+          fallingStaircase: null
       });
 
       if (recordType === 'yearly' || recordType === '12month') {
+        const recordThresholds = settings.recordThresholds || DEFAULT_SETTINGS.recordThresholds;
         const frostThreshold = settings.tempUnit === 'F' ? 32 : 0;
         const warmThreshold = convertTemp(20, settings.tempUnit);
         const summerThreshold = convertTemp(25, settings.tempUnit);
@@ -935,14 +958,14 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         let sunnyDays = 0;
         let gloomyDays = 0;
 
-        let firstFrost: string | null = null;
-        let lastFrost: string | null = null;
-        let firstFrostAfterLongest: string | null = null;
-        let lastFrostBeforeLongest: string | null = null;
+        let firstFrost: { date: string, temp: number } | null = null;
+        let lastFrost: { date: string, temp: number } | null = null;
+        let firstFrostAfterLongest: { date: string, temp: number } | null = null;
+        let lastFrostBeforeLongest: { date: string, temp: number } | null = null;
         
         // Absolute year records
-        let absFirstFrost: string | null = null;
-        let absLastFrost: string | null = null;
+        let absFirstFrost: { date: string, temp: number } | null = null;
+        let absLastFrost: { date: string, temp: number } | null = null;
         let firstWarmDay: { date: string, temp: number } | null = null;
         let lastWarmDay: { date: string, temp: number } | null = null;
         let firstSummerDay: { date: string, temp: number } | null = null;
@@ -989,8 +1012,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             continue;
           }
 
-          const maxVal = convertTemp(loopTMax, settings.tempUnit);
-          const minVal = convertTemp(loopTMin, settings.tempUnit);
+          const maxVal = convertTempPrecise(loopTMax, settings.tempUnit);
+          const minVal = convertTempPrecise(loopTMin, settings.tempUnit);
           const rainVal =
             typeof rain === 'number' && !Number.isNaN(rain) ? convertPrecip(rain, settings.precipUnit) : NaN;
           const sunHours =
@@ -1021,22 +1044,22 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             frostDays += 1;
             
             // Track absolute first/last frost for fallback
-            if (!absFirstFrost) absFirstFrost = date;
-            absLastFrost = date;
+            if (!absFirstFrost) absFirstFrost = { date, temp: minVal };
+            absLastFrost = { date, temp: minVal };
 
             if (longestDayIndex >= 0) {
               if (i > longestDayIndex) {
                 if (!firstFrostAfterLongest) {
-                  firstFrostAfterLongest = date;
+                  firstFrostAfterLongest = { date, temp: minVal };
                 }
               } else if (i < longestDayIndex) {
-                lastFrostBeforeLongest = date;
+                lastFrostBeforeLongest = { date, temp: minVal };
               }
             } else {
               if (!firstFrostAfterLongest) {
-                firstFrostAfterLongest = date;
+                firstFrostAfterLongest = { date, temp: minVal };
               }
-              lastFrostBeforeLongest = date;
+              lastFrostBeforeLongest = { date, temp: minVal };
             }
           }
           if (maxVal <= frostThreshold) {
@@ -1132,25 +1155,164 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const wetStreak = findStreak(rainConverted, times, v => v >= rainThreshold);
         const gloomyStreak = findStreak(sunshineHours, times, v => v <= 1);
         
-        // New streaks based on settings
-        const recordThresholds = settings.recordThresholds || DEFAULT_SETTINGS.recordThresholds || {
-            summerStreakTemp: 25,
-            niceStreakTemp: 20,
-            coldStreakTemp: 5,
-            iceStreakTemp: 0
+        // Stable Streak (Max temp variation <= 2)
+        const findStableStreak = (values: number[], dates: string[], maxDiff: number): Streak | null => {
+            if (!values.length || values.length !== dates.length) return null;
+            let bestLength = 0;
+            let bestStart = -1;
+            let bestEnd = -1;
+            
+            // Pre-round values to 1 decimal for stable calculation
+            const roundedValues = values.map(v => typeof v === 'number' ? parseFloat(v.toFixed(1)) : v);
+
+            for (let i = 0; i < roundedValues.length; i++) {
+                let minVal = roundedValues[i];
+                let maxVal = roundedValues[i];
+                if (Number.isNaN(minVal)) continue;
+
+                for (let j = i; j < roundedValues.length; j++) {
+                    const v = roundedValues[j];
+                    if (Number.isNaN(v)) break;
+                    
+                    minVal = Math.min(minVal, v);
+                    maxVal = Math.max(maxVal, v);
+                    
+                    if (maxVal - minVal <= maxDiff) {
+                        const len = j - i + 1;
+                        if (len > bestLength) {
+                            bestLength = len;
+                            bestStart = i;
+                            bestEnd = j;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            if (bestLength < 3) return null;
+            
+            return {
+                length: bestLength,
+                start: dates[bestStart],
+                end: dates[bestEnd],
+                temps: roundedValues.slice(bestStart, bestEnd + 1),
+                days: dates.slice(bestStart, bestEnd + 1)
+            };
         };
 
-        const summerStreak = findStreak(maxTempsConverted, times, v => v >= recordThresholds.summerStreakTemp);
-        const niceStreak = findStreak(maxTempsConverted, times, v => v >= recordThresholds.niceStreakTemp);
-        const coldStreak = findStreak(maxTempsConverted, times, v => v < recordThresholds.coldStreakTemp);
+        const stableStreak = findStableStreak(maxTempsConverted, times, 3);
+        
         const iceStreak = findStreak(maxTempsConverted, times, v => v <= recordThresholds.iceStreakTemp);
 
-        const streakMaxBelowZero = findStreak(maxTempsConverted, times, v => v < (settings.tempUnit === 'F' ? 32 : 0));
-        const streakMinBelowZero = findStreak(minTempsConverted, times, v => v < (settings.tempUnit === 'F' ? 32 : 0));
-        const streakMaxBelowFive = findStreak(maxTempsConverted, times, v => v < (settings.tempUnit === 'F' ? 41 : 5));
+        const streakMaxBelowZero = findStreak(maxTempsConverted, times, v => v <= (settings.tempUnit === 'F' ? 32 : 0));
+        const streakMinBelowZero = findStreak(minTempsConverted, times, v => v <= (settings.tempUnit === 'F' ? 32 : 0));
+        const streakMaxBelowFive = findStreak(maxTempsConverted, times, v => v <= (settings.tempUnit === 'F' ? 41 : 5));
         const streakMaxAbove25 = findStreak(maxTempsConverted, times, v => v >= (settings.tempUnit === 'F' ? 77 : 25));
         const streakMaxAbove30 = findStreak(maxTempsConverted, times, v => v >= (settings.tempUnit === 'F' ? 86 : 30));
         const streakMaxAbove35 = findStreak(maxTempsConverted, times, v => v >= (settings.tempUnit === 'F' ? 95 : 35));
+
+        // Staircase streaks (Oplopende / Aflopende trap)
+        const findStaircaseStreak = (values: number[], dates: string[], direction: 'up' | 'down'): Streak | null => {
+            if (values.length < 2) return null;
+            let bestLength = 0;
+            let bestStart = -1;
+            let bestEnd = -1;
+            let currentLength = 1;
+            let currentStart = 0;
+
+            for (let i = 1; i < values.length; i++) {
+                const prev = values[i-1];
+                const curr = values[i];
+                if (Number.isNaN(prev) || Number.isNaN(curr)) {
+                    currentLength = 1;
+                    currentStart = i;
+                    continue;
+                }
+
+                const ok = direction === 'up' ? curr > prev : curr < prev;
+                if (ok) {
+                    currentLength++;
+                    if (currentLength > bestLength) {
+                        bestLength = currentLength;
+                        bestStart = currentStart;
+                        bestEnd = i;
+                    }
+                } else {
+                    currentLength = 1;
+                    currentStart = i;
+                }
+            }
+
+            if (bestLength < 2) return null;
+            return {
+                length: bestLength,
+                start: dates[bestStart],
+                end: dates[bestEnd],
+                temps: values.slice(bestStart, bestEnd + 1),
+                days: dates.slice(bestStart, bestEnd + 1)
+            };
+        };
+
+        const risingStaircase = findStaircaseStreak(maxTempsConverted, times, 'up');
+        const fallingStaircase = findStaircaseStreak(maxTempsConverted, times, 'down');
+
+        // JoJo Streak (Alternating warm/cold)
+        const findJoJoStreak = (values: number[], dates: string[]): Streak | null => {
+            if (values.length < 3) return null;
+            let bestLength = 0;
+            let bestStart = -1;
+            let bestEnd = -1;
+            let currentLength = 1;
+            let currentStart = 0;
+            // 0 = unknown, 1 = going up, -1 = going down
+            let lastDirection = 0; 
+
+            for (let i = 1; i < values.length; i++) {
+                const prev = values[i-1];
+                const curr = values[i];
+                if (Number.isNaN(prev) || Number.isNaN(curr) || prev === curr) {
+                    currentLength = 1;
+                    currentStart = i;
+                    lastDirection = 0;
+                    continue;
+                }
+
+                const direction = curr > prev ? 1 : -1;
+                
+                if (lastDirection === 0) {
+                     // Start of a potential sequence
+                     lastDirection = direction;
+                     currentLength++;
+                } else if (direction !== lastDirection) {
+                     // Alternated successfully
+                     lastDirection = direction;
+                     currentLength++;
+                     if (currentLength > bestLength) {
+                         bestLength = currentLength;
+                         bestStart = currentStart;
+                         bestEnd = i;
+                     }
+                } else {
+                     // Same direction twice - sequence broken
+                     // But the last two points form a valid start for a new sequence (length 2)
+                     currentLength = 2;
+                     currentStart = i - 1;
+                     lastDirection = direction;
+                }
+            }
+
+            if (bestLength < 3) return null;
+            return {
+                length: bestLength,
+                start: dates[bestStart],
+                end: dates[bestEnd],
+                temps: values.slice(bestStart, bestEnd + 1),
+                days: dates.slice(bestStart, bestEnd + 1)
+            };
+        };
+
+        const jojoStreak = findJoJoStreak(maxTempsConverted, times);
 
         // Ensure we have all heatwave settings, falling back to defaults if missing
         const heatwaveSettings = { ...DEFAULT_SETTINGS.heatwave, ...(settings.heatwave || {}) };
@@ -1275,7 +1437,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 lastNice: lastNiceDay,
                 firstSummer: firstSummerDay,
                 lastSummer: lastSummerDay
-            }
+            },
+            risingStaircase,
+            fallingStaircase,
+            jojoStreak
         }));
 
         setFrostInfo({
@@ -1288,9 +1453,6 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           wet: wetStreak,
           gloomy: gloomyStreak,
           heatwave: null,
-          summerStreak,
-          niceStreak,
-          coldStreak,
           iceStreak,
           streakMaxBelowZero,
           streakMinBelowZero,
@@ -1298,6 +1460,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           streakMaxAbove25,
           streakMaxAbove30,
           streakMaxAbove35,
+          stableStreak,
         });
 
         // Calculate Perioden (Weeks and Weekends)
@@ -1391,6 +1554,157 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             coldestWeekendMax: findExtremePeriod(fullWeekends, 'max', 'coldest'),
             coldestWeekendMin: findExtremePeriod(fullWeekends, 'min', 'coldest')
         });
+
+        // Climate Numbers Calculation
+        if (recordType === 'yearly') {
+            const isNorth = location.lat >= 0;
+            const year = selectedYear;
+            const prevYear = year - 1;
+            
+            // Define dates
+            let hellmannStart, hellmannEnd, heatStart, heatEnd;
+            
+            if (isNorth) {
+                hellmannStart = `${prevYear}-11-01`;
+                hellmannEnd = `${year}-03-31`;
+                heatStart = `${year}-04-15`;
+                heatEnd = `${year}-10-15`;
+            } else {
+                // South
+                // Hellmann (Winter): May 1 - Sep 30
+                hellmannStart = `${year}-05-01`;
+                hellmannEnd = `${year}-09-30`;
+                // Heat (Summer): Nov 1 (prev) - Mar 31 (curr)
+                heatStart = `${prevYear}-11-01`;
+                heatEnd = `${year}-03-31`;
+            }
+            
+            // We always need prev year Nov/Dec data if it's not in the current fetch range
+            // Current fetch range for 'yearly' is YYYY-01-01 to YYYY-12-31.
+            // So we need prev year data if start date is in prev year.
+            
+            const tempMap = new Map<string, number>();
+            
+            // Add current year data
+            for(let i=0; i<times.length; i++) {
+                const d = times[i];
+                const tMean = (maxTemps[i] + minTemps[i]) / 2;
+                 if (!Number.isNaN(tMean)) tempMap.set(d, tMean);
+            }
+
+            // Fetch extra data if needed
+            const needsExtra = (isNorth) || (!isNorth); // Both scenarios might need prev year data
+            // Actually, North Hellmann needs prev year. South Heat needs prev year.
+            // So we can just fetch Nov/Dec of prev year blindly as it covers both cases.
+            
+            const extraStart = `${prevYear}-11-01`;
+            const extraEnd = `${prevYear}-12-31`;
+            
+            try {
+                // Only fetch if we don't have it (we don't for 'yearly' mode)
+                const extraData = await fetchHistorical(location.lat, location.lon, extraStart, extraEnd);
+                if (extraData && extraData.daily && extraData.daily.time) {
+                    const extraDaily = extraData.daily;
+                    for(let i=0; i<extraDaily.time.length; i++) {
+                        const d = extraDaily.time[i];
+                        const tMax = extraDaily.temperature_2m_max[i];
+                        const tMin = extraDaily.temperature_2m_min[i];
+                        if (typeof tMax === 'number' && typeof tMin === 'number') {
+                            const tMean = (tMax + tMin) / 2;
+                            tempMap.set(d, tMean);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch extra climate data", e);
+            }
+            
+            const calcScore = (start: string, end: string, type: 'hellmann' | 'heat'): ClimateSeasonStats => {
+                let score = 0;
+                const monthly: Record<string, number> = {};
+                let currentDate = new Date(start);
+                const stopDate = new Date(end);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                let state: 'future' | 'active' | 'finished' = 'future';
+                let cappedEnd = stopDate;
+                let progression = '';
+                
+                const startD = new Date(start);
+                
+                if (startD > yesterday) {
+                     state = 'future';
+                     progression = t('records.season_not_started');
+                } else if (stopDate > yesterday) {
+                     state = 'active';
+                     cappedEnd = yesterday;
+                     progression = t('records.season_progress');
+                } else {
+                     state = 'finished';
+                }
+                
+                // Iterate
+                const loopDate = new Date(start);
+                // Ensure we don't go beyond available data or capped end
+                while (loopDate <= cappedEnd) {
+                    const dStr = loopDate.toISOString().split('T')[0];
+                    const temp = tempMap.get(dStr);
+                    
+                    if (temp !== undefined) {
+                        let val = 0;
+                        if (type === 'hellmann') {
+                            if (temp < 0) val = Math.abs(temp);
+                        } else {
+                            if (temp > 18) val = temp - 18;
+                        }
+                        
+                        if (val > 0) {
+                            score += val;
+                            // Monthly breakdown
+                            const monthKey = loopDate.toLocaleString(getLocale(), { month: 'short' });
+                            monthly[monthKey] = (monthly[monthKey] || 0) + val;
+                        }
+                    }
+                    
+                    loopDate.setDate(loopDate.getDate() + 1);
+                }
+                
+                // Format monthly - we want all months in range even if 0? 
+                // User said "Toon voor beide een maand overzicht met de totaal scroe per maand."
+                // Better to show all months in the season.
+                
+                const allMonths: { month: string, score: number }[] = [];
+                const mLoop = new Date(start);
+                while (mLoop <= stopDate) { // Iterate full season range for labels
+                     const mKey = mLoop.toLocaleString(getLocale(), { month: 'short' });
+                     if (!allMonths.find(m => m.month === mKey)) {
+                         allMonths.push({ month: mKey, score: monthly[mKey] ? parseFloat(monthly[mKey].toFixed(1)) : 0.0 });
+                     }
+                     mLoop.setDate(mLoop.getDate() + 15); // Jump 15 days to ensure we hit next month
+                }
+                
+                return {
+                    score: parseFloat(score.toFixed(1)),
+                    monthlyScores: allMonths,
+                    progression: state === 'active' ? progression : undefined,
+                    seasonState: state,
+                    startDate: start,
+                    endDate: end
+                };
+            };
+            
+            const hellmannStats = calcScore(hellmannStart, hellmannEnd, 'hellmann');
+            const heatStats = calcScore(heatStart, heatEnd, 'heat');
+            
+            setClimateNumbers({
+                hellmann: hellmannStats,
+                heat: heatStats
+            });
+        } else {
+            setClimateNumbers(null);
+        }
       }
       setLoading(false);
   };
@@ -2399,11 +2713,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 <div className="w-3 h-3 rounded-sm bg-[#1200ED]"></div>
                                 <div className="w-3 h-3 rounded-sm bg-[#2400DB]"></div>
                             </div>
-                            <span className="font-medium">{t('records.coldest_days') || '3 Koudste Dagen'}</span>
+                            <span className="font-medium">{t('records.coldest_days')}</span>
                         </div>
                         <div className="w-px h-4 bg-border-color"></div>
                         <div className="flex items-center gap-2">
-                            <span className="font-medium">{t('records.warmest_days') || '3 Warmste Dagen'}</span>
+                            <span className="font-medium">{t('records.warmest_days')}</span>
                             <div className="flex gap-0.5">
                                 <div className="w-3 h-3 rounded-sm bg-[#DB0024]"></div>
                                 <div className="w-3 h-3 rounded-sm bg-[#ED0012]"></div>
@@ -2491,6 +2805,106 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   value => `${convertPrecip(value, settings.precipUnit)}\u00a0${settings.precipUnit}`
                 )}
               </div>
+
+              {/* Climate Numbers */}
+              {recordType === 'yearly' && climateNumbers && (
+                  <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color mb-6">
+                      <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xl font-bold flex items-center gap-2 text-text-main">
+                              <Icon name="public" className="text-accent-primary" />
+                              {t('records.climate_numbers_title')}
+                          </h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Hellmann */}
+                          <div className="bg-bg-page rounded-xl p-4 border border-border-color flex flex-col relative group">
+                              <div className="flex items-center justify-between mb-2">
+                                  <span className="font-bold text-text-main flex items-center gap-2">
+                                      <Icon name="ac_unit" className="text-blue-500" />
+                                      {t('records.hellmann_title')}
+                                  </span>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setShowClimateModal(true); }}
+                                    className="p-1 rounded-full hover:bg-bg-card transition-colors"
+                                  >
+                                      <Icon name="info" className="text-xs text-text-muted hover:text-text-main" />
+                                  </button>
+                              </div>
+                              
+                              <div className="flex items-end gap-2 mb-1">
+                                  <span className="text-4xl font-black text-blue-500">{climateNumbers.hellmann.score.toFixed(1)}</span>
+                              </div>
+                              
+                              {climateNumbers.hellmann.progression && (
+                                  <span className="text-xs text-text-muted mb-3 italic">
+                                      {climateNumbers.hellmann.progression}
+                                  </span>
+                              )}
+                              
+                              <div className="mt-auto pt-3 border-t border-border-color">
+                                  <div className="grid grid-cols-5 gap-1">
+                                      {climateNumbers.hellmann.monthlyScores.map((m, idx) => (
+                                          <div key={idx} className="flex flex-col items-center">
+                                              <span className="text-[10px] text-text-muted uppercase">{m.month}</span>
+                                              <span className={`text-xs font-bold ${m.score > 0 ? 'text-blue-500' : 'text-text-muted opacity-50'}`}>
+                                                  {m.score > 0 ? m.score.toFixed(1) : '-'}
+                                              </span>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                              
+                               <div className="mt-2 text-[10px] text-text-muted opacity-70">
+                                  {formatDateLabel(climateNumbers.hellmann.startDate)} - {formatDateLabel(climateNumbers.hellmann.endDate)}
+                               </div>
+                          </div>
+                          
+                          {/* Heat Number */}
+                          <div className="bg-bg-page rounded-xl p-4 border border-border-color flex flex-col relative group">
+                              <div className="flex items-center justify-between mb-2">
+                                  <span className="font-bold text-text-main flex items-center gap-2">
+                                      <Icon name="local_fire_department" className="text-orange-500" />
+                                      {t('records.heat_number_title')}
+                                  </span>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setShowClimateModal(true); }}
+                                    className="p-1 rounded-full hover:bg-bg-card transition-colors"
+                                  >
+                                      <Icon name="info" className="text-xs text-text-muted hover:text-text-main" />
+                                  </button>
+                              </div>
+                              
+                              <div className="flex items-end gap-2 mb-1">
+                                  <span className="text-4xl font-black text-orange-500">{climateNumbers.heat.score.toFixed(1)}</span>
+                              </div>
+                              
+                              {climateNumbers.heat.progression && (
+                                  <span className="text-xs text-text-muted mb-3 italic">
+                                      {climateNumbers.heat.progression}
+                                  </span>
+                              )}
+                              
+                              <div className="mt-auto pt-3 border-t border-border-color">
+                                  <div className="grid grid-cols-6 gap-1">
+                                      {climateNumbers.heat.monthlyScores.map((m, idx) => (
+                                          <div key={idx} className="flex flex-col items-center">
+                                              <span className="text-[10px] text-text-muted uppercase">{m.month}</span>
+                                              <span className={`text-xs font-bold ${m.score > 0 ? 'text-orange-500' : 'text-text-muted opacity-50'}`}>
+                                                  {m.score > 0 ? m.score.toFixed(1) : '-'}
+                                              </span>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                              
+                               <div className="mt-2 text-[10px] text-text-muted opacity-70">
+                                  {formatDateLabel(climateNumbers.heat.startDate)} - {formatDateLabel(climateNumbers.heat.endDate)}
+                               </div>
+                          </div>
+                      </div>
+                  </div>
+              )}
 
               {/* Yearly Counts */}
               {(recordType === 'yearly' || recordType === '12month') && yearlyCounts && (
@@ -2636,83 +3050,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       )}
                     </div>
 
-                     {/* Summer Streak */}
-                     <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-text-muted font-medium">
-                          {t('records.sequences.summer_streak')}
-                        </span>
-                        <span className="text-[10px] text-text-muted mb-0.5 opacity-70">
-                           &ge; {settings.recordThresholds?.summerStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.summerStreakTemp}°
-                        </span>
-                        {yearlySequences.summerStreak && yearlySequences.summerStreak.start && yearlySequences.summerStreak.end ? (
-                          <span className="text-xs text-text-muted">
-                            {formatDateLabel(yearlySequences.summerStreak.start)} – {formatDateLabel(yearlySequences.summerStreak.end)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-text-muted">
-                            {t('records.sequences.none')}
-                          </span>
-                        )}
-                      </div>
-                      {yearlySequences.summerStreak && yearlySequences.summerStreak.length > 0 && (
-                        <span className="font-bold text-text-main">
-                          {yearlySequences.summerStreak.length} {t('days')}
-                        </span>
-                      )}
-                    </div>
 
-                     {/* Nice Streak */}
-                     <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-text-muted font-medium">
-                          {t('records.sequences.nice_streak')}
-                        </span>
-                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           &ge; {settings.recordThresholds?.niceStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.niceStreakTemp}°
-                        </span>
-                        {yearlySequences.niceStreak && yearlySequences.niceStreak.start && yearlySequences.niceStreak.end ? (
-                          <span className="text-xs text-text-muted">
-                            {formatDateLabel(yearlySequences.niceStreak.start)} – {formatDateLabel(yearlySequences.niceStreak.end)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-text-muted">
-                            {t('records.sequences.none')}
-                          </span>
-                        )}
-                      </div>
-                      {yearlySequences.niceStreak && yearlySequences.niceStreak.length > 0 && (
-                        <span className="font-bold text-text-main">
-                          {yearlySequences.niceStreak.length} {t('days')}
-                        </span>
-                      )}
-                    </div>
-
-                     {/* Cold Streak */}
-                     <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-text-muted font-medium">
-                          {t('records.sequences.cold_streak')}
-                        </span>
-                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           &lt; {settings.recordThresholds?.coldStreakTemp ?? DEFAULT_SETTINGS.recordThresholds.coldStreakTemp}°
-                        </span>
-                        {yearlySequences.coldStreak && yearlySequences.coldStreak.start && yearlySequences.coldStreak.end ? (
-                          <span className="text-xs text-text-muted">
-                            {formatDateLabel(yearlySequences.coldStreak.start)} – {formatDateLabel(yearlySequences.coldStreak.end)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-text-muted">
-                            {t('records.sequences.none')}
-                          </span>
-                        )}
-                      </div>
-                      {yearlySequences.coldStreak && yearlySequences.coldStreak.length > 0 && (
-                        <span className="font-bold text-text-main">
-                          {yearlySequences.coldStreak.length} {t('days')}
-                        </span>
-                      )}
-                    </div>
 
                      {/* Ice Streak */}
                      <div className="flex items-center justify-between">
@@ -2745,10 +3083,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-text-muted font-medium">
-                          Langste periode &lt; 0°C (Max)
+                          {t('records.sequences.streak_max_below_zero')}
                         </span>
                         <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           Max Temp &lt; 0°C
+                           {t('records.sequences.streak_max_below_zero_desc')}
                         </span>
                         {yearlySequences.streakMaxBelowZero && yearlySequences.streakMaxBelowZero.start && yearlySequences.streakMaxBelowZero.end ? (
                           <span className="text-xs text-text-muted">
@@ -2771,10 +3109,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-text-muted font-medium">
-                          Langste periode &lt; 0°C (Min)
+                          {t('records.sequences.streak_min_below_zero')}
                         </span>
                         <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           Min Temp &lt; 0°C
+                           {t('records.sequences.streak_min_below_zero_desc')}
                         </span>
                         {yearlySequences.streakMinBelowZero && yearlySequences.streakMinBelowZero.start && yearlySequences.streakMinBelowZero.end ? (
                           <span className="text-xs text-text-muted">
@@ -2797,10 +3135,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-text-muted font-medium">
-                          Langste periode &lt; 5°C (Max)
+                          {t('records.sequences.streak_max_below_five')}
                         </span>
                         <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           Max Temp &lt; 5°C
+                           {t('records.sequences.streak_max_below_five_desc')}
                         </span>
                         {yearlySequences.streakMaxBelowFive && yearlySequences.streakMaxBelowFive.start && yearlySequences.streakMaxBelowFive.end ? (
                           <span className="text-xs text-text-muted">
@@ -2823,10 +3161,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-text-muted font-medium">
-                          Langste periode &gt; 25°C (Max)
+                          {t('records.sequences.streak_max_above_25')}
                         </span>
                         <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           Max Temp &gt; 25°C
+                           {t('records.sequences.streak_max_above_25_desc')}
                         </span>
                         {yearlySequences.streakMaxAbove25 && yearlySequences.streakMaxAbove25.start && yearlySequences.streakMaxAbove25.end ? (
                           <span className="text-xs text-text-muted">
@@ -2849,10 +3187,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-text-muted font-medium">
-                          Langste periode &gt; 30°C (Max)
+                          {t('records.sequences.streak_max_above_30')}
                         </span>
                         <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           Max Temp &gt; 30°C
+                           {t('records.sequences.streak_max_above_30_desc')}
                         </span>
                         {yearlySequences.streakMaxAbove30 && yearlySequences.streakMaxAbove30.start && yearlySequences.streakMaxAbove30.end ? (
                           <span className="text-xs text-text-muted">
@@ -2875,10 +3213,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-text-muted font-medium">
-                          Langste periode &gt; 35°C (Max)
+                          {t('records.sequences.streak_max_above_35')}
                         </span>
                         <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
-                           Max Temp &gt; 35°C
+                           {t('records.sequences.streak_max_above_35_desc')}
                         </span>
                         {yearlySequences.streakMaxAbove35 && yearlySequences.streakMaxAbove35.start && yearlySequences.streakMaxAbove35.end ? (
                           <span className="text-xs text-text-muted">
@@ -2918,10 +3256,16 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                   {showHeatwaveInfo && (
                       <div className="mb-4 p-3 bg-bg-page rounded-lg text-xs text-text-muted border border-border-color animate-in fade-in slide-in-from-top-1">
-                          <p className="font-bold mb-1 text-text-main">Definition:</p>
+                          <p className="font-bold mb-1 text-text-main">{t('common.definition')}:</p>
                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Min. {(settings.heatwave || DEFAULT_SETTINGS.heatwave).minLength} days &ge; {(settings.heatwave || DEFAULT_SETTINGS.heatwave).lowerThreshold}°C</li>
-                              <li>Of which min. {(settings.heatwave || DEFAULT_SETTINGS.heatwave).minHeatDays} days &ge; {(settings.heatwave || DEFAULT_SETTINGS.heatwave).heatThreshold}°C</li>
+                              <li>{t('records.sequences.heatwave_min_days', { 
+                                  days: (settings.heatwave || DEFAULT_SETTINGS.heatwave).minLength, 
+                                  temp: (settings.heatwave || DEFAULT_SETTINGS.heatwave).lowerThreshold 
+                              })}</li>
+                              <li>{t('records.sequences.heatwave_min_heat_days', { 
+                                  days: (settings.heatwave || DEFAULT_SETTINGS.heatwave).minHeatDays, 
+                                  temp: (settings.heatwave || DEFAULT_SETTINGS.heatwave).heatThreshold 
+                              })}</li>
                           </ul>
                       </div>
                   )}
@@ -3201,6 +3545,184 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                               )}
                           </button>
 
+                          {/* Oplopende Trap */}
+                          <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
+                                  {t('records.sequences.rising_staircase')} ({t('records.sequences.rising_staircase_desc')})
+                              </span>
+                              {diverseRecords.risingStaircase ? (
+                                  <div>
+                                      <div className="text-2xl font-bold text-orange-500 mb-1">
+                                          {diverseRecords.risingStaircase.length} {t('days')}
+                                      </div>
+                                      <div className="text-xs text-text-muted mb-2">
+                                          {formatDateLabel(diverseRecords.risingStaircase.start)} – {formatDateLabel(diverseRecords.risingStaircase.end)}
+                                      </div>
+                                      {diverseRecords.risingStaircase.temps && diverseRecords.risingStaircase.days && (
+                                          <div className="mt-2 flex flex-wrap gap-2">
+                                              {diverseRecords.risingStaircase.temps.map((temp, i) => (
+                                                  <div key={i} className="flex flex-col items-center bg-bg-card px-2 py-1 rounded border border-border-color">
+                                                       <span className="text-[10px] text-text-muted">{new Date(diverseRecords.risingStaircase!.days![i]).getDate()} {new Date(diverseRecords.risingStaircase!.days![i]).toLocaleString(getLocale(), { month: 'short' })}</span>
+                                                       <span className="text-xs font-bold">{temp.toFixed(1)}°</span>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
+                                  </div>
+                              ) : (
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
+                              )}
+                          </div>
+
+                          {/* Aflopende Trap */}
+                          <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
+                                  {t('records.sequences.falling_staircase')} ({t('records.sequences.falling_staircase_desc')})
+                              </span>
+                              {diverseRecords.fallingStaircase ? (
+                                  <div>
+                                      <div className="text-2xl font-bold text-blue-400 mb-1">
+                                          {diverseRecords.fallingStaircase.length} {t('days')}
+                                      </div>
+                                      <div className="text-xs text-text-muted mb-2">
+                                          {formatDateLabel(diverseRecords.fallingStaircase.start)} – {formatDateLabel(diverseRecords.fallingStaircase.end)}
+                                      </div>
+                                      {diverseRecords.fallingStaircase.temps && diverseRecords.fallingStaircase.days && (
+                                          <div className="mt-2 flex flex-wrap gap-2">
+                                              {diverseRecords.fallingStaircase.temps.map((temp, i) => (
+                                                  <div key={i} className="flex flex-col items-center bg-bg-card px-2 py-1 rounded border border-border-color">
+                                                       <span className="text-[10px] text-text-muted">{new Date(diverseRecords.fallingStaircase!.days![i]).getDate()} {new Date(diverseRecords.fallingStaircase!.days![i]).toLocaleString(getLocale(), { month: 'short' })}</span>
+                                                       <span className="text-xs font-bold">{temp.toFixed(1)}°</span>
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
+                                  </div>
+                              ) : (
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
+                              )}
+                          </div>
+
+                          {/* Stable Streak (Moved here) */}
+                          <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
+                                  {t('records.sequences.stable_streak')} ({t('records.sequences.stable_streak_desc')})
+                              </span>
+                              {yearlySequences.stableStreak ? (
+                                  <div>
+                                      <div className="text-2xl font-bold text-teal-500 mb-1">
+                                          {yearlySequences.stableStreak.length} {t('days')}
+                                      </div>
+                                      <div className="text-xs text-text-muted mb-2">
+                                          {formatDateLabel(yearlySequences.stableStreak.start)} – {formatDateLabel(yearlySequences.stableStreak.end)}
+                                      </div>
+                                      {yearlySequences.stableStreak.temps && yearlySequences.stableStreak.days && (
+                                          <div className="mt-2 flex flex-wrap gap-2">
+                                              {yearlySequences.stableStreak.temps.map((temp, i) => {
+                                                  const maxT = Math.max(...yearlySequences.stableStreak!.temps!);
+                                                  const minT = Math.min(...yearlySequences.stableStreak!.temps!);
+                                                  let bgClass = "bg-bg-card border-border-color";
+                                                  let textClass = "text-text-main";
+                                                  
+                                                  if (temp === maxT) {
+                                                      bgClass = "bg-red-500/10 border-red-500/20";
+                                                      textClass = "text-red-500";
+                                                  } else if (temp === minT) {
+                                                      bgClass = "bg-blue-500/10 border-blue-500/20";
+                                                      textClass = "text-blue-500";
+                                                  }
+
+                                                  return (
+                                                      <div key={i} className={`flex flex-col items-center px-2 py-1 rounded border ${bgClass}`}>
+                                                          <span className="text-[10px] text-text-muted">{new Date(yearlySequences.stableStreak!.days![i]).getDate()} {new Date(yearlySequences.stableStreak!.days![i]).toLocaleString(getLocale(), { month: 'short' })}</span>
+                                                          <span className={`text-xs font-bold ${textClass}`}>{temp.toFixed(1)}°</span>
+                                                      </div>
+                                                  );
+                                              })}
+                                          </div>
+                                      )}
+                                  </div>
+                              ) : (
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
+                              )}
+                          </div>
+
+                          {/* JoJo Streak */}
+                          <div className="bg-bg-page rounded-xl p-4 border border-border-color">
+                              <span className="text-sm font-medium text-text-muted block mb-2">
+                                  {t('records.sequences.jojo_streak')} <span className="text-xs opacity-70">({t('max_temp')})</span>
+                              </span>
+                              {diverseRecords.jojoStreak ? (
+                                  <div>
+                                      <div className="text-2xl font-bold text-purple-500 mb-1">
+                                          {diverseRecords.jojoStreak.length} {t('days')}
+                                      </div>
+                                      <div className="text-xs text-text-muted mb-2">
+                                          {formatDateLabel(diverseRecords.jojoStreak.start)} – {formatDateLabel(diverseRecords.jojoStreak.end)}
+                                      </div>
+                                      {diverseRecords.jojoStreak.temps && diverseRecords.jojoStreak.days && (
+                                          <div className="mt-2 flex flex-wrap gap-2">
+                                              {diverseRecords.jojoStreak.temps.map((temp, i, arr) => {
+                                                  // Determine if warm (peak) or cold (valley)
+                                                  // For Jojo, peaks are red, valleys are blue.
+                                                  // Logic: compare with neighbors.
+                                                  let isPeak = false;
+                                                  let isValley = false;
+                                                  
+                                                  const prev = i > 0 ? arr[i-1] : null;
+                                                  const next = i < arr.length - 1 ? arr[i+1] : null;
+                                                  
+                                                  if (prev === null) {
+                                                      // First item
+                                                      if (next !== null) {
+                                                          if (temp > next) isPeak = true;
+                                                          else if (temp < next) isValley = true;
+                                                      }
+                                                  } else if (next === null) {
+                                                      // Last item
+                                                      if (prev !== null) {
+                                                          if (temp > prev) isPeak = true;
+                                                          else if (temp < prev) isValley = true;
+                                                      }
+                                                  } else {
+                                                      // Middle
+                                                      if (temp > prev && temp > next) isPeak = true;
+                                                      else if (temp < prev && temp < next) isValley = true;
+                                                      
+                                                      // Special case: if it's part of a run?
+                                                      // JoJo implies strictly alternating, but data might have small noise?
+                                                      // But findJoJoStreak enforces alternating direction.
+                                                      // So it should be peak/valley/peak/valley.
+                                                      // However, let's just stick to local comparison.
+                                                      // If findJoJoStreak logic holds, every internal point is a peak or valley.
+                                                  }
+
+                                                  let bgClass = "bg-bg-card border-border-color";
+                                                  let textClass = "text-text-main";
+
+                                                  if (isPeak) {
+                                                      bgClass = "bg-red-500/10 border-red-500/20";
+                                                      textClass = "text-red-500";
+                                                  } else if (isValley) {
+                                                      bgClass = "bg-blue-500/10 border-blue-500/20";
+                                                      textClass = "text-blue-500";
+                                                  }
+
+                                                  return (
+                                                      <div key={i} className={`flex flex-col items-center px-2 py-1 rounded border ${bgClass}`}>
+                                                          <span className="text-[10px] text-text-muted">{new Date(diverseRecords.jojoStreak!.days![i]).getDate()} {new Date(diverseRecords.jojoStreak!.days![i]).toLocaleString(getLocale(), { month: 'short' })}</span>
+                                                          <span className={`text-xs font-bold ${textClass}`}>{temp.toFixed(1)}°</span>
+                                                      </div>
+                                                  );
+                                              })}
+                                          </div>
+                                      )}
+                                  </div>
+                              ) : (
+                                  <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
+                              )}
+                          </div>
+
                           {/* Extremes Section */}
                           {diverseRecords.extremes && (
                               <div className="grid grid-cols-1 gap-4">
@@ -3275,10 +3797,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                       </span>
                                       {frostInfo.firstFrost ? (
                                           <button 
-                                            className="text-lg font-bold text-text-main w-full text-left underline-offset-2 hover:underline"
-                                            onClick={() => frostInfo.firstFrost && navigateToHistoricalSingle(frostInfo.firstFrost)}
+                                            className="text-lg flex justify-between items-center w-full"
+                                            onClick={() => frostInfo.firstFrost && navigateToHistoricalSingle(frostInfo.firstFrost.date)}
                                           >
-                                              {formatDateLabel(frostInfo.firstFrost)}
+                                              <span className="font-bold text-text-main underline-offset-2 hover:underline">{formatDateLabel(frostInfo.firstFrost.date)}</span>
+                                              <span className="text-blue-500 font-bold">{frostInfo.firstFrost.temp}°</span>
                                           </button>
                                       ) : (
                                           <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
@@ -3291,10 +3814,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                       </span>
                                       {frostInfo.lastFrost ? (
                                           <button 
-                                            className="text-lg font-bold text-text-main w-full text-left underline-offset-2 hover:underline"
-                                            onClick={() => frostInfo.lastFrost && navigateToHistoricalSingle(frostInfo.lastFrost)}
+                                            className="text-lg flex justify-between items-center w-full"
+                                            onClick={() => frostInfo.lastFrost && navigateToHistoricalSingle(frostInfo.lastFrost.date)}
                                           >
-                                              {formatDateLabel(frostInfo.lastFrost)}
+                                              <span className="font-bold text-text-main underline-offset-2 hover:underline">{formatDateLabel(frostInfo.lastFrost.date)}</span>
+                                              <span className="text-blue-500 font-bold">{frostInfo.lastFrost.temp}°</span>
                                           </button>
                                       ) : (
                                           <span className="text-sm text-text-muted opacity-60">{t('records.sequences.none')}</span>
@@ -3403,6 +3927,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           isOpen={showComfortModal} 
           onClose={() => setShowComfortModal(false)} 
           settings={settings} 
+      />
+      <ClimateScoreModal 
+        isOpen={showClimateModal} 
+        onClose={() => setShowClimateModal(false)} 
+        settings={settings} 
       />
       {showFeelsLikeModal && currentWeather && (
         <FeelsLikeInfoModal
