@@ -565,6 +565,7 @@ export const de: Dictionary = {
     'records.monthly_summary': 'Monatsübersicht',
     'records.intermediate_status': 'Zwischenstand',
     'records.temperature_graph': 'Temperatur',
+    'records.dashboard': 'Dashboard',
 
     // Pricing
     'pricing.title': 'Preise',
@@ -811,7 +812,10 @@ export const de: Dictionary = {
     'settings.theme': 'Thema',
     'settings.language': 'Sprache',
     'settings.time_format': 'Zeitformat',
-    'settings.calendar.heatmap': 'Zeige heatmap',
+    'settings.calendar.heatmap': 'Dashboard',
+    'settings.country': 'Landauswahl (für Feiertage)',
+    'records.holidays': 'Feiertage',
+    'records.holiday_weather': 'Feiertagswetter',
     'settings.calendar.details': 'Zeige details',
     'settings.favorites': 'Favorisierte städte',
     'settings.add_city': 'Stadt hinzufügen...',

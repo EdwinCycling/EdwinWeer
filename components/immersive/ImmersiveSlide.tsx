@@ -26,6 +26,8 @@ interface HourData {
     moonPhase: number;
     sunrise: string | null;
     sunset: string | null;
+    moonrise?: string | null;
+    moonset?: string | null;
 }
 
 interface Props {

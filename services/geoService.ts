@@ -58,3 +58,39 @@ export const reverseGeocode = async (lat: number, lon: number): Promise<string |
     return null;
   }
 };
+
+export const reverseGeocodeFull = async (lat: number, lon: number): Promise<{ name: string, countryCode: string } | null> => {
+  try {
+    checkLimit();
+    trackCall();
+
+    const latFixed = lat.toFixed(4);
+    const lonFixed = lon.toFixed(4);
+    
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latFixed}&lon=${lonFixed}&zoom=10`;
+    const headers = { 'User-Agent': 'BaroWeatherApp/1.0' };
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) return null;
+    
+    const data = await res.json();
+    if (!data || !data.address) return null;
+    
+    const name = data.address.city || 
+           data.address.town || 
+           data.address.village || 
+           data.address.municipality || 
+           data.address.suburb || 
+           null;
+    
+    const countryCode = data.address.country_code ? data.address.country_code.toUpperCase() : 'US';
+
+    if (name) {
+        return { name, countryCode };
+    }
+    return null;
+  } catch (e) {
+    console.error("Reverse geocoding full failed", e);
+    return null;
+  }
+};

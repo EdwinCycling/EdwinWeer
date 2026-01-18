@@ -48,6 +48,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
     const [routePoints, setRoutePoints] = useState<RoutePoint[]>([]);
     const [locationNames, setLocationNames] = useState<Record<number, string>>({});
     const [toast, setToast] = useState<string | null>(null);
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
     // Toast auto-hide
     useEffect(() => {
@@ -111,7 +112,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
 
                     points.push({
                         dist: Math.round(pt.distFromStart * 10) / 10,
-                        time: pointTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        time: pointTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
                         lat: pt.lat,
                         lon: pt.lon,
                         temp,
@@ -312,29 +313,189 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
 
     const handlePDF = async () => {
         if (!contentRef.current) return;
+        setToast(t('trip_planner.generating_pdf'));
+        setIsGeneratingPDF(true);
+        
         try {
-            const dataUrl = await toPng(contentRef.current, { 
+            // Wait for state change and re-render
+            await new Promise(r => setTimeout(r, 100));
+
+            const element = contentRef.current;
+            const mapContainer = mapContainerRef.current?.parentElement;
+            const originalMapHeight = mapContainer?.style.height;
+            const originalWidth = element.style.width;
+            const originalHeight = element.style.height;
+            const originalOverflow = element.style.overflow;
+            const originalMaxHeight = element.style.maxHeight;
+            const L = (window as any).L;
+
+            // Force a standard width for A4 consistency
+            element.style.width = '800px';
+            element.style.height = 'auto';
+            element.style.overflow = 'visible';
+            element.style.maxHeight = 'none';
+
+            // Hide controls for a cleaner PDF
+            const controls = element.querySelectorAll('.leaflet-control-container');
+            controls.forEach((c: any) => (c as HTMLElement).style.display = 'none');
+
+            // Increase map height for PDF
+            if (mapContainer && mapInstanceRef.current && L) {
+                mapContainer.style.height = '500px';
+                mapInstanceRef.current.invalidateSize();
+                
+                const latLngs = gpxRoute.map(p => [p.lat, p.lon]);
+                const polyline = L.polyline(latLngs);
+                mapInstanceRef.current.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+            }
+
+            // Wait for map and layout to stabilize
+            await new Promise(r => setTimeout(r, 1500));
+            
+            const dataUrl = await toPng(element, { 
                 cacheBust: true, 
-                backgroundColor: colors.bgPage
+                backgroundColor: colors.bgPage,
+                pixelRatio: 2,
+                style: {
+                    borderRadius: '0',
+                    boxShadow: 'none',
+                    height: 'auto',
+                    overflow: 'visible'
+                }
             });
+
+            // Create PDF in A4 Portrait
             const pdf = new jsPDF({
                 orientation: 'portrait',
-                unit: 'px',
-                format: [contentRef.current.offsetWidth, contentRef.current.offsetHeight]
+                unit: 'mm',
+                format: 'a4'
             });
-            pdf.addImage(dataUrl, 'PNG', 0, 0, contentRef.current.offsetWidth, contentRef.current.offsetHeight);
-            pdf.save('baro-trip.pdf');
-            setToast('PDF Gedownload!');
+
+            const imgProps = new Image();
+            imgProps.src = dataUrl;
+            await new Promise(r => imgProps.onload = r);
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            // Header height in mm
+            const headerHeight = 30;
+            
+            // Add Header Background
+            pdf.setFillColor(colors.bgPage);
+            pdf.rect(0, 0, pdfWidth, headerHeight, 'F');
+            
+            // Add Title
+            pdf.setFontSize(20);
+            pdf.setTextColor(colors.textMain);
+            pdf.text('Baro Ritplanner', 10, 15);
+            
+            pdf.setFontSize(10);
+            pdf.setTextColor(colors.textMuted);
+            pdf.text(`${tripOption.day === 'today' ? t('today') : t('tomorrow')} • ${tripOption.startTime} - ${tripOption.endTime}`, 10, 22);
+            pdf.text(`${gpxName || t('trip_planner.location')}`, 10, 27);
+
+            // Add QR Code (Google Maps Route)
+            try {
+                if (gpxRoute && gpxRoute.length > 0) {
+                    const start = gpxRoute[0];
+                    const end = gpxRoute[gpxRoute.length - 1];
+                    
+                    // Select up to 8 intermediate waypoints to stay within Google Maps URL limits
+                    const waypoints: string[] = [];
+                    if (gpxRoute.length > 2) {
+                        const step = Math.floor((gpxRoute.length - 2) / 8) || 1;
+                        for (let i = step; i < gpxRoute.length - 1; i += step) {
+                            if (waypoints.length < 8) {
+                                waypoints.push(`${gpxRoute[i].lat},${gpxRoute[i].lon}`);
+                            }
+                        }
+                    }
+
+                    const origin = `${start.lat},${start.lon}`;
+                    const destination = `${end.lat},${end.lon}`;
+                    const waypointsStr = waypoints.length > 0 ? `&waypoints=${waypoints.join('|')}` : '';
+                    
+                    // Use travelmode=bicycling as default for a ritplanner
+                    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypointsStr}&travelmode=bicycling`;
+                    // Use a higher margin and white background for the QR code
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(mapsUrl)}&bgcolor=ffffff&color=000000&margin=2`;
+                    
+                    const qrImg = new Image();
+                    qrImg.crossOrigin = "Anonymous";
+                    qrImg.src = qrUrl;
+                    await new Promise((resolve, reject) => {
+                        qrImg.onload = resolve;
+                        qrImg.onerror = reject;
+                        setTimeout(resolve, 2500); // Slightly longer timeout
+                    });
+                    
+                    if (qrImg.complete && qrImg.naturalWidth > 0) {
+                        // Draw white background for QR code to ensure scannability even on dark themes
+                        pdf.setFillColor(255, 255, 255);
+                        pdf.roundedRect(pdfWidth - 37, 3, 29, 29, 2, 2, 'F');
+                        pdf.addImage(qrImg, 'PNG', pdfWidth - 35, 5, 25, 25);
+                        pdf.setFontSize(7);
+                        pdf.setTextColor(0, 0, 0); // Force black text for the QR label
+                        pdf.text('Scan voor de route', pdfWidth - 35, 33);
+                    }
+                }
+            } catch (e) {
+                console.error('QR error', e);
+            }
+
+            // Calculate image dimensions to fit A4
+            const imgWidth = pdfWidth;
+            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+            
+            // Handle multiple pages
+            let heightLeft = imgHeight;
+            let position = 0;
+            
+            // First page content (starts after header)
+            pdf.addImage(dataUrl, 'PNG', 0, headerHeight, imgWidth, imgHeight);
+            heightLeft -= (pdfHeight - headerHeight);
+            
+            // Additional pages if needed
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                // Fill background of new page
+                pdf.setFillColor(colors.bgPage);
+                pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+                pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pdfHeight;
+            }
+            
+            // Restore styles
+            element.style.width = originalWidth;
+            element.style.height = originalHeight;
+            element.style.overflow = originalOverflow;
+            element.style.maxHeight = originalMaxHeight;
+            controls.forEach((c: any) => (c as HTMLElement).style.display = '');
+            setIsGeneratingPDF(false);
+            
+            if (mapContainer && mapInstanceRef.current && L) {
+                mapContainer.style.height = originalMapHeight || '';
+                mapInstanceRef.current.invalidateSize();
+                const latLngs = gpxRoute.map(p => [p.lat, p.lon]);
+                const polyline = L.polyline(latLngs);
+                mapInstanceRef.current.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+            }
+
+            pdf.save(`baro-ritplanner-${new Date().toISOString().split('T')[0]}.pdf`);
+            setToast(t('trip_planner.pdf_ready'));
         } catch (e) {
             console.error(e);
-            setToast('Fout bij PDF maken');
+            setIsGeneratingPDF(false);
+            setToast(t('trip_planner.pdf_error'));
         }
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[1000] flex flex-col bg-bg-page/30 backdrop-blur-md animate-in fade-in duration-200 max-h-screen">
+        <div className="fixed inset-0 z-[3000] flex flex-col bg-bg-page/30 backdrop-blur-md animate-in fade-in duration-200 max-h-screen">
             {toast && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2000] bg-bg-card text-text-main border border-border-color px-4 py-2 rounded-full shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-4">
                     {toast}
@@ -384,101 +545,90 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                     </div>
                 </div>
 
-                <div className="h-64 rounded-2xl overflow-hidden shadow-lg border border-border-color relative z-0">
+                <div className="h-80 rounded-2xl overflow-hidden shadow-lg border border-border-color relative z-0">
                      <div ref={mapContainerRef} className="h-full w-full bg-bg-page" />
                 </div>
 
-                <div className="bg-bg-card rounded-2xl border border-border-color overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-text-muted uppercase bg-bg-page">
-                                <tr>
-                                    <th className="px-4 py-3">{t('dist')} / {t('time')}</th>
-                                    <th className="px-4 py-3">{t('wind_direction')}</th>
-                                    <th className="px-4 py-3">{t('wind')}</th>
-                                    <th className="px-4 py-3">{t('finder.param.wind_gusts')}</th>
-                                    <th className="px-4 py-3">{t('temp')}</th>
-                                    <th className="px-4 py-3">{t('rain')}</th>
-                                    <th className="px-4 py-3">{t('sun')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border-color text-text-main">
-                                {routePoints.map((pt, i) => (
-                                    <React.Fragment key={i}>
-                                        {locationNames[i] && (
-                                            <tr className="bg-bg-page">
-                                                <td colSpan={7} className="px-4 py-2 font-bold text-xs text-text-main uppercase tracking-wider">
-                                                    <div className="flex items-center flex-wrap gap-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="flex items-center justify-center w-5 h-5 bg-accent-primary/10 text-accent-primary rounded-full text-[10px] font-bold border border-accent-primary/20">
-                                                                {Object.keys(locationNames).map(Number).sort((a,b)=>a-b).indexOf(i) + 1}
-                                                            </div>
-                                                            <span>📍</span> 
-                                                            <span>{locationNames[i]}</span>
-                                                            <span className="text-text-muted font-normal ml-1">
-                                                                (± {pt.time})
-                                                            </span>
-                                                        </div>
-                                                        <div className="hidden md:flex items-center gap-3 text-text-muted font-normal normal-case border-l border-border-color pl-3">
-                                                            <div className="flex items-center gap-1"><Icon name="thermostat" className="text-xs" /> {Math.round(pt.temp)}°</div>
-                                                            <div className="flex items-center gap-1"><Icon name="air" className="text-xs" /> {convertWind(pt.windSpeed, settings.windUnit || 'kmh')} <span className="text-[10px]">{settings.windUnit || 'km/h'}</span></div>
-                                                            <div className="flex items-center gap-1"><Icon name="water_drop" className="text-xs" /> {pt.precip > 0 ? `${pt.precip}%` : '0%'}</div>
-                                                            <div className="flex items-center gap-1"><Icon name="wb_sunny" className="text-xs" /> {Math.round(pt.sunChance)}%</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                        <tr className="hover:bg-bg-page transition-colors">
-                                            <td className="px-4 py-3 font-medium">
-                                                <div>{pt.dist} km</div>
-                                                <div className="text-xs text-text-muted font-normal">{pt.time}</div>
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div 
-                                                        className={`px-2 py-1 rounded text-xs font-bold ${
-                                                            pt.relativeWind === 'tail' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' :
-                                                            pt.relativeWind === 'head' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' :
-                                                            'bg-bg-page text-text-muted'
-                                                        }`}
-                                                    >
-                                                        {pt.relativeWind === 'tail' ? t('wind.tail') : pt.relativeWind === 'head' ? t('wind.head') : t('wind.side')}
-                                                    </div>
-                                                    <div style={{ transform: `rotate(${pt.windDir}deg)` }}>
-                                                        <Icon name="arrow_upward" className="text-xs opacity-50" />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 font-bold">
-                                                {convertWind(pt.windSpeed, settings.windUnit || 'kmh')}
-                                            </td>
-                                            <td className="px-4 py-3 font-bold text-text-muted">
-                                                {(() => {
-                                                    const unit = settings.windUnit || 'kmh';
-                                                    const val = convertWind(pt.windGusts, unit);
-                                                    if (unit === 'bft') {
-                                                        const kmh = Math.round(pt.windGusts);
-                                                        return <span>{val} <span className="text-[10px] font-normal opacity-70">({kmh} km/h)</span></span>;
-                                                    }
-                                                    return val;
-                                                })()}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {Math.round(pt.temp)}°
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {pt.precip > 0 ? `${pt.precip}%` : '-'}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                {Math.round(pt.sunChance)}%
-                                            </td>
+                <div className={`grid ${isGeneratingPDF ? 'grid-cols-2 gap-2' : 'grid-cols-1 lg:grid-cols-2 gap-4'}`}>
+                    {[
+                        { points: routePoints.slice(0, Math.ceil(routePoints.length / 2)), id: 'left' },
+                        { points: routePoints.slice(Math.ceil(routePoints.length / 2)), id: 'right' }
+                    ].map((col, colIdx) => (
+                        <div key={col.id} className="bg-bg-card rounded-2xl border border-border-color overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-[10px] md:text-xs text-left border-collapse">
+                                    <thead className="text-[9px] text-text-muted uppercase bg-bg-page border-b border-border-color">
+                                        <tr>
+                                            <th className="px-1.5 py-2 font-bold">{t('dist')}</th>
+                                            <th className="px-0.5 py-2 text-center font-bold">Dir</th>
+                                            <th className="px-0.5 py-2 text-center font-bold">Wnd</th>
+                                            <th className="px-0.5 py-2 text-center font-bold">Gst</th>
+                                            <th className="px-0.5 py-2 text-center font-bold">Tmp</th>
+                                            <th className="px-0.5 py-2 text-center font-bold">Rn</th>
+                                            <th className="px-0.5 py-2 text-center font-bold">Sun</th>
                                         </tr>
-                                    </React.Fragment>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-border-color text-text-main">
+                                        {col.points.map((pt, i) => {
+                                            const originalIndex = colIdx === 1 ? i + Math.ceil(routePoints.length / 2) : i;
+                                            return (
+                                                <React.Fragment key={originalIndex}>
+                                                    {locationNames[originalIndex] && (
+                                                        <tr className="bg-bg-page/50">
+                                                            <td colSpan={7} className="px-1.5 py-1 font-bold text-[8px] text-accent-primary uppercase tracking-wider">
+                                                                <div className="flex items-center gap-1">
+                                                                    <span>📍</span> {locationNames[originalIndex]}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    <tr className="hover:bg-bg-page/30 transition-colors">
+                                                        <td className="px-1.5 py-1.5 font-medium whitespace-nowrap">
+                                                            <div className="flex flex-col">
+                                                                <span>{pt.dist} km</span>
+                                                                <span className="text-[8px] text-text-muted font-normal">{pt.time}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-0.5 py-1.5">
+                                                            <div className="flex flex-col items-center gap-0.5">
+                                                                <div 
+                                                                    className={`px-1 py-0.5 rounded-[3px] text-[7px] font-black leading-none text-white shadow-sm ${
+                                                                        pt.relativeWind === 'tail' ? 'bg-green-500' :
+                                                                        pt.relativeWind === 'head' ? 'bg-red-500' :
+                                                                        'bg-orange-500'
+                                                                    }`}
+                                                                >
+                                                                    {pt.relativeWind === 'tail' ? 'MEE' : pt.relativeWind === 'head' ? 'TEGEN' : 'ZIJ'}
+                                                                </div>
+                                                                <div style={{ transform: `rotate(${pt.windDir}deg)` }} className="flex items-center justify-center">
+                                                                    <Icon name="arrow_upward" className="text-[10px] text-text-main font-bold" />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-0.5 py-1.5 font-bold text-center">
+                                                            {convertWind(pt.windSpeed, settings.windUnit || 'kmh')}
+                                                        </td>
+                                                        <td className="px-0.5 py-1.5 font-bold text-text-muted text-center">
+                                                            {convertWind(pt.windGusts, settings.windUnit || 'kmh')}
+                                                        </td>
+                                                        <td className="px-0.5 py-1.5 text-center">
+                                                            {Math.round(pt.temp)}°
+                                                        </td>
+                                                        <td className="px-0.5 py-1.5 text-center">
+                                                            {pt.precip > 0 ? `${pt.precip}%` : '-'}
+                                                        </td>
+                                                        <td className="px-0.5 py-1.5 text-center">
+                                                            {Math.round(pt.sunChance)}%
+                                                        </td>
+                                                    </tr>
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
             </div>
@@ -490,10 +640,10 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                 <button onClick={handleCopy} className="flex-1 bg-bg-page hover:bg-border-color text-text-main py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
                     <Icon name="content_copy" /> {t('copy')}
                 </button>
-                <button onClick={handlePDF} className="flex-1 bg-bg-page hover:bg-border-color text-text-main py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
-                    <Icon name="picture_as_pdf" /> {t('pdf')}
+                <button onClick={handlePDF} className="flex-1 bg-gradient-to-r from-primary to-accent-primary hover:opacity-90 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                    <Icon name="picture_as_pdf" /> {t('trip_planner.download_report')}
                 </button>
-                 <button onClick={onClose} className="w-16 bg-text-main text-bg-card py-3 rounded-xl font-bold transition-colors flex items-center justify-center">
+                 <button onClick={onClose} className="w-16 bg-bg-page hover:bg-border-color text-text-main py-3 rounded-xl font-bold transition-colors flex items-center justify-center">
                     <Icon name="close" />
                 </button>
             </div>

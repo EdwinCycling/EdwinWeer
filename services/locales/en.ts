@@ -47,6 +47,10 @@ export const en: Dictionary = {
     'trip_planner.your_choice': 'Your choice',
     'trip_planner.stars': 'Rating',
     'trip_planner.baro_index': 'Baro Index',
+    'trip_planner.download_report': 'Download Report',
+    'trip_planner.generating_pdf': 'Generating report...',
+    'trip_planner.pdf_ready': 'Report downloaded!',
+    'trip_planner.pdf_error': 'Error creating report',
 
     'nav.current': 'Current',
     'nav.forecast': 'Forecast',
@@ -607,6 +611,9 @@ export const en: Dictionary = {
     'records.monthly_summary': 'Monthly summary',
     'records.intermediate_status': 'Intermediate status',
     'records.temperature_graph': 'Temperature',
+    'records.frequency_max_title': 'Max. Temp. Frequency',
+    'records.frequency_min_title': 'Min. Temp. Frequency',
+    'records.dashboard': 'Dashboard',
 
     // Pricing
     'pricing.title': 'Pricing',
@@ -953,7 +960,10 @@ export const en: Dictionary = {
     'settings.theme': 'Theme',
     'settings.language': 'Language',
     'settings.time_format': 'Time format',
-    'settings.calendar.heatmap': 'Show heatmap',
+    'settings.calendar.heatmap': 'Dashboard',
+    'settings.country': 'Country selection (for holidays)',
+    'records.holidays': 'Holidays',
+    'records.holiday_weather': 'Holiday weather',
     'settings.calendar.details': 'Show details',
     'settings.favorites': 'Favorite cities',
     'settings.add_city': 'Add city...',

@@ -388,7 +388,7 @@ export const StarMapModal: React.FC<StarMapModalProps> = ({
                     </div>
 
                     {/* Map */}
-                    <div className="relative w-[95vw] md:w-[80vw] max-w-[1000px] aspect-square rounded-full overflow-hidden border-4 border-white/5 shadow-2xl bg-[#0b1a26] mt-16 md:mt-20">
+                    <div className="relative w-[95vw] md:w-[80vw] max-w-[1000px] aspect-square rounded-full overflow-hidden border-4 border-white/5 shadow-2xl bg-[#0b1a26] mt-4 md:mt-20 max-h-[75vh]">
                          <div 
                             key={JSON.stringify(appliedConfig)}
                             id="celestial-map" 

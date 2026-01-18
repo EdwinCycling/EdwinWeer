@@ -564,6 +564,7 @@ export const es: Dictionary = {
     'records.monthly_summary': 'Resumen mensual',
     'records.intermediate_status': 'Estado intermedio',
     'records.temperature_graph': 'Temperatura',
+    'records.dashboard': 'Tablero',
 
     // Pricing
     'pricing.title': 'Precios',
@@ -809,7 +810,10 @@ export const es: Dictionary = {
     'settings.theme': 'Tema',
     'settings.language': 'Idioma',
     'settings.time_format': 'Formato de hora',
-    'settings.calendar.heatmap': 'Mostrar mapa de calor',
+    'settings.calendar.heatmap': 'Tablero',
+    'settings.country': 'Selección de país (para días festivos)',
+    'records.holidays': 'Días festivos',
+    'records.holiday_weather': 'Tiempo en días festivos',
     'settings.calendar.details': 'Mostrar detalles',
     'settings.favorites': 'Ciudades favoritas',
     'settings.add_city': 'Añadir ciudad...',

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint, calculateComfortScore, ComfortScore } from '../services/weatherService';
+import { fetchHolidaysSmart, Holiday, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint, calculateComfortScore, ComfortScore } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode, loadEnsembleModel } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
@@ -36,6 +36,16 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const [showComfortModal, setShowComfortModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+
+  useEffect(() => {
+      const loadHolidays = async () => {
+          const countryCode = location.country || settings.countryCode || 'NL';
+          const h = await fetchHolidaysSmart(countryCode);
+          setHolidays(h);
+      };
+      loadHolidays();
+  }, [location.country, settings.countryCode]);
 
   const t = (key: string) => getTranslation(key, settings.language);
 
@@ -284,6 +294,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
 
           let color = 'from-yellow-400 to-amber-400';
 
+          // Find holiday
+          const dateStr = date.toISOString().split('T')[0];
+          const holiday = holidays.find(h => h.date === dateStr);
+
           return {
               day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
               icon: mapWmoCodeToIcon(code),
@@ -298,7 +312,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               windDir,
               activityScores,
               comfort,
-              dayParts
+              dayParts,
+              holiday
           };
       });
   };
@@ -333,8 +348,13 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                     </button>
                </foreignObject>
                <foreignObject x={-15} y={-45} width={30} height={30}>
-                   <div className="flex justify-center items-center h-full w-full">
+                   <div className="flex justify-center items-center h-full w-full relative">
                        <Icon name={data.icon} className="text-2xl text-text-main" />
+                       {data.holiday && (
+                           <div className="absolute -top-1 -right-1 bg-accent-primary rounded-full p-[2px] shadow-sm border border-bg-page flex items-center justify-center">
+                              <Icon name="celebration" className="text-[8px] text-white" />
+                           </div>
+                       )}
                    </div>
                </foreignObject>
                <text x={0} y={-5} textAnchor="middle" fill={colors.textMuted} fontSize={10} className="font-bold uppercase">
@@ -720,6 +740,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                             <div className="flex flex-col">
                                                 <span className="text-xs sm:text-sm font-bold text-text-main whitespace-nowrap">{d.day.split(' ')[0]}</span>
                                                 <span className="text-[10px] text-text-muted whitespace-nowrap">{d.day.split(' ').slice(1).join(' ')}</span>
+                                                {d.holiday && (
+                                                    <div className="flex items-center gap-1 mt-0.5 text-accent-primary">
+                                                        <Icon name="celebration" className="text-[10px]" />
+                                                        <span className="text-[9px] font-medium truncate max-w-[80px]">{d.holiday.localName}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-2 py-3 text-center border-y border-border-color/30">
@@ -877,6 +903,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                             <div>
                                                 <p className="font-medium flex items-center gap-1 truncate">
                                                     {d.day}
+                                                    {d.holiday && <Icon name="celebration" className="text-sm text-accent-primary flex-shrink-0" />}
                                                     {d.feelsLike < 0 && (
                                                         <Icon name="ac_unit" className="text-[14px] text-sky-500 flex-shrink-0" />
                                                     )}
@@ -884,6 +911,9 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                         <Icon name="whatshot" className="text-[14px] text-orange-500 flex-shrink-0" />
                                                     )}
                                                 </p>
+                                                {d.holiday && (
+                                                    <p className="text-[10px] text-accent-primary font-medium truncate max-w-[150px] -mt-0.5">{d.holiday.localName}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -951,6 +981,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                          <div className="flex flex-col">
                                              <span className="font-bold text-sm truncate">{d.day.split(' ')[0]}</span>
                                              <span className="text-[10px] text-text-muted whitespace-nowrap">{d.day.split(' ').slice(1).join(' ')}</span>
+                                             {d.holiday && (
+                                                <div className="flex items-center gap-0.5 text-accent-primary mt-0.5">
+                                                     <Icon name="celebration" className="text-[10px]" />
+                                                     <span className="text-[9px] truncate max-w-[60px] font-medium">{d.holiday.localName}</span>
+                                                </div>
+                                             )}
                                          </div>
                                          <div className="flex flex-col items-center">
                                              <button

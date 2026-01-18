@@ -738,7 +738,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                   </h3>
                   <div className="w-full h-[500px]">
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                          <ComposedChart data={processChartData.data} margin={{ top: 10, right: isMobile ? 0 : 30, left: isMobile ? -20 : 0, bottom: 10 }}>
+                          <ComposedChart data={processChartData.data} margin={{ top: 10, right: isMobile ? 10 : 30, left: 0, bottom: 10 }}>
                               <defs>
                                   <linearGradient id="gradientGrid" x1="0" y1="0" x2="0" y2="1">
                                       <stop offset="0%" stopColor="#888" stopOpacity={0.1} />
@@ -749,19 +749,20 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                               {/* Custom Grid for Temperature */}
                               {isTemp ? (
                                   <>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={false} stroke="rgba(128,128,128,0.2)" />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={false} stroke={colors.textMuted} strokeOpacity={0.2} />
                                     {Array.from({ length: 111 }, (_, i) => i - 50).map(temp => (
                                         <ReferenceLine 
                                             key={`grid-${temp}`} 
                                             y={temp} 
-                                            stroke={temp % 5 === 0 ? "rgba(128,128,128,0.3)" : "rgba(128,128,128,0.1)"}
+                                            stroke={colors.textMuted}
+                                            strokeOpacity={temp % 5 === 0 ? 0.3 : 0.1}
                                             strokeWidth={temp % 5 === 0 ? 1.5 : 0.5}
                                             ifOverflow="hidden"
                                         />
                                     ))}
                                   </>
                               ) : (
-                                  <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke="rgba(128,128,128,0.2)" />
+                                  <CartesianGrid strokeDasharray="3 3" vertical={timeStep === 'daily'} horizontal={true} stroke={colors.textMuted} strokeOpacity={0.2} />
                               )}
 
                               {isTemp && (
@@ -818,7 +819,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                       stroke="rgba(128,128,128,0)"
                                   />
                               )}
-                              <YAxis stroke="rgba(128,128,128,0.5)" tick={{ fontSize: 10 }} unit={getUnitLabel(selectedVariable)} width={40} />
+                              <YAxis stroke={colors.textMuted} strokeOpacity={0.5} tick={{ fontSize: 10 }} unit={getUnitLabel(selectedVariable)} width={40} />
 
                               {viewMode === 'spread' && !isDirection && (
                                   <Area type="monotone" dataKey="range" stroke="none" fill={chartColor} fillOpacity={0.2} />

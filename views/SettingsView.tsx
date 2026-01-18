@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, Location, AppTheme, AppLanguage, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
+import { CountrySelector } from '../components/CountrySelector';
 import { getTranslation } from '../services/translations';
-import { searchCityByName } from '../services/geoService';
+import { searchCityByName, reverseGeocodeFull } from '../services/geoService';
 import { getUsage, UsageStats, getLimit } from '../services/usageService';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
@@ -507,6 +508,15 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                             12h
                                         </button>
                                     </div>
+                                </div>
+
+                                {/* Country Selection */}
+                                <div className="p-4 border-t border-border-color">
+                                    <CountrySelector 
+                                        value={settings.countryCode || 'US'} 
+                                        onChange={(code) => updateSetting('countryCode', code)}
+                                        language={settings.language}
+                                    />
                                 </div>
 
                                 {/* Timezone */}

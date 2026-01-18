@@ -6,7 +6,7 @@ import { getVisiblePlanets } from '../services/astronomyService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
 import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, getBeaufort, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
-import { searchCityByName, reverseGeocode } from '../services/geoService';
+import { searchCityByName, reverseGeocode, reverseGeocodeFull } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
@@ -960,22 +960,32 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                  setLoadingCity(true);
                                  geo.getCurrentPosition(async (pos) => {
                                      const lat = pos.coords.latitude;
-                                     const lon = pos.coords.longitude;
-                                     let name = t('my_location');
-                                     
-                                     // Try to get actual city name
-                                 const cityName = await reverseGeocode(lat, lon);
-                                 if (cityName) {
-                                     name = cityName;
-                                 }
+                                    const lon = pos.coords.longitude;
+                                    let name = t('my_location');
+                                    let countryCode = '';
+                                    
+                                    // Try to get actual city name
+                                    try {
+                                        const result = await reverseGeocodeFull(lat, lon);
+                                        if (result) {
+                                            name = result.name;
+                                            countryCode = result.countryCode;
+                                            
+                                            if (onUpdateSettings && countryCode && countryCode !== settings.countryCode) {
+                                                onUpdateSettings({ ...settings, countryCode });
+                                            }
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
 
-                                     const loc: Location = {
-                                         name: name,
-                                         country: "",
-                                         lat: lat,
-                                         lon: lon,
-                                         isCurrentLocation: true
-                                     };
+                                    const loc: Location = {
+                                        name: name,
+                                        country: countryCode,
+                                        lat: lat,
+                                        lon: lon,
+                                        isCurrentLocation: true
+                                    };
 
                                      saveLastKnownMyLocation(loc);
                                      setLastKnownMyLocation(loc);

@@ -61,7 +61,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     pressureUnit: PressureUnit.HPA,
     favorites: DEFAULT_FAVORITES,
     theme: 'dark',
-    language: 'en',
+    language: 'nl',
     timeFormat: '24h',
     enabledActivities: DEFAULT_ENABLED_ACTIVITIES,
     historicalMode: 'single',
@@ -78,6 +78,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
         iceStreakTemp: 0
     },
     weekStartDay: 'monday',
+    countryCode: 'NL',
     climatePeriodType: '30year',
     calendar: {
         showHeatmap: true,

@@ -54,6 +54,96 @@ export const throttledFetch = async (url: string) => {
 };
 
 
+export interface Holiday {
+    date: string;
+    localName: string;
+    name: string;
+    countryCode: string;
+    fixed: boolean;
+    global: boolean;
+    counties: string[] | null;
+    launchYear: number | null;
+    types: string[];
+}
+
+export const fetchHolidays = async (year: number, countryCode: string): Promise<Holiday[]> => {
+    // Nager Date API
+    // GET /api/v3/PublicHolidays/{Year}/{CountryCode}
+    const url = `https://date.nager.at/api/v3/publicholidays/${year}/${countryCode}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+             // Fallback or empty if not found
+             return [];
+        }
+        return await response.json();
+    } catch (e) {
+        console.error("Error fetching holidays:", e);
+        return [];
+    }
+};
+
+export const fetchHolidaysSmart = async (countryCode: string): Promise<Holiday[]> => {
+    const CACHE_KEY = `holidays_smart_${countryCode}`;
+    const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    
+    // 1. Try Load from Local Storage
+    try {
+        const cachedStr = localStorage.getItem(CACHE_KEY);
+        if (cachedStr) {
+            const cached = JSON.parse(cachedStr);
+            // Check expiry and if it covers the correct central year
+            if (Date.now() - cached.timestamp < CACHE_EXPIRY && cached.centralYear === currentYear) {
+                return cached.holidays;
+            }
+        }
+    } catch (e) {
+        console.error("Error reading holiday cache", e);
+    }
+
+    // 2. Fetch if needed
+    try {
+        // We need Dec Y-1, All Y, Jan Y+1
+        const [prev, curr, next] = await Promise.all([
+            fetchHolidays(currentYear - 1, countryCode),
+            fetchHolidays(currentYear, countryCode),
+            fetchHolidays(currentYear + 1, countryCode)
+        ]);
+
+        // Filter
+        const holidaysPrev = prev.filter(h => {
+            const d = new Date(h.date);
+            return d.getMonth() === 11; // December
+        });
+
+        // Current year: take all
+        const holidaysCurr = curr;
+
+        const holidaysNext = next.filter(h => {
+            const d = new Date(h.date);
+            return d.getMonth() === 0; // January
+        });
+
+        const combined = [...holidaysPrev, ...holidaysCurr, ...holidaysNext];
+
+        // Store
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            timestamp: Date.now(),
+            centralYear: currentYear,
+            holidays: combined
+        }));
+
+        return combined;
+
+    } catch (e) {
+        console.error("Error in smart holiday fetch:", e);
+        return [];
+    }
+};
+
 // --- UNIT CONVERSION HELPERS ---
 
 export const convertTemp = (tempC: number, unit: TempUnit): number => {
@@ -422,8 +512,8 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   // Use Archive if end date is before today (yesterday or older), or if range is long
   const useArchive = end < today || spanDays > 40;
   
-  const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration,pressure_msl';
-  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,daylight_duration,sunshine_duration';
+  const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration,pressure_msl,cloud_cover';
+  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_speed_10m_mean,daylight_duration,sunshine_duration,cloud_cover_mean';
 
   let url = '';
 
@@ -485,7 +575,7 @@ export const fetchHistoricalFull = async (lat: number, lon: number, date: string
     // Variables matching CurrentWeatherView as much as possible
     const hourlyVars = 'temperature_2m,weather_code,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,precipitation,visibility,snow_depth,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_80m,soil_temperature_0cm,soil_moisture_0_to_1cm,vapour_pressure_deficit,temperature_80m,temperature_120m,temperature_180m,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,soil_moisture_27_to_81cm,wind_speed_120m,wind_speed_180m,wind_direction_80m,wind_direction_120m,wind_direction_180m,sunshine_duration';
     
-    const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
+    const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_gusts_10m_max,wind_speed_10m_max,wind_speed_10m_mean,wind_direction_10m_dominant,daylight_duration,sunshine_duration,et0_fao_evapotranspiration';
   
     let url = '';
   

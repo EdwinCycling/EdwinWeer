@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, WindUnit } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchHistorical, convertTemp, convertTempPrecise, convertWind, convertPrecip, fetchForecast, fetchYearData, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore, calculateJagTi, calculateHeatIndex } from '../services/weatherService';
+import { fetchHistorical, convertTemp, convertTempPrecise, convertWind, convertPrecip, fetchForecast, fetchYearData, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore, calculateJagTi, calculateHeatIndex, fetchHolidays, fetchHolidaysSmart, Holiday } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, DEFAULT_SETTINGS } from '../services/storageService';
 import { HeatmapComponent } from '../components/HeatmapComponent';
 import { TemperatureDistributionChart } from '../components/TemperatureDistributionChart';
@@ -15,7 +15,7 @@ import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { getTranslation } from '../services/translations';
-import { reverseGeocode } from '../services/geoService';
+import { reverseGeocode, reverseGeocodeFull } from '../services/geoService';
 import {
   LineChart,
   Line,
@@ -93,6 +93,12 @@ interface YearlySequences {
   niceStreak: Streak | null;
   coldStreak: Streak | null;
   iceStreak: Streak | null;
+  streakMaxBelowZero: Streak | null;
+  streakMinBelowZero: Streak | null;
+  streakMaxBelowFive: Streak | null;
+  streakMaxAbove25: Streak | null;
+  streakMaxAbove30: Streak | null;
+  streakMaxAbove35: Streak | null;
 }
 
 interface DiverseRecord {
@@ -165,11 +171,26 @@ interface DailyData {
     minTemp: number | null;
     rain: number | null;
     sun: number | null;
+    cloudCover: number | null;
+    windGust: number | null;
+    windSpeed: number | null;
     isWeekend: boolean;
 }
 
 export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
+
+  const formatDateTime = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = { 
+          weekday: 'long', 
+          day: 'numeric', 
+          month: 'long',
+          hour: '2-digit',
+          minute: '2-digit'
+      };
+      return now.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', options);
+  };
   const [recordType, setRecordType] = useState<'12month' | 'yearly' | 'monthly' | 'calendar' | 'heatmap'>('yearly');
   const [heatmapData, setHeatmapData] = useState<{ dates: string[], maxTemps: (number|null)[], minTemps: (number|null)[], precip: (number|null)[], sun: (number|null)[], daylight: (number|null)[] } | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -215,6 +236,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [currentWeather, setCurrentWeather] = useState<any>(null);
   const [showComfortModal, setShowComfortModal] = useState(false);
   const [showFeelsLikeModal, setShowFeelsLikeModal] = useState(false);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   useEffect(() => {
     const loadCurrent = async () => {
@@ -382,6 +404,23 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setMonthlyStats(null);
     setDailyData([]);
     setHeatmapData(null);
+    setHolidays([]);
+
+    if (recordType === 'yearly') {
+        fetchHolidays(selectedYear, settings.countryCode || 'NL').then(setHolidays);
+    }
+    
+    if (recordType === '12month') {
+        const now = new Date();
+        const y1 = now.getFullYear();
+        const y2 = y1 - 1;
+        Promise.all([
+            fetchHolidays(y1, settings.countryCode || 'NL'),
+            fetchHolidays(y2, settings.countryCode || 'NL')
+        ]).then(([h1, h2]) => {
+            setHolidays([...h1, ...h2]);
+        });
+    }
 
     if (recordType === 'heatmap') {
         try {
@@ -463,6 +502,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       const maxTemps: number[] | undefined = daily?.temperature_2m_max;
       const minTemps: number[] | undefined = daily?.temperature_2m_min;
       const windGustValues: number[] | undefined = daily?.wind_gusts_10m_max;
+      const windSpeedValues: number[] | undefined = daily?.wind_speed_10m_mean;
       const rainValues: number[] | undefined = daily?.precipitation_sum;
       const sunshineValues: number[] | undefined = daily?.sunshine_duration;
       const daylightValues: number[] | undefined = daily?.daylight_duration;
@@ -470,11 +510,71 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       const hourly = data?.hourly;
       const hourlyTimes: string[] | undefined = hourly?.time;
       const hourlyTemps: number[] | undefined = hourly?.temperature_2m;
+      const hourlyCloudCover: number[] | undefined = hourly?.cloud_cover;
+
+      const cloudCoverMeanValues: number[] | undefined = daily?.cloud_cover_mean;
 
       if (recordType !== 'monthly' && recordType !== 'calendar' && (!times || !maxTemps || !minTemps || times.length === 0)) {
         setError(t('errors.no_data'));
         setLoading(false);
         return;
+      }
+
+      if (recordType === 'yearly' || recordType === '12month') {
+          const dailyList: DailyData[] = [];
+          if (times && maxTemps && minTemps) {
+              for(let i=0; i<times.length; i++) {
+                  const d = times[i];
+                  const tMax = maxTemps[i];
+                  const tMin = minTemps[i];
+                  const rain = rainValues ? rainValues[i] : 0;
+                  const sun = sunshineValues ? sunshineValues[i] : 0;
+                  const daylight = daylightValues ? daylightValues[i] : 0;
+                  const windGust = windGustValues ? windGustValues[i] : 0;
+                  const windSpeed = windSpeedValues ? windSpeedValues[i] : 0;
+                  
+                  let cloudCover = cloudCoverMeanValues ? cloudCoverMeanValues[i] : null;
+                  
+                  // If not in daily, try to calculate from hourly
+                  if (cloudCover === null && hourlyCloudCover && hourlyTimes) {
+                      const dayStart = `${d}T00:00`;
+                      const dayEnd = `${d}T23:59`;
+                      let sum = 0;
+                      let count = 0;
+                      for (let j = 0; j < hourlyTimes.length; j++) {
+                          if (hourlyTimes[j] >= dayStart && hourlyTimes[j] <= dayEnd) {
+                              if (typeof hourlyCloudCover[j] === 'number') {
+                                  sum += hourlyCloudCover[j];
+                                  count++;
+                              }
+                          }
+                      }
+                      if (count > 0) cloudCover = sum / count;
+                  }
+                  
+                  if (typeof tMax !== 'number' || typeof tMin !== 'number') continue;
+                  
+                  let sunPct = 0;
+                  if (daylight > 0) {
+                      sunPct = (sun / daylight) * 100;
+                      if (sunPct > 100) sunPct = 100;
+                  }
+                  
+                  dailyList.push({
+                      day: parseInt(d.split('-')[2]),
+                      date: d,
+                      maxTemp: convertTemp(tMax, settings.tempUnit),
+                      minTemp: convertTemp(tMin, settings.tempUnit),
+                      rain: convertPrecip(rain || 0, settings.precipUnit),
+                      sun: sunPct,
+                      cloudCover: cloudCover,
+                      windGust: windGust,
+                      windSpeed: windSpeed,
+                      isWeekend: new Date(d).getDay() === 0 || new Date(d).getDay() === 6
+                  });
+              }
+          }
+          setDailyData(dailyList);
       }
 
       if (recordType === 'monthly' || recordType === 'calendar') {
@@ -503,15 +603,38 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           
           const dailyDataList: DailyData[] = [];
 
-          const dataMap = new Map<string, { tMax: number, tMin: number, rain: number, sun: number, daylight: number }>();
+          const dataMap = new Map<string, { tMax: number, tMin: number, rain: number, sun: number, cloudCover: number | null, daylight: number, windGust: number, windSpeed: number }>();
           if (times && maxTemps && minTemps) {
               for(let i=0; i<times.length; i++) {
-                  dataMap.set(times[i], {
+                  const d = times[i];
+                  let cloudCover = cloudCoverMeanValues ? cloudCoverMeanValues[i] : null;
+
+                  // If not in daily, try to calculate from hourly
+                  if (cloudCover === null && hourlyCloudCover && hourlyTimes) {
+                      const dayStart = `${d}T00:00`;
+                      const dayEnd = `${d}T23:59`;
+                      let sum = 0;
+                      let count = 0;
+                      for (let j = 0; j < hourlyTimes.length; j++) {
+                          if (hourlyTimes[j] >= dayStart && hourlyTimes[j] <= dayEnd) {
+                              if (typeof hourlyCloudCover[j] === 'number') {
+                                  sum += hourlyCloudCover[j];
+                                  count++;
+                              }
+                          }
+                      }
+                      if (count > 0) cloudCover = sum / count;
+                  }
+
+                  dataMap.set(d, {
                       tMax: maxTemps[i],
                       tMin: minTemps[i],
                       rain: rainValues ? rainValues[i] : 0,
                       sun: sunshineValues ? sunshineValues[i] : 0,
-                      daylight: daylightValues ? daylightValues[i] : 0
+                      cloudCover: cloudCover,
+                      daylight: daylightValues ? daylightValues[i] : 0,
+                      windGust: windGustValues ? windGustValues[i] : 0,
+                      windSpeed: windSpeedValues ? windSpeedValues[i] : 0
                   });
               }
           }
@@ -526,7 +649,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               const entry = dataMap.get(dateStr);
               
               if (entry && typeof entry.tMax === 'number' && typeof entry.tMin === 'number') {
-                  const { tMax, tMin, rain, sun, daylight } = entry;
+                  const { tMax, tMin, rain, sun, cloudCover, daylight, windGust, windSpeed } = entry;
 
                   if (tMax > maxTempHighVal) { maxTempHighVal = tMax; maxTempHighDate = dateStr; }
                   if (tMax < maxTempLowVal) { maxTempLowVal = tMax; maxTempLowDate = dateStr; }
@@ -555,6 +678,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       minTemp: convertTemp(tMin, settings.tempUnit),
                       rain: convertPrecip(rain || 0, settings.precipUnit),
                       sun: sunPct,
+                      cloudCover: cloudCover,
+                      windGust: windGust,
+                      windSpeed: windSpeed,
                       isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6
                   });
               } else {
@@ -565,6 +691,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       minTemp: null,
                       rain: null,
                       sun: null,
+                      cloudCover: null,
+                      windGust: null,
+                      windSpeed: null,
                       isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6
                   });
               }
@@ -762,7 +891,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           extremes: null // Will be populated in yearly section if needed, or initialized here
       });
 
-      if (recordType === 'yearly') {
+      if (recordType === 'yearly' || recordType === '12month') {
         const frostThreshold = settings.tempUnit === 'F' ? 32 : 0;
         const warmThreshold = convertTemp(20, settings.tempUnit);
         const summerThreshold = convertTemp(25, settings.tempUnit);
@@ -1016,6 +1145,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const coldStreak = findStreak(maxTempsConverted, times, v => v < recordThresholds.coldStreakTemp);
         const iceStreak = findStreak(maxTempsConverted, times, v => v <= recordThresholds.iceStreakTemp);
 
+        const streakMaxBelowZero = findStreak(maxTempsConverted, times, v => v < (settings.tempUnit === 'F' ? 32 : 0));
+        const streakMinBelowZero = findStreak(minTempsConverted, times, v => v < (settings.tempUnit === 'F' ? 32 : 0));
+        const streakMaxBelowFive = findStreak(maxTempsConverted, times, v => v < (settings.tempUnit === 'F' ? 41 : 5));
+        const streakMaxAbove25 = findStreak(maxTempsConverted, times, v => v >= (settings.tempUnit === 'F' ? 77 : 25));
+        const streakMaxAbove30 = findStreak(maxTempsConverted, times, v => v >= (settings.tempUnit === 'F' ? 86 : 30));
+        const streakMaxAbove35 = findStreak(maxTempsConverted, times, v => v >= (settings.tempUnit === 'F' ? 95 : 35));
+
         // Ensure we have all heatwave settings, falling back to defaults if missing
         const heatwaveSettings = { ...DEFAULT_SETTINGS.heatwave, ...(settings.heatwave || {}) };
 
@@ -1156,6 +1292,12 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           niceStreak,
           coldStreak,
           iceStreak,
+          streakMaxBelowZero,
+          streakMinBelowZero,
+          streakMaxBelowFive,
+          streakMaxAbove25,
+          streakMaxAbove30,
+          streakMaxAbove35,
         });
 
         // Calculate Perioden (Weeks and Weekends)
@@ -1562,11 +1704,17 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         const lat = pos.coords.latitude;
                         const lon = pos.coords.longitude;
                         let name = t('my_location');
+                        let countryCode = '';
                         
                         try {
-                           const cityName = await reverseGeocode(lat, lon);
-                           if (cityName) {
-                               name = cityName;
+                           const result = await reverseGeocodeFull(lat, lon);
+                           if (result) {
+                               name = result.name;
+                               countryCode = result.countryCode;
+                               
+                               if (onUpdateSettings && countryCode && countryCode !== settings.countryCode) {
+                                   onUpdateSettings({ ...settings, countryCode });
+                               }
                            }
                         } catch (e) {
                            console.error(e);
@@ -1574,7 +1722,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                         setLocation({
                           name,
-                          country: '',
+                          country: countryCode,
                           lat,
                           lon,
                           isCurrentLocation: true
@@ -1623,41 +1771,51 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         {currentWeather && (
             <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
-                        {currentTemp}°
-                    </h1>
+                    <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
+                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                            {currentTemp}°
+                        </h1>
+                    </div>
                     
-                    {currentWeather.current.temperature_2m < 10 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
-                            <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
-                            <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
-                            <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('feels_like')}</span>
-                        </div>
-                    )}
-                    
-                    {currentWeather.current.temperature_2m > 25 && (
-                        <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
-                            <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
-                            <span className="text-lg font-bold leading-none mt-1">{heatIndex}°</span>
-                            <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('heat_index')}</span>
-                        </div>
-                    )}
+                    <div className="flex gap-3">
+                        {currentWeather.current.temperature_2m < 10 && (
+                            <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                                <Icon name="thermostat" className={`text-xl ${feelsLike < currentTemp ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`} />
+                                <span className="text-lg font-bold leading-none mt-1">{feelsLike.toFixed(1)}°</span>
+                                <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('feels_like')}</span>
+                            </div>
+                        )}
+                        
+                        {currentWeather.current.temperature_2m > 25 && (
+                            <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card/60 backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform group relative">
+                                <Icon name="thermostat" className="text-xl text-orange-500 dark:text-orange-300" />
+                                <span className="text-lg font-bold leading-none mt-1">{heatIndex}°</span>
+                                <span className="text-[9px] uppercase text-text-muted leading-none mt-1">{t('heat_index')}</span>
+                            </div>
+                        )}
 
-                    {currentComfort && (
-                        <WeatherRatingButton 
-                            score={currentComfort} 
-                            onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }} 
-                            className="min-w-[70px] w-auto"
-                        />
-                    )}
+                        {currentComfort && (
+                            <WeatherRatingButton 
+                                score={currentComfort} 
+                                onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }} 
+                                className="min-w-[70px] w-auto"
+                            />
+                        )}
+                    </div>
                 </div>
-                <p className="text-xl font-medium tracking-wide drop-shadow-md mt-2 flex items-center gap-2">
-                        <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
-                    {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
-                </p>
-                <p className="text-text-main/80 text-base font-normal drop-shadow-md mt-1">
-                    H:{highTemp}° L:{lowTemp}°
-                </p>
+                
+                <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
+                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                            <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
+                        {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
+                    </p>
+                    <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                        H:{highTemp}° L:{lowTemp}°
+                    </p>
+                    <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
+                        {formatDateTime()}
+                    </p>
+                </div>
             </div>
         )}
 
@@ -1692,7 +1850,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </button>
                 </UITooltip>
 
-                <UITooltip content="Heatmap">
+                <UITooltip content={t('records.dashboard')}>
                  <button
                 onClick={() => setRecordType('heatmap')}
                 className={`px-4 py-2 rounded-full text-sm font-bold transition-colors flex items-center gap-2 ${
@@ -1701,7 +1859,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     : 'text-text-muted hover:text-text-main border-transparent'
                 }`}
                 >
-                <span className="hidden md:inline">Heatmap</span>
+                <span className="hidden md:inline">{t('records.dashboard')}</span>
                 <Icon name="grid_on" className="md:hidden" />
                 </button>
                 </UITooltip>
@@ -1800,8 +1958,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                              <TemperatureFrequencyChart data={heatmapData.maxTemps} title="Max. Temp. Frequentie" settings={settings} />
-                              <TemperatureFrequencyChart data={heatmapData.minTemps} title="Min. Temp. Frequentie" settings={settings} />
+                              <TemperatureFrequencyChart data={heatmapData.maxTemps} title={t('records.frequency_max_title')} settings={settings} />
+                              <TemperatureFrequencyChart data={heatmapData.minTemps} title={t('records.frequency_min_title')} settings={settings} />
                         </div>
 
                         <RainProbabilityChart data={heatmapData} settings={settings} />
@@ -1991,7 +2149,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       <h3 className="text-lg font-bold mb-2 text-text-main px-2 sm:px-0">{t('records.rain_sun_graph')}</h3>
                       <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <ComposedChart data={dailyData} margin={{top: 45, right: 5, bottom: 5, left: -25}} barGap={2} syncId="monthlyGraph">
+                        <ComposedChart data={dailyData} margin={{top: 45, right: 5, bottom: 5, left: -10}} barGap={2} syncId="monthlyGraph">
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.2)" />
                              {/* Weekend highlights */}
                              {dailyData.map((entry, index) => (
@@ -2334,7 +2492,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 )}
               </div>
 
-              {recordType === 'yearly' && yearlyCounts && (
+              {/* Yearly Counts */}
+              {(recordType === 'yearly' || recordType === '12month') && yearlyCounts && (
                 <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xl font-bold flex items-center gap-2">
@@ -2391,7 +2550,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 </div>
               )}
 
-              {recordType === 'yearly' && yearlySequences && (
+              {/* Sequences */}
+              {(recordType === 'yearly' || recordType === '12month') && yearlySequences && (
                 <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xl font-bold flex items-center gap-2">
@@ -2579,6 +2739,163 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         </span>
                       )}
                     </div>
+
+                    {/* New Streaks */}
+                    {/* Max < 0 (Ice Days) */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-text-muted font-medium">
+                          Langste periode &lt; 0°C (Max)
+                        </span>
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
+                           Max Temp &lt; 0°C
+                        </span>
+                        {yearlySequences.streakMaxBelowZero && yearlySequences.streakMaxBelowZero.start && yearlySequences.streakMaxBelowZero.end ? (
+                          <span className="text-xs text-text-muted">
+                            {formatDateLabel(yearlySequences.streakMaxBelowZero.start)} – {formatDateLabel(yearlySequences.streakMaxBelowZero.end)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">
+                            {t('records.sequences.none')}
+                          </span>
+                        )}
+                      </div>
+                      {yearlySequences.streakMaxBelowZero && yearlySequences.streakMaxBelowZero.length > 0 && (
+                        <span className="font-bold text-text-main">
+                          {yearlySequences.streakMaxBelowZero.length} {t('days')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Min < 0 (Frost Days) */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-text-muted font-medium">
+                          Langste periode &lt; 0°C (Min)
+                        </span>
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
+                           Min Temp &lt; 0°C
+                        </span>
+                        {yearlySequences.streakMinBelowZero && yearlySequences.streakMinBelowZero.start && yearlySequences.streakMinBelowZero.end ? (
+                          <span className="text-xs text-text-muted">
+                            {formatDateLabel(yearlySequences.streakMinBelowZero.start)} – {formatDateLabel(yearlySequences.streakMinBelowZero.end)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">
+                            {t('records.sequences.none')}
+                          </span>
+                        )}
+                      </div>
+                      {yearlySequences.streakMinBelowZero && yearlySequences.streakMinBelowZero.length > 0 && (
+                        <span className="font-bold text-text-main">
+                          {yearlySequences.streakMinBelowZero.length} {t('days')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Max < 5 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-text-muted font-medium">
+                          Langste periode &lt; 5°C (Max)
+                        </span>
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
+                           Max Temp &lt; 5°C
+                        </span>
+                        {yearlySequences.streakMaxBelowFive && yearlySequences.streakMaxBelowFive.start && yearlySequences.streakMaxBelowFive.end ? (
+                          <span className="text-xs text-text-muted">
+                            {formatDateLabel(yearlySequences.streakMaxBelowFive.start)} – {formatDateLabel(yearlySequences.streakMaxBelowFive.end)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">
+                            {t('records.sequences.none')}
+                          </span>
+                        )}
+                      </div>
+                      {yearlySequences.streakMaxBelowFive && yearlySequences.streakMaxBelowFive.length > 0 && (
+                        <span className="font-bold text-text-main">
+                          {yearlySequences.streakMaxBelowFive.length} {t('days')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Max > 25 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-text-muted font-medium">
+                          Langste periode &gt; 25°C (Max)
+                        </span>
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
+                           Max Temp &gt; 25°C
+                        </span>
+                        {yearlySequences.streakMaxAbove25 && yearlySequences.streakMaxAbove25.start && yearlySequences.streakMaxAbove25.end ? (
+                          <span className="text-xs text-text-muted">
+                            {formatDateLabel(yearlySequences.streakMaxAbove25.start)} – {formatDateLabel(yearlySequences.streakMaxAbove25.end)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">
+                            {t('records.sequences.none')}
+                          </span>
+                        )}
+                      </div>
+                      {yearlySequences.streakMaxAbove25 && yearlySequences.streakMaxAbove25.length > 0 && (
+                        <span className="font-bold text-text-main">
+                          {yearlySequences.streakMaxAbove25.length} {t('days')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Max > 30 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-text-muted font-medium">
+                          Langste periode &gt; 30°C (Max)
+                        </span>
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
+                           Max Temp &gt; 30°C
+                        </span>
+                        {yearlySequences.streakMaxAbove30 && yearlySequences.streakMaxAbove30.start && yearlySequences.streakMaxAbove30.end ? (
+                          <span className="text-xs text-text-muted">
+                            {formatDateLabel(yearlySequences.streakMaxAbove30.start)} – {formatDateLabel(yearlySequences.streakMaxAbove30.end)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">
+                            {t('records.sequences.none')}
+                          </span>
+                        )}
+                      </div>
+                      {yearlySequences.streakMaxAbove30 && yearlySequences.streakMaxAbove30.length > 0 && (
+                        <span className="font-bold text-text-main">
+                          {yearlySequences.streakMaxAbove30.length} {t('days')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Max > 35 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-text-muted font-medium">
+                          Langste periode &gt; 35°C (Max)
+                        </span>
+                        <span className="text-[10px] text-text-muted opacity-70 mb-0.5">
+                           Max Temp &gt; 35°C
+                        </span>
+                        {yearlySequences.streakMaxAbove35 && yearlySequences.streakMaxAbove35.start && yearlySequences.streakMaxAbove35.end ? (
+                          <span className="text-xs text-text-muted">
+                            {formatDateLabel(yearlySequences.streakMaxAbove35.start)} – {formatDateLabel(yearlySequences.streakMaxAbove35.end)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-text-muted">
+                            {t('records.sequences.none')}
+                          </span>
+                        )}
+                      </div>
+                      {yearlySequences.streakMaxAbove35 && yearlySequences.streakMaxAbove35.length > 0 && (
+                        <span className="font-bold text-text-main">
+                          {yearlySequences.streakMaxAbove35.length} {t('days')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -2636,6 +2953,94 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Holidays Section */}
+              {(recordType === 'yearly' || recordType === '12month') && holidays.length > 0 && (
+                <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-xl font-bold flex items-center gap-2 text-text-main">
+                            <Icon name="celebration" className="text-accent-primary" />
+                            {t('records.holidays')} <span className="text-sm font-normal text-text-muted">({settings.countryCode || 'US'})</span>
+                        </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {holidays.map((holiday, idx) => {
+                            const dayData = dailyData.find(d => d.date === holiday.date);
+                            if (!dayData || dayData.maxTemp === null) return null;
+
+                            return (
+                                <div key={idx} className="bg-bg-page p-3 rounded-xl border border-border-color flex flex-col gap-2">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-sm text-text-main">{holiday.localName}</span>
+                                            <span className="text-xs text-text-muted">{formatDateLabel(holiday.date)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-bold text-red-500">{dayData.maxTemp}°</span>
+                                                <span className="text-xs text-blue-500">{dayData.minTemp}°</span>
+                                            </div>
+                                            {(() => {
+                                                // Baro Score Calc
+                                                let baroScore = 10;
+                                                if (dayData.maxTemp < 10) baroScore -= 2;
+                                                else if (dayData.maxTemp < 15) baroScore -= 1;
+                                                else if (dayData.maxTemp > 30) baroScore -= 1;
+
+                                                if (dayData.rain !== null) {
+                                                    if (dayData.rain > 0) baroScore -= 1;
+                                                    if (dayData.rain > 2) baroScore -= 1;
+                                                    if (dayData.rain > 5) baroScore -= 1;
+                                                }
+                                                
+                                                if (dayData.sun !== null && dayData.sun < 20) baroScore -= 1;
+                                                if (dayData.windGust !== null && dayData.windGust > 40) baroScore -= 1;
+
+                                                baroScore = Math.max(1, Math.min(10, Math.round(baroScore)));
+                                                
+                                                let scoreColor = 'bg-red-500 text-white';
+                                                if (baroScore >= 8) scoreColor = 'bg-green-500 text-white';
+                                                else if (baroScore >= 6) scoreColor = 'bg-blue-500 text-white';
+                                                else if (baroScore >= 4) scoreColor = 'bg-orange-500 text-white';
+                                                
+                                                return (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setShowComfortModal(true); }}
+                                                        className={`w-8 h-8 rounded-lg ${scoreColor} flex items-center justify-center font-bold text-sm shadow-sm hover:opacity-80 transition-opacity`}
+                                                    >
+                                                        {baroScore}
+                                                    </button>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-text-muted mt-1">
+                                        {dayData.rain !== null && (
+                                            <span className="flex items-center gap-1" title={t('precipitation')}>
+                                                <Icon name="water_drop" className="text-blue-400" />
+                                                {dayData.rain > 0 ? `${dayData.rain} ${settings.precipUnit}` : '0'}
+                                            </span>
+                                        )}
+                                        {dayData.cloudCover !== null && (
+                                            <span className="flex items-center gap-1" title={t('cloud_cover')}>
+                                                <Icon name="cloud" className="text-gray-400" />
+                                                {Math.round(dayData.cloudCover)}%
+                                            </span>
+                                        )}
+                                         {dayData.windSpeed !== undefined && dayData.windSpeed !== null && (
+                                            <span className="flex items-center gap-1" title={t('wind_speed')}>
+                                                <Icon name="air" className="text-teal-400" />
+                                                {convertWind(dayData.windSpeed, settings.windUnit)} {settings.windUnit}
+                                            </span>
+                                         )}
+                                    </div>
+
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
               )}
 
@@ -2902,8 +3307,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               )}
 
               {/* Perioden Section */}
-              {recordType === 'yearly' && periodRecords && (
-                  <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color mt-6">
+              {(recordType === 'yearly' || recordType === '12month') && periodRecords && (
+                <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color mt-6">
                       <div className="flex items-center justify-between mb-3">
                           <h3 className="text-xl font-bold flex items-center gap-2 text-text-main">
                               <Icon name="calendar_month" className="text-text-muted" />

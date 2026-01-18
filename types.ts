@@ -194,6 +194,7 @@ export interface AppSettings {
     historicalMode?: 'single' | 'compare';
     mapBaseLayer?: MapBaseLayer;
     weekStartDay?: 'monday' | 'sunday' | 'saturday';
+    countryCode?: string; // Default 'US'
     timezone?: string;
     calendar?: CalendarSettings;
     climatePeriodType?: '30year' | 'decade';
