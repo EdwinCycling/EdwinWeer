@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Globe, { GlobeMethods } from 'react-globe.gl';
+import * as Astronomy from 'astronomy-engine';
 import { ViewState, Location, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
@@ -36,6 +37,53 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
     const [showToast, setShowToast] = useState(true);
     
     const t = (key: string) => getTranslation(key, settings.language);
+
+    const calculateTideStrength = () => {
+        try {
+            // Calculate moon phase for today
+            const now = new Date();
+            // Use local calculation if Astronomy fails
+            let phase = 0.5; // Default to neutral
+            
+            try {
+                 // Try Astronomy Engine first
+                 if (Astronomy && Astronomy.Illumination) {
+                     phase = Astronomy.Illumination(now).phase_fraction;
+                 } else {
+                     throw new Error("Astronomy engine missing");
+                 }
+            } catch (e) {
+                 // Fallback to approximate manual calculation
+                 // Our calculateMoonPhase returns 0..1 (New..Full..New? No, 0..1 Cycle)
+                 // Manual calc returns: 0=New, 0.25=FirstQ, 0.5=Full, 0.75=LastQ
+                 // Illumination is what we need? No, logic uses 0, 0.5, 1 as targets.
+                 // If original logic expected 0, 0.5, 1 to be Spring Tide, it assumed Phase Cycle.
+                 // Illumination: New(0), Full(1). Quarter(0.5).
+                 // If we use Cycle: New(0), Full(0.5), New(1).
+                 // Let's use our manual cycle calculation which is safe.
+                 phase = calculateMoonPhase(now);
+            }
+
+            // Distance to closest spring tide point (0, 0.5, 1.0)
+            // If phase is Cycle (0=New, 0.5=Full): 0, 0.5, 1 are Spring Tides.
+            const dist0 = Math.abs(phase - 0);
+            const dist05 = Math.abs(phase - 0.5);
+            const dist1 = Math.abs(phase - 1.0);
+            
+            const minDistToSpring = Math.min(dist0, dist05, dist1);
+            // Scale 0.25 -> 0% (Doodtij) and 0 -> 100% (Springtij)
+            const percentage = Math.round((0.25 - minDistToSpring) / 0.25 * 100);
+            
+            let label = "Normaal Getij";
+            if (percentage >= 85) label = "🌊 Springtij (Sterke stroming!)";
+            else if (percentage <= 15) label = "🧘 Doodtij (Rustig water)";
+            
+            return { percentage, label };
+        } catch (err) {
+            console.error("Tide calculation error", err);
+            return { percentage: 50, label: "Normaal Getij" };
+        }
+    };
 
     useEffect(() => {
         if (globeEl.current) {
@@ -375,6 +423,42 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                                                         <span className="text-sm text-blue-100 font-bold">Normale deining</span>
                                                     </div>
                                                 )}
+
+                                                {/* Getijden Indicator (Tide Strength) */}
+                                                {marineData.current.wave_height > 0 && (() => {
+                                                    const tide = calculateTideStrength();
+                                                    return (
+                                                    <div className="mt-6 pt-4 border-t border-blue-400/20">
+                                                        <div className="flex justify-between items-end mb-2">
+                                                            <span className="text-[10px] font-black uppercase tracking-tighter text-blue-200">Getijden Indicator</span>
+                                                            <span className="text-[10px] font-bold text-white bg-blue-500/30 px-2 py-0.5 rounded-full">
+                                                                {tide.percentage}%
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {/* Progress Bar */}
+                                                        <div className="h-1.5 w-full bg-blue-900/40 rounded-full overflow-hidden mb-2">
+                                                            <div 
+                                                                className="h-full transition-all duration-1000 ease-out"
+                                                                style={{ 
+                                                                    width: `${tide.percentage}%`,
+                                                                    backgroundColor: tide.percentage >= 85 ? '#ef4444' : 
+                                                                                     tide.percentage <= 15 ? '#3b82f6' : '#10b981'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        
+                                                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                                            {tide.label}
+                                                        </div>
+                                                        
+                                                        {tide.percentage >= 85 && (
+                                                            <p className="text-[10px] text-blue-200/80 mt-1 leading-tight italic">
+                                                                Let op: Water komt hoger en zakt lager dan gemiddeld.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )})()}
                                             </div>
                                         </div>
                                     )}

@@ -176,18 +176,18 @@ export const YrInteractiveMap: React.FC<YrInteractiveMapProps> = ({ userLocation
                         <div className="flex items-center bg-bg-page rounded-lg">
                             <button 
                                 onClick={handleZoomOut}
-                                className="p-2 hover:bg-bg-card rounded-lg transition-colors text-text-main"
+                                className="p-1.5 sm:p-2 hover:bg-bg-card rounded-lg transition-colors text-text-main"
                                 title="Uitzoomen (-)"
                             >
-                                <Icon name="remove" className="text-sm" />
+                                <Icon name="remove" className="text-[18px] sm:text-[24px]" />
                             </button>
                             <div className="w-px h-4 bg-border-color"></div>
                             <button 
                                 onClick={handleZoomIn}
-                                className="p-2 hover:bg-bg-card rounded-lg transition-colors text-text-main"
+                                className="p-1.5 sm:p-2 hover:bg-bg-card rounded-lg transition-colors text-text-main"
                                 title="Inzoomen (+)"
                             >
-                                <Icon name="add" className="text-sm" />
+                                <Icon name="add" className="text-[18px] sm:text-[24px]" />
                             </button>
                         </div>
                     </div>

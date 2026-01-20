@@ -5,6 +5,7 @@ import { fetchForecast, convertTemp, convertWind, convertPressure, getBeaufort, 
 import { loadCurrentLocation } from '../services/storageService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, BarChart, Bar, ReferenceLine, ScatterChart, Scatter, Line } from 'recharts';
 import { CompactHourlyChart } from '../components/CompactHourlyChart';
+import { SolarPowerWidget } from '../components/SolarPowerWidget';
 import { getTranslation } from '../services/translations';
 
 interface Props {
@@ -179,6 +180,16 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
       </>
   );
 
+  // Solar Widget Logic
+  // Check if target day is within 8 days from today
+  const isWithinSolarRange = () => {
+      if (!initialDate) return false;
+      const now = new Date();
+      const diffTime = Math.abs(initialDate.getTime() - now.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      return diffDays < 8;
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-bg-page pb-24 overflow-y-auto text-text-main transition-colors">
       <div className="flex items-center p-4 pt-8 fixed top-0 left-0 right-0 bg-bg-card/95 backdrop-blur z-50 border-b border-border-color">
@@ -236,6 +247,18 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
             
             <div className="w-full overflow-x-auto pb-4">
                 <div className="min-w-[600px] md:min-w-full flex flex-col gap-8 pr-4">
+                    
+                    {/* Solar Widget (if enabled and within range) */}
+                    {settings.enableSolar && isWithinSolarRange() && weatherData && (
+                        <div className="w-full">
+                            <SolarPowerWidget 
+                                weatherData={weatherData} 
+                                settings={settings} 
+                                targetDate={initialDate}
+                                showStats={false}
+                            />
+                        </div>
+                    )}
                     
                     {/* Temperature Graph */}
                     <div className="h-96 bg-bg-card rounded-2xl p-4 border border-border-color relative shadow-sm w-full">

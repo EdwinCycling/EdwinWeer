@@ -293,7 +293,6 @@ const App: React.FC = () => {
   }
 
   const renderView = () => {
-    console.debug('App: renderView called', { currentView });
     switch (currentView) {
       case ViewState.CURRENT:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
@@ -494,63 +493,63 @@ const App: React.FC = () => {
 
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-bg-card/90 backdrop-blur-xl border-t border-border-color z-[1600] shadow-2xl transition-colors duration-300 print:hidden">
-            <div className="max-w-5xl mx-auto flex justify-around p-2 pb-4 md:pb-6" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+            <div className="max-w-5xl mx-auto flex justify-around p-1.5 pb-3 md:p-2 md:pb-6" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
             <button 
                 onClick={() => { navigate(ViewState.CURRENT); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.CURRENT || currentView === ViewState.HOURLY_DETAIL ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="sunny" />
+                <Icon name="sunny" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.current')}</span>
             </button>
             <button 
                 onClick={() => { navigate(ViewState.FORECAST); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.FORECAST ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.FORECAST ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="date_range" />
+                <Icon name="date_range" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.forecast')}</span>
             </button>
             <button 
                 onClick={() => { navigate(ViewState.ENSEMBLE); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.ENSEMBLE ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.ENSEMBLE ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="ssid_chart" />
+                <Icon name="ssid_chart" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.ensemble')}</span>
             </button>
             <button 
                 onClick={() => { navigate(ViewState.RECORDS); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.RECORDS ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.RECORDS ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="bar_chart" />
+                <Icon name="bar_chart" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.records')}</span>
             </button>
             <button 
                 onClick={() => { navigate(ViewState.HISTORICAL); setMenuOpen(false); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HISTORICAL ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${currentView === ViewState.HISTORICAL ? 'text-primary scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="calendar_month" />
+                <Icon name="calendar_month" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('nav.historical')}</span>
             </button>
             <button 
                 onClick={() => { setBaroMenuOpen(!baroMenuOpen); setMenuOpen(false); setExtraMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${baroMenuOpen ? 'text-text-main scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${baroMenuOpen ? 'text-text-main scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="face" />
+                <Icon name="face" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('menu.extra.baro_weerman')}</span>
             </button>
             <button 
                 onClick={() => { setExtraMenuOpen(!extraMenuOpen); setMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${extraMenuOpen ? 'text-text-main scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${extraMenuOpen ? 'text-text-main scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="add_circle" />
+                <Icon name="add_circle" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('share.extra_menu')}</span>
             </button>
             
             {/* Hamburger Menu Button */}
             <button 
                 onClick={() => { setMenuOpen(!menuOpen); setExtraMenuOpen(false); setBaroMenuOpen(false); }}
-                className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ${menuOpen ? 'text-text-main scale-110' : 'text-text-muted hover:text-text-main'}`}
+                className={`flex flex-col items-center p-1.5 md:p-2 rounded-xl transition-all duration-300 ${menuOpen ? 'text-text-main scale-110' : 'text-text-muted hover:text-text-main'}`}
             >
-                <Icon name="menu" />
+                <Icon name="menu" className="text-[20px] md:text-[24px]" />
                 <span className="hidden lg:block text-[10px] font-medium uppercase mt-1">{t('menu')}</span>
             </button>
         </div>

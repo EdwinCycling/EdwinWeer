@@ -7,10 +7,10 @@ function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      console.log('SW Registered: ' + r);
+      // SW Registered
     },
     onRegisterError(error) {
-      console.log('SW registration error', error);
+      // SW registration error
     },
   });
 
@@ -19,13 +19,11 @@ function ReloadPrompt() {
   };
 
   const handleUpdate = () => {
-    console.log('Updating service worker and reloading...');
     updateServiceWorker(true);
     
     // Fallback: als de hook niet automatisch herlaadt binnen 2 seconden, doen we het handmatig
     setTimeout(() => {
       if (needRefresh) {
-        console.log('Fallback reload triggered');
         window.location.reload();
       }
     }, 2000);
@@ -33,7 +31,7 @@ function ReloadPrompt() {
 
   useEffect(() => {
     if (needRefresh) {
-      console.log('PWA Update available!');
+      // PWA Update available
     }
   }, [needRefresh]);
 

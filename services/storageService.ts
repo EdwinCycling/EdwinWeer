@@ -78,6 +78,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
         iceStreakTemp: 0
     },
     weekStartDay: 'monday',
+    enableSolar: true,
+    solarPowerWp: 0,
     countryCode: 'NL',
     climatePeriodType: '30year',
     calendar: {

@@ -11,6 +11,8 @@ import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsemb
 import { WeatherBackground } from '../components/WeatherBackground';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { MoonPhaseVisual } from '../components/MoonPhaseVisual';
+import { SolarPowerWidget } from '../components/SolarPowerWidget';
+import { SunElevationGraph } from '../components/SunElevationGraph';
 import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { Tooltip } from '../components/Tooltip';
 import { FavoritesList } from '../components/FavoritesList';
@@ -1288,6 +1290,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     <div className="mb-8">
                         <SunElevationGraph />
                     </div>
+
+                    {/* Solar Power Widget */}
+                    <SolarPowerWidget weatherData={weatherData} settings={settings} />
 
                     {(frostWarning || rainAlert) && (
                         <div className="flex flex-col gap-3 mb-8">

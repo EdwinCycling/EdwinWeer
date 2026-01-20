@@ -564,6 +564,52 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     </div>
                                 </div>
 
+                                {/* Solar Energy Settings */}
+                                <div className="p-4 border-t border-border-color">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Icon name="solar_power" className="text-text-main/80" />
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-text-main">Zonne-energie</span>
+                                                <span className="text-xs text-text-muted">Toon zonne-energie widget</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => updateSetting('enableSolar', !settings.enableSolar)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${settings.enableSolar ? 'bg-accent-primary' : 'bg-bg-page'}`}
+                                        >
+                                            <span
+                                                className={`${
+                                                    settings.enableSolar ? 'translate-x-6 bg-white' : 'translate-x-1 bg-text-muted'
+                                                } inline-block h-4 w-4 transform rounded-full transition-transform`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {settings.enableSolar && (
+                                        <div className="mt-4 flex items-center justify-between pl-9 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <span className="text-sm text-text-muted">Totaal vermogen (Wp)</span>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="99999"
+                                                    value={settings.solarPowerWp || 0}
+                                                    onChange={(e) => {
+                                                        let val = parseInt(e.target.value);
+                                                        if (isNaN(val)) val = 0;
+                                                        if (val < 0) val = 0;
+                                                        if (val > 99999) val = 99999;
+                                                        updateSetting('solarPowerWp', val);
+                                                    }}
+                                                    className="bg-bg-page text-text-main text-sm rounded-lg px-3 py-1.5 w-24 text-right border-none focus:ring-1 focus:ring-accent-primary outline-none"
+                                                />
+                                                <span className="text-xs text-text-muted font-bold">Wp</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                              </div>
                         </section>
 

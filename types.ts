@@ -213,6 +213,8 @@ export interface AppSettings {
     historicalMode?: 'single' | 'compare';
     mapBaseLayer?: MapBaseLayer;
     weekStartDay?: 'monday' | 'sunday' | 'saturday';
+    enableSolar?: boolean;
+    solarPowerWp?: number;
     countryCode?: string; // Default 'US'
     timezone?: string;
     calendar?: CalendarSettings;
