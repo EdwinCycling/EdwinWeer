@@ -20,7 +20,6 @@ import { AppLanguage, ViewState } from "../../types";
 import { twitterProvider, facebookProvider, microsoftProvider, db } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { SystemConfig } from "../../types";
-import { toast } from "sonner"; // Assuming sonner is used, or fallback to alert/console
 
 interface LandingPageProps {
   onNavigate: (view: ViewState) => void;
