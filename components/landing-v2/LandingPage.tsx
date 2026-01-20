@@ -17,7 +17,10 @@ import { FlagIcon } from "../../components/FlagIcon";
 import { getTranslation } from "../../services/translations";
 import { loadSettings, saveSettings } from "../../services/storageService";
 import { AppLanguage, ViewState } from "../../types";
-import { twitterProvider, facebookProvider, microsoftProvider } from "../../services/firebase";
+import { twitterProvider, facebookProvider, microsoftProvider, db } from "../../services/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { SystemConfig } from "../../types";
+import { toast } from "sonner"; // Assuming sonner is used, or fallback to alert/console
 
 interface LandingPageProps {
   onNavigate: (view: ViewState) => void;
@@ -101,6 +104,62 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
   const handleLogin = async () => {
     try {
+        // Check system config for block
+        const docRef = doc(db, 'system', 'config');
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const config = docSnap.data() as SystemConfig;
+            
+            // Check active & disable_app
+            // Note: If include_landing_page is true, the overlay prevents clicking anyway.
+            // But if include_landing_page is false, the overlay is hidden, so we must block here.
+            const isActive = config.active === true || String(config.active).toLowerCase() === 'true';
+            const isHardBlock = config.disable_app === true || String(config.disable_app).toLowerCase() === 'true';
+            
+            if (isActive && isHardBlock) {
+                // Check time window
+                const now = new Date();
+                
+                // Helper for CET/CEST offset
+                const getCETOffset = (date: Date) => {
+                    const year = date.getFullYear();
+                    const startDST = new Date(year, 2, 31);
+                    startDST.setHours(2, 0, 0, 0);
+                    startDST.setDate(31 - startDST.getDay());
+                    const endDST = new Date(year, 9, 31);
+                    endDST.setHours(3, 0, 0, 0);
+                    endDST.setDate(31 - endDST.getDay());
+                    return (date >= startDST && date < endDST) ? "+02:00" : "+01:00";
+                };
+
+                const parseDate = (dateStr: string | undefined) => {
+                    if (!dateStr) return null;
+                    try {
+                        if (dateStr.includes('Z') || dateStr.includes('+')) {
+                            return new Date(dateStr);
+                        }
+                        const tempDate = new Date(dateStr + "+01:00");
+                        const offset = getCETOffset(tempDate);
+                        return new Date(dateStr + offset);
+                    } catch (e) {
+                        return null;
+                    }
+                };
+
+                const startDate = parseDate(config.start_time);
+                const isStarted = !startDate || isNaN(startDate.getTime()) || now >= startDate;
+
+                const endDate = parseDate(config.end_time);
+                const isEnded = endDate && !isNaN(endDate.getTime()) && now > endDate;
+
+                if (isStarted && !isEnded) {
+                    alert(config.maintenance_message || "De applicatie is momenteel niet beschikbaar wegens onderhoud.");
+                    return;
+                }
+            }
+        }
+
       await signInWithGoogle();
     } catch (error) {
       console.error("Login failed", error);

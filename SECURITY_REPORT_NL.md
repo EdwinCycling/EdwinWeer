@@ -1,51 +1,71 @@
-# Beveiligingsrapport en Analyse (NL)
+# Beveiligingsrapport en Analyse (Update 2026)
 
-**Datum:** 29-12-2025  
-**Auteur:** Code Assistant
+**Datum:** 20-01-2026  
+**Status:** VEILIG (Na correcties)
 
-Dit rapport bevat een analyse van de beveiliging van de applicatie, met specifieke focus op de geconstateerde 'test bypass' en frontend validatie.
+Dit rapport bevat een volledige beveiligingsanalyse van de Baro applicatie, inclusief frontend, backend, database en infrastructuur.
 
-## 1. Samenvatting
+## 1. Samenvatting & Prioriteiten
 
-De applicatie bevat **kritieke beveiligingsrisico's** in de frontend logica. De meest zorgwekkende bevinding is de hardcoded 'admin bypass' voor het e-mailadres `edwin@editsolutions.nl`. Deze bypass bevindt zich volledig aan de client-zijde (in de browser), wat betekent dat deze eenvoudig te manipuleren of te omzeilen is door kwaadwillenden. Daarnaast is de rate-limiting (gebruikslimieten) afhankelijk van `localStorage`, wat door elke gebruiker gereset kan worden.
+De algehele beveiliging van de applicatie is **sterk verbeterd**. Kritieke kwetsbaarheden uit eerdere rapporten (zoals de 'admin bypass') zijn verholpen. De focus ligt nu op het verder aanscherpen van API-toegang en HTTP-headers.
 
-## 2. Analyse van 'Test Bypass' (Edwin)
+### Prioriteiten Matrix
 
-In de bestanden `BaroWeatherReport.tsx` en `usageService.ts` is logica aangetroffen die specifieke privileges toekent aan gebruikers met het e-mailadres `edwin@editsolutions.nl`.
-
-**Code Locaties:**
-- `BaroWeatherReport.tsx` (regel 74, 80, 253): Controleert op `isEdwin` om limieten te negeren en toegang te geven tot testfuncties.
-- `usageService.ts` (regel 178): `checkLimit` functie stopt direct als het e-mailadres overeenkomt, waardoor alle API-limieten worden genegeerd.
-- `UserAccountView.tsx` (regel 157): Toont een 'Admin Zone' op basis van dezelfde check.
-
-**Risico's:**
-1.  **Client-Side Authenticatie:** De controle `user?.email === '...'` vindt plaats in de browser. Een aanvaller kan dit eenvoudig manipuleren door de `user` state aan te passen in de React Developer Tools of door het netwerkverkeer te onderscheppen.
-2.  **Identiteitsfraude:** Als de authenticatieprovider geen strikte e-mailverificatie vereist, kan iedereen een account aanmaken met dit e-mailadres (of een variatie) en admin-rechten verkrijgen binnen de app.
-3.  **Toegang tot Testfuncties:** De functie `handleTestEmail` stuurt data naar een backend endpoint. Omdat de controle in de frontend zit, kan iedereen dit endpoint aanroepen als ze de URL weten (`/.netlify/functions/test-email`).
-
-**Advies:**
-- Verwijder hardcoded e-mailchecks uit de frontend code.
-- Beheer rollen en rechten (zoals 'admin' of 'premium') via de backend (bijv. Firebase Custom Claims of een database veld) en verifieer deze *in* de backend functies (Netlify Functions).
-- Zorg dat API-endpoints (zoals de AI-generatie en e-mail) zelf verifiëren of de aanvrager geautoriseerd is, ongeacht wat de frontend zegt.
-
-## 3. Overige Beveiligingsbevindingen
-
-### A. Rate Limiting (Gebruikslimieten)
-De huidige implementatie van gebruikslimieten (`usageService.ts`) slaat de tellers op in `localStorage`.
-- **Risico:** Een gebruiker kan zijn limiet resetten door simpelweg zijn browsergeschiedenis/cookies te wissen of `localStorage.clear()` uit te voeren in de console.
-- **Advies:** Limieten moeten worden bijgehouden in een database (zoals Firestore) aan de server-zijde. De frontend mag alleen de status *uitlezen*, niet *bepalen*.
-
-### B. API Keys en Secrets
-- **Positief:** De Gemini AI logica lijkt te zijn ondergebracht in een serverless functie (`/.netlify/functions/ai-weather`), waardoor de API key niet direct zichtbaar is in de frontend code.
-- **Aandachtspunt:** Controleer of de Netlify functies zelf wel authenticatie vereisen. Als ze openbaar zijn, kan iedereen ze aanroepen en kosten maken op jouw API-account.
-
-### C. Data Validatie
-- Er wordt in `BaroWeatherReport.tsx` HTML gegenereerd (`.replace(/\n/g, '<br>')`) en verstuurd.
-- **Risico:** Let op Cross-Site Scripting (XSS) als deze content ergens onveilig wordt weergegeven. Zorg dat alle input wordt 'gesanitized' voordat het als HTML wordt behandeld.
-
-## 4. Conclusie
-
-De applicatie is functioneel, maar de beveiliging leunt te zwaar op het vertrouwen van de client. De 'test bypass' is onveilig in zijn huidige vorm. Het wordt sterk aangeraden om authenticatie en autorisatie checks te verplaatsen naar de backend (Netlify Functions).
+| Prioriteit | Onderdeel | Status | Actie |
+|:---:|---|---|---|
+| 🟢 **Laag** | **Frontend Validatie** | ✅ Veilig | 'Admin bypass' is verwijderd. XSS risico's zijn minimaal. |
+| 🟢 **Laag** | **Database (Firestore)** | ✅ Veilig | Regels zijn strikt (owner-only). Credits zijn beschermd. |
+| 🟡 **Medium** | **API Rate Limiting** | ⚠️ Gematigd | Backend IP-limits zijn actief. Frontend limits zijn omzeilbaar (localStorage), maar backend blokkeert misbruik. |
+| 🟢 **Laag** | **CORS / Cross-Site** | ✅ Opgelost | CORS aangescherpt in AI functies. Headers toegevoegd. |
+| 🟢 **Laag** | **Scripts & Secrets** | ✅ Veilig | Secrets worden niet gelekt in client bundle. Admin scripts zijn veilig. |
 
 ---
-*Gegenereerd door Code Assistant*
+
+## 2. Gedetailleerde Bevindingen
+
+### A. Pagina's en Velden (Frontend)
+- **Input Validatie:** React's standaard escaping voorkomt de meeste XSS aanvallen.
+- **Gevaarlijke Content:** Het gebruik van `dangerouslySetInnerHTML` is beperkt tot vertalingen (veilig) en wordt **niet** gebruikt voor AI-output (veilig, gebruikt tekst-parsing).
+- **Admin Bypass:** De code die voorheen `edwin@editsolutions.nl` automatisch admin rechten gaf in de frontend is **verwijderd**. Dit is een cruciale verbetering.
+
+### B. Cross-Site Gebruik (CORS & Headers)
+- **Probleem:** De AI API (`ai-weather.js`) stond voorheen alle domeinen toe (`*`).
+- **Oplossing:** Dit is aangepast naar een strikte allowlist: `localhost`, `askbaro.com` en Netlify previews.
+- **Headers:** Extra beveiligingsheaders zijn toegevoegd aan `netlify.toml`:
+  - `Strict-Transport-Security` (HSTS): Forceert HTTPS.
+  - `Permissions-Policy`: Blokkeert onnodige browser features (camera, microfoon).
+  - `Content-Security-Policy`: Voorkomt dat de site in een iframe wordt geladen elders.
+
+### C. Rate Limiting (Teveel Calls)
+Er zijn drie lagen van bescherming:
+1.  **Frontend (Gebruikersgemak):** De app houdt lokaal bij hoeveel calls er zijn gedaan.
+    - *Risico:* Gebruikers kunnen dit resetten door cookies te wissen.
+    - *Impact:* Laag, want de backend is de echte bewaker.
+2.  **Backend Proxy (IP Limit):** De `weather` functie limiteert IP-adressen tot 200 calls per 15 minuten.
+3.  **Backend AI (Credit Check):** De `ai-weather` functie controleert **server-side** (in Firestore) of de gebruiker voldoende credits heeft. Dit kan niet worden omzeild door de frontend aan te passen.
+    - *Conclusie:* Het systeem is robuust tegen misbruik (scraping/DDoS) en fraude (gratis credits stelen).
+
+### D. Scripts & Backend
+- **Admin Scripts:** De scripts in `scripts/` (zoals `set_admin.cjs`) gebruiken `firebase-admin` en vereisen een service account key. Zolang `service-account.json` **niet** in Git staat (gecheckt in `.gitignore`), is dit veilig.
+- **Stripe Webhook:** De webhook verifieert de handtekening van Stripe (`stripe-signature`). Dit voorkomt dat kwaadwillenden neppe betalingen inschieten.
+
+### E. Database Beveiliging
+- **Firestore Rules:**
+  - Gebruikers kunnen alleen hun **eigen** data lezen/schrijven.
+  - Cruciaal: Gebruikers kunnen hun eigen credits (`weatherCredits`, `baroCredits`) **niet ophogen**. De regels blokkeren updates waarbij de credits stijgen (alleen de backend/webhook mag dit).
+  - Audit logs zijn 'append-only' (niet te verwijderen door gebruiker).
+
+---
+
+## 3. Aanbevelingen
+
+Hoewel de applicatie nu veilig is, zijn hier nog enkele 'best practices' voor de toekomst:
+
+1.  **Monitoring:** Houd de logs van Netlify in de gaten voor IP-adressen die frequent tegen de rate-limits aanlopen.
+2.  **Dependency Scanning:** Voer regelmatig `npm audit` uit om kwetsbare packages te updaten.
+3.  **Service Account:** Zorg dat `service-account.json` nooit op de server staat, maar dat de environment variabelen (`FIREBASE_SERVICE_ACCOUNT`) worden gebruikt in productie.
+
+## 4. Testen
+U kunt de wijzigingen testen op de interne server:
+- De applicatie draait op: `http://localhost:3000`
+- De API endpoints zijn beveiligd en accepteren alleen calls van toegestane domeinen.

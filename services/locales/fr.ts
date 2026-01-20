@@ -27,6 +27,7 @@ export const fr: Dictionary = {
     'nav.ensemble': 'Ensemble',
     'nav.pricing': 'Tarifs',
     'nav.team': 'L\'équipe',
+    'nav.globe': 'Globe',
     'nav.model_info': 'Modèles météo',
     'nav.info': 'Info',
     'nav.user_account': 'Mon compte & utilisation',
@@ -47,7 +48,10 @@ export const fr: Dictionary = {
     'error.boundary.title': 'Oeps, er ging iets mis',
     'error.boundary.message': 'Er is een onverwachte fout opgetreden.',
     'error.boundary.refresh': 'Ververs pagina',
-    'error.boundary.home': 'Terug naar home',
+    'error.boundary.home': 'Retour à l\'accueil',
+    'banned.title': 'Accès Restreint',
+    'banned.message': 'Votre compte a été restreint en raison d\'une violation de nos conditions d\'utilisation. Veuillez contacter le support si vous pensez qu\'il s\'agit d\'une erreur.',
+    'banned.support_email': 'support@editsolutions.nl',
     'error_no_data_for_forecast': 'Aucune donnée de prévision disponible',
     'welcome_message': 'Bienvenue ! dans les paramètres, vous pouvez tout personnaliser selon vos souhaits. profitez de baro !',
     'welcome.title': 'Bienvenue chez baro !',
@@ -1096,6 +1100,12 @@ export const fr: Dictionary = {
     'usage.ok': 'Ok',
     'usage.warning': 'Attention',
     'usage.limit_reached': 'Limite atteinte',
+    
+    // Credits
+    'credits.empty_title': 'Plus de crédits météo',
+    'credits.empty_desc': 'Vous avez utilisé tous vos crédits. Revenez demain ou consultez nos forfaits Pro.',
+    'credits.buy_pro': 'Voir les prix',
+    'credits.low_warning': 'Attention : vos crédits sont presque épuisés.',
     'usage.limit_reached_daily': 'Limite quotidienne de l\'API atteinte. Veuillez réessayer demain ou acheter un forfait Pro (supplémentaire).',
     'usage.this_month': 'Ce mois',
     'usage.limits_title': 'Conso & limites',
@@ -1353,6 +1363,7 @@ export const fr: Dictionary = {
 
     // Activity Reasons
     'reason.perfect': 'Conditions parfaites !',
+    'reason.warm': 'Il fait bon et chaud !',
     'reason.feels_like_subzero': 'Ressenti sous zéro',
     'reason.wet_field': 'Terrain mouillé',
     'reason.damp_field': 'Terrain humide',

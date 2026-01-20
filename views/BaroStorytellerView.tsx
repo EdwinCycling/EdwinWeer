@@ -367,7 +367,8 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
     }
 
     return (
-        <div className="bg-bg-page min-h-screen text-text-main pt-24 pb-32 px-4 max-w-2xl mx-auto">
+        <div className="relative min-h-screen flex flex-col pb-24 overflow-y-auto text-text-main bg-bg-page transition-colors duration-300">
+            <div className="relative z-10 max-w-2xl mx-auto p-6 pt-24">
             <div className="mb-8 text-center">
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl mb-4">
                     <Icon name="auto_stories" className="text-3xl" />
@@ -541,5 +542,6 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
 
             </div>
         </div>
+    </div>
     );
 };

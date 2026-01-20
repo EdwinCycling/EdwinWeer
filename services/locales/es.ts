@@ -27,6 +27,7 @@ export const es: Dictionary = {
     'nav.ensemble': 'Conjunto',
     'nav.pricing': 'Precios',
     'nav.team': 'El equipo',
+    'nav.globe': 'Globo',
     'nav.model_info': 'Modelos meteorológicos',
     'nav.info': 'Info',
     'nav.user_account': 'Mi cuenta y uso',
@@ -47,7 +48,10 @@ export const es: Dictionary = {
     'error.boundary.title': 'Oeps, er ging iets mis',
     'error.boundary.message': 'Er is een onverwachte fout opgetreden.',
     'error.boundary.refresh': 'Ververs pagina',
-    'error.boundary.home': 'Terug naar home',
+    'error.boundary.home': 'Volver al inicio',
+    'banned.title': 'Acceso Restringido',
+    'banned.message': 'Tu cuenta ha sido restringida debido a una violación de nuestros términos de servicio. Por favor, contacta con el soporte als crees que esto es un error.',
+    'banned.support_email': 'support@editsolutions.nl',
     'error_no_data_for_forecast': 'No hay datos de pronóstico disponibles',
     'welcome_message': '¡bienvenido! puedes personalizar todo en los ajustes. ¡disfruta de baro!',
     'welcome.title': '¡bienvenido a baro!',
@@ -1092,6 +1096,12 @@ export const es: Dictionary = {
     'usage.ok': 'Ok',
     'usage.warning': 'Advertencia',
     'usage.limit_reached': 'Límite alcanzado',
+    
+    // Credits
+    'credits.empty_title': 'Sin créditos meteorológicos',
+    'credits.empty_desc': 'Has usado todos tus créditos. Vuelve mañana o consulta nuestros paquetes Pro.',
+    'credits.buy_pro': 'Ver precios',
+    'credits.low_warning': 'Advertencia: tus créditos se están agotando.',
     'usage.limit_reached_daily': 'Límite diario de API alcanzado. Inténtelo de nuevo mañana o compre un paquete Pro (adicional).',
     'usage.this_month': 'Este mes',
     'usage.limits_title': 'Consumo y límites',
@@ -1349,6 +1359,7 @@ export const es: Dictionary = {
 
     // Activity Reasons
     'reason.perfect': '¡condiciones perfectas!',
+    'reason.warm': '¡Tiempo agradable y cálido!',
     'reason.feels_like_subzero': 'Sensación térmica bajo cero',
     'reason.wet_field': 'Campo mojado',
     'reason.damp_field': 'Campo húmedo',

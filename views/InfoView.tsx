@@ -13,8 +13,8 @@ export const InfoView: React.FC<Props> = ({ onNavigate, settings }) => {
   const t = (key: string) => getTranslation(key, settings.language);
 
   return (
-    <div className="min-h-screen bg-bg-page p-6 pb-24 text-text-main overflow-y-auto">
-      <div className="max-w-3xl mx-auto">
+    <div className="relative min-h-screen flex flex-col pb-24 overflow-y-auto text-text-main bg-bg-page transition-colors duration-300">
+      <div className="relative z-10 max-w-3xl mx-auto p-6">
         <div className="flex items-center gap-4 mb-8">
             <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-card transition-colors">
                 <Icon name="arrow_back_ios_new" />

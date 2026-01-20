@@ -33,9 +33,11 @@ interface HourData {
 interface Props {
     data: HourData;
     settings: AppSettings;
+    isVisible?: boolean;
+    isNear?: boolean;
 }
 
-export const ImmersiveSlide = React.memo(({ data, settings }: Props) => {
+export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, isNear = true }: Props) => {
     const date = new Date(data.time);
     const timeStr = date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
     const dateStr = date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -85,13 +87,18 @@ export const ImmersiveSlide = React.memo(({ data, settings }: Props) => {
 
     return (
         <article className="relative w-full h-full min-w-full md:min-w-full snap-center flex-shrink-0 overflow-hidden border-r border-white/10">
-            {/* Visual Engine */}
-            <ImmersiveBackground 
-                weatherCode={data.code} 
-                isDay={data.isDay} 
-                precipAmount={data.precip} 
-                cloudCover={data.cloudCover}
-            />
+            {/* Visual Engine - Alleen renderen als we in de buurt zijn */}
+            {isNear ? (
+                <ImmersiveBackground 
+                    weatherCode={data.code} 
+                    isDay={data.isDay} 
+                    precipAmount={data.precip} 
+                    cloudCover={data.cloudCover}
+                    isVisible={isVisible}
+                />
+            ) : (
+                <div className="absolute inset-0 bg-gray-900" />
+            )}
 
             {/* Content Layout (Screenshot Look) */}
             <div className="absolute inset-0 z-10 p-6 pt-36 pb-24 flex flex-col justify-between text-white select-none">

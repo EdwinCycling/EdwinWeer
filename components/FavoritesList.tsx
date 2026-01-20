@@ -408,7 +408,6 @@ export const FavoritesList: React.FC<Props> = ({
             <div className="flex-1 overflow-y-auto p-4 pb-20 scrollbar-hide">
                 {myLocation && renderCard(myLocation, true)}
 
-                {/* Favorites */}
                 {displayedFavorites.map(fav => renderCard(fav, false))}
 
                 {/* Loading Indicator / Sentinel */}

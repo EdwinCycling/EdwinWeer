@@ -27,6 +27,7 @@ export const de: Dictionary = {
     'nav.ensemble': 'Ensemble',
     'nav.pricing': 'Preise',
     'nav.team': 'Das team',
+    'nav.globe': 'Globus',
     'nav.model_info': 'Wettermodelle',
     'nav.info': 'Info',
     'nav.user_account': 'Mein konto & nutzung',
@@ -47,7 +48,10 @@ export const de: Dictionary = {
     'error.boundary.title': 'Oeps, er ging iets mis',
     'error.boundary.message': 'Er is een onverwachte fout opgetreden.',
     'error.boundary.refresh': 'Ververs pagina',
-    'error.boundary.home': 'Terug naar home',
+    'error.boundary.home': 'Zurück zum Home',
+    'banned.title': 'Zugriff Gesperrt',
+    'banned.message': 'Ihr Konto wurde aufgrund eines Verstoßes tegen unsere Nutzungsbedingungen gesperrt. Bitte kontaktieren Sie den Support, wenn Sie glauben, dass dies ein Fehler ist.',
+    'banned.support_email': 'support@editsolutions.nl',
     'error_no_data_for_forecast': 'Keine vorhersagedaten verfügbar',
     'welcome_message': 'Willkommen! in den einstellungen kannst du alles nach deinen wünschen anpassen. viel spaß mit baro!',
     'welcome.title': 'Willkommen bei baro!',
@@ -1094,6 +1098,12 @@ export const de: Dictionary = {
     'usage.ok': 'Ok',
     'usage.warning': 'Warnung',
     'usage.limit_reached': 'Limit erreicht',
+    
+    // Credits
+    'credits.empty_title': 'Keine Wetter-Credits mehr',
+    'credits.empty_desc': 'Sie haben alle Credits verbraucht. Kommen Sie morgen wieder oder prüfen Sie unsere Pro-Pakete.',
+    'credits.buy_pro': 'Preise ansehen',
+    'credits.low_warning': 'Achtung: Ihre Credits gehen zur Neige.',
     'usage.limit_reached_daily': 'Tägliches API-Limit erreicht. Bitte versuchen Sie es morgen erneut oder kaufen Sie ein (zusätzliches) Pro-Paket.',
     'usage.this_month': 'Diesen monat',
     'usage.limits_title': 'Verbrauch & limits',
@@ -1345,6 +1355,7 @@ export const de: Dictionary = {
 
     // Activity Reasons
     'reason.perfect': 'Perfekte bedingungen!',
+    'reason.warm': 'Schön warmes Wetter!',
     'reason.feels_like_subzero': 'Gefühlt unter null',
     'reason.wet_field': 'Nasses feld',
     'reason.damp_field': 'Feuchtes feld',

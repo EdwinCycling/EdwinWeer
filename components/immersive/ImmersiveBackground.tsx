@@ -8,9 +8,10 @@ interface Props {
     isDay: boolean;
     precipAmount?: number; // mm
     cloudCover?: number; // 0-100
+    isVisible?: boolean;
 }
 
-export const ImmersiveBackground = React.memo(({ weatherCode, isDay, precipAmount = 0, cloudCover }: Props) => {
+export const ImmersiveBackground = React.memo(({ weatherCode, isDay, precipAmount = 0, cloudCover, isVisible = true }: Props) => {
     
     // 1. Determine Background Gradient (Sky)
     const getSkyGradient = () => {
@@ -115,7 +116,8 @@ export const ImmersiveBackground = React.memo(({ weatherCode, isDay, precipAmoun
             {renderStars()}
             {renderCelestial()}
             {renderClouds()}
-            <ImmersiveWeatherEffect weatherCode={weatherCode} isDay={isDay} precipAmount={precipAmount} />
+            {/* Alleen zware weereffecten (animaties) renderen als de slide zichtbaar is */}
+            {isVisible && <ImmersiveWeatherEffect weatherCode={weatherCode} isDay={isDay} precipAmount={precipAmount} />}
         </div>
     );
 });

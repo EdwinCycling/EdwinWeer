@@ -301,21 +301,17 @@ export const saveSettings = (settings: AppSettings) => {
 };
 
 export const loadSettings = (): AppSettings => {
-    console.log("storageService: loadSettings called");
     if (typeof window === "undefined") {
-        console.log("storageService: window is undefined, returning default");
         return DEFAULT_SETTINGS;
     }
     const stored = localStorage.getItem(KEY_APP_SETTINGS);
     if (!stored) {
-        console.log("storageService: No stored settings found, returning default");
         return DEFAULT_SETTINGS;
     }
     
     try {
         // Merge with default to ensure new fields (theme, language) exist if old storage
         const parsed = JSON.parse(stored);
-        console.log("storageService: Parsed settings from localStorage", parsed);
         
         // Migration: aiProfile -> caelixProfile -> baroProfile
         if (parsed.aiProfile && !parsed.baroProfile) {

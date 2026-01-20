@@ -205,6 +205,14 @@ export const handler = async (event, context) => {
 
         for (const doc of usersSnapshot.docs) {
             const userData = doc.data();
+            const userId = doc.id;
+
+            // Skip banned users
+            if (userData.isBanned === true) {
+                console.log(`User ${userId} is banned, skipping scheduled your-day.`);
+                continue;
+            }
+
             const customEvents = userData.customEvents || [];
             
             if (!customEvents.length) continue;

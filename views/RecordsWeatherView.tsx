@@ -2463,7 +2463,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       <h3 className="text-lg font-bold mb-2 text-text-main px-2 sm:px-0">{t('records.rain_sun_graph')}</h3>
                       <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <ComposedChart data={dailyData} margin={{top: 45, right: 5, bottom: 5, left: -10}} barGap={2} syncId="monthlyGraph">
+                        <ComposedChart data={dailyData} margin={{top: 45, right: 5, bottom: 5, left: isMobile ? 0 : -10}} barGap={2} syncId="monthlyGraph">
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.2)" />
                              {/* Weekend highlights */}
                              {dailyData.map((entry, index) => (

@@ -39,29 +39,36 @@ const BaroTimeMachineView = React.lazy(() => import('./views/BaroTimeMachineView
 const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView').then(module => ({ default: module.BaroStorytellerView })));
 const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(module => ({ default: module.SongWriterView })));
 const ImmersiveForecastView = React.lazy(() => import('./views/ImmersiveForecastView').then(module => ({ default: module.ImmersiveForecastView })));
+const GlobeView = React.lazy(() => import('./views/GlobeView').then(module => ({ default: module.GlobeView })));
 const LandingPageV2 = React.lazy(() => import('./views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
 import { ViewState, AppSettings } from './types';
 import packageJson from './package.json';
 const appVersion = packageJson.version;
-import { loadSettings, saveSettings } from './services/storageService';
+import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './contexts/ThemeContext';
 import { LimitReachedModal } from './components/LimitReachedModal';
+import { CreditMonitor } from './components/CreditMonitor';
 import ReloadPrompt from './components/ReloadPrompt';
 import { useScrollLock } from './hooks/useScrollLock';
 import { LoginToast } from './components/LoginToast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { checkLimit, getUsage, API_LIMITS } from './services/usageService';
+import { GlobalBanner } from './components/GlobalBanner';
 
 const App: React.FC = () => {
-  console.log("App: Component rendering started");
   const { user, loading, logout, sessionExpiry } = useAuth();
   const { theme, setTheme } = useTheme();
 
-  console.log("App: Auth state", { user: user?.uid, loading });
   const [currentView, setCurrentView] = useState<ViewState>(() => {
+      // Check for persisted view from session (to handle first-load jumps)
+      const persistedView = sessionStorage.getItem('baro_current_view');
+      if (persistedView && Object.values(ViewState).includes(persistedView as ViewState)) {
+          return persistedView as ViewState;
+      }
+
       // Check if returning from Stripe payment
       const params = new URLSearchParams(window.location.search);
       if (params.get('success') === 'true') {
@@ -76,12 +83,18 @@ const App: React.FC = () => {
 
       return ViewState.CURRENT;
   });
+
+  // Persist view state to handle unexpected reloads/jumps
+  useEffect(() => {
+      if (currentView) {
+          sessionStorage.setItem('baro_current_view', currentView);
+      }
+  }, [currentView]);
   const [previousView, setPreviousView] = useState<ViewState | null>(null);
   const [viewParams, setViewParams] = useState<any>(null);
 
   // Load Settings
   const [settings, setSettings] = useState<AppSettings>(() => {
-    console.log("App: Initializing settings");
     return loadSettings();
   });
 
@@ -253,17 +266,30 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
+      <>
+        <GlobalBanner />
+        <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </>
     );
   }
 
   if (!user) {
     if (currentView === ViewState.FAQ) {
-        return <FAQView onNavigate={navigate} settings={settings} isLandingV2={true} />;
+        return (
+            <>
+                <GlobalBanner />
+                <FAQView onNavigate={navigate} settings={settings} isLandingV2={true} />
+            </>
+        );
     }
-    return <LandingPageV2 onNavigate={navigate} />;
+    return (
+        <>
+            <GlobalBanner />
+            <LandingPageV2 onNavigate={navigate} />
+        </>
+    );
   }
 
   const renderView = () => {
@@ -315,6 +341,15 @@ const App: React.FC = () => {
         return <CyclingView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.IMMERSIVE_FORECAST:
         return <ImmersiveForecastView onNavigate={navigate} settings={settings} />;
+      case ViewState.GLOBE:
+        return <GlobeView 
+            onNavigate={navigate} 
+            settings={settings} 
+            onSelectLocation={(loc) => {
+                saveCurrentLocation(loc);
+                navigate(ViewState.CURRENT);
+            }} 
+        />;
       case ViewState.BARO_WEERMAN:
         return <BaroWeermanView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} isLimitReached={!!limitReached} />;
       case ViewState.BARO_TIME_MACHINE:
@@ -352,6 +387,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
+        <GlobalBanner />
         <div className="pb-32 max-w-5xl mx-auto w-full px-0 lg:px-8">
             <ErrorBoundary settings={settings} onNavigate={navigate}>
                 <Suspense fallback={<LoadingSpinner />}>
@@ -888,6 +924,8 @@ const App: React.FC = () => {
 
         {/* Limit Reached Modal - Replaced by Banner */}
         {import.meta.env.PROD && <ReloadPrompt />}
+        
+        <CreditMonitor currentView={currentView} onNavigate={navigate} settings={settings} />
     </div>
   );
 };

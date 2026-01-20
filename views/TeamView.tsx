@@ -17,18 +17,6 @@ export const TeamView: React.FC<Props> = ({ onNavigate, settings }) => {
 
   return (
     <div className="relative min-h-screen flex flex-col pb-24 overflow-y-auto text-text-main bg-bg-page transition-colors duration-300">
-      {/* Background Layer */}
-      <div className="absolute top-0 left-0 right-0 h-[50vh] z-0 overflow-hidden rounded-b-[3rem]">
-          <StaticWeatherBackground 
-              weatherCode={0} 
-              isDay={1} 
-              className="absolute inset-0 w-full h-full"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-page" />
-      </div>
-
-      <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
-
       <div className="relative z-10 max-w-2xl mx-auto p-6">
         <div className="flex items-center gap-4 mb-8">
             <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full bg-bg-card/50 backdrop-blur text-text-main hover:bg-bg-card transition-colors">

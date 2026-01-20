@@ -246,8 +246,8 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
             </div>
 
             {/* Heatmap Container */}
-            <div className="overflow-x-auto pb-4">
-                <div className="min-w-[700px] flex justify-center">
+            <div className="overflow-x-auto pb-4 scrollbar-hide">
+                <div className="w-fit mx-auto px-4">
                     <svg width={width} height={height} className="font-sans">
                         {/* Month Labels */}
                         {monthLabels.map((l, i) => (

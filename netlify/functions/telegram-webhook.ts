@@ -68,6 +68,12 @@ export const handler: Handler = async (event) => {
                      return { statusCode: 200, body: 'User not found' };
                 }
 
+                const userData = userDoc.data();
+                if (userData?.isBanned === true) {
+                    await sendTelegramMessage(chatId, "Je account is geblokkeerd. Toegang geweigerd.");
+                    return { statusCode: 200, body: 'User banned' };
+                }
+
                 // Update User with Telegram Chat ID
                 await userRef.update({
                     telegramChatId: chatId.toString()

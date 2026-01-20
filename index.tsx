@@ -20,14 +20,11 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   }
 }
 
-console.log("index.tsx: Starting render");
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-  console.error("index.tsx: Root element not found!");
   throw new Error('Failed to find the root element');
 }
 
-console.log("index.tsx: Root element found, mounting React");
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
@@ -38,4 +35,3 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
-console.log("index.tsx: Render called");

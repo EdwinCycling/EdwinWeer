@@ -298,6 +298,13 @@ export const handler = async (event, context) => {
         for (const doc of snapshot.docs) {
             const userData = doc.data();
             const userId = doc.id;
+
+            // Skip banned users
+            if (userData.isBanned === true) {
+                console.log(`User ${userId} is banned, skipping baro-weerman.`);
+                continue;
+            }
+
             const settings = userData.baro_weerman;
 
             if (!settings || !settings.enabled) continue;
@@ -337,8 +344,18 @@ export const handler = async (event, context) => {
             const tripOptions = calculateTripOptions(weather, settings.trip_settings);
             if (tripOptions.length === 0) continue;
 
+            // Helper: Get User Name
+            let userName = userData.displayName || "Fietser";
+            // Try to get from Google Auth provider if available (fallback)
+            if (userData.providerData) {
+                const googleProfile = userData.providerData.find(p => p.providerId === 'google.com');
+                if (googleProfile && googleProfile.displayName) {
+                    userName = googleProfile.displayName;
+                }
+            }
+
             // Generate HTML
-            const html = generateHtmlTable(tripOptions, settings.trip_settings);
+            const html = generateHtmlTable(tripOptions, settings.trip_settings, userName);
 
             let sent = false;
             // Always prefer Email for this rich format

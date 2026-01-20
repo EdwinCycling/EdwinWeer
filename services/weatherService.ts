@@ -7,6 +7,7 @@ const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 const ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble";
 const SEASONAL_URL = "https://seasonal-api.open-meteo.com/v1/seasonal";
+const MARINE_URL = "https://marine-api.open-meteo.com/v1/marine";
 
 // --- CACHE ---
 const forecastCache: Record<string, { timestamp: number, data: any }> = {};
@@ -496,6 +497,18 @@ export const fetchForecast = async (lat: number, lon: number, model?: EnsembleMo
 
 export const fetchWeather = async (lat: number, lon: number, settings?: AppSettings) => {
     return fetchForecast(lat, lon);
+};
+
+export const fetchMarineData = async (lat: number, lon: number) => {
+    // Current marine data
+    const url = `${MARINE_URL}?latitude=${lat}&longitude=${lon}&current=wave_height,wave_direction,wave_period,wind_wave_height,swell_wave_height&timezone=auto`;
+    try {
+        const data = await throttledFetch(url);
+        return data;
+    } catch (e) {
+        console.error("Error fetching marine data", e);
+        return null;
+    }
 };
 
 export const fetchHistorical = async (lat: number, lon: number, startDate: string, endDate: string) => {

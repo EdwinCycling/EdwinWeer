@@ -173,6 +173,12 @@ export const handler = async (event, context) => {
             const userId = doc.id;
             const userData = doc.data();
             
+            // Skip banned users
+            if (userData.isBanned === true) {
+                console.log(`User ${userId} is banned, skipping push.`);
+                continue;
+            }
+
             // Extract settings
             const settings = userData.settings || {};
             // Support multiple profiles

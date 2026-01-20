@@ -74,6 +74,7 @@ export const nl: Dictionary = {
     'nav.ensemble': 'Ensemble',
     'nav.pricing': 'Prijzen',
     'nav.team': 'Het team',
+    'nav.globe': 'Wereldbol',
     'nav.model_info': 'Weermodellen',
     'nav.info': 'Info',
     'nav.user_account': 'Mijn account en verbruik',
@@ -98,6 +99,9 @@ export const nl: Dictionary = {
     'error.boundary.message': 'Er is een onverwachte fout opgetreden.',
     'error.boundary.refresh': 'Ververs pagina',
     'error.boundary.home': 'Terug naar home',
+    'banned.title': 'Toegang Geblokkeerd',
+    'banned.message': 'Je account is geblokkeerd vanwege een schending van onze gebruiksvoorwaarden. Neem contact op met de support als je denkt dat dit een vergissing is.',
+    'banned.support_email': 'support@editsolutions.nl',
     'error_no_data_for_forecast': 'Geen voorspelling beschikbaar voor deze locatie',
     'welcome_message': 'Welkom! bij instellingen kun je alles naar wens aanpassen. veel plezier met baro!',
     'welcome.title': 'Welkom bij baro!',
@@ -1283,6 +1287,12 @@ export const nl: Dictionary = {
     'usage.ok': 'Ok',
     'usage.warning': 'Waarschuwing',
     'usage.limit_reached': 'Limiet bereikt',
+    
+    // Credits
+    'credits.empty_title': 'Geen weather credits meer',
+    'credits.empty_desc': 'Je credits zijn op. Kom morgen terug of schaf een Pro pakket aan.',
+    'credits.buy_pro': 'Bekijk prijzen',
+    'credits.low_warning': 'Let op: je credits raken bijna op.',
     'usage.limit_reached_daily': 'Dagelijkse API-limiet bereikt. Probeer het morgen opnieuw of koop een (extra) Pro pakket.',
     'usage.this_month': 'Deze maand',
     'usage.limits_title': 'Verbruik & limieten',
@@ -1544,6 +1554,7 @@ export const nl: Dictionary = {
 
     // Activity Reasons
     'reason.perfect': 'Perfecte omstandigheden!',
+    'reason.warm': 'Lekker warm weer!',
     'reason.feels_like_subzero': 'Gevoelstemperatuur onder nul',
     'reason.wet_field': 'Nat veld',
     'reason.damp_field': 'Vochtig veld',

@@ -1,4 +1,13 @@
 
+export interface SystemConfig {
+  active: boolean;
+  maintenance_message: string;
+  start_time?: string;
+  end_time?: string;
+  disable_app: boolean;
+  include_landing_page?: boolean;
+}
+
 export type Dictionary = Record<string, string>;
 
 export interface WeatherData {
@@ -159,6 +168,16 @@ export type AppTheme = 'dark' | 'light' | 'neuro' | 'iceland' | 'retro' | 'fores
 export type AppLanguage = 'en' | 'nl' | 'fr' | 'de' | 'es';
 export type TimeFormat = '12h' | '24h';
 export type MapBaseLayer = 'light' | 'dark' | 'satellite';
+export type UserRole = 'user' | 'admin';
+
+export interface AppUser {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+    role: UserRole;
+    isBanned?: boolean;
+}
 
 export interface HeatwaveSettings {
     minLength: number;
@@ -287,6 +306,7 @@ export enum ViewState {
   SETTINGS = 'SETTINGS',
   TEAM = 'TEAM',
   PRICING = 'PRICING',
+  GLOBE = 'GLOBE',
   INFO = 'INFO',
   MODEL_INFO = 'MODEL_INFO',
   FORECAST = 'FORECAST',

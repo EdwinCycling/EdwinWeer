@@ -259,6 +259,12 @@ export const handler = async (event, context) => {
             const userId = doc.id;
             const userData = doc.data();
             
+            // Skip banned users
+            if (userData.isBanned === true) {
+                console.log(`User ${userId} is banned, skipping scheduled email/telegram.`);
+                continue;
+            }
+
             // Extract settings
             const settings = userData.settings || {};
             // Support multiple profiles
@@ -455,7 +461,7 @@ export const handler = async (event, context) => {
                 // 3. Generate Content
                 let emailContent = '';
                 if (shouldSendEmail || shouldSendMessenger) {
-                    emailContent = await generateReport(weatherData, baroProfile, userName);
+                    emailContent = await generateAIReport(weatherData, baroProfile, userName);
                 }
 
                 // 4. Send Notifications

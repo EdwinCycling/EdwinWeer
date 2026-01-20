@@ -30,8 +30,18 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export const handler = async (event) => {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8888',
+    'https://askbaro.com',
+    'https://www.askbaro.com'
+  ];
+  
+  const origin = event.headers['origin'] || event.headers['Origin'];
+  const allowOrigin = allowedOrigins.includes(origin) || (origin && origin.endsWith('.netlify.app')) ? origin : allowedOrigins[0];
+
   const headers = {
-    'Access-Control-Allow-Origin': '*', // Controlled by Netlify TOML/Env in production, but kept open here for dev
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-App-Source',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
@@ -96,6 +106,12 @@ export const handler = async (event) => {
       const idToken = authHeader.split('Bearer ')[1];
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       uid = decodedToken.uid;
+
+      // Check if user is banned
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (userDoc.exists && userDoc.data()?.isBanned === true) {
+          return { statusCode: 403, headers, body: JSON.stringify({ error: 'User is banned' }) };
+      }
 
       // Transaction to check and deduct credits
       await db.runTransaction(async (t) => {

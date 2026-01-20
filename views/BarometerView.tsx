@@ -392,6 +392,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
                 setShowFavorites(false);
             }}
             settings={settings}
+            onOpenGlobe={() => onNavigate(ViewState.GLOBE)}
         />
 
     </div>

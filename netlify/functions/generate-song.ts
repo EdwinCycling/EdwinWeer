@@ -137,6 +137,11 @@ export const handler: Handler = async (event) => {
         }
         
         const userData = userDoc.data();
+        
+        if (userData?.isBanned === true) {
+            return { statusCode: 403, headers, body: JSON.stringify({ error: 'User is banned' }) };
+        }
+
         const baroCredits = userData?.usage?.baroCredits || 0;
 
         if (baroCredits < 1) {

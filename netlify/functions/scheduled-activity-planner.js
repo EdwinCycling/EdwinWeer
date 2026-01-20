@@ -498,6 +498,13 @@ export const handler = async (event, context) => {
         for (const doc of snapshot.docs) {
             const userData = doc.data();
             const userId = doc.id;
+            
+            // Skip banned users
+            if (userData.isBanned === true) {
+                console.log(`User ${userId} is banned, skipping activity planner.`);
+                continue;
+            }
+
             const settings = userData.activity_settings;
             
             if (!settings) continue;

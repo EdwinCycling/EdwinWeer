@@ -34,6 +34,12 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
 
         const observer = new Astronomy.Observer(location.lat, location.lon, 0);
 
+        // Pre-calculate moon events for the entire period to avoid rebuilding inside the loop
+        const moonEvents: { type: 'rise' | 'set', time: number }[] = [];
+        if (data.daily.moonrise) data.daily.moonrise.forEach(t => moonEvents.push({ type: 'rise', time: new Date(t).getTime() }));
+        if (data.daily.moonset) data.daily.moonset.forEach(t => moonEvents.push({ type: 'set', time: new Date(t).getTime() }));
+        moonEvents.sort((a, b) => a.time - b.time);
+
         const hoursData = data.hourly.time
             .slice(currentHourIndex, currentHourIndex + 48)
             .map((time, i) => {
@@ -41,6 +47,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                 
                 // Calculate Sun/Moon position
                 const date = new Date(time); 
+                const nowTime = date.getTime();
                 
                 const sunEq = Astronomy.Equator(Astronomy.Body.Sun, date, observer, true, true);
                 const sunHor = Astronomy.Horizon(date, observer, sunEq.ra, sunEq.dec, 'normal');
@@ -71,57 +78,31 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                     const currentSunTime = date.getTime() - sr.getTime();
                     sunProgress = Math.max(0, Math.min(1, currentSunTime / totalSunTime));
 
-                    // Robust Moon Progress Calculation
-                    const nowTime = date.getTime();
-                    // Get all moon events from daily data to form a timeline
-                    const events: { type: 'rise' | 'set', time: number }[] = [];
-                    if (data.daily.moonrise) data.daily.moonrise.forEach(t => events.push({ type: 'rise', time: new Date(t).getTime() }));
-                    if (data.daily.moonset) data.daily.moonset.forEach(t => events.push({ type: 'set', time: new Date(t).getTime() }));
-                    events.sort((a, b) => a.time - b.time);
-
-                    // Find the active transit (Rise <= Now < NextRise)
-                    // We want the Rise that is current (started before now)
-                    const lastRise = events.filter(e => e.type === 'rise' && e.time <= nowTime).pop();
+                    // Find the active transit (Rise <= Now < NextRise) using the pre-calculated events
+                    const lastRise = moonEvents.filter(e => e.type === 'rise' && e.time <= nowTime).pop();
                     
                     if (lastRise) {
-                        // Find the set that belongs to this rise (the next set after rise)
-                        const nextSet = events.find(e => e.type === 'set' && e.time > lastRise.time);
-                        
+                        const nextSet = moonEvents.find(e => e.type === 'set' && e.time > lastRise.time);
                         if (nextSet) {
-                            // Calculate progress based on this transit
                             const totalDuration = nextSet.time - lastRise.time;
                             moonProgress = (nowTime - lastRise.time) / totalDuration;
-
-                            // Use these specific times for the label
                             const mrDate = new Date(lastRise.time);
                             const msDate = new Date(nextSet.time);
                             moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
                             moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
                         }
                     } else {
-                        const nextRise = events.find(e => e.type === 'rise' && e.time > nowTime);
+                        const nextRise = moonEvents.find(e => e.type === 'rise' && e.time > nowTime);
                         if (nextRise) {
-                             const nextSet = events.find(e => e.type === 'set' && e.time > nextRise.time);
+                             const nextSet = moonEvents.find(e => e.type === 'set' && e.time > nextRise.time);
                              if (nextSet) {
                                  const totalDuration = nextSet.time - nextRise.time;
-                                 moonProgress = (nowTime - nextRise.time) / totalDuration; // Will be negative
-                                 
+                                 moonProgress = (nowTime - nextRise.time) / totalDuration;
                                  const mrDate = new Date(nextRise.time);
                                  const msDate = new Date(nextSet.time);
                                  moonriseStr = mrDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
                                  moonsetStr = msDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
                              }
-                        }
-                    }
-
-                    // Fallback (only if no events found at all)
-                    if (moonProgress === 0 && !moonriseStr && data.daily.moonrise && data.daily.moonrise[dayIndex]) {
-                        const mr = new Date(data.daily.moonrise[dayIndex]);
-                        moonriseStr = mr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                        
-                        if (data.daily.moonset && data.daily.moonset[dayIndex]) {
-                            const ms = new Date(data.daily.moonset[dayIndex]);
-                            moonsetStr = ms.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
                         }
                     }
                 }
@@ -131,7 +112,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                     temp: data.hourly.temperature_2m[index],
                     code: data.hourly.weather_code[index],
                     precip: data.hourly.precipitation[index],
-                    windSpeed: data.hourly.wind_speed_10m[index], // Raw value, convert later
+                    windSpeed: data.hourly.wind_speed_10m[index], 
                     windDir: data.hourly.wind_direction_10m[index],
                     feelsLike: data.hourly.apparent_temperature[index],
                     humidity: data.hourly.relative_humidity_2m[index],
@@ -262,9 +243,22 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                     className="w-full h-full overflow-x-auto overflow-y-hidden flex snap-x snap-mandatory scrollbar-hide items-center"
                     style={{ scrollBehavior: 'smooth' }}
                 >
-                    {enrichedHours.map((hour, idx) => (
-                        <ImmersiveSlide key={hour.time} data={hour as any} settings={settings} />
-                    ))}
+                    {enrichedHours.map((hour, idx) => {
+                        // Alleen de huidige slide en de direct aangrenzende slides volledig renderen
+                        // Dit bespaart enorm veel CPU/GPU omdat we niet 48 zware achtergronden tegelijk renderen
+                        const isVisible = Math.abs(idx - currentIndex) <= 1;
+                        const isNear = Math.abs(idx - currentIndex) <= 2;
+
+                        return (
+                            <ImmersiveSlide 
+                                key={hour.time} 
+                                data={hour as any} 
+                                settings={settings} 
+                                isVisible={isVisible}
+                                isNear={isNear}
+                            />
+                        );
+                    })}
                 </div>
 
                 {/* Indicator Dots - Inside the window */}

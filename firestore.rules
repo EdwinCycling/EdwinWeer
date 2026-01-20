@@ -24,6 +24,12 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // System configuration (Publicly readable)
+    match /system/config {
+      allow read: if true;
+      allow write: if false; // Only Admin SDK can write
+    }
     
     // Purchases collection (Transaction Log)
     match /purchases/{purchaseId} {

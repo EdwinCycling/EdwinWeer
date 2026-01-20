@@ -538,14 +538,20 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
     // Calculations for Sun Graph
     const parseTime = (iso: string) => {
+        if (!iso) return NaN;
         const d = new Date(iso);
+        if (isNaN(d.getTime())) return NaN;
         return d.getHours() + d.getMinutes() / 60;
     };
     
     // Adjust sunrise/sunset for UTC offset to get local solar time roughly
     // We use direct parsing of the ISO string from OpenMeteo which is already in the city's timezone
-    const sunriseHr = parseTime(weatherData.daily.sunrise[0]);
-    const sunsetHr = parseTime(weatherData.daily.sunset[0]);
+    const sunriseHr = weatherData.daily.sunrise?.[0] ? parseTime(weatherData.daily.sunrise[0]) : NaN;
+    const sunsetHr = weatherData.daily.sunset?.[0] ? parseTime(weatherData.daily.sunset[0]) : NaN;
+
+    if (isNaN(sunriseHr) || isNaN(sunsetHr)) {
+        return null;
+    }
     
     // Calculate current time at the location
     // We calculate the city's current hour based on the UTC offset
@@ -1004,6 +1010,16 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <Icon name="my_location" className="text-sm" />
                         <span className="text-sm font-medium">{t('my_location')}</span>
                     </button>
+
+                    {/* Wereldbol Button */}
+                    <button 
+                        onClick={() => onNavigate(ViewState.GLOBE)}
+                        className="flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color"
+                    >
+                        <Icon name="public" className="text-sm" />
+                        <span className="text-sm font-medium">{t('nav.globe') || 'Wereldbol'}</span>
+                    </button>
+
                     {settings.favorites.map((fav, i) => {
                         const isActive = !location.isCurrentLocation && 
                                         location.name === fav.name && 
@@ -1655,6 +1671,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               setShowFavorites(false);
           }}
           settings={settings}
+          onOpenGlobe={() => onNavigate(ViewState.GLOBE)}
       />
       <WelcomeModal 
           isOpen={showWelcomeModal} 

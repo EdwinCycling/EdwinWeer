@@ -77,6 +77,10 @@ export const handler = async (event: any, context: any) => {
             }
             
             const data = doc.data();
+            if (data?.isBanned === true) {
+                throw new Error('User is banned');
+            }
+
             const usage = data.usage || {};
             const baroCredits = usage.baroCredits || 0;
 

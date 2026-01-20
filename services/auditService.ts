@@ -55,7 +55,6 @@ export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 
                 const docsToDelete = snapshot.docs.slice(50);
                 const deletePromises = docsToDelete.map(d => deleteDoc(doc(db, 'users', userId, 'audit_logs', d.id)));
                 await Promise.all(deletePromises);
-                console.log(`Cleaned up ${docsToDelete.length} old audit logs for user ${userId}`);
             }
         } catch (cleanupError) {
             console.error("Error cleaning up audit logs:", cleanupError);

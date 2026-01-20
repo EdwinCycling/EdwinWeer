@@ -428,13 +428,20 @@ export const handler = async (event: any, context: any) => {
         let count = 0;
         for (const userDoc of activeUsers) {
             const userData = userDoc.data();
+            const userId = userDoc.id;
+
+            // Skip banned users
+            if (userData.isBanned === true) {
+                console.log(`Skipping banned user ${userId} for cycling report.`);
+                continue;
+            }
+
             const settings = userData.settings || {};
             const credits = userData.usage?.baroCredits || 0;
             const lastUpdate = userData.last_cycling_update_date;
             
             // Gebruik UID als backup als email ontbreekt in het document
             const userEmail = (userData.email || "").toLowerCase().trim();
-            const userId = userDoc.id;
             
             // Edwin's UID en Email bypass
             const isTestUser = false;

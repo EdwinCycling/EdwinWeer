@@ -199,6 +199,9 @@ export const getUsage = (): UsageStats => {
 const saveUsage = (stats: UsageStats) => {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('usage:updated'));
+        }
     } catch (e) {
         console.error('Failed to save usage stats', e);
     }
@@ -263,6 +266,52 @@ export const checkLimit = (): void => {
     }
 };
 
+/**
+ * Checks and resets daily credits if a new day has started.
+ * Ensures user has at least FREE_DAILY credits.
+ */
+export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // If it's a new day
+    if (currentStats.dayStart !== today) {
+        console.log(`New day detected (Old: ${currentStats.dayStart}, New: ${today}). Checking credits...`);
+        
+        // 1. Reset counters
+        currentStats.dayCount = 0;
+        currentStats.dayStart = today;
+        currentStats.alerts.day80 = false;
+        currentStats.alerts.day100 = false;
+        
+        // 2. Check Credits Top-up
+        const freeDaily = API_LIMITS.CREDITS?.FREE_DAILY || 10;
+        const currentCredits = currentStats.weatherCredits || 0;
+        
+        if (currentCredits < freeDaily) {
+            const topUp = freeDaily - currentCredits;
+            console.log(`Topping up credits by ${topUp} to reach ${freeDaily}`);
+            
+            // Apply locally
+            currentStats.weatherCredits = freeDaily;
+            
+            // Apply remotely (negative consumption = addition)
+            if (db && uid) {
+                try {
+                    const userRef = doc(db, 'users', uid);
+                    await updateDoc(userRef, {
+                        'usage.weatherCredits': increment(topUp)
+                    });
+                } catch (e) {
+                    console.error("Error topping up credits:", e);
+                }
+            }
+        }
+        
+        // Save the new dayStart to prevent re-run
+        saveUsage(currentStats);
+    }
+};
+
 export const consumeCredit = async (type: 'weather' | 'baro', amount: number = 1) => {
     if (!currentUserId || !db) return;
     try {
@@ -303,25 +352,26 @@ export const deductBaroCredit = (): boolean => {
     return false;
 };
 
-export const trackCall = () => {
+export const trackCall = async () => {
     const stats = getUsage();
     const now = Date.now();
+    const today = new Date().toISOString().split('T')[0];
 
-    const isPro = stats.weatherCredits > 0;
-    const limits = isPro ? API_LIMITS.PRO : API_LIMITS.FREE;
+    // Ensure we are on the correct day (Top-up check)
+    if (currentUserId && stats.dayStart !== today) {
+        await checkAndResetDailyCredits(stats, currentUserId);
+    }
 
+    const limits = stats.weatherCredits > 0 ? API_LIMITS.PRO : API_LIMITS.FREE;
+    
     stats.totalCalls++;
 
-    // Low credits check (e.g. < 50)
-    if (isPro && stats.weatherCredits < 50 && !stats.alerts.creditsLow) {
-        stats.alerts.creditsLow = true;
-        // sendAlert('credits_low', stats.weatherCredits, 0);
-    }
-    
-    if (isPro) {
+    // Decrement Credits (Atomic decrement on server)
+    if (stats.weatherCredits > 0) {
         stats.weatherCredits--;
-        // Atomic decrement on server
         consumeCredit('weather', 1);
+    } else {
+        console.warn("Call tracked with 0 credits!");
     }
 
     // Minute
@@ -330,7 +380,7 @@ export const trackCall = () => {
     } else {
         stats.minuteCount = 1;
         stats.minuteStart = now;
-        warnedMinute = false; // Reset transient warning
+        warnedMinute = false;
     }
 
     // Hour
@@ -339,17 +389,15 @@ export const trackCall = () => {
     } else {
         stats.hourCount = 1;
         stats.hourStart = now;
-        warnedHour = false; // Reset transient warning
+        warnedHour = false;
     }
 
     // Day
-    const today = new Date().toISOString().split('T')[0];
     if (stats.dayStart === today) {
         stats.dayCount++;
     } else {
         stats.dayCount = 1;
         stats.dayStart = today;
-        // Reset daily alerts
         stats.alerts.day80 = false;
         stats.alerts.day100 = false;
     }
@@ -361,7 +409,6 @@ export const trackCall = () => {
     } else {
         stats.monthCount = 1;
         stats.monthStart = thisMonth;
-        // Reset monthly alerts
         stats.alerts.month80 = false;
         stats.alerts.month100 = false;
     }
@@ -394,14 +441,14 @@ export const trackCall = () => {
         if (dayRatio >= 0.8 && dayRatio < 1.0 && !stats.alerts.day80) {
             stats.alerts.day80 = true;
             emitUsageWarning('day', stats);
-            sendAlert('day_80', stats.dayCount, limits.DAY);
+            // sendAlert('day_80', stats.dayCount, limits.DAY);
         }
 
         // 100% Alert
         if (dayRatio >= 1.0 && !stats.alerts.day100) {
             stats.alerts.day100 = true;
-            emitUsageWarning('day', stats); // or emitLimitReached? checkLimit throws error, here we just warn
-            sendAlert('day_100', stats.dayCount, limits.DAY);
+            emitUsageWarning('day', stats); 
+            // sendAlert('day_100', stats.dayCount, limits.DAY);
         }
     }
 
@@ -413,14 +460,14 @@ export const trackCall = () => {
         if (monthRatio >= 0.8 && monthRatio < 1.0 && !stats.alerts.month80) {
             stats.alerts.month80 = true;
             emitUsageWarning('month', stats);
-            sendAlert('month_80', stats.monthCount, limits.MONTH);
+            // sendAlert('month_80', stats.monthCount, limits.MONTH);
         }
 
         // 100% Alert
         if (monthRatio >= 1.0 && !stats.alerts.month100) {
             stats.alerts.month100 = true;
             emitUsageWarning('month', stats);
-            sendAlert('month_100', stats.monthCount, limits.MONTH);
+            // sendAlert('month_100', stats.monthCount, limits.MONTH);
         }
     }
 

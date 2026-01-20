@@ -95,6 +95,7 @@ export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat
                             tick={{ fill: 'var(--text-muted)' }}
                             axisLine={{ stroke: 'var(--border-color)' }}
                             tickLine={{ stroke: 'var(--border-color)' }}
+                            interval={0}
                         />
                         <YAxis 
                             stroke="var(--text-muted)" 

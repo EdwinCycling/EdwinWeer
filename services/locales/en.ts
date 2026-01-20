@@ -70,6 +70,7 @@ export const en: Dictionary = {
     'nav.ensemble': 'Ensemble',
     'nav.pricing': 'Pricing',
     'nav.team': 'Team',
+    'nav.globe': 'Globe',
     'nav.model_info': 'Weather models',
     'nav.info': 'Info',
     'nav.user_account': 'My account & usage',
@@ -93,6 +94,9 @@ export const en: Dictionary = {
     'error.boundary.message': 'An unexpected error occurred.',
     'error.boundary.refresh': 'Refresh page',
     'error.boundary.home': 'Back to home',
+    'banned.title': 'Access Restricted',
+    'banned.message': 'Your account has been restricted due to a violation of our terms of service. Please contact support if you believe this is a mistake.',
+    'banned.support_email': 'support@editsolutions.nl',
     'error_no_data_for_forecast': 'No forecast available for this location',
     'welcome_message': 'Welkom! bij instellingen kun je alles naar wens aanpassen. veel plezier met baro!',
     'welcome.title': 'Welcome to baro!',
@@ -1263,6 +1267,12 @@ export const en: Dictionary = {
     'usage.ok': 'Ok',
     'usage.warning': 'Warning',
     'usage.limit_reached': 'Limit reached',
+    
+    // Credits
+    'credits.empty_title': 'No weather credits left',
+    'credits.empty_desc': 'You have used all your credits. Come back tomorrow or check our Pro packages.',
+    'credits.buy_pro': 'View pricing',
+    'credits.low_warning': 'Warning: your credits are running low.',
     'usage.limit_reached_daily': 'Daily API limit reached. Please try again tomorrow or buy an (extra) Pro package.',
     'usage.this_month': 'This month',
     'usage.limits_title': 'Usage & limits',
@@ -1524,6 +1534,7 @@ export const en: Dictionary = {
 
     // Activity Reasons
     'reason.perfect': 'Perfect conditions!',
+    'reason.warm': 'Nice and warm weather!',
     'reason.feels_like_subzero': 'Feels like subzero',
     'reason.wet_field': 'Wet field',
     'reason.damp_field': 'Damp field',
