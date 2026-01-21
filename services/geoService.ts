@@ -59,7 +59,7 @@ export const reverseGeocode = async (lat: number, lon: number): Promise<string |
   }
 };
 
-export const reverseGeocodeFull = async (lat: number, lon: number): Promise<{ name: string, countryCode: string } | null> => {
+export const reverseGeocodeFull = async (lat: number, lon: number): Promise<{ name: string, countryCode: string, countryName?: string } | null> => {
   try {
     checkLimit();
     trackCall();
@@ -84,9 +84,10 @@ export const reverseGeocodeFull = async (lat: number, lon: number): Promise<{ na
            null;
     
     const countryCode = data.address.country_code ? data.address.country_code.toUpperCase() : 'US';
+    const countryName = data.address.country;
 
     if (name) {
-        return { name, countryCode };
+        return { name, countryCode, countryName };
     }
     return null;
   } catch (e) {

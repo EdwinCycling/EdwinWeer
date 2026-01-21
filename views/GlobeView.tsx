@@ -1,23 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Globe, { GlobeMethods } from 'react-globe.gl';
+import { MapContainer, TileLayer, useMapEvents, useMap, Marker } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import * as Astronomy from 'astronomy-engine';
 import { ViewState, Location, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { 
     fetchForecast, 
-    convertTemp, 
-    mapWmoCodeToText, 
-    mapWmoCodeToIcon, 
     fetchMarineData, 
-    getWindDirection, 
-    convertWind, 
-    convertTempPrecise,
-    calculateMoonPhase,
-    getMoonPhaseText
+    calculateMoonPhase
 } from '../services/weatherService';
 import { reverseGeocodeFull } from '../services/geoService';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
+import { useScrollLock } from '../hooks/useScrollLock';
+
+// Fix for Leaflet marker icons in React
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface Props {
     settings: AppSettings;
@@ -25,53 +31,189 @@ interface Props {
     onSelectLocation: (loc: Location) => void;
 }
 
+interface MapControllerProps {
+    onSwitchToGlobe: (lat: number, lng: number) => void;
+    onUpdateCenter: (lat: number, lng: number) => void;
+    onUpdateZoom: (zoom: number) => void;
+}
+
+const MapController: React.FC<MapControllerProps> = ({ onSwitchToGlobe, onUpdateCenter, onUpdateZoom }) => {
+    const map = useMap();
+    
+    useMapEvents({
+        zoomend: () => {
+            const z = map.getZoom();
+            if (z < 4) {
+                const center = map.getCenter();
+                onSwitchToGlobe(center.lat, center.lng);
+            } else {
+                onUpdateZoom(z);
+            }
+        },
+        moveend: () => {
+            const center = map.getCenter();
+            onUpdateCenter(center.lat, center.lng);
+        }
+    });
+    
+    return null;
+};
+
+interface MapClickHandlerProps {
+    onMapClick: (lat: number, lng: number) => void;
+}
+
+const MapClickHandler: React.FC<MapClickHandlerProps> = ({ onMapClick }) => {
+    useMapEvents({
+        click: (e) => {
+            onMapClick(e.latlng.lat, e.latlng.lng);
+        }
+    });
+    return null;
+};
+
+interface MapUpdaterProps {
+    center: { lat: number, lng: number };
+    zoom: number;
+}
+
+const MapUpdater: React.FC<MapUpdaterProps> = ({ center, zoom }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+        if (map) {
+            const currentCenter = map.getCenter();
+            const currentZoom = map.getZoom();
+            
+            // Only update if significantly different to avoid loops/jitters
+            const dist = Math.sqrt(
+                Math.pow(currentCenter.lat - center.lat, 2) + 
+                Math.pow(currentCenter.lng - center.lng, 2)
+            );
+            
+            if (dist > 0.0001 || currentZoom !== zoom) {
+                map.setView([center.lat, center.lng], zoom, { animate: true });
+            }
+        }
+    }, [center, zoom, map]);
+    
+    return null;
+};
+
 export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocation }) => {
     const globeEl = useRef<GlobeMethods | undefined>(undefined);
     const [selectedPoint, setSelectedPoint] = useState<{ lat: number; lng: number } | null>(null);
     const [weatherData, setWeatherData] = useState<any>(null);
     const [marineData, setMarineData] = useState<any>(null);
     const [locationType, setLocationType] = useState<'LAND' | 'WATER'>('LAND');
-    const [locationInfo, setLocationInfo] = useState<{ name: string; countryCode: string } | null>(null);
+    const [locationInfo, setLocationInfo] = useState<{ name: string; countryCode: string; countryName?: string } | null>(null);
     const [loading, setLoading] = useState(false);
     const [isGlobeLoading, setIsGlobeLoading] = useState(true);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+
+    useEffect(() => {
+        const updateDimensions = () => {
+            if (containerRef.current) {
+                setDimensions({
+                    width: containerRef.current.offsetWidth,
+                    height: containerRef.current.offsetHeight
+                });
+            }
+        };
+
+        const resizeObserver = new ResizeObserver(updateDimensions);
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
+        updateDimensions();
+        return () => resizeObserver.disconnect();
+    }, []);
     const [showToast, setShowToast] = useState(true);
-    
+
+    useScrollLock(!!selectedPoint);
+
+    // Hybrid Mode State
+    const [viewMode, setViewMode] = useState<'globe' | 'map'>('globe');
+    const [skin, setSkin] = useState<'satellite' | 'night' | 'topo' | 'streets'>(() => {
+        if (typeof window !== 'undefined') {
+            return (localStorage.getItem('globe_skin') as any) || 'satellite';
+        }
+        return 'satellite';
+    });
+    const [mapCenter, setMapCenter] = useState({ lat: 52.36, lng: 4.90 });
+    const [mapZoom, setMapZoom] = useState(6);
+
     const t = (key: string) => getTranslation(key, settings.language);
+
+    // Globe image URL based on skin
+    const getGlobeImage = () => {
+        switch (skin) {
+            case 'night': return '//unpkg.com/three-globe/example/img/earth-night.jpg';
+            case 'topo': return '//unpkg.com/three-globe/example/img/earth-topology.png';
+            case 'streets':
+            case 'satellite':
+            default: return '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
+        }
+    };
+
+    const getTileLayer = () => {
+        switch (skin) {
+            case 'night':
+                return "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+            case 'topo':
+                return "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
+            case 'streets':
+                return "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+            case 'satellite':
+            default:
+                return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+        }
+    };
+
+    const handleSkinChange = (newSkin: 'satellite' | 'night' | 'topo' | 'streets') => {
+        setSkin(newSkin);
+        localStorage.setItem('globe_skin', newSkin);
+    };
+
+    // MapController moved outside to prevent re-mounting loops
+
+    const handleSwitchToGlobe = (lat: number, lng: number) => {
+        // Reset to satellite if streets was selected (streets doesn't look good on globe)
+        if (skin === 'streets') {
+            setSkin('satellite');
+        }
+        
+        setViewMode('globe');
+        // Wait for transition
+        setTimeout(() => {
+            if (globeEl.current) {
+                globeEl.current.pointOfView({ lat, lng, altitude: 1.5 }, 1000);
+            }
+        }, 100);
+    };
 
     const calculateTideStrength = () => {
         try {
-            // Calculate moon phase for today
             const now = new Date();
-            // Use local calculation if Astronomy fails
-            let phase = 0.5; // Default to neutral
+            let phase = 0.5;
             
             try {
-                 // Try Astronomy Engine first
                  if (Astronomy && Astronomy.Illumination) {
-                     phase = Astronomy.Illumination(now).phase_fraction;
-                 } else {
+                    phase = Astronomy.Illumination(Astronomy.Body.Moon, now).phase_fraction;
+                } else {
                      throw new Error("Astronomy engine missing");
                  }
             } catch (e) {
-                 // Fallback to approximate manual calculation
-                 // Our calculateMoonPhase returns 0..1 (New..Full..New? No, 0..1 Cycle)
-                 // Manual calc returns: 0=New, 0.25=FirstQ, 0.5=Full, 0.75=LastQ
-                 // Illumination is what we need? No, logic uses 0, 0.5, 1 as targets.
-                 // If original logic expected 0, 0.5, 1 to be Spring Tide, it assumed Phase Cycle.
-                 // Illumination: New(0), Full(1). Quarter(0.5).
-                 // If we use Cycle: New(0), Full(0.5), New(1).
-                 // Let's use our manual cycle calculation which is safe.
                  phase = calculateMoonPhase(now);
             }
 
-            // Distance to closest spring tide point (0, 0.5, 1.0)
-            // If phase is Cycle (0=New, 0.5=Full): 0, 0.5, 1 are Spring Tides.
             const dist0 = Math.abs(phase - 0);
             const dist05 = Math.abs(phase - 0.5);
             const dist1 = Math.abs(phase - 1.0);
             
             const minDistToSpring = Math.min(dist0, dist05, dist1);
-            // Scale 0.25 -> 0% (Doodtij) and 0 -> 100% (Springtij)
             const percentage = Math.round((0.25 - minDistToSpring) / 0.25 * 100);
             
             let label = "Normaal Getij";
@@ -88,6 +230,23 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
     useEffect(() => {
         if (globeEl.current) {
             globeEl.current.pointOfView({ altitude: 2.5 });
+            
+            // Add controls change listener for Hybrid System
+            const controls = globeEl.current.controls();
+            if (controls) {
+                controls.addEventListener('change', () => {
+                    const alt = globeEl.current?.pointOfView().altitude || 2.5;
+                    // If zoomed in close (altitude < 0.6), switch to Map
+                    if (alt < 0.6 && viewMode === 'globe') {
+                         const pos = globeEl.current?.pointOfView();
+                         if (pos) {
+                             setMapCenter({ lat: pos.lat, lng: pos.lng });
+                             setMapZoom(5); // Start zoom level for map
+                             setViewMode('map');
+                         }
+                    }
+                });
+            }
         }
         const timer = setTimeout(() => {
             setIsGlobeLoading(false);
@@ -99,7 +258,30 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             clearTimeout(timer);
             clearTimeout(toastTimer);
         };
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Re-attach listener when viewMode changes back to globe
+    useEffect(() => {
+        if (viewMode === 'globe' && globeEl.current) {
+             const controls = globeEl.current.controls();
+             const checkAltitude = () => {
+                const alt = globeEl.current?.pointOfView().altitude || 2.5;
+                if (alt < 0.6) {
+                     const pos = globeEl.current?.pointOfView();
+                     if (pos) {
+                         setMapCenter({ lat: pos.lat, lng: pos.lng });
+                         setMapZoom(5);
+                         setViewMode('map');
+                     }
+                }
+             };
+             
+             if (controls) {
+                 controls.addEventListener('change', checkAltitude);
+                 return () => controls.removeEventListener('change', checkAltitude);
+             }
+        }
+    }, [viewMode]);
 
     useEffect(() => {
         if (globeEl.current) {
@@ -118,13 +300,31 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
         setMarineData(null);
         setLocationType('LAND');
         setLocationInfo(null);
-        if (globeEl.current) {
+        // Only animate globe if in globe mode
+        if (globeEl.current && viewMode === 'globe') {
             globeEl.current.pointOfView({ lat, lng, altitude: 1.8 }, 1000);
         }
         fetchData(lat, lng);
     };
 
     const handleControl = (direction: 'up' | 'down' | 'left' | 'right' | 'zoomIn' | 'zoomOut') => {
+        if (viewMode === 'map') {
+            // Map Controls
+            const moveStep = 0.5; // degrees for map panning
+            let { lat, lng } = mapCenter;
+            
+            switch (direction) {
+                case 'up': lat += moveStep; break;
+                case 'down': lat -= moveStep; break;
+                case 'left': lng -= moveStep; break;
+                case 'right': lng += moveStep; break;
+                case 'zoomIn': setMapZoom(z => z + 1); return;
+                case 'zoomOut': setMapZoom(z => z - 1); return;
+            }
+            setMapCenter({ lat, lng });
+            return;
+        }
+
         if (!globeEl.current) return;
 
         const current = globeEl.current.pointOfView();
@@ -147,7 +347,6 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
     const fetchData = async (lat: number, lon: number) => {
         setLoading(true);
         try {
-            // Parallel fetch: Weather, Marine, Location Name
             const [weather, marine, locInfo] = await Promise.all([
                 fetchForecast(lat, lon),
                 fetchMarineData(lat, lon),
@@ -157,21 +356,12 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             setWeatherData(weather);
             setMarineData(marine);
 
-            // Determine Location Type
-            // If marine data has significant waves and no specific city name was found (or if it looks like ocean)
-            // User logic: "Als marineData.current.wave_height > 0 (of een geldige waarde heeft): Modus = WATER"
             let isWater = false;
             if (marine && marine.current && typeof marine.current.wave_height === 'number') {
-                // Check if valid wave height (sometimes 0 can be a lake, but null is definitely land)
-                // Open-Meteo returns null for land usually
                 if (marine.current.wave_height !== null) {
                     isWater = true;
                 }
             }
-            
-            // Refine: if reverse geocode found a specific street/city, it might be coastal land.
-            // But if user clicks ON the water, we want marine data.
-            // Let's stick to the user's rule: "Als marineData.current.wave_height > 0 (of een geldige waarde heeft)"
             
             setLocationType(isWater ? 'WATER' : 'LAND');
 
@@ -204,18 +394,8 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
         }
     };
 
-    // Globe image URL
-    // Blue Marble or Earth at Night
-    const globeImage = settings.theme === 'dark' 
-        ? '//unpkg.com/three-globe/example/img/earth-night.jpg' 
-        : '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
-
-    const backgroundStyle = {
-        backgroundColor: 'rgba(0,0,0,0)' // Transparent to fit Baro interface
-    };
-
     return (
-        <div className="flex flex-col h-screen w-full relative bg-bg-page/50 overflow-hidden">
+        <div ref={containerRef} className="flex flex-col h-[100dvh] w-full relative bg-bg-page/50 overflow-hidden">
             {/* Back Button */}
             <div className="absolute top-6 left-6 z-[100]">
                  <button 
@@ -226,21 +406,44 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                 </button>
             </div>
 
+            {/* Skins Selection Menu */}
+            <div className="absolute top-6 left-24 z-[100] flex gap-2">
+                {[
+                    { id: 'satellite', icon: 'satellite', label: 'Satelliet' },
+                    { id: 'night', icon: 'nights_stay', label: 'Nacht' },
+                    { id: 'topo', icon: 'terrain', label: 'Topo' },
+                    { id: 'streets', icon: 'map', label: 'Kaart' }
+                ].map((s) => (
+                    <button
+                        key={s.id}
+                        onClick={() => handleSkinChange(s.id as any)}
+                        className={`px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md transition-all border ${
+                            skin === s.id 
+                                ? 'bg-accent-primary text-white border-accent-primary shadow-lg shadow-accent-primary/30' 
+                                : 'bg-bg-card/40 text-text-muted hover:bg-bg-card/60 border-white/10'
+                        }`}
+                    >
+                        <Icon name={s.icon} className="text-lg" />
+                        <span className="text-sm font-bold hidden sm:inline">{s.label}</span>
+                    </button>
+                ))}
+            </div>
+
             {/* Controls */}
-            <div className="absolute top-6 right-6 z-[100] flex flex-col gap-2">
+            <div className="absolute top-6 right-6 z-[100] flex flex-col gap-2 scale-75 md:scale-100 origin-top-right">
                 <div className="flex flex-col bg-bg-card/40 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
-                    <button onClick={() => handleControl('zoomIn')} className="p-3 hover:bg-white/10 active:bg-white/20 transition-colors"><Icon name="add" /></button>
-                    <button onClick={() => handleControl('zoomOut')} className="p-3 hover:bg-white/10 active:bg-white/20 transition-colors border-t border-white/10"><Icon name="remove" /></button>
+                    <button onClick={() => handleControl('zoomIn')} className="p-1.5 sm:p-3 hover:bg-white/10 active:bg-white/20 transition-colors"><Icon name="add" /></button>
+                    <button onClick={() => handleControl('zoomOut')} className="p-1.5 sm:p-3 hover:bg-white/10 active:bg-white/20 transition-colors border-t border-white/10"><Icon name="remove" /></button>
                 </div>
                 <div className="grid grid-cols-3 gap-1 bg-bg-card/40 backdrop-blur-md rounded-xl border border-white/10 p-1">
                      <div />
-                     <button onClick={() => handleControl('up')} className="p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_up" /></button>
+                     <button onClick={() => handleControl('up')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_up" /></button>
                      <div />
-                     <button onClick={() => handleControl('left')} className="p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_left" /></button>
+                     <button onClick={() => handleControl('left')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_left" /></button>
                      <div className="flex items-center justify-center"><Icon name="public" className="text-xs opacity-50"/></div>
-                     <button onClick={() => handleControl('right')} className="p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_right" /></button>
+                     <button onClick={() => handleControl('right')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_right" /></button>
                      <div />
-                     <button onClick={() => handleControl('down')} className="p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_down" /></button>
+                     <button onClick={() => handleControl('down')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_down" /></button>
                      <div />
                 </div>
             </div>
@@ -256,36 +459,86 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             )}
 
             {/* Globe Container - Dynamic Height */}
-            <div className={`relative transition-all duration-700 ease-in-out ${selectedPoint ? 'h-[45vh]' : 'h-full'} w-full cursor-move flex items-center justify-center`}>
-                <Globe
-                    ref={globeEl}
-                    globeImageUrl={globeImage}
-                    backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-                    atmosphereColor="lightskyblue"
-                    atmosphereAltitude={0.15}
-                    onGlobeClick={handleGlobeClick}
-                    backgroundColor="rgba(0,0,0,0)"
-                    htmlElementsData={selectedPoint ? [selectedPoint] : []}
-                    htmlElement={(d: any) => {
-                        const el = document.createElement('div');
-                        el.innerHTML = `<span style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));">📍</span>`;
-                        el.style.transform = `translate(-50%, -100%)`;
-                        return el;
-                    }}
-                />
+            <div 
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${
+                    viewMode === 'globe' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+            >
+                <div className={`relative transition-all duration-700 ease-in-out ${selectedPoint ? 'h-[50dvh] sm:h-[60vh] md:h-[65vh]' : 'h-full'} w-full cursor-move flex items-center justify-center`}>
+                    <Globe
+                        ref={globeEl}
+                        width={dimensions.width}
+                        height={selectedPoint ? (dimensions.height * (window.innerWidth < 640 ? 0.5 : 0.65)) : dimensions.height}
+                        globeImageUrl={getGlobeImage()}
+                        backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+                        atmosphereColor="lightskyblue"
+                        atmosphereAltitude={0.15}
+                        onGlobeClick={handleGlobeClick}
+                        backgroundColor="rgba(0,0,0,0)"
+                        htmlElementsData={selectedPoint ? [selectedPoint] : []}
+                        htmlElement={(d: any) => {
+                            const el = document.createElement('div');
+                            el.innerHTML = `<span style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));">📍</span>`;
+                            el.style.transform = `translate(-50%, -100%)`;
+                            return el;
+                        }}
+                    />
 
-                {/* Globe Loading Overlay */}
-                {isGlobeLoading && (
-                    <div className="absolute inset-0 z-[110] bg-bg-page flex flex-col items-center justify-center animate-in fade-in duration-500">
-                        <div className="relative">
-                            <div className="h-24 w-24 rounded-full border-4 border-accent-primary/20 border-t-accent-primary animate-spin"></div>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <Icon name="public" className="text-3xl text-accent-primary animate-pulse" />
+                    {/* Globe Loading Overlay */}
+                    {isGlobeLoading && (
+                        <div className="absolute inset-0 z-[110] bg-bg-page flex flex-col items-center justify-center animate-in fade-in duration-500">
+                            <div className="relative">
+                                <div className="h-24 w-24 rounded-full border-4 border-accent-primary/20 border-t-accent-primary animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Icon name="public" className="text-3xl text-accent-primary animate-pulse" />
+                                </div>
                             </div>
+                            <p className="mt-4 text-text-main font-bold animate-pulse">Wereldbol laden...</p>
                         </div>
-                        <p className="mt-4 text-text-main font-bold animate-pulse">Wereldbol laden...</p>
-                    </div>
-                )}
+                    )}
+                </div>
+            </div>
+
+            {/* Map Container - Round & Glassy */}
+            <div 
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out z-10 ${
+                    viewMode === 'map' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+            >
+                <div 
+                    className="relative w-full h-full md:w-[80vh] md:h-[80vh] rounded-full overflow-hidden border-2 border-white/20 shadow-2xl backdrop-blur-sm"
+                    style={{
+                        boxShadow: '0 0 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.2)'
+                    }}
+                >
+                     {viewMode === 'map' && (
+                        <MapContainer 
+                            center={[mapCenter.lat, mapCenter.lng]} 
+                            zoom={mapZoom} 
+                            style={{ height: '100%', width: '100%' }}
+                            zoomControl={false}
+                            attributionControl={false}
+                        >
+                            <TileLayer
+                                url={getTileLayer()}
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            />
+                            <MapController 
+                                onSwitchToGlobe={handleSwitchToGlobe}
+                                onUpdateCenter={(lat, lng) => setMapCenter({ lat, lng })}
+                                onUpdateZoom={(zoom) => setMapZoom(zoom)}
+                            />
+                            <MapUpdater center={mapCenter} zoom={mapZoom} />
+                            <MapClickHandler onMapClick={(lat, lng) => handleGlobeClick({ lat, lng })} />
+                            {selectedPoint && (
+                                <Marker position={[selectedPoint.lat, selectedPoint.lng]} />
+                            )}
+                        </MapContainer>
+                    )}
+                    
+                    {/* Glass Reflection Effect */}
+                    <div className="absolute inset-0 rounded-full pointer-events-none bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
+                </div>
             </div>
             
             {/* Floating Credits Button */}
@@ -295,288 +548,234 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
 
             {/* Weather Detail Panel - Full Width as requested */}
             {selectedPoint && (
-                <div className="flex-1 bg-bg-card/95 backdrop-blur-2xl border-t border-border-color p-6 overflow-y-auto z-20 animate-in slide-in-from-bottom-full duration-500">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex justify-between items-start mb-6">
+                <div className="bg-bg-card/95 backdrop-blur-2xl border-t border-border-color p-6 pb-32 overflow-y-auto z-20 animate-in slide-in-from-bottom-full duration-500 fixed bottom-0 left-0 right-0 h-[50dvh] sm:h-[40vh] md:h-[35vh]">
+                    <div className="max-w-4xl mx-auto relative">
+                        {/* Close Button */}
+                        <button 
+                            onClick={() => setSelectedPoint(null)}
+                            className="absolute top-3 right-3 sm:-top-2 sm:-right-2 md:top-0 md:right-0 p-2 bg-bg-page/50 hover:bg-bg-page rounded-full text-text-muted transition-colors z-30 border border-white/10"
+                            title="Sluit venster"
+                        >
+                            <Icon name="close" />
+                        </button>
+
+                        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-6 pr-10">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 flex-wrap">
                                     <h2 className="text-3xl font-bold text-text-main tracking-tight">
                                         {locationInfo ? locationInfo.name : 'Laden...'}
                                     </h2>
                                     {weatherData && (
-                                        <span className="text-lg font-medium text-text-muted bg-bg-page/50 px-3 py-1 rounded-xl border border-border-color">
-                                            {new Date().toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { 
-                                                hour: '2-digit', 
-                                                minute: '2-digit',
-                                                timeZone: weatherData.timezone 
-                                            })}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg font-medium text-text-muted bg-bg-page/50 px-3 py-1 rounded-xl border border-border-color">
+                                                {new Date().toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { 
+                                                    hour: '2-digit', 
+                                                    minute: '2-digit',
+                                                    timeZone: weatherData.timezone 
+                                                })}
+                                            </span>
+                                            {(() => {
+                                                const localSecs = new Date().getTimezoneOffset() * -60;
+                                                const targetSecs = weatherData.utc_offset_seconds || 0;
+                                                const diffHours = (targetSecs - localSecs) / 3600;
+                                                if (diffHours === 0) return null;
+                                                const sign = diffHours > 0 ? '+' : '';
+                                                return (
+                                                    <span className="text-xs font-bold text-text-muted/60">
+                                                        ({sign}{diffHours}u t.o.v. nu)
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 mt-2">
                                     {locationInfo?.countryCode && (
-                                        <span className="text-xs font-bold text-accent-primary bg-accent-primary/10 px-3 py-1 rounded-full border border-accent-primary/20">
-                                            {locationInfo.countryCode}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-accent-primary bg-accent-primary/10 px-3 py-1 rounded-full border border-accent-primary/20">
+                                                {locationInfo.countryCode}
+                                            </span>
+                                            {locationInfo.countryName && (
+                                                <span className="text-xs font-medium text-text-muted hidden md:inline">
+                                                    {locationInfo.countryName}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
-                                    <span className="text-xs text-text-muted font-mono bg-bg-page px-2 py-1 rounded">
-                                        {selectedPoint.lat.toFixed(4)}, {selectedPoint.lng.toFixed(4)}
+                                    <span className="text-xs text-text-muted flex items-center gap-1">
+                                        <Icon name="location_on" className="text-sm" />
+                                        {selectedPoint.lat.toFixed(2)}, {selectedPoint.lng.toFixed(2)}
                                     </span>
                                 </div>
                             </div>
                             <button 
-                                onClick={() => { setSelectedPoint(null); setWeatherData(null); setMarineData(null); setLocationType('LAND'); }}
-                                className="p-2 bg-bg-page hover:bg-bg-input rounded-full text-text-muted transition-colors"
+                                onClick={handleSelect}
+                                className="bg-accent-primary hover:bg-accent-primary/80 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-bold shadow-lg shadow-accent-primary/20 transition-all flex items-center gap-2 hover:scale-105 active:scale-95 w-full sm:w-auto text-sm sm:text-base"
                             >
-                                <Icon name="close" className="text-2xl" />
+                                <Icon name="check" />
+                                Selecteer
                             </button>
                         </div>
 
                         {loading ? (
-                             <div className="flex flex-col items-center justify-center py-20">
-                                <div className="h-16 w-16 border-4 border-accent-primary/20 border-t-accent-primary rounded-full animate-spin"></div>
-                                <p className="mt-6 text-text-muted font-medium animate-pulse">Weergegevens ophalen...</p>
+                            <div className="flex items-center justify-center py-12">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full border-2 border-accent-primary border-t-transparent animate-spin"></div>
+                                    <span className="text-text-muted animate-pulse">Weergegevens ophalen...</span>
+                                </div>
                             </div>
                         ) : weatherData ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                                {/* Left Column: Main Weather */}
-                                <div className="lg:col-span-4 flex flex-col gap-6">
-                                    <div className="bg-gradient-to-br from-accent-primary/20 via-accent-primary/5 to-transparent rounded-[2.5rem] p-8 border border-accent-primary/20 flex flex-col items-center justify-center text-center shadow-2xl shadow-accent-primary/10 relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                            <Icon name="cloud" className="text-8xl" />
-                                        </div>
-                                        
-                                        <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, !weatherData.current.is_day)} className="text-8xl text-accent-primary mb-6 drop-shadow-glow animate-float" />
-                                        
-                                        <div className="text-7xl font-black text-text-main tracking-tighter">
-                                            {convertTemp(weatherData.current.temperature_2m, settings.tempUnit)}°
-                                        </div>
-                                        
-                                        <div className="text-2xl font-bold text-text-main mt-4">
-                                            {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-bg-page/50 rounded-full border border-border-color">
-                                            <span className="text-sm text-text-muted font-medium">Gevoel:</span>
-                                            <span className="text-sm font-bold text-text-main">{convertTemp(weatherData.current.apparent_temperature, settings.tempUnit)}°</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Buttons - Stacked under the card */}
-                                    <div className="flex flex-col gap-3">
-                                        <button 
-                                            onClick={handleSelect}
-                                            disabled={loading || !weatherData}
-                                            className="w-full py-4 bg-accent-primary text-white rounded-2xl font-black hover:opacity-90 transition-all shadow-xl shadow-accent-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg active:scale-[0.98]"
-                                        >
-                                            <Icon name="check_circle" className="text-2xl" />
-                                            Deze locatie selecteren
-                                        </button>
-                                        <button 
-                                            onClick={() => { setSelectedPoint(null); setWeatherData(null); setMarineData(null); setLocationType('LAND'); }}
-                                            className="w-full py-4 bg-bg-page hover:bg-bg-input text-text-muted rounded-2xl font-bold transition-all border border-border-color flex items-center justify-center gap-2 active:scale-[0.98]"
-                                        >
-                                            <Icon name="close" />
-                                            Annuleren
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Right Column: Detailed Grid */}
-                                <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                    {/* Ocean Card (Only for water) */}
-                                    {locationType === 'WATER' && marineData && marineData.current && (
-                                        <div className="bg-gradient-to-br from-blue-600/30 to-blue-400/10 rounded-3xl p-6 border border-blue-400/30 flex flex-col justify-between group overflow-hidden relative shadow-lg shadow-blue-500/10">
-                                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                                <Icon name="waves" className="text-6xl" />
-                                            </div>
-                                            <div className="flex items-center gap-3 text-blue-200 mb-4">
-                                                <div className="p-2 bg-blue-500/20 rounded-xl">
-                                                    <Icon name="waves" />
-                                                </div>
-                                                <span className="text-xs font-black uppercase tracking-widest">Zeecondities</span>
-                                            </div>
+                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {/* Current Weather Card */}
+                                    <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                        <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
+                                            <Icon name="thermostat" className="text-accent-primary" />
+                                            Huidig Weer
+                                        </h3>
+                                        <div className="flex items-center justify-between">
                                             <div>
-                                                <div className="text-4xl font-black text-white">
-                                                    {settings.precipUnit === 'mm' 
-                                                        ? `${marineData.current.wave_height} m`
-                                                        : `${(marineData.current.wave_height * 1.09361).toFixed(1)} yd`
-                                                    }
+                                                <div className="text-4xl font-bold text-text-main">
+                                                    {weatherData.current.temperature_2m}°
                                                 </div>
-                                                <div className="text-xs text-blue-200 mt-2 font-medium">
-                                                    Periode: {marineData.current.wave_period}s | Richting: {marineData.current.wave_direction}°
+                                                <div className="text-sm text-text-muted mt-1">
+                                                    Voelt als {weatherData.current.apparent_temperature}°
                                                 </div>
-                                                
-                                                {/* Zeeziekte indicator */}
-                                                {(marineData.current.wave_height > 1.5 && marineData.current.wave_period < 6) ? (
-                                                    <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-red-500/20 rounded-full border border-red-500/30">
-                                                        <span className="text-xl">🤢</span>
-                                                        <span className="text-sm font-bold text-red-200">Ruwe Zee (Zeeziekte)</span>
-                                                    </div>
-                                                ) : marineData.current.wave_height < 0.5 ? (
-                                                    <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-green-500/20 rounded-full border border-green-500/30">
-                                                        <span className="text-xl">😎</span>
-                                                        <span className="text-sm font-bold text-green-200">Vlak water</span>
-                                                    </div>
-                                                ) : (
-                                                     <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-blue-500/20 rounded-full border border-blue-500/30">
-                                                        <span className="text-sm text-blue-100 font-bold">Normale deining</span>
+                                                {weatherData.daily && (
+                                                    <div className="text-xs font-bold text-red-400 mt-2 flex items-center gap-1">
+                                                        <Icon name="arrow_upward" className="text-xs" />
+                                                        Max vandaag: {weatherData.daily.temperature_2m_max[0]}°
                                                     </div>
                                                 )}
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-3xl">
+                                                    {/* Weather Icon Map (Simplified) */}
+                                                    {weatherData.current.weather_code === 0 ? '☀️' : 
+                                                     weatherData.current.weather_code < 3 ? '⛅' : 
+                                                     weatherData.current.weather_code < 50 ? '☁️' : 
+                                                     weatherData.current.weather_code < 70 ? '🌧️' : '⛈️'}
+                                                </div>
+                                                <div className="text-xs font-bold text-accent-primary mt-1 px-2 py-0.5 bg-accent-primary/10 rounded-full inline-block">
+                                                    Code {weatherData.current.weather_code}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                                {/* Getijden Indicator (Tide Strength) */}
-                                                {marineData.current.wave_height > 0 && (() => {
-                                                    const tide = calculateTideStrength();
-                                                    return (
-                                                    <div className="mt-6 pt-4 border-t border-blue-400/20">
-                                                        <div className="flex justify-between items-end mb-2">
-                                                            <span className="text-[10px] font-black uppercase tracking-tighter text-blue-200">Getijden Indicator</span>
-                                                            <span className="text-[10px] font-bold text-white bg-blue-500/30 px-2 py-0.5 rounded-full">
-                                                                {tide.percentage}%
-                                                            </span>
-                                                        </div>
-                                                        
-                                                        {/* Progress Bar */}
-                                                        <div className="h-1.5 w-full bg-blue-900/40 rounded-full overflow-hidden mb-2">
-                                                            <div 
-                                                                className="h-full transition-all duration-1000 ease-out"
-                                                                style={{ 
-                                                                    width: `${tide.percentage}%`,
-                                                                    backgroundColor: tide.percentage >= 85 ? '#ef4444' : 
-                                                                                     tide.percentage <= 15 ? '#3b82f6' : '#10b981'
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        
-                                                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                                                            {tide.label}
-                                                        </div>
-                                                        
-                                                        {tide.percentage >= 85 && (
-                                                            <p className="text-[10px] text-blue-200/80 mt-1 leading-tight italic">
-                                                                Let op: Water komt hoger en zakt lager dan gemiddeld.
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                )})()}
+                                    {/* Wind & Atmosphere */}
+                                    <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                        <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
+                                            <Icon name="air" className="text-blue-400" />
+                                            Wind & Atmosfeer
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-text-muted">Wind</span>
+                                                <span className="font-bold text-text-main flex items-center gap-1">
+                                                    {weatherData.current.wind_speed_10m} km/u
+                                                    <span style={{ transform: `rotate(${weatherData.current.wind_direction_10m}deg)` }} className="inline-block">↓</span>
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-text-muted">Vochtigheid</span>
+                                                <span className="font-bold text-text-main">{weatherData.current.relative_humidity_2m}%</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-text-muted">Luchtdruk</span>
+                                                <span className="font-bold text-text-main">{weatherData.current.surface_pressure} hPa</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-text-muted">Zicht</span>
+                                                <span className="font-bold text-text-main">
+                                                    {weatherData.hourly && weatherData.hourly.visibility ? 
+                                                        (weatherData.hourly.visibility[0] / 1000).toFixed(1) + ' km' : '--'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Sun & Moon */}
+                                    {weatherData.daily && weatherData.daily.sunrise && (
+                                        <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                            <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
+                                                <Icon name="wb_sunny" className="text-yellow-500" />
+                                                Zon & Dag
+                                            </h3>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs text-text-muted flex items-center gap-1"><Icon name="wb_twilight" className="text-xs"/> Opkomst</span>
+                                                    <span className="font-bold text-text-main">
+                                                        {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs text-text-muted flex items-center gap-1"><Icon name="wb_twilight" className="text-xs rotate-180"/> Ondergang</span>
+                                                    <span className="font-bold text-text-main">
+                                                        {new Date(weatherData.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="bg-bg-page/40 hover:bg-bg-page/60 transition-all rounded-3xl p-5 border border-border-color flex flex-col justify-between group">
-                                        <div className="flex items-center gap-3 text-text-muted mb-4">
-                                            <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform">
-                                                <Icon name="air" />
-                                            </div>
-                                            <span className="text-xs font-black uppercase tracking-widest">Wind</span>
-                                        </div>
-                                        <div>
-                                            <div className="text-3xl font-black text-text-main">
-                                                {convertWind(weatherData.current.wind_speed_10m, locationType === 'WATER' ? (settings.windUnit === 'km/h' ? 'knots' : settings.windUnit) : settings.windUnit)} <span className="text-sm font-normal text-text-muted">{locationType === 'WATER' && settings.windUnit === 'km/h' ? 'knots' : settings.windUnit}</span>
-                                            </div>
-                                            <div className="text-xs text-text-muted mt-2 flex items-center gap-1">
-                                                <Icon name="speed" className="text-[10px]" />
-                                                Vlagen: {convertWind(weatherData.current.wind_gusts_10m, locationType === 'WATER' ? (settings.windUnit === 'km/h' ? 'knots' : settings.windUnit) : settings.windUnit)} {locationType === 'WATER' && settings.windUnit === 'km/h' ? 'knots' : settings.windUnit}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-bg-page/40 hover:bg-bg-page/60 transition-all rounded-3xl p-5 border border-border-color flex flex-col justify-between group">
-                                        <div className="flex items-center gap-3 text-text-muted mb-4">
-                                            <div className="p-2 bg-cyan-500/10 rounded-xl text-cyan-500 group-hover:scale-110 transition-transform">
-                                                <Icon name="humidity_percentage" />
-                                            </div>
-                                            <span className="text-xs font-black uppercase tracking-widest">Vocht</span>
-                                        </div>
-                                        <div>
-                                            <div className="text-3xl font-black text-text-main">
-                                                {weatherData.current.relative_humidity_2m}<span className="text-sm font-normal text-text-muted">%</span>
-                                            </div>
-                                            <div className="text-xs text-text-muted mt-2">
-                                                Dauwpunt: {Math.round(weatherData.current.temperature_2m - ((100 - weatherData.current.relative_humidity_2m) / 5))}°
+                                    {/* Marine / Water Info */}
+                                    {locationType === 'WATER' && marineData && (
+                                        <div className="bg-blue-500/10 rounded-2xl p-5 border border-blue-500/20 hover:border-blue-500/30 transition-colors">
+                                            <h3 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2">
+                                                <Icon name="waves" />
+                                                Marine Info
+                                            </h3>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-text-muted text-sm">Golfhoogte</span>
+                                                    <span className="text-text-main font-bold">{marineData.current.wave_height}m</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-text-muted text-sm">Golfperiode</span>
+                                                    <span className="text-text-main font-bold">{marineData.current.wave_period || '--'}s</span>
+                                                </div>
+                                                <div className="mt-3 pt-3 border-t border-white/5">
+                                                     <div className="flex items-center gap-2">
+                                                         <span className="text-2xl">{calculateTideStrength().label.split(' ')[0]}</span>
+                                                         <span className="text-sm font-medium text-text-main">{calculateTideStrength().label.replace(/^[^\s]+\s+/, '')}</span>
+                                                     </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="bg-bg-page/40 hover:bg-bg-page/60 transition-all rounded-3xl p-5 border border-border-color flex flex-col justify-between group">
-                                        <div className="flex items-center gap-3 text-text-muted mb-4">
-                                            <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-500 group-hover:scale-110 transition-transform">
-                                                <Icon name="compress" />
-                                            </div>
-                                            <span className="text-xs font-black uppercase tracking-widest">Druk</span>
-                                        </div>
-                                        <div>
-                                            <div className="text-3xl font-black text-text-main">
-                                                {Math.round(weatherData.current.surface_pressure)} <span className="text-sm font-normal text-text-muted">hPa</span>
-                                            </div>
-                                            <div className="text-xs text-text-muted mt-2">
-                                                Zeekwaliteit: {Math.round(weatherData.current.pressure_msl)} hPa
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-bg-page/40 hover:bg-bg-page/60 transition-all rounded-3xl p-5 border border-border-color flex flex-col justify-between group">
-                                        <div className="flex items-center gap-3 text-text-muted mb-4">
-                                            <div className="p-2 bg-blue-400/10 rounded-xl text-blue-400 group-hover:scale-110 transition-transform">
-                                                <Icon name="water_drop" />
-                                            </div>
-                                            <span className="text-xs font-black uppercase tracking-widest">Neerslag</span>
-                                        </div>
-                                        <div>
-                                            <div className="text-3xl font-black text-text-main">
-                                                {weatherData.current.precipitation} <span className="text-sm font-normal text-text-muted">mm</span>
-                                            </div>
-                                            <div className="text-xs text-text-muted mt-2">
-                                                Kans: {weatherData.daily.precipitation_probability_max[0]}%
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-bg-page/40 hover:bg-bg-page/60 transition-all rounded-3xl p-5 border border-border-color flex flex-col justify-between group">
-                                        <div className="flex items-center gap-3 text-text-muted mb-4">
-                                            <div className="p-2 bg-orange-500/10 rounded-xl text-orange-500 group-hover:scale-110 transition-transform">
-                                                <Icon name="wb_sunny" />
-                                            </div>
-                                            <span className="text-xs font-black uppercase tracking-widest">UV Index</span>
-                                        </div>
-                                        <div>
-                                            <div className="text-3xl font-black text-text-main">
-                                                {weatherData.daily.uv_index_max[0]}
-                                            </div>
-                                            <div className="text-xs text-text-muted mt-2 font-medium">
-                                                {weatherData.daily.uv_index_max[0] > 5 ? 'Hoge bescherming nodig' : 'Lage bescherming'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-bg-page/40 hover:bg-bg-page/60 transition-all rounded-3xl p-5 border border-border-color flex flex-col justify-between group">
-                                        <div className="flex items-center gap-3 text-text-muted mb-4">
-                                            <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform">
-                                                <Icon name="wb_twilight" />
-                                            </div>
-                                            <span className="text-xs font-black uppercase tracking-widest">Zon</span>
-                                        </div>
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs text-text-muted">Opkomst</span>
-                                                <span className="text-sm font-black text-text-main">{new Date(weatherData.daily.sunrise[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs text-text-muted">Ondergang</span>
-                                                <span className="text-sm font-black text-text-main">{new Date(weatherData.daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                            <div className="mt-2 flex items-center justify-between pt-2 border-t border-border-color/30">
-                                                <span className="text-xs text-text-muted">Maan</span>
-                                                <span className="text-xs font-bold text-text-main">{getMoonPhaseText(calculateMoonPhase(new Date()), settings.language)}</span>
-                                            </div>
-                                            <div className="mt-1 text-xs font-medium text-center bg-bg-card/50 rounded py-1 border border-border-color/50">
-                                                {weatherData.current.is_day ? '☀️ Dag' : '🌙 Nacht'}
-                                            </div>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
+                                
+                                {/* 7 Day Forecast Preview */}
+                                {weatherData.daily && (
+                                    <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 mt-4">
+                                        <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
+                                            <Icon name="calendar_today" />
+                                            Verwachting
+                                        </h3>
+                                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                                            {weatherData.daily.time.slice(1, 8).map((t: string, i: number) => (
+                                                <div key={t} className="flex flex-col items-center min-w-[60px] p-2 rounded-xl bg-bg-card/30 border border-white/5">
+                                                    <span className="text-xs text-text-muted font-bold mb-1">
+                                                        {new Date(t).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { weekday: 'short' })}
+                                                    </span>
+                                                    <span className="text-lg my-1">
+                                                        {weatherData.daily.weather_code[i+1] < 3 ? '☀️' : 
+                                                         weatherData.daily.weather_code[i+1] < 50 ? '⛅' : '🌧️'}
+                                                    </span>
+                                                    <span className="text-sm font-bold text-text-main">{Math.round(weatherData.daily.temperature_2m_max[i+1])}°</span>
+                                                    <span className="text-xs text-text-muted">{Math.round(weatherData.daily.temperature_2m_min[i+1])}°</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        ) : null}
+                        ) : (
+                            <div className="text-center py-12 text-text-muted">
+                                Geen weergegevens beschikbaar voor deze locatie.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

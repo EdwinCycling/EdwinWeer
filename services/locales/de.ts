@@ -1670,4 +1670,22 @@ export const de: Dictionary = {
     'newspaper.share_title': 'Meine Baro-Zeitung',
     'newspaper.share_text': 'Schau dir meine historische Baro-Zeitung an!',
 
+    // Solar Widget
+    'solar.title': 'Sonnenenergie',
+    'solar.check': 'Ertragsprüfung',
+    'solar.forecast': 'Vorhersage',
+    'solar.unit': 'W/m²',
+    'solar.now': 'JETZT',
+    'solar.max': 'MAX',
+    'solar.received': 'Erhalten',
+    'solar.expected': 'Erwartet',
+    'solar.radiation': 'Strahlung',
+    'solar.advice.free_power_today': 'Gratis Strom! Waschmaschine und Geschirrspüler einschalten.',
+    'solar.advice.high_forecast': 'Viel Sonnenenergie erwartet!',
+    'solar.advice.good_yield_today': 'Guter Ertrag. Prima für Geräte.',
+    'solar.advice.good_day_forecast': 'Guter Sonnentag erwartet.',
+    'solar.advice.moderate_yield_today': 'Mäßiger Ertrag. Schwere Geräte begrenzen.',
+    'solar.advice.moderate_energy': 'Mäßige Sonnenenergie.',
+    'solar.advice.low_sun_today': 'Zu wenig Sonne für Gratisstrom.',
+    'solar.advice.low_energy_forecast': 'Wenig Sonnenenergie erwartet.',
 };

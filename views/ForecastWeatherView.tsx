@@ -16,6 +16,7 @@ import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 import { useThemeColors } from '../hooks/useThemeColors';
+import { SolarPowerWidget } from '../components/SolarPowerWidget';
 import { ComposedChart, Line, Bar, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList, ReferenceLine, ReferenceArea } from 'recharts';
 
 interface Props {
@@ -1272,6 +1273,31 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                          );
                     })()}
                 </div>
+
+                {/* Solar Power Widget */}
+                {settings.enableSolar && (() => {
+                    const targetDate = new Date(weatherData.daily.time[selectedDayIndex]);
+                    const isWithinSolarRange = () => {
+                        const now = new Date();
+                        const diffTime = targetDate.getTime() - now.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        return diffDays < 8; // API provides 7 days forecast for solar usually, or ensuring accuracy
+                    };
+                    
+                    if (isWithinSolarRange()) {
+                        return (
+                            <div className="w-full mt-6 mb-6">
+                                <SolarPowerWidget 
+                                    weatherData={weatherData} 
+                                    settings={settings} 
+                                    targetDate={targetDate}
+                                    showStats={false}
+                                />
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <div className="bg-bg-page rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm">

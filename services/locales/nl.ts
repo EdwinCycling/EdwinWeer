@@ -1871,4 +1871,23 @@ export const nl: Dictionary = {
     'landing.faq_title': 'Vragen?',
     'landing.faq_desc': 'Heb je vragen over Baro? Bekijk onze uitgebreide FAQ pagina.',
     'landing.login_google': 'Login met Google',
+
+    // Solar Widget
+    'solar.title': 'Zonne-Energie',
+    'solar.check': 'Opbrengst check',
+    'solar.forecast': 'Verwachting',
+    'solar.unit': 'W/m²',
+    'solar.now': 'NU',
+    'solar.max': 'MAX',
+    'solar.received': 'Ontvangen',
+    'solar.expected': 'Verwacht',
+    'solar.radiation': 'Straling',
+    'solar.advice.free_power_today': 'Gratis Stroom! Zet wasmachine en vaatwasser aan.',
+    'solar.advice.high_forecast': 'Veel zonne-energie verwacht!',
+    'solar.advice.good_yield_today': 'Goede opbrengst. Prima voor apparaten.',
+    'solar.advice.good_day_forecast': 'Goede zonne-dag verwacht.',
+    'solar.advice.moderate_yield_today': 'Matige opbrengst. Beperk zware apparaten.',
+    'solar.advice.moderate_energy': 'Matige zonne-energie.',
+    'solar.advice.low_sun_today': 'Te weinig zon voor gratis stroom.',
+    'solar.advice.low_energy_forecast': 'Weinig zonne-energie verwacht.',
 };

@@ -26,7 +26,7 @@ De algehele beveiliging van de applicatie is **sterk verbeterd**. Kritieke kwets
 ### A. Pagina's en Velden (Frontend)
 - **Input Validatie:** React's standaard escaping voorkomt de meeste XSS aanvallen.
 - **Gevaarlijke Content:** Het gebruik van `dangerouslySetInnerHTML` is beperkt tot vertalingen (veilig) en wordt **niet** gebruikt voor AI-output (veilig, gebruikt tekst-parsing).
-- **Admin Bypass:** De code die voorheen `edwin@editsolutions.nl` automatisch admin rechten gaf in de frontend is **verwijderd**. Dit is een cruciale verbetering.
+- **Admin Bypass:** De code die voorheen `AskBaroApp@gmail.com` automatisch admin rechten gaf in de frontend is **verwijderd**. Dit is een cruciale verbetering.
 
 ### B. Cross-Site Gebruik (CORS & Headers)
 - **Probleem:** De AI API (`ai-weather.js`) stond voorheen alle domeinen toe (`*`).

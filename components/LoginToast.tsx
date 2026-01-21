@@ -19,7 +19,7 @@ export const LoginToast: React.FC<Props> = ({ userEmail, onClose }) => {
 
     if (!stats) return null;
 
-    const isEdwin = userEmail === 'edwin@editsolutions.nl';
+    const isEdwin = userEmail === 'AskBaroApp@gmail.com';
     const status = isEdwin ? 'Baro Weerman' : 'Free Plan'; // Logic can be expanded for Pro
     
     // Credits

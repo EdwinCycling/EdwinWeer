@@ -12,7 +12,6 @@ import { WeatherBackground } from '../components/WeatherBackground';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { MoonPhaseVisual } from '../components/MoonPhaseVisual';
 import { SolarPowerWidget } from '../components/SolarPowerWidget';
-import { SunElevationGraph } from '../components/SunElevationGraph';
 import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { Tooltip } from '../components/Tooltip';
 import { FavoritesList } from '../components/FavoritesList';
@@ -609,18 +608,18 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <div className="absolute inset-x-0 bottom-8 h-[100px] flex justify-center overflow-hidden">
                 <svg viewBox={`0 0 ${width} ${height + 10}`} className="w-full h-full" preserveAspectRatio="none">
                     <path d={`M ${longestPath}`} fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-text-muted/30" />
-                    <path d={`M ${todayPath}`} fill="none" stroke="var(--accent-primary)" strokeWidth="3" strokeLinecap="round" />
+                    <path d={`M ${todayPath}`} fill="none" stroke="#facc15" strokeWidth="3" strokeLinecap="round" />
                     <defs>
                         <linearGradient id="sunGradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="var(--accent-primary)" />
-                            <stop offset="50%" stopColor="var(--accent-primary)" />
-                            <stop offset="100%" stopColor="var(--accent-primary)" />
+                            <stop offset="0%" stopColor="#facc15" />
+                            <stop offset="50%" stopColor="#facc15" />
+                            <stop offset="100%" stopColor="#facc15" />
                         </linearGradient>
                     </defs>
                     {currentHr > sunriseHr && currentHr < sunsetHr && (
                          <g transform={`translate(${sunCx}, ${sunCy})`}>
-                            <circle r="6" fill="var(--accent-primary)" stroke="white" strokeWidth="2" />
-                            <circle r="12" fill="var(--accent-primary)" opacity="0.3" className="animate-pulse" />
+                            <circle r="6" fill="#facc15" stroke="white" strokeWidth="2" />
+                            <circle r="12" fill="#facc15" opacity="0.3" className="animate-pulse" />
                         </g>
                     )}
                 </svg>
@@ -635,7 +634,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
             <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-text-muted">
                 <div className="flex items-center gap-1">
-                    <span className="w-3 h-0.5 bg-accent-primary"></span> {t('sun_graph.today')}
+                    <span className="w-3 h-0.5 bg-[#facc15]"></span> {t('sun_graph.today')}
                 </div>
                 <div className="flex items-center gap-1">
                     <span className="w-3 h-0.5 bg-text-muted/50 border-t border-dashed border-text-muted"></span> {t('sun_graph.longest')}
@@ -1007,19 +1006,19 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                              }
                          }}
                          data-active={location.isCurrentLocation}
-                         className={`flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${location.isCurrentLocation ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color'}`}
+                        className={`flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border ${location.isCurrentLocation ? 'bg-accent-primary text-text-inverse font-bold border-accent-primary' : 'bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color'}`}
                     >
-                        <Icon name="my_location" className="text-sm" />
-                        <span className="text-sm font-medium">{t('my_location')}</span>
+                        <Icon name="my_location" className="text-xs sm:text-sm" />
+                        <span className="text-xs sm:text-sm font-medium">{t('my_location')}</span>
                     </button>
 
                     {/* Wereldbol Button */}
                     <button 
                         onClick={() => onNavigate(ViewState.GLOBE)}
-                        className="flex items-center gap-1 px-4 py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color"
+                        className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full whitespace-nowrap backdrop-blur-md shadow-sm transition-colors border bg-bg-card/60 text-text-main hover:bg-bg-card hover:text-accent-primary border-border-color"
                     >
-                        <Icon name="public" className="text-sm" />
-                        <span className="text-sm font-medium">{t('nav.globe') || 'Wereldbol'}</span>
+                        <Icon name="public" className="text-xs sm:text-sm" />
+                        <span className="text-xs sm:text-sm font-medium">{t('nav.globe') || 'Wereldbol'}</span>
                     </button>
 
                     {settings.favorites.map((fav, i) => {
@@ -1032,7 +1031,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 key={i}
                                 data-active={isActive}
                                 onClick={() => setLocation(fav)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${isActive ? 'bg-accent-primary text-text-inverse font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card/80 border-border-color'}`}
+                                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border backdrop-blur-md shadow-sm ${isActive ? 'bg-accent-primary text-text-inverse font-bold' : 'bg-bg-card/60 text-text-main hover:bg-bg-card/80 border-border-color'}`}
                             >
                                 {fav.name}
                             </button>
@@ -1291,8 +1290,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <SunElevationGraph />
                     </div>
 
-                    {/* Solar Power Widget */}
-                    <SolarPowerWidget weatherData={weatherData} settings={settings} />
+                    {/* Solar Power Widget - only show when sun graph is shown (is_day) */}
+                    {weatherData.current.is_day === 1 && (
+                        <SolarPowerWidget weatherData={weatherData} settings={settings} />
+                    )}
 
                     {(frostWarning || rainAlert) && (
                         <div className="flex flex-col gap-3 mb-8">

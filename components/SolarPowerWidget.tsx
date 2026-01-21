@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from './Icon';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts';
 import { AppSettings } from '../types';
+import { getTranslation } from '../services/translations';
 
 interface Props {
     weatherData: any;
@@ -26,7 +27,7 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
 
     if (settings.enableSolar === false) return null;
 
-    const t = (key: string) => key; // Fallback helper if needed
+    const t = (key: string) => getTranslation(key, settings.language);
 
     // 1. Data Preparation
     const now = new Date();
@@ -73,28 +74,28 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
     // Helper for advice
     const getSolarAdvice = (watts: number) => {
         if (watts >= 500) return { 
-            text: isToday ? "Gratis Stroom! Zet wasmachine en vaatwasser aan." : "Veel zonne-energie verwacht!", 
+            text: isToday ? t('solar.advice.free_power_today') : t('solar.advice.high_forecast'), 
             color: "text-green-400", 
             icon: "bolt", 
             bgColor: "bg-green-900/20",
             borderColor: "border-green-500/30"
         };
         if (watts >= 200) return { 
-            text: isToday ? "Goede opbrengst. Prima voor apparaten." : "Goede zonne-dag verwacht.", 
+            text: isToday ? t('solar.advice.good_yield_today') : t('solar.advice.good_day_forecast'), 
             color: "text-yellow-400", 
             icon: "wb_sunny",
             bgColor: "bg-yellow-900/20",
             borderColor: "border-yellow-500/30"
         };
         if (watts >= 50) return { 
-            text: isToday ? "Matige opbrengst. Beperk zware apparaten." : "Matige zonne-energie.", 
+            text: isToday ? t('solar.advice.moderate_yield_today') : t('solar.advice.moderate_energy'), 
             color: "text-orange-400", 
             icon: "cloud_queue",
             bgColor: "bg-orange-900/20",
             borderColor: "border-orange-500/30"
         };
         return { 
-            text: isToday ? "Te weinig zon voor gratis stroom." : "Weinig zonne-energie verwacht.", 
+            text: isToday ? t('solar.advice.low_sun_today') : t('solar.advice.low_energy_forecast'), 
             color: "text-blue-400", 
             icon: "nightlight_round",
             bgColor: "bg-blue-900/20",
@@ -151,13 +152,13 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
                          <Icon name={advice.icon} className={`${advice.color} text-xl`} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-lg text-text-main">Zonne-Energie</h3>
-                        <p className="text-xs text-text-muted">{isToday ? "Opbrengst check" : "Verwachting"}</p>
+                        <h3 className="font-bold text-lg text-text-main">{t('solar.title')}</h3>
+                        <p className="text-xs text-text-muted">{isToday ? t('solar.check') : t('solar.forecast')}</p>
                     </div>
                 </div>
                 <div className="text-right">
                     <p className={`text-2xl font-black ${advice.color}`}>{Math.round(adviceWatts)}</p>
-                    <p className="text-[10px] font-bold text-text-muted uppercase">W/m² {isToday ? "(NU)" : "(MAX)"}</p>
+                    <p className="text-[10px] font-bold text-text-muted uppercase">{t('solar.unit')} {isToday ? `(${t('solar.now')})` : `(${t('solar.max')})`}</p>
                 </div>
             </div>
 
@@ -168,11 +169,11 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
                     <div className="mt-2 flex gap-4 text-xs text-text-muted">
                         <div>
                             <span className="block font-bold text-text-main">{percentReceived}%</span>
-                            Ontvangen
+                            {t('solar.received')}
                         </div>
                         <div>
                             <span className="block font-bold text-text-main">{percentRemaining}%</span>
-                            Verwacht
+                            {t('solar.expected')}
                         </div>
                     </div>
                 )}
@@ -206,7 +207,7 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
                         <Tooltip 
                             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                             itemStyle={{ color: '#fff' }}
-                            formatter={(value: any) => [`${value} W/m²`, 'Straling']}
+                            formatter={(value: any) => [`${value} ${t('solar.unit')}`, t('solar.radiation')]}
                             labelStyle={{ color: '#94a3b8' }}
                         />
                         <ReferenceLine y={50} stroke="#fb923c" strokeDasharray="3 3" strokeOpacity={0.4} label={{ value: "50", position: 'insideLeft', fill: '#fb923c', fontSize: 10 }} />
@@ -220,7 +221,7 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
                                 strokeDasharray="3 3" 
                                 strokeOpacity={0.8}
                                 strokeWidth={2}
-                                label={{ value: "NU", position: 'insideTop', fill: '#fff', fontSize: 10, fontWeight: 'bold' }} 
+                                label={{ value: t('solar.now'), position: 'insideTop', fill: '#fff', fontSize: 10, fontWeight: 'bold' }} 
                             />
                         )}
                         

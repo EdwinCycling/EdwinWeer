@@ -1851,4 +1851,23 @@ export const en: Dictionary = {
     'landing.faq_title': 'Questions?',
     'landing.faq_desc': 'Do you have questions about Baro? Check our extensive FAQ page.',
     'landing.login_google': 'Login with Google',
+
+    // Solar Widget
+    'solar.title': 'Solar Power',
+    'solar.check': 'Yield check',
+    'solar.forecast': 'Forecast',
+    'solar.unit': 'W/m²',
+    'solar.now': 'NOW',
+    'solar.max': 'MAX',
+    'solar.received': 'Received',
+    'solar.expected': 'Expected',
+    'solar.radiation': 'Radiation',
+    'solar.advice.free_power_today': 'Free Power! Run washing machine and dishwasher.',
+    'solar.advice.high_forecast': 'High solar energy expected!',
+    'solar.advice.good_yield_today': 'Good yield. Great for appliances.',
+    'solar.advice.good_day_forecast': 'Good solar day expected.',
+    'solar.advice.moderate_yield_today': 'Moderate yield. Limit heavy appliances.',
+    'solar.advice.moderate_energy': 'Moderate solar energy.',
+    'solar.advice.low_sun_today': 'Too little sun for free power.',
+    'solar.advice.low_energy_forecast': 'Low solar energy expected.',
 };

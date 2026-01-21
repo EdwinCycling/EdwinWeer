@@ -387,7 +387,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
         <GlobalBanner />
-        <div className="pb-32 max-w-5xl mx-auto w-full px-0 lg:px-8">
+        <div className="max-w-5xl mx-auto px-0 lg:px-8 pb-32 w-full">
             <ErrorBoundary settings={settings} onNavigate={navigate}>
                 <Suspense fallback={<LoadingSpinner />}>
                     {renderView()}
