@@ -277,7 +277,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
              <div className="flex flex-col items-center w-full" ref={contentRef}>
                 
                 {/* Vintage Weather Station */}
-                <div className="mb-8">
+                <div className="mb-8 print-mb-small">
                     <VintageWeatherStation 
                         pressure={currentPressure}
                         prevPressure={yesterdayPressure}
@@ -290,7 +290,7 @@ export const BarometerView: React.FC<Props> = ({ onNavigate, settings }) => {
 
                 {/* Detailed Info Box */}
                 <div className="w-full max-w-md px-6">
-                    <div className="bg-bg-card/90 backdrop-blur-md rounded-2xl shadow-xl border border-border-color p-5">
+                    <div className="bg-bg-card/90 backdrop-blur-md rounded-2xl shadow-xl border border-border-color p-5 print-compact">
                         <h3 className="text-center text-lg font-bold text-text-main mb-1">
                             {details.title}
                         </h3>

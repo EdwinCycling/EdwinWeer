@@ -96,8 +96,7 @@ const syncSettingsToRemote = async (settings: AppSettings) => {
     }
     try {
         // Exclude theme from sync (per user request)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { theme, ...settingsToSync } = settings;
+        const { theme: _, ...settingsToSync } = settings;
         
         const userRef = doc(db, 'users', currentUserId);
         await setDoc(userRef, { settings: settingsToSync }, { merge: true });

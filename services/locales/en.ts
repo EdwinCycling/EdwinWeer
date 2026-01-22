@@ -143,7 +143,7 @@ export const en: Dictionary = {
     'cycling.no_credits_alert': 'NO credits left. top up your balance to use this feature.',
     
     // Baro Weerman (Nieuwe functie)
-    'share.photo_weather': 'Share weather(photo)',
+    'share.photo_weather': 'Photo weather report',
     'baro_weerman.title': 'Baro ride advice',
     'baro_weerman.subtitle': 'Your best timeslot',
     'baro_weerman.intro_title': 'What is this?',
@@ -867,6 +867,7 @@ export const en: Dictionary = {
 
     // Share
     'share.title': 'Share weather',
+    'share.strava': 'Analyze your ride',
     'share.upload': 'Upload photo',
     'share.clean': 'Clean canvas',
     'share.style': 'Style',
@@ -1006,7 +1007,18 @@ export const en: Dictionary = {
     'history.range_all': 'Alle jaren',
     'history.range_last': 'Laatste',
     'history.range_years': 'Jaar',
-    'history.range_decade': 'Jaren',
+    'history.range_decade': 'Decades',
+    'history.intro_title': 'What is This Day in History?',
+    'history.intro_text': 'Discover the weather of today, but in the past. View extremes, trends, and records of the past decades for your location.',
+    'history.export_csv': 'Export CSV',
+    'history.table_date': 'Year',
+    'history.table_max_temp': 'Max Temp',
+    'history.table_min_temp': 'Min Temp',
+    'history.table_precip': 'Precipitation',
+    'history.table_wind': 'Wind',
+    'history.no_data_export': 'No data to export',
+    'history.export_filename': 'baro_history_export',
+
 
     // Your Day View
     'yourday.title': 'Weather your day',

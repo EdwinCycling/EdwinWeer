@@ -990,7 +990,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                 </div>
                             </div>
 
-                            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-6 rounded-3xl text-white shadow-lg shadow-purple-500/20">
+                            <div className="bg-bg-card dark:bg-gradient-to-br dark:from-purple-500 dark:to-indigo-600 p-6 rounded-3xl text-text-main dark:text-white border border-border-color dark:border-none shadow-sm dark:shadow-lg dark:shadow-purple-500/20">
                                 <h3 className="text-sm font-bold flex items-center gap-2 mb-4 opacity-90">
                                     <Icon name="analytics" />
                                     Statistieken
@@ -1046,7 +1046,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                         </div>
 
                         {/* Chart - Now full width below cards */}
-                        <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5">
+                        <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                                 <div>
                                     <h3 className="font-bold text-lg flex items-center gap-2">
@@ -1180,9 +1180,9 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                 const daysAgo = Math.floor((new Date().getTime() - new Date(match.date).getTime()) / (1000 * 3600 * 24));
                                 
                                 return (
-                                    <div key={match.date} className={`p-4 rounded-2xl border ${isRecent ? 'bg-white dark:bg-card-dark border-purple-200 dark:border-purple-500/30 ring-1 ring-purple-100 dark:ring-purple-500/20' : 'bg-slate-50 dark:bg-white/5 border-transparent'} transition-all`}>
+                                    <div key={match.date} className={`p-4 rounded-2xl border ${isRecent ? 'bg-bg-card border-purple-200 dark:border-purple-500/30 ring-1 ring-purple-100 dark:ring-purple-500/20' : 'bg-bg-page dark:bg-white/5 border-transparent'} transition-all`}>
                                         <div className="flex justify-between items-start mb-2">
-                                            <div className="font-bold text-slate-700 dark:text-slate-200">
+                                            <div className="font-bold text-text-main">
                                                 {new Date(match.date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
                                             </div>
                                             {isRecent && (

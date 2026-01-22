@@ -246,8 +246,8 @@ export const handler = async (event, context) => {
 
                 // --- PROCEED TO SEND ---
                 
-                // Random delay to prevent rate limits
-                const delay = Math.floor(Math.random() * 5000); 
+                // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+                const delay = 12000; 
                 await new Promise(resolve => setTimeout(resolve, delay));
 
                 // 1. Get Location

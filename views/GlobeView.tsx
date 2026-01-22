@@ -230,23 +230,6 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
     useEffect(() => {
         if (globeEl.current) {
             globeEl.current.pointOfView({ altitude: 2.5 });
-            
-            // Add controls change listener for Hybrid System
-            const controls = globeEl.current.controls();
-            if (controls) {
-                controls.addEventListener('change', () => {
-                    const alt = globeEl.current?.pointOfView().altitude || 2.5;
-                    // If zoomed in close (altitude < 0.6), switch to Map
-                    if (alt < 0.6 && viewMode === 'globe') {
-                         const pos = globeEl.current?.pointOfView();
-                         if (pos) {
-                             setMapCenter({ lat: pos.lat, lng: pos.lng });
-                             setMapZoom(5); // Start zoom level for map
-                             setViewMode('map');
-                         }
-                    }
-                });
-            }
         }
         const timer = setTimeout(() => {
             setIsGlobeLoading(false);
@@ -293,7 +276,12 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
         }
     }, [selectedPoint]);
 
+    const lastClickTime = useRef<number>(0);
     const handleGlobeClick = (clickData: { lat: number, lng: number }) => {
+        const now = Date.now();
+        if (now - lastClickTime.current < 300) return; // Debounce
+        lastClickTime.current = now;
+
         const { lat, lng } = clickData;
         setSelectedPoint({ lat, lng });
         setWeatherData(null);
@@ -461,10 +449,10 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             {/* Globe Container - Dynamic Height */}
             <div 
                 className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${
-                    viewMode === 'globe' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                    viewMode === 'globe' ? 'opacity-100 pointer-events-auto z-20' : 'opacity-0 pointer-events-none z-0'
                 }`}
             >
-                <div className={`relative transition-all duration-700 ease-in-out ${selectedPoint ? 'h-[50dvh] sm:h-[60vh] md:h-[65vh]' : 'h-full'} w-full cursor-move flex items-center justify-center`}>
+                <div className={`relative transition-all duration-700 ease-in-out ${selectedPoint ? 'h-[50dvh] sm:h-[60vh] md:h-[65vh]' : 'h-full'} w-full flex items-center justify-center`}>
                     <Globe
                         ref={globeEl}
                         width={dimensions.width}
@@ -474,12 +462,16 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                         atmosphereColor="lightskyblue"
                         atmosphereAltitude={0.15}
                         onGlobeClick={handleGlobeClick}
+                        onPointerClick={(point) => {
+                            if (point) handleGlobeClick(point);
+                        }}
                         backgroundColor="rgba(0,0,0,0)"
                         htmlElementsData={selectedPoint ? [selectedPoint] : []}
                         htmlElement={(d: any) => {
                             const el = document.createElement('div');
                             el.innerHTML = `<span style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));">📍</span>`;
                             el.style.transform = `translate(-50%, -100%)`;
+                            el.style.pointerEvents = 'none'; // Ensure marker doesn't block clicks
                             return el;
                         }}
                     />
@@ -501,8 +493,8 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
 
             {/* Map Container - Round & Glassy */}
             <div 
-                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out z-10 ${
-                    viewMode === 'map' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-in-out ${
+                    viewMode === 'map' ? 'opacity-100 pointer-events-auto z-20' : 'opacity-0 pointer-events-none z-0'
                 }`}
             >
                 <div 
@@ -548,7 +540,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
 
             {/* Weather Detail Panel - Full Width as requested */}
             {selectedPoint && (
-                <div className="bg-bg-card/95 backdrop-blur-2xl border-t border-border-color p-6 pb-32 overflow-y-auto z-20 animate-in slide-in-from-bottom-full duration-500 fixed bottom-0 left-0 right-0 h-[50dvh] sm:h-[40vh] md:h-[35vh]">
+                <div className="bg-bg-card/95 backdrop-blur-2xl border-t border-border-color p-6 pb-32 overflow-y-auto z-[150] animate-in slide-in-from-bottom-full duration-500 fixed bottom-0 left-0 right-0 h-[50dvh] sm:h-[40vh] md:h-[35vh]">
                     <div className="max-w-4xl mx-auto relative">
                         {/* Close Button */}
                         <button 

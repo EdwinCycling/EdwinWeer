@@ -42,8 +42,6 @@ const ImmersiveForecastView = React.lazy(() => import('./views/ImmersiveForecast
 const GlobeView = React.lazy(() => import('./views/GlobeView').then(module => ({ default: module.GlobeView })));
 const LandingPageV2 = React.lazy(() => import('./views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
 import { ViewState, AppSettings } from './types';
-import packageJson from './package.json';
-const appVersion = packageJson.version;
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
 import { getTranslation } from './services/translations';
 import { Icon } from './components/Icon';
@@ -57,10 +55,12 @@ import { LoginToast } from './components/LoginToast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { checkLimit, getUsage, API_LIMITS } from './services/usageService';
 import { GlobalBanner } from './components/GlobalBanner';
+import packageJson from './package.json';
 
 const App: React.FC = () => {
-  const { user, loading, logout, sessionExpiry } = useAuth();
+  const { user, loading, sessionExpiry } = useAuth();
   const { theme, setTheme } = useTheme();
+  const appVersion = packageJson.version;
 
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       // Check for persisted view from session (to handle first-load jumps)

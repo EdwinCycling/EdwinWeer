@@ -5,8 +5,8 @@ import { calculateActivityScore, ActivityScore } from '../services/activityServi
 import { getVisiblePlanets } from '../services/astronomyService';
 import { Icon } from '../components/Icon';
 import { getLuckyCity } from '../services/geminiService';
-import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getMoonPhaseIcon, getBeaufortDescription, getBeaufort, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
-import { searchCityByName, reverseGeocode, reverseGeocodeFull } from '../services/geoService';
+import { fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getMoonPhaseText, calculateMoonPhase, getBeaufort, convertTemp, convertTempPrecise, convertWind, convertPrecip, convertPressure, calculateHeatIndex, calculateJagTi, getWindDirection, calculateDewPoint as calculateDewPointMagnus, calculateComfortScore } from '../services/weatherService';
+import { searchCityByName, reverseGeocodeFull } from '../services/geoService';
 import { loadCurrentLocation, saveCurrentLocation, loadEnsembleModel, saveEnsembleModel, loadSettings, loadLastKnownMyLocation, saveLastKnownMyLocation } from '../services/storageService';
 import { WeatherBackground } from '../components/WeatherBackground';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';

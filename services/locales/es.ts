@@ -143,7 +143,7 @@ export const es: Dictionary = {
     'cycling.no_credits_alert': 'NO quedan créditos. recarga tu saldo para usar esta funcióN.',
     
     // Baro Weerman (Nieuwe functie)
-    'share.photo_weather': 'Compartir clima(foto)',
+    'share.photo_weather': 'Reporte del tiempo con foto',
     'baro_weerman.title': 'Consejo viaje Baro',
     'baro_weerman.subtitle': 'Tu mejor franja horaria',
     'baro_weerman.intro_title': '¿qué es esto?',
@@ -867,6 +867,7 @@ export const es: Dictionary = {
 
     // Share
     'share.title': 'Deel het weer',
+    'share.strava': 'Analiza tu viaje',
     'share.upload': 'Upload foto',
     'share.clean': 'Leeg canvas',
     'share.style': 'Kies stijl',

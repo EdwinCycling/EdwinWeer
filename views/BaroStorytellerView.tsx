@@ -485,7 +485,7 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                     )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 relative z-40">
                     {/* Tone */}
                     <div>
                         <label className="block text-sm font-bold text-text-main mb-2">

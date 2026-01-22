@@ -606,6 +606,9 @@ export const handler = async (event, context) => {
                 continue;
             }
 
+            // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+            await new Promise(resolve => setTimeout(resolve, 12000));
+
             // Generate Content
             const userName = userData.displayName || "Sportieveling";
             const aiText = await generateAIContent(weather, activityKey, scoreData, userName);

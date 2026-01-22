@@ -393,6 +393,8 @@ export const handler = async (event: any, context: any) => {
                             
                             // Generate for all unique languages found
                             for (const lang of Array.from(uniqueLanguages)) {
+                                // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+                                await new Promise(resolve => setTimeout(resolve, 12000));
                                 weatherTexts[lang] = await generateWeatherText(
                                     nameTitle, 
                                     locationDisplay, 

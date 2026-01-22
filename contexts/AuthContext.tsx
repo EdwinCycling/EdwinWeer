@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { User, signInWithPopup, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider } from 'firebase/auth';
 import { auth, googleProvider, db } from '../services/firebase';
 import { setStorageUserId, loadRemoteData } from '../services/storageService';
-import { setUsageUserId, loadRemoteUsage } from '../services/usageService';
+import { setUsageUserId, loadRemoteUsage, checkAndResetDailyCredits, getUsage } from '../services/usageService';
 import { logAuthEvent } from '../services/auditService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { AppUser, UserRole } from '../types';
@@ -99,6 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               loadRemoteData(currentUser.uid),
               loadRemoteUsage(currentUser.uid)
           ]);
+
+          // Daily Credit Check (Login Hook)
+          await checkAndResetDailyCredits(getUsage(), currentUser.uid);
 
           if (docSnap.exists()) {
               const userData = docSnap.data();

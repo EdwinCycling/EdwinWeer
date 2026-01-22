@@ -259,7 +259,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
             : '';
 
         const iconHtml = `
-            <div style="background: ${colors.bgCard}; padding: 4px; border-radius: 8px; border: 2px solid ${colors.textMain}; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: sans-serif; text-align: center; min-width: 56px;">
+            <div style="background: ${colors.bgCard}; padding: 4px; border-radius: 8px; border: 2px solid ${colors.textMain}; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-family: sans-serif; text-align: center; min-width: 56px;">
                 ${tempHtml}
                 ${windHtml}
             </div>
@@ -540,7 +540,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     <Icon name="directions_bike" className="text-6xl text-strava" />
                 </div>
                 <h2 className="text-2xl font-bold mb-2">{t('connect_ride')}</h2>
-                <p className="text-center text-slate-500 dark:text-white/60 max-w-xs mb-8">
+                <p className="text-center text-text-muted max-w-xs mb-8">
                     {t('upload_gpx')}
                 </p>
                 
@@ -578,16 +578,16 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                    </button>
 
                     {/* Legend - Only on Map */}
-                    <div className="absolute top-4 left-16 z-[1001] bg-white/90 dark:bg-[#1e293b]/90 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-white/10 text-xs font-medium flex items-center gap-2">
+                    <div className="absolute top-4 left-16 z-[1001] bg-bg-card/90 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-border-color text-xs font-medium flex items-center gap-2 text-text-main">
                         <span className="size-2 rounded-full bg-[#10b981]"></span> {t('map.legend.start')}
                         <span className="size-2 rounded-full bg-[#ef4444]"></span> {t('map.legend.end')}
-                        {!isRouteOnly && <span className="ml-2 flex items-center gap-1 opacity-60"><Icon name="cloud" className="text-[10px]" /> {t('map_data_msg')}</span>}
+                        {!isRouteOnly && <span className="ml-2 flex items-center gap-1 opacity-70 text-text-muted"><Icon name="cloud" className="text-[10px]" /> {t('map_data_msg')}</span>}
                     </div>
 
                     {!isRouteOnly && (
                         <div className="absolute bottom-4 left-4 z-[1002] flex flex-col items-start">
                             {isMapMenuOpen && (
-                                <div className="mb-2 bg-white/95 dark:bg-[#1e293b]/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 dark:border-white/10 p-3 w-52">
+                                <div className="mb-2 bg-bg-card/95 backdrop-blur rounded-xl shadow-lg border border-border-color p-3 w-52 text-text-main">
                                     <div className="flex items-center justify-between py-1">
                                         <span className="text-sm font-medium">{t('temp')}</span>
                                         <button
@@ -613,7 +613,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                             <button
                                 onClick={() => setIsMapMenuOpen(v => !v)}
-                                className="bg-white dark:bg-[#1e293b] text-slate-800 dark:text-white p-2 rounded-lg shadow-md border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                                className="bg-bg-card text-text-main p-2 rounded-lg shadow-md border border-border-color hover:bg-bg-subtle transition-colors"
                                 title={t('map.options')}
                             >
                                 <Icon name="tune" />
@@ -663,46 +663,46 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 {!isRouteOnly && (
                 <>
                 {/* 3. Weather Stats */}
-                <h3 className="text-sm font-bold uppercase text-slate-500 dark:text-white/50 mt-2">{t('during_ride')}</h3>
+                <h3 className="text-sm font-bold uppercase text-text-muted mt-2">{t('during_ride')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                      <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-2xl border border-blue-100 dark:border-blue-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-blue-500"><Icon name="thermostat" /></div>
                         <div>
-                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('avg_temp')}</p>
-                            <p className="text-xl font-bold text-blue-600 dark:text-blue-100">{rideData.weather.temp}°</p>
+                            <p className="text-xs text-text-muted uppercase font-bold">{t('avg_temp')}</p>
+                            <p className="text-xl font-bold text-blue-700 dark:text-blue-100">{rideData.weather.temp}°</p>
                         </div>
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-500/10 p-3 rounded-2xl border border-slate-200 dark:border-slate-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-slate-500"><Icon name="thermometer" /></div>
+                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-text-muted"><Icon name="thermometer" /></div>
                         <div>
-                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('start_temp')}</p>
-                            <p className="text-xl font-bold">{rideData.startTemp}°</p>
+                            <p className="text-xs text-text-muted uppercase font-bold">{t('start_temp')}</p>
+                            <p className="text-xl font-bold text-text-main">{rideData.startTemp}°</p>
                         </div>
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-500/10 p-3 rounded-2xl border border-slate-200 dark:border-slate-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-slate-500"><Icon name="thermometer" /></div>
+                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-text-muted"><Icon name="thermometer" /></div>
                         <div>
-                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('end_temp')}</p>
-                            <p className="text-xl font-bold">{rideData.endTemp}°</p>
+                            <p className="text-xs text-text-muted uppercase font-bold">{t('end_temp')}</p>
+                            <p className="text-xl font-bold text-text-main">{rideData.endTemp}°</p>
                         </div>
                     </div>
 
                      <div className="bg-green-50 dark:bg-green-500/10 p-3 rounded-2xl border border-green-100 dark:border-green-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-green-500"><Icon name="air" /></div>
                         <div>
-                            <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('max_wind')}</p>
-                            <p className="text-xl font-bold text-green-600 dark:text-green-100">{rideData.weather.wind} <span className="text-xs">{settings.windUnit}</span></p>
+                            <p className="text-xs text-text-muted uppercase font-bold">{t('max_wind')}</p>
+                            <p className="text-xl font-bold text-green-700 dark:text-green-100">{rideData.weather.wind} <span className="text-xs">{settings.windUnit}</span></p>
                         </div>
                     </div>
                      <div className="bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm flex items-center gap-3">
                         <div className="bg-white dark:bg-white/10 p-2 rounded-full text-indigo-500"><Icon name="explore" /></div>
                         <div>
-                             <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('wind_dir')}</p>
+                             <p className="text-xs text-text-muted uppercase font-bold">{t('wind_dir')}</p>
                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold text-indigo-600 dark:text-indigo-100">{rideData.avgWindText}</span>
-                                <div style={{ transform: `rotate(${rideData.avgWindDir}deg)` }}>
+                                <span className="text-xl font-bold text-indigo-700 dark:text-indigo-100">{rideData.avgWindText}</span>
+                                <div style={{ transform: `rotate(${rideData.avgWindDir}deg)` }} className="text-indigo-600 dark:text-indigo-300">
                                     <Icon name="arrow_upward" className="text-sm" />
                                 </div>
                              </div>
@@ -712,16 +712,16 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                         <div className="bg-cyan-50 dark:bg-cyan-500/10 p-3 rounded-2xl border border-cyan-100 dark:border-cyan-500/20 shadow-sm flex items-center gap-3">
                             <div className="bg-white dark:bg-white/10 p-2 rounded-full text-cyan-500"><Icon name="rainy" /></div>
                             <div>
-                                <p className="text-xs text-slate-500 dark:text-white/50 uppercase font-bold">{t('total_rain')}</p>
-                                <p className="text-xl font-bold text-cyan-600 dark:text-cyan-100">{rideData.weather.precip} <span className="text-xs">{settings.precipUnit}</span></p>
+                                <p className="text-xs text-text-muted uppercase font-bold">{t('total_rain')}</p>
+                                <p className="text-xl font-bold text-cyan-700 dark:text-cyan-100">{rideData.weather.precip} <span className="text-xs">{settings.precipUnit}</span></p>
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* 4. Interactive Chart */}
-                <div className="bg-white dark:bg-card-dark rounded-2xl p-4 border border-slate-200 dark:border-white/5 shadow-sm">
-                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                <div className="bg-bg-card rounded-2xl p-4 border border-border-color shadow-sm">
+                    <h3 className="font-bold mb-4 flex items-center gap-2 text-text-main">
                         <Icon name="insights" className="text-strava" /> {t('strava.analysis')}
                     </h3>
                     <div className="h-[360px] w-full">
@@ -733,10 +733,10 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
-                                <XAxis dataKey="dist" type="number" unit="km" tick={{fontSize: 10, fill: '#888'}} />
-                                <YAxis yAxisId="left" orientation="left" tick={{fontSize: 10, fill: '#888'}} />
-                                <YAxis yAxisId="right" orientation="right" tick={{fontSize: 10, fill: '#888'}} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.borderColor} opacity={0.5} />
+                                <XAxis dataKey="dist" type="number" unit="km" tick={{fontSize: 10, fill: colors.textMuted}} />
+                                <YAxis yAxisId="left" orientation="left" tick={{fontSize: 10, fill: colors.textMuted}} />
+                                <YAxis yAxisId="right" orientation="right" tick={{fontSize: 10, fill: colors.textMuted}} />
                                 <YAxis
                                     yAxisId="wind"
                                     orientation="right"

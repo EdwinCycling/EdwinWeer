@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchHolidaysSmart, Holiday, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint, calculateComfortScore, ComfortScore } from '../services/weatherService';
+import { fetchHolidaysSmart, Holiday, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint, calculateComfortScore, ComfortScore, calculateSolarOutput } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode, loadEnsembleModel } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
@@ -299,6 +299,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
           const dateStr = date.toISOString().split('T')[0];
           const holiday = holidays.find(h => h.date === dateStr);
 
+          // Solar calculation
+          const mjValue = weatherData.daily.shortwave_radiation_sum?.[i] || 0;
+          const solar = settings.enableSolar && (settings.solarPowerWp || 0) > 0 
+            ? calculateSolarOutput(mjValue, settings.solarPowerWp || 0)
+            : null;
+
           return {
               day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
               icon: mapWmoCodeToIcon(code),
@@ -314,12 +320,16 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               activityScores,
               comfort,
               dayParts,
-              holiday
+              holiday,
+              solar,
+              mjValue
           };
       });
   };
 
-  const dailyForecast = getDailyForecast().slice(0, visibleDays);
+  const allDaysForecast = getDailyForecast();
+  const dailyForecast = allDaysForecast.slice(0, visibleDays);
+  const maxMj = Math.max(...allDaysForecast.map(d => d.mjValue), 1);
   const tempScaleMin = dailyForecast.length > 0 ? Math.min(...dailyForecast.map(d => d.min)) : 0;
   const tempScaleMax = dailyForecast.length > 0 ? Math.max(...dailyForecast.map(d => d.max)) : 1;
   const tempScaleRange = Math.max(1, tempScaleMax - tempScaleMin);
@@ -966,6 +976,31 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                     </div>
                                                 );
                                             })}
+                                    </div>
+                                )}
+
+                                {settings.enableSolar && (settings.solarPowerWp || 0) > 0 && d.solar && (
+                                    <div className="mt-2 pt-2 border-t border-border-color">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2 min-w-[100px]">
+                                                <Icon name="solar_power" className="text-orange-500 text-sm" />
+                                                <span className="text-[10px] font-bold text-text-muted uppercase tracking-tight">{t('solar.title')}</span>
+                                            </div>
+                                            <div className="flex-1 h-1.5 bg-border-color rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all duration-500 ${
+                                                        (d.mjValue / maxMj) > 0.8 ? 'bg-green-500' : (d.mjValue / maxMj) < 0.2 ? 'bg-red-500/50' : 'bg-orange-400'
+                                                    }`} 
+                                                    style={{ width: `${(d.mjValue / maxMj) * 100}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2 min-w-[80px] justify-end">
+                                                <span className="text-[10px] font-bold text-text-main">{d.solar.label}</span>
+                                                <span className="text-[9px] text-text-muted font-medium bg-bg-card px-1.5 py-0.5 rounded border border-border-color">
+                                                    Score {d.solar.score}/10
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>

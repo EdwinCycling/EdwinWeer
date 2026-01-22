@@ -616,7 +616,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
               </div>
 
               {/* Controls */}
-              <div className="flex flex-wrap items-end gap-4">
+              <div className="flex flex-wrap items-end gap-4 relative z-10">
                   <div className="flex-1 min-w-[120px]">
                       <label className="text-xs font-medium text-text-muted mb-1 block">
                           {t('tab.day')}
@@ -674,7 +674,7 @@ export const ThisDayView: React.FC<ThisDayViewProps> = ({ onNavigate, settings, 
                       <p className="text-sm text-slate-500 dark:text-slate-400">{selectedLocation.name}</p>
                       
                       {/* Range Filter */}
-                      <div className="mt-2 flex justify-center">
+                      <div className="mt-2 flex justify-center relative z-10">
                           <select 
                               value={selectedRange} 
                               onChange={(e) => {

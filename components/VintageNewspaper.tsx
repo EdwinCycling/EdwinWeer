@@ -193,7 +193,7 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto pt-16 print:p-0 print:bg-white print:static print:block">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto pt-16 print:p-0 print:bg-white print:static print:block">
             <style>
                 {`
                 @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap');

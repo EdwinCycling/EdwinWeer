@@ -3,11 +3,11 @@ import { ViewState, AppSettings } from '@/types';
 import { Icon } from '@/components/Icon';
 import { getTranslation } from '@/services/translations';
 import { StaticWeatherBackground } from '@/components/StaticWeatherBackground';
-import { AnimatedGradientOrb } from '@/src/components/landing-v2/AnimatedGradientOrb';
-import { FloatingWeatherIcons } from '@/src/components/landing-v2/FloatingWeatherIcons';
-import { DynamicWeatherEffect } from '@/src/components/landing-v2/DynamicWeatherEffect';
-import { ParticleField } from '@/src/components/landing-v2/ParticleField';
-import { WeatherPhotoShowcase } from '@/src/components/landing-v2/WeatherPhotoShowcase';
+import { AnimatedGradientOrb } from '@/components/landing-v2/AnimatedGradientOrb';
+import { FloatingWeatherIcons } from '@/components/landing-v2/FloatingWeatherIcons';
+import { DynamicWeatherEffect } from '@/components/landing-v2/DynamicWeatherEffect';
+import { ParticleField } from '@/components/landing-v2/ParticleField';
+import { WeatherPhotoShowcase } from '@/components/landing-v2/WeatherPhotoShowcase';
 
 interface Props {
   onNavigate: (view: ViewState) => void;

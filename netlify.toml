@@ -31,16 +31,16 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
 [functions."scheduled-email"]
-  schedule = "@hourly"
+  schedule = "0 * * * *"
 
 [functions."scheduled-your-day"]
-  schedule = "@hourly"
+  schedule = "12 * * * *"
 
 [functions."scheduled-activity-planner"]
-  schedule = "@hourly"
+  schedule = "24 * * * *"
 
 [functions."scheduled-push"]
-  schedule = "@hourly"
+  schedule = "36 * * * *"
 
 [functions."daily-cycling-report"]
-  schedule = "@hourly"
+  schedule = "48 * * * *"

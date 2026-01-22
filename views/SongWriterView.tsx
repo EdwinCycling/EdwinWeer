@@ -444,6 +444,14 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
 
     return (
         <div className="bg-bg-page min-h-screen text-text-main pt-24 pb-32 px-4 max-w-2xl mx-auto">
+            <button 
+                onClick={() => onNavigate(ViewState.CURRENT)}
+                className="mb-6 flex items-center gap-2 text-text-muted hover:text-text-main transition-colors"
+            >
+                <Icon name="arrow_back" />
+                {t('back') || 'Back'}
+            </button>
+
             <div className="mb-8 text-center">
                 <div className="inline-flex items-center justify-center p-3 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl mb-4">
                     <Icon name="music_note" className="text-3xl" />

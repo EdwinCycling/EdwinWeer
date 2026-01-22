@@ -262,8 +262,8 @@ export const handler = async (event, context) => {
                     continue;
                 }
 
-                // LOAD BALANCING: Add a small random delay (0-15s) to prevent hammering APIs
-                const delay = Math.floor(Math.random() * 15000);
+                // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+                const delay = 12000;
                 await new Promise(resolve => setTimeout(resolve, delay));
 
                 // Check Credits

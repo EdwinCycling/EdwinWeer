@@ -31,6 +31,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
     const [year, setYear] = useState<string>((new Date().getFullYear() - 10).toString());
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [generationStep, setGenerationStep] = useState(0); // 0=Idle, 1=Weather, 2=History, 3=Printing
     const [showNewspaper, setShowNewspaper] = useState(false);
     const [newspaperData, setNewspaperData] = useState<any>(null);
     const [weatherContext, setWeatherContext] = useState<any>(null);
@@ -92,6 +93,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
         }
 
         setIsGenerating(true);
+        setGenerationStep(1);
         try {
             const dateStr = `${year}-${month}-${day}`;
             
@@ -103,6 +105,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
             }
 
             // 2. Fetch data for the week before
+            setGenerationStep(2);
             const weekBefore = new Date(dateStr);
             weekBefore.setDate(weekBefore.getDate() - 7);
             const weekBeforeStr = weekBefore.toISOString().split('T')[0];
@@ -147,6 +150,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
             });
 
             // 5. Generate with Gemini
+            setGenerationStep(3);
             const result = await generateVintageNewspaper(
                 weatherSummary,
                 selectedLocation.name,
@@ -262,7 +266,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                                     handleCitySearch(e.target.value);
                                 }}
                                 placeholder={t('city_search.placeholder')}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium"
+                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium"
                             />
                             {loadingCity && (
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -390,6 +394,41 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                     </div>
                 )}
             </div>
+
+            {/* Generation Modal */}
+            {isGenerating && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-slate-100 dark:border-white/10 relative overflow-hidden">
+                         {/* Background Pattern */}
+                         <div className="absolute top-0 right-0 p-10 opacity-5">
+                             <Icon name="history_edu" className="text-9xl" />
+                         </div>
+
+                        <div className="relative z-10 text-center space-y-6">
+                            <div className="size-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="size-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                            
+                            <div>
+                                <h3 className="text-xl font-bold mb-2">{t('baro_time_machine.generating')}</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                                    {generationStep === 1 && "Weerdata ophalen..."}
+                                    {generationStep === 2 && "Historie analyseren..."}
+                                    {generationStep === 3 && "Krant drukken (AI)..."}
+                                </p>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                                    style={{ width: `${(generationStep / 3) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Newspaper Component */}
             {showNewspaper && newspaperData && (

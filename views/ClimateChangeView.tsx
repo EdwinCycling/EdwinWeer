@@ -489,6 +489,25 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       setCurrentNormal(null);
   };
 
+  // Calculate Trend Line Helper
+  const calculateTrendLine = (values: number[]) => {
+      const n = values.length;
+      if (n < 2) return Array(n).fill(null);
+
+      let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+      values.forEach((y, x) => {
+          sumX += x;
+          sumY += y;
+          sumXY += x * y;
+          sumXX += x * x;
+      });
+
+      const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+      const intercept = (sumY - slope * sumX) / n;
+
+      return values.map((_, x) => slope * x + intercept);
+  };
+
   // Chart data
   const chartData = {
       labels: climateData.map(d => d.period).reverse(),
@@ -501,8 +520,6 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
               tension: 0.4,
               segment: {
                 borderDash: (ctx: any) => {
-                    // Make the last segment (forecast) dashed
-                    // The data is reversed, so forecast is at the end
                     return ctx.p0DataIndex === climateData.length - 2 ? [6, 6] : undefined;
                 }
               }
@@ -518,6 +535,17 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                     return ctx.p0DataIndex === climateData.length - 2 ? [6, 6] : undefined;
                 }
               }
+          },
+          // Trend Lines
+          {
+              label: 'Trend (Max)',
+              data: calculateTrendLine(climateData.map(d => d.max).reverse()),
+              borderColor: '#ef4444',
+              borderWidth: 1,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              fill: false,
+              tension: 0
           }
       ]
   };
@@ -551,12 +579,25 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
 
   const rainChartData = {
       labels: climateData.map(d => d.period).reverse(),
-      datasets: [{
+      datasets: [
+        {
           label: t('climate.rain'),
           data: climateData.map(d => d.rain).reverse(),
           backgroundColor: '#3b82f6',
           borderRadius: 4,
-      }]
+          order: 2
+        },
+        {
+            label: 'Trend',
+            data: calculateTrendLine(climateData.map(d => d.rain).reverse()),
+            borderColor: '#2563eb', // Darker blue
+            borderWidth: 2,
+            type: 'line' as const,
+            pointRadius: 0,
+            tension: 0,
+            order: 1
+        }
+      ]
   };
 
   const otherChartData = {
@@ -861,6 +902,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                             <tbody className="divide-y divide-border-color">
                                 {climateData.map((row, i) => {
                                     const oldestYear = climateData[climateData.length - 1]?.period.split('-')[0];
+                                    const isLast = i === climateData.length - 1;
                                     return (
                                     <tr key={row.period} className={`hover:bg-bg-page transition-colors text-text-main ${row.isForecast ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}>
                                         <td className="p-4 font-medium">
@@ -872,40 +914,44 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                             )}
                                         </td>
                                         <td className="p-4 text-orange-500 font-bold">
-                                            {row.max}°
+                                            {typeof row.max === 'number' ? row.max.toFixed(1) : row.max}°
                                             {row.isForecast && (
                                                <span className="block text-[10px] text-orange-400 font-normal">
                                                   +{row.diffMax}°
                                                </span>
                                             )}
-                                            <div className="mt-1 flex flex-col gap-0.5">
-                                                <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
-                                                    {row.pctMaxFirst && row.pctMaxFirst > 0 ? '+' : ''}{row.pctMaxFirst || 0}% vs {oldestYear}
-                                                </span>
-                                                {i < climateData.length - 1 && (
+                                            {!isLast && (
+                                                <div className="mt-1 flex flex-col gap-0.5">
                                                     <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
-                                                        {row.pctMaxPrev && row.pctMaxPrev > 0 ? '+' : ''}{row.pctMaxPrev || 0}% vs vorig
+                                                        {row.pctMaxFirst && row.pctMaxFirst > 0 ? '+' : ''}{row.pctMaxFirst || 0}% vs {oldestYear}
                                                     </span>
-                                                )}
-                                            </div>
+                                                    {i < climateData.length - 1 && (
+                                                        <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
+                                                            {row.pctMaxPrev && row.pctMaxPrev > 0 ? '+' : ''}{row.pctMaxPrev || 0}% vs vorig
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="p-4 text-blue-500 font-bold">
-                                        {row.min}°
+                                        {typeof row.min === 'number' ? row.min.toFixed(1) : row.min}°
                                         {row.isForecast && (
                                            <span className="block text-[10px] text-blue-400 font-normal">
                                               {row.diffMin > 0 ? '+' : ''}{row.diffMin}°
                                            </span>
                                         )}
-                                        <div className="mt-1 flex flex-col gap-0.5">
-                                            <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
-                                                {row.pctMinFirst && row.pctMinFirst > 0 ? '+' : ''}{row.pctMinFirst || 0}% vs {oldestYear}
-                                            </span>
-                                            {i < climateData.length - 1 && (
+                                        {!isLast && (
+                                            <div className="mt-1 flex flex-col gap-0.5">
                                                 <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
-                                                    {row.pctMinPrev && row.pctMinPrev > 0 ? '+' : ''}{row.pctMinPrev || 0}% vs vorig
+                                                    {row.pctMinFirst && row.pctMinFirst > 0 ? '+' : ''}{row.pctMinFirst || 0}% vs {oldestYear}
                                                 </span>
-                                            )}
-                                        </div>
+                                                {i < climateData.length - 1 && (
+                                                    <span className="text-[9px] text-text-muted font-normal whitespace-nowrap">
+                                                        {row.pctMinPrev && row.pctMinPrev > 0 ? '+' : ''}{row.pctMinPrev || 0}% vs vorig
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="p-4 text-blue-400 font-bold">
                                         {row.rain}<span className="text-xs font-normal text-text-muted ml-0.5">{getRainUnitLabel(settings.precipUnit)}</span>
