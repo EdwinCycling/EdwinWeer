@@ -617,7 +617,7 @@ export const handler = async (event, context) => {
             // Send Telegram
             const activityName = activityNames[activityKey] || activityKey;
             const message = `
-<b>📅 Planner: ${activityName} (Morgen)</b>
+<b>📅 Activiteitenplanner: ${activityName} (Morgen)</b>
 
 ${safeAiText}
 
