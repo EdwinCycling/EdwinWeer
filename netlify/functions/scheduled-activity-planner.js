@@ -616,8 +616,16 @@ export const handler = async (event, context) => {
 
             // Send Telegram
             const activityName = activityNames[activityKey] || activityKey;
+            
+            // Format date for message (DD-MM)
+            const dayNum = tomorrow.getDate().toString().padStart(2, '0');
+            const monthNum = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
+            const dateDisplay = `${dayNum}-${monthNum}`;
+
             const message = `
-<b>📅 Activiteitenplanner: ${activityName} (Morgen)</b>
+<b>📅 Activiteitenplanner: ${activityName}</b>
+📍 ${locationName}
+🗓️ Morgen (${dateDisplay})
 
 ${safeAiText}
 
