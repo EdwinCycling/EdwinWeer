@@ -46,6 +46,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [forecast, setForecast] = useState<OpenMeteoResponse | null>(null);
+    const [shouldAutoLoad, setShouldAutoLoad] = useState(false);
     
     // Local Location State
     const [location, setLocation] = useState<Location>(loadCurrentLocation());
@@ -68,6 +69,53 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
             searchInputRef.current.focus();
         }
     }, [isSearchOpen]);
+
+    // Check for passed GPX from BaroRitAdviesView
+    useEffect(() => {
+        const passedGpx = sessionStorage.getItem('baro_analyze_gpx');
+        const passedDate = sessionStorage.getItem('baro_analyze_date');
+        const passedTime = sessionStorage.getItem('baro_analyze_time');
+
+        if (passedGpx) {
+            try {
+                const points = parseGpx(passedGpx);
+                if (points.length > 0) {
+                    setGpxRoute(points);
+                    setGpxName("Baro Route Import");
+                    // Set location to start point
+                    setLocation({
+                        name: "Baro Route Start",
+                        country: "GPX Import",
+                        lat: points[0].lat,
+                        lon: points[0].lon,
+                        timezone: 'Europe/Amsterdam'
+                    });
+
+                     // Set Date/Time if passed
+                    if (passedDate === 'today' || passedDate === 'tomorrow') {
+                        setTargetDay(passedDate);
+                    }
+                    
+                    if (passedTime) {
+                        setPlannerSettings(prev => ({
+                            ...prev,
+                            startTime: passedTime
+                        }));
+                    }
+
+                    // Clear storage to prevent re-loading on refresh
+                    sessionStorage.removeItem('baro_analyze_gpx');
+                    sessionStorage.removeItem('baro_analyze_date');
+                    sessionStorage.removeItem('baro_analyze_time');
+                    
+                    // Trigger load data
+                    setShouldAutoLoad(true);
+                }
+            } catch (e) {
+                console.error("Failed to parse passed GPX", e);
+            }
+        }
+    }, []); // Empty dependency array to run only once
 
     // Handle Search
     const handleSearch = async (query: string) => {
@@ -166,6 +214,13 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     };
 
     // Auto-calculate when GPX is loaded
+    useEffect(() => {
+        if (shouldAutoLoad && location) {
+            loadData();
+            setShouldAutoLoad(false);
+        }
+    }, [shouldAutoLoad, location]);
+
     // Removed auto-calc per user request
 
 
@@ -569,15 +624,27 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     </div>
 
                                     {/* Warnings / Details */}
-                                    {(option.details.length > 0 || option.windVariation) && (
+                                    {(option.details.length > 0 || option.windVariation || option.isDark || option.isTwilight) && (
                                         <div className="space-y-1 pt-3 border-t border-border-color">
+                                            {option.isDark && (
+                                                <div className="flex items-start gap-2 text-xs text-purple-600 dark:text-purple-400 font-bold">
+                                                    <Icon name="nights_stay" className="text-sm mt-0.5" />
+                                                    <span>{option.daylightWarning || "Donker"}</span>
+                                                </div>
+                                            )}
+                                            {!option.isDark && option.isTwilight && (
+                                                <div className="flex items-start gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-bold">
+                                                    <Icon name="bedtime" className="text-sm mt-0.5" />
+                                                    <span>{option.daylightWarning || "Schemer"}</span>
+                                                </div>
+                                            )}
                                             {option.windVariation && (
                                                 <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
                                                     <Icon name="rotate_right" className="text-sm mt-0.5" />
                                                     <span>{option.windVariationText}</span>
                                                 </div>
                                             )}
-                                            {option.details.map((detail, i) => (
+                                            {option.details.filter(d => d !== option.daylightWarning).map((detail, i) => (
                                                 <div key={i} className="flex items-start gap-2 text-xs text-text-muted">
                                                     <Icon name="info" className="text-sm mt-0.5 opacity-70" />
                                                     <span>{detail}</span>

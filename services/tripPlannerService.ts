@@ -21,6 +21,13 @@ export interface TripOption {
     startHour: number; // 0-23
     day: 'today' | 'tomorrow';
     isTargetTime: boolean;
+    
+    // Daylight info
+    sunriseTime?: string;
+    sunsetTime?: string;
+    isDark?: boolean;
+    isTwilight?: boolean;
+    daylightWarning?: string;
 }
 
 export const calculateTripOptions = (
@@ -128,9 +135,71 @@ export const calculateTripOptions = (
         const windDirText = getWindDirection(startDir, lang);
         const windEndText = getWindDirection(endDir, lang);
 
+        // Daylight Analysis
+        let sunriseTime: string | undefined;
+        let sunsetTime: string | undefined;
+        let isDark = false;
+        let isTwilight = false;
+        let daylightWarning: string | undefined;
+
+        if (forecast.daily && forecast.daily.sunrise && forecast.daily.sunset) {
+            // Find correct daily index
+            // We use targetDateStr calculated earlier to match daily.time
+            const dailyIdx = forecast.daily.time.findIndex(t => t === targetDateStr);
+            
+            if (dailyIdx !== -1) {
+                const sunrise = new Date(forecast.daily.sunrise[dailyIdx]);
+                const sunset = new Date(forecast.daily.sunset[dailyIdx]);
+                
+                sunriseTime = sunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                sunsetTime = sunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                // Calculate trip start and end Date objects
+                const tripStart = new Date(hourly.time[startIndex]);
+                const tripEnd = new Date(tripStart.getTime() + duration * 60 * 60 * 1000);
+
+                const TWILIGHT_MS = 30 * 60 * 1000; // 30 mins
+
+                // Check Start
+                if (tripStart < new Date(sunrise.getTime() - TWILIGHT_MS)) {
+                    isDark = true;
+                    daylightWarning = isNl ? 'Start in donker' : 'Start in dark';
+                } else if (tripStart < sunrise) {
+                    isTwilight = true;
+                    daylightWarning = isNl ? 'Start in schemer' : 'Start in twilight';
+                }
+
+                // Check End
+                if (tripEnd > new Date(sunset.getTime() + TWILIGHT_MS)) {
+                    if (isDark) {
+                        daylightWarning += isNl ? ' & Finish in donker' : ' & Finish in dark';
+                    } else {
+                        isDark = true;
+                        daylightWarning = isNl ? 'Finish in donker' : 'Finish in dark';
+                    }
+                } else if (tripEnd > sunset) {
+                     if (!isDark && !isTwilight) {
+                        isTwilight = true;
+                        daylightWarning = isNl ? 'Finish in schemer' : 'Finish in twilight';
+                     } else if (daylightWarning) {
+                        daylightWarning += isNl ? ' & Finish in schemer' : ' & Finish in twilight';
+                     }
+                }
+            }
+        }
+
         // Scoring Logic (1-10)
         let score = 10;
         const details: string[] = [];
+
+        // Daylight Penalty
+        if (isDark) {
+            score -= 2;
+            if (daylightWarning) details.push(daylightWarning);
+        } else if (isTwilight) {
+            score -= 0.5;
+            if (daylightWarning) details.push(daylightWarning);
+        }
 
         // 1. Rain Penalty (Heavy)
         if (maxRainProb > 10) {
@@ -195,7 +264,12 @@ export const calculateTripOptions = (
             isBest: false,
             startHour: h,
             day: targetDay,
-            isTargetTime: h === startH
+            isTargetTime: h === startH,
+            sunriseTime,
+            sunsetTime,
+            isDark,
+            isTwilight,
+            daylightWarning
         });
     }
 

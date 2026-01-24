@@ -71,3 +71,35 @@ export const calculateBearing = (lat1: number, lon1: number, lat2: number, lon2:
     const brng = (θ * 180 / Math.PI + 360) % 360; // in degrees
     return brng;
 };
+
+export const generateGpx = (geoJson: any, name: string): string => {
+    if (!geoJson || !geoJson.features || !geoJson.features[0] || !geoJson.features[0].geometry || !geoJson.features[0].geometry.coordinates) {
+        throw new Error("Invalid GeoJSON data");
+    }
+
+    const coordinates = geoJson.features[0].geometry.coordinates; // [lon, lat]
+    
+    let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="BaroApp" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>${name}</name>
+  </metadata>
+  <trk>
+    <name>${name}</name>
+    <trkseg>
+`;
+
+    for (const coord of coordinates) {
+        // GeoJSON is [lon, lat, ele?], GPX needs lat=".." lon=".."
+        const lon = coord[0];
+        const lat = coord[1];
+        const ele = coord[2] !== undefined ? `<ele>${coord[2]}</ele>` : '';
+        gpx += `      <trkpt lat="${lat}" lon="${lon}">${ele}</trkpt>\n`;
+    }
+
+    gpx += `    </trkseg>
+  </trk>
+</gpx>`;
+
+    return gpx;
+};

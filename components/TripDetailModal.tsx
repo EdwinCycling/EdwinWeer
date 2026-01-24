@@ -524,24 +524,64 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
 
             <div ref={contentRef} className="flex-1 overflow-y-auto bg-bg-page p-4 space-y-6 min-h-0">
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
-                        <div className="text-xs text-text-muted uppercase font-bold">{t('temp')}</div>
-                        <div className="text-lg font-bold text-text-main">{Math.round(tripOption.avgTemp)}°</div>
-                    </div>
-                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
-                        <div className="text-xs text-text-muted uppercase font-bold">{t('wind')}</div>
-                        <div className="text-lg font-bold text-text-main">
-                            {convertWind(tripOption.maxWind, settings.windUnit || 'kmh')} <span className="text-xs">{settings.windUnit || 'km/h'}</span>
+                {/* Weather Summary: Departure vs Arrival */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Departure */}
+                    <div className="bg-bg-card p-4 rounded-xl border border-border-color shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-10">
+                            <Icon name="flight_takeoff" className="text-4xl" />
+                        </div>
+                        <div className="text-xs text-text-muted uppercase font-bold mb-3 border-b border-border-color pb-2 flex justify-between">
+                            <span>{t('departure') || 'Vertrek'}</span>
+                            <span>{tripOption.startTime}</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('temp')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? Math.round(routePoints[0].temp) : Math.round(tripOption.avgTemp)}°</div>
+                             </div>
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('wind')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? convertWind(routePoints[0].windSpeed, settings.windUnit || 'kmh') : convertWind(tripOption.maxWind, settings.windUnit || 'kmh')}</div>
+                             </div>
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('rain')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? `${routePoints[0].precip}%` : `${tripOption.maxRain}%`}</div>
+                             </div>
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('sun')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? Math.round(routePoints[0].sunChance) : Math.round(tripOption.avgSunChance)}%</div>
+                             </div>
                         </div>
                     </div>
-                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
-                        <div className="text-xs text-text-muted uppercase font-bold">{t('rain')}</div>
-                        <div className="text-lg font-bold text-text-main">{tripOption.maxRain}%</div>
-                    </div>
-                    <div className="bg-bg-card p-3 rounded-xl border border-border-color shadow-sm">
-                        <div className="text-xs text-text-muted uppercase font-bold">{t('sun')}</div>
-                        <div className="text-lg font-bold text-text-main">{Math.round(tripOption.avgSunChance)}%</div>
+
+                    {/* Arrival */}
+                    <div className="bg-bg-card p-4 rounded-xl border border-border-color shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-10">
+                            <Icon name="flight_land" className="text-4xl" />
+                        </div>
+                        <div className="text-xs text-text-muted uppercase font-bold mb-3 border-b border-border-color pb-2 flex justify-between">
+                            <span>{t('arrival') || 'Aankomst'}</span>
+                            <span>{tripOption.endTime}</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('temp')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? Math.round(routePoints[routePoints.length-1].temp) : Math.round(tripOption.avgTemp)}°</div>
+                             </div>
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('wind')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? convertWind(routePoints[routePoints.length-1].windSpeed, settings.windUnit || 'kmh') : convertWind(tripOption.maxWind, settings.windUnit || 'kmh')}</div>
+                             </div>
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('rain')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? `${routePoints[routePoints.length-1].precip}%` : `${tripOption.maxRain}%`}</div>
+                             </div>
+                             <div className="text-center">
+                                <div className="text-[10px] text-text-muted uppercase">{t('sun')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? Math.round(routePoints[routePoints.length-1].sunChance) : Math.round(tripOption.avgSunChance)}%</div>
+                             </div>
+                        </div>
                     </div>
                 </div>
 

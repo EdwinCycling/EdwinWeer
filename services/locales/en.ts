@@ -45,6 +45,8 @@ export const en: Dictionary = {
     'trip_planner.search_location': 'Search location...',
     'trip_planner.all_good': 'All shown times are excellent options!',
     'trip_planner.your_choice': 'Your choice',
+    'departure': 'Departure',
+    'arrival': 'Arrival',
     'trip_planner.stars': 'Rating',
     'trip_planner.baro_index': 'Baro index',
     'trip_planner.download_report': 'Download report',

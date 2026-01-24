@@ -285,7 +285,10 @@ export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: s
         
         // 2. Check Credits Top-up
         const freeDaily = API_LIMITS.CREDITS?.FREE_DAILY || 10;
-        const currentCredits = currentStats.weatherCredits || 0;
+        
+        // Ensure we handle undefined or missing weatherCredits gracefully
+        if (currentStats.weatherCredits === undefined) currentStats.weatherCredits = 0;
+        const currentCredits = currentStats.weatherCredits;
         
         if (currentCredits < freeDaily) {
             const topUp = freeDaily - currentCredits;
@@ -298,6 +301,10 @@ export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: s
             if (db && uid) {
                 try {
                     const userRef = doc(db, 'users', uid);
+                    // Use increment to be safe with concurrent updates, but we want to reach exactly freeDaily.
+                    // However, we only do this if we are the first to switch the day.
+                    // A cleaner way is to just set it if it's low, but increment is safer for concurrent usage.
+                    // But we already calculated topUp.
                     await updateDoc(userRef, {
                         'usage.weatherCredits': increment(topUp)
                     });
@@ -310,6 +317,26 @@ export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: s
         // Save the new dayStart to prevent re-run
         saveUsage(currentStats);
     }
+};
+
+/**
+ * Force check credits (e.g. on login) even if dayStart matches, 
+ * to handle cases where local storage might be out of sync or fresh login on new device.
+ */
+export const ensureDailyCredits = async (uid: string) => {
+    const stats = getUsage();
+    const today = new Date().toISOString().split('T')[0];
+    const freeDaily = API_LIMITS.CREDITS?.FREE_DAILY || 10;
+
+    // If dayStart is not today, checkAndResetDailyCredits will handle it.
+    // But if dayStart IS today, but credits < 10 (and user expects reset? No, only once per day).
+    // The requirement is: "you get 10 weathercredits again, but only if it's the first time that day."
+    // So if I used 10 credits today, logged out, logged in -> I should NOT get more.
+    // So checkAndResetDailyCredits is correct.
+    
+    // However, for a NEW user, dayStart might be empty or old.
+    // Or if local storage was cleared.
+    await checkAndResetDailyCredits(stats, uid);
 };
 
 export const consumeCredit = async (type: 'weather' | 'baro', amount: number = 1) => {

@@ -974,8 +974,8 @@ export const calculateComfortScore = (weather: {
     else if (temp < 5) baseScore = 4;
     else if (temp < 15) baseScore = 6;
     else if (temp < 20) baseScore = 8;
-    else if (temp <= 26) baseScore = 10;
-    else if (temp <= 30) baseScore = 8;
+    else if (temp <= 28) baseScore = 10;
+    else if (temp <= 32) baseScore = 8;
     else if (temp <= 35) baseScore = 5;
     else baseScore = 3;
 

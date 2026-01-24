@@ -41,6 +41,7 @@ const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(mo
 const ImmersiveForecastView = React.lazy(() => import('./views/ImmersiveForecastView').then(module => ({ default: module.ImmersiveForecastView })));
 const GlobeView = React.lazy(() => import('./views/GlobeView').then(module => ({ default: module.GlobeView })));
 const LandingPageV2 = React.lazy(() => import('./views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
+const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').then(module => ({ default: module.BaroRitAdviesView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
 import { getTranslation } from './services/translations';
@@ -55,9 +56,12 @@ import { LoginToast } from './components/LoginToast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { checkLimit, getUsage, API_LIMITS } from './services/usageService';
 import { GlobalBanner } from './components/GlobalBanner';
+import { useGeoBlock } from './hooks/useGeoBlock';
+import { AccessDenied } from './components/AccessDenied';
 import packageJson from './package.json';
 
 const App: React.FC = () => {
+  const { isBlocked, loading: geoLoading } = useGeoBlock();
   const { user, loading, sessionExpiry } = useAuth();
   const { theme, setTheme } = useTheme();
   const appVersion = packageJson.version;
@@ -264,7 +268,7 @@ const App: React.FC = () => {
       }
   }, [user]);
 
-  if (loading) {
+  if (loading || geoLoading) {
     return (
       <>
         <GlobalBanner />
@@ -273,6 +277,10 @@ const App: React.FC = () => {
         </div>
       </>
     );
+  }
+
+  if (isBlocked) {
+    return <AccessDenied />;
   }
 
   if (!user) {
@@ -355,6 +363,8 @@ const App: React.FC = () => {
         return <BaroTimeMachineView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} isLimitReached={!!limitReached} />;
       case ViewState.BARO_STORYTELLER:
         return <BaroStorytellerView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} isLimitReached={!!limitReached} />;
+      case ViewState.BARO_RIT_ADVIES:
+        return <BaroRitAdviesView onNavigate={navigate} />;
       case ViewState.SONG_WRITER:
         return <SongWriterView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} isLimitReached={!!limitReached} />;
       case ViewState.WEATHER_FINDER:
@@ -654,6 +664,17 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('wielerkoers_weerbericht.title')}</span>
                                         <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('wielerkoers_weerbericht.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                {/* Baro Rit Advies */}
+                                <button onClick={() => { navigate(ViewState.BARO_RIT_ADVIES); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <Icon name="alt_route" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full">{t('baro_rit_advies.title')}</span>
+                                        <span className="text-xs text-slate-500 dark:text-white/60 text-left line-clamp-1">{t('baro_rit_advies.subtitle')}</span>
                                     </div>
                                 </button>
                             </div>

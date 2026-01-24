@@ -30,16 +30,23 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
     const t = (key: string) => getTranslation(key, settings.language);
 
     // 1. Data Preparation
-    const now = new Date();
+    // Calculate "now" based on location timezone if available
+    const utcOffset = weatherData.utc_offset_seconds !== undefined ? weatherData.utc_offset_seconds : 0;
+    const browserOffset = new Date().getTimezoneOffset() * -60; // in seconds
+    const diff = utcOffset - browserOffset;
+    
+    // Adjusted "now" representing the time at the location
+    const now = new Date(new Date().getTime() + diff * 1000);
+
     // Use targetDate if provided, otherwise use now. 
     // If targetDate is provided, we treat it as "current" for data selection purposes, 
-    // but we only show "current time" line if it's actually today.
+    // but we only show "current time" line if it's actually today (at location).
     const displayDate = targetDate || now;
     const isToday = displayDate.getDate() === now.getDate() && 
                     displayDate.getMonth() === now.getMonth() && 
                     displayDate.getFullYear() === now.getFullYear();
 
-    const currentHour = now.getHours(); // Always use real current hour for "NU" line
+    const currentHour = now.getHours(); // Use adjusted hour for "NU" line
     
     // Find index for displayDate 06:00
     const timeArray = weatherData.hourly.time;

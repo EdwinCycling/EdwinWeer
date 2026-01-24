@@ -577,7 +577,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       }
   };
 
-  const rainChartData = {
+  const rainChartData: any = {
       labels: climateData.map(d => d.period).reverse(),
       datasets: [
         {
