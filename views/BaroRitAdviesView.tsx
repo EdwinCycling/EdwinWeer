@@ -236,6 +236,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
     
     // Weather Data State
     const [forecastData, setForecastData] = useState<any>(null);
+    const [fullHourlyWeather, setFullHourlyWeather] = useState<any>(null);
     const [isWeatherLoading, setIsWeatherLoading] = useState(false);
 
     // Edit Mode State
@@ -319,6 +320,8 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                 const data = await throttledFetch(url);
                 
                 if (data.hourly) {
+                    setFullHourlyWeather(data.hourly);
+                    
                     // Set current wind for map/markers
                     setCurrentWind({
                         direction: data.hourly.wind_direction_10m[hourIndex],
@@ -1478,7 +1481,6 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 <div>
                                     <p className="font-bold">{daylightInfo.isCritical ? 'Daglicht Waarschuwing' : 'Schemering Info'}</p>
                                     <p>{daylightInfo.warning}</p>
-                                    <p className="text-xs opacity-75 mt-1">Strafpunten: -{daylightInfo.scorePenalty}</p>
                                 </div>
                             </div>
                         )}
@@ -1667,7 +1669,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             </div>
                         )}
 
-                        {/* Weather Details Card - Moved Here */}
+                        {/* Weather Details Card - Split View */}
                         {forecastData && routeData && (
                             <div className="bg-bg-card p-4 rounded-xl border border-border-color animate-in fade-in slide-in-from-bottom-2">
                                 <div className="flex justify-between items-center mb-3">
@@ -1675,29 +1677,87 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                         <Icon name="partly_cloudy_day" /> Weerbericht
                                     </label>
                                     <span className="text-xs text-text-muted">
-                                        {selectedDate === 'today' ? 'Vandaag' : 'Morgen'} {selectedTime} - {getEndTime(selectedTime, routeData.features[0].properties.summary.distance, averageSpeed)}
+                                        {selectedDate === 'today' ? 'Vandaag' : 'Morgen'}
                                     </span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                        <span className="text-xs text-text-muted uppercase">Temp</span>
-                                        <span className="font-bold text-lg">{Math.round(forecastData.temp)}°</span>
-                                        <span className="text-[10px] text-text-muted">Gevoel {Math.round(forecastData.feelsLike)}°</span>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Departure */}
+                                    <div className="space-y-2">
+                                        <div className="text-xs font-bold text-text-muted uppercase text-center border-b border-border-color pb-1 mb-2">
+                                            Vertrek {selectedTime}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                <span className="text-[10px] text-text-muted uppercase">Temp</span>
+                                                <span className="font-bold">{Math.round(forecastData.temp)}°</span>
+                                            </div>
+                                            <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                <span className="text-[10px] text-text-muted uppercase">Wind</span>
+                                                <span className="font-bold">{convertWind(forecastData.windSpeed, settings.windUnit || WindUnit.KMH)}</span>
+                                            </div>
+                                            <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                <span className="text-[10px] text-text-muted uppercase">Regen</span>
+                                                <span className="font-bold">{forecastData.precipProb}%</span>
+                                            </div>
+                                            <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                <span className="text-[10px] text-text-muted uppercase">Zon</span>
+                                                <span className="font-bold">{100 - forecastData.cloudCover}%</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                        <span className="text-xs text-text-muted uppercase">Wind</span>
-                                        <span className="font-bold text-lg">{convertWind(forecastData.windSpeed, settings.windUnit || WindUnit.KMH)}</span>
-                                        <span className="text-[10px] text-text-muted">{settings.windUnit || 'km/u'}</span>
-                                    </div>
-                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                        <span className="text-xs text-text-muted uppercase">Neerslag</span>
-                                        <span className="font-bold text-lg">{forecastData.precipProb}%</span>
-                                        <span className="text-[10px] text-text-muted">Kans</span>
-                                    </div>
-                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                        <span className="text-xs text-text-muted uppercase">Zon</span>
-                                        <span className="font-bold text-lg">{100 - forecastData.cloudCover}%</span>
-                                        <span className="text-[10px] text-text-muted">Kans</span>
+
+                                    {/* Arrival */}
+                                    <div className="space-y-2">
+                                        <div className="text-xs font-bold text-text-muted uppercase text-center border-b border-border-color pb-1 mb-2">
+                                            Aankomst {getEndTime(selectedTime, routeData.features[0].properties.summary.distance, averageSpeed)}
+                                        </div>
+                                        {(() => {
+                                            // Calculate arrival weather
+                                            let arrivalWeather = forecastData;
+                                            if (fullHourlyWeather) {
+                                                const [h, m] = selectedTime.split(':').map(Number);
+                                                const durationHours = (routeData.features[0].properties.summary.distance / 1000) / averageSpeed;
+                                                // Add minutes to make it more precise? Hourly data is just hourly.
+                                                // Round to nearest hour or floor? OpenMeteo hourly is 00:00, 01:00...
+                                                // If I arrive at 14:50, 15:00 weather is probably better than 14:00?
+                                                // Let's just use floor + duration.
+                                                const arrivalHourIndex = Math.min(
+                                                    Math.floor(h + durationHours),
+                                                    fullHourlyWeather.temperature_2m.length - 1
+                                                );
+                                                
+                                                if (fullHourlyWeather.temperature_2m[arrivalHourIndex] !== undefined) {
+                                                    arrivalWeather = {
+                                                        temp: fullHourlyWeather.temperature_2m[arrivalHourIndex],
+                                                        windSpeed: fullHourlyWeather.wind_speed_10m[arrivalHourIndex],
+                                                        precipProb: fullHourlyWeather.precipitation_probability[arrivalHourIndex],
+                                                        cloudCover: fullHourlyWeather.cloud_cover[arrivalHourIndex]
+                                                    };
+                                                }
+                                            }
+
+                                            return (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase">Temp</span>
+                                                        <span className="font-bold">{Math.round(arrivalWeather.temp)}°</span>
+                                                    </div>
+                                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase">Wind</span>
+                                                        <span className="font-bold">{convertWind(arrivalWeather.windSpeed, settings.windUnit || WindUnit.KMH)}</span>
+                                                    </div>
+                                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase">Regen</span>
+                                                        <span className="font-bold">{arrivalWeather.precipProb}%</span>
+                                                    </div>
+                                                    <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase">Zon</span>
+                                                        <span className="font-bold">{100 - arrivalWeather.cloudCover}%</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>
