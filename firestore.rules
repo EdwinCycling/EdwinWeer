@@ -1,43 +1,64 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if the user is authenticated and is the owner of the document
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+
+    // Helper: Is de gebruiker ingelogd?
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Match the user document
+    // Helper: Is de gebruiker de eigenaar van het document?
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper: Is de gebruiker een admin?
+    function isAdmin() {
+      return isSignedIn() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Gebruikers collectie
     match /users/{userId} {
-      // Allow create/read if owner
-      allow create, read: if isOwner(userId);
+      // Lezen mag als het je eigen profiel is of als je admin bent
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       
-      // Allow update if owner AND credits are not increased (prevents client-side hacking)
-      // Webhook/Backend uses Admin SDK which bypasses these rules
-      allow update: if isOwner(userId) && 
-        request.resource.data.usage.weatherCredits <= resource.data.usage.weatherCredits &&
-        request.resource.data.usage.baroCredits <= resource.data.usage.baroCredits;
+      // Belangrijk: Gebruiker mag NIET zijn eigen rol aanpassen!
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+      );
       
-      // Match the subcollection audit_logs
-      // Only allow creation (append-only) and reading. No updates or deletes to logs.
+      // Audit logs binnen een gebruiker
       match /audit_logs/{logId} {
-        allow read, create: if isOwner(userId);
-        allow update, delete: if false;
+        allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow delete: if isOwner(userId) || isAdmin(); // Sta verwijderen toe voor opschoning
+        allow update: if false;
       }
     }
 
-    // System configuration (Publicly readable)
+    // Systeem configuratie (Banner & App blokkade)
     match /system/config {
-      allow read: if true;
-      allow write: if false; // Only Admin SDK can write
+      allow read: if true; // Iedereen moet kunnen zien of de app geblokkeerd is
+      allow write: if isAdmin(); // Alleen de admin (jij dus) kan dit aanpassen
     }
-    
-    // Purchases collection (Transaction Log)
+
+    // Admin audit logs
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // Admin logs kunnen niet worden gewist
+    }
+
+    // Purchases (Omzet)
     match /purchases/{purchaseId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow write: if false; // Only Admin SDK (webhook) can write
+      allow read: if isAdmin();
+      allow write: if false; // Alleen via backend/Stripe, nooit via de app
     }
     
-    // Deny access to everything else by default
+    // Fallback: ontzeg alle andere toegang
     match /{document=**} {
       allow read, write: if false;
     }
