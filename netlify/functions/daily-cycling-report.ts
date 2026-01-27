@@ -83,7 +83,7 @@ async function sendEmailNotification(email: string, subject: string, htmlContent
     const sendSmtpEmail = new Brevo.SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "info@baro-app.nl" }; // Adjust sender if needed
+    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "AskBaroApp@gmail.com" }; // Adjust sender if needed
     sendSmtpEmail.to = [{ "email": email }];
 
     try {

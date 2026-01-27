@@ -27,6 +27,7 @@ import { HorizonCompassView } from '../components/HorizonCompassView';
 import { getUsage } from '../services/usageService';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 import { useThemeColors } from '../hooks/useThemeColors';
+import { useAuth } from '../hooks/useAuth';
 
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
@@ -64,6 +65,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [limitError, setLimitError] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -83,16 +85,19 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   }, [isSearchOpen]);
 
     useEffect(() => {
-        // Welcome popup for new users
-        const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
-        if (!hasSeenWelcome) {
-            setShowWelcomeModal(true);
+        // Welcome popup for new users (Only if logged in and not seen yet)
+        if (user) {
+             const key = `welcome_seen_${user.uid}`;
+             const hasSeen = localStorage.getItem(key);
+             if (!hasSeen) {
+                 setShowWelcomeModal(true);
+             }
         }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
       saveCurrentLocation(location);
       loadWeather();
-  }, [location]);
+  }, [location, user]);
 
   const getLocationTime = () => {
     if (!weatherData) return new Date();
@@ -1683,7 +1688,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           isOpen={showWelcomeModal} 
           onClose={() => {
               setShowWelcomeModal(false);
-              localStorage.setItem('hasSeenWelcome', 'true');
+              if (user) {
+                  localStorage.setItem(`welcome_seen_${user.uid}`, 'true');
+              }
           }}
           settings={settings}
           onUpdateSettings={onUpdateSettings}

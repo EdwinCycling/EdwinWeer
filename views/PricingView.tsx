@@ -70,11 +70,18 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
   const hasBaroCredits = (usageStats?.baroCredits || 0) > 0;
   const hasAnyCredits = hasProCredits || hasBaroCredits;
 
-  const handleBuy = (priceId: string) => {
+  const handleBuy = (priceId: string | undefined) => {
     if (!user) {
         alert('Log eerst in om credits te kopen.');
         return;
     }
+    
+    if (!priceId) {
+        console.error('Price ID is missing. Check environment variables.');
+        alert('Fout: Product informatie niet gevonden. Neem contact op met support.');
+        return;
+    }
+
     setConfirmModal({ show: true, priceId });
   };
 
@@ -119,7 +126,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
        <div className="relative z-10 p-6">
        {/* Success Modal */}
        {showSuccess && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                 <div className="bg-bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-xl text-center border border-border-color">
                     <div className="p-8">
                         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -160,7 +167,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
 
         {/* Confirmation Modal */}
         {confirmModal.show && confirmModal.priceId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                 <div className="bg-bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-xl border border-border-color">
                     <div className="p-6">
                         <h3 className="text-xl font-bold mb-4 text-text-main">

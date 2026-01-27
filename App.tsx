@@ -409,7 +409,7 @@ const App: React.FC = () => {
             <LoginToast userEmail={user.email} onClose={() => setShowLoginToast(false)} />
         )}
 
-        {limitReached && (
+        {limitReached && currentView !== ViewState.PRICING && (
             <div className="fixed top-4 inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">
                 <div className="max-w-xl w-full bg-amber-500 text-white border border-amber-600 rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 pointer-events-auto">
                     <div className="mt-0.5">

@@ -48,8 +48,8 @@ if (brevoApi.setApiKey) {
 
 // Mapping of Price IDs to Credit Amounts
 const CREDIT_PACKAGES: Record<string, { type: 'weatherCredits' | 'baroCredits', amount: number }> = {
-    [process.env.STRIPE_PRICE_WEATHER || '']: { type: 'weatherCredits', amount: 10000 },
-    [process.env.STRIPE_PRICE_BARO || '']: { type: 'baroCredits', amount: 500 },
+    [process.env.STRIPE_PRICE_WEATHER || '']: { type: 'weatherCredits', amount: 5000 },
+    [process.env.STRIPE_PRICE_BARO || '']: { type: 'baroCredits', amount: 250 },
 };
 
 async function sendPurchaseEmail(email: string, name: string, locale: string, updates: Record<string, number>) {
