@@ -575,10 +575,12 @@ export const handler = async (event: any, context: any) => {
             }
 
             // Update user usage
-            await db.collection('users').doc(userId).update({
-                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                'last_cycling_update_date': today
-            });
+            await db.collection('users').doc(userId).set({
+                usage: {
+                    baroCredits: admin.firestore.FieldValue.increment(-1)
+                },
+                last_cycling_update_date: today
+            }, { merge: true });
             count++;
         }
 

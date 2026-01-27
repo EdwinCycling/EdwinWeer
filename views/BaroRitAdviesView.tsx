@@ -64,26 +64,26 @@ const WindMarkers = ({ data, wind, unit }: { data: any, wind: { direction: numbe
         
         // Create a custom icon for wind
         const windIcon = L.divIcon({
-            className: 'custom-wind-icon',
-            html: `
-                <div style="
-                    transform: rotate(${wind.direction}deg); 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center;
-                    width: 30px;
-                    height: 30px;
-                    background: white;
-                    border-radius: 50%;
-                    border: 2px solid #4f46e5;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                ">
-                    <span style="font-size: 16px;">⬇️</span>
-                </div>
-            `,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
-        });
+    className: 'custom-wind-icon',
+    html: `
+      <div style="
+        transform: rotate(${wind.direction}deg); 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        width: 15px;
+        height: 15px;
+        background: white;
+        border-radius: 50%;
+        border: 1.5px solid #4f46e5;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      ">
+        <span style="font-size: 8px;">⬇️</span>
+      </div>
+    `,
+    iconSize: [15, 15],
+    iconAnchor: [7.5, 7.5]
+  });
 
         markers.push(
             <Marker key={`wind-${dist}`} position={[lat, lon]} icon={windIcon}>
@@ -203,7 +203,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
         } catch (e) {}
         return 'paved';
     });
-    const [shape, setShape] = useState<'loop' | 'figure8' | 'square' | 'triangle' | 'star' | 'hexagon' | 'zigzag' | 'boomerang'>(() => getSavedState('shape', 'loop'));
+    const [shape, setShape] = useState<'loop' | 'figure8' | 'square' | 'triangle' | 'star' | 'hexagon' | 'zigzag' | 'boomerang' | 'kerstboom' | 'kerstman' | 'pashaas' | 'dieren'>(() => getSavedState('shape', 'loop'));
     const [isAdvancedOpen, setIsAdvancedOpen] = useState<boolean>(true); // Default open as requested by user implication
     
     const [loading, setLoading] = useState<boolean>(false);
@@ -1306,7 +1306,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                              <div className="space-y-4">
                                 {/* Shape Selector */}
                                 <div>
-                                    <label className="text-xs font-medium text-text-main mb-2 block">Vorm</label>
+                                    <label className="text-xs font-medium text-text-main mb-2 block">Basis Vorm</label>
                                     <div className="grid grid-cols-4 gap-1 bg-bg-page rounded-lg p-1 border border-border-color">
                                         {[
                                             { id: 'loop', label: 'Lus' },
@@ -1327,6 +1327,22 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                {/* Figures Dropdown */}
+                                <div>
+                                    <label className="text-xs font-medium text-text-main mb-2 block">Speciale Figuren</label>
+                                    <select 
+                                        value={['kerstboom', 'kerstman', 'pashaas', 'dieren'].includes(shape) ? shape : ''}
+                                        onChange={(e) => e.target.value && setShape(e.target.value as any)}
+                                        className="w-full bg-bg-page text-text-main text-xs rounded-lg px-3 py-2 border border-border-color focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
+                                    >
+                                        <option value="">-- Kies een figuur --</option>
+                                        <option value="kerstboom">🎄 Kerstboom</option>
+                                        <option value="kerstman">🎅 Kerstman</option>
+                                        <option value="pashaas">🐰 Pashaas</option>
+                                        <option value="dieren">🐟 Vis (Dier)</option>
+                                    </select>
                                 </div>
 
                                 {/* Bending Outbound */}

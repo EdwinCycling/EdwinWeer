@@ -9,8 +9,8 @@ export const nl: Dictionary = {
     'error_fetching_weather': 'Kon weerdata niet ophalen.',
     'sun_chance': 'Zonneschijn (kans)',
     'copied': 'Gekopieerd!',
-    'nav.trip_planner': 'Baro rit-planner',
-    'trip_planner.title': 'Baro rit-planner',
+    'nav.trip_planner': 'Baro route planner',
+    'trip_planner.title': 'Baro route planner',
     'trip_planner.subtitle': 'Vind het beste startmoment voor je rit',
     'trip_planner.settings': 'Instellingen',
     'trip_planner.activity': 'Activiteit',
@@ -350,8 +350,8 @@ export const nl: Dictionary = {
     'info.card.ensembles_desc': 'Bekijk 15+ wereldwijde modellen om onzekerheid en kans te zien, niet alleen ééN uitkomst.',
     'info.card.soil_title': 'Diepe bodem & landbouw',
     
-    // Baro Rit Advies
-    'baro_rit_advies.title': 'Baro Rit Advies',
+    // Baro Route planner
+    'baro_rit_advies.title': 'Baro Route planner',
     'baro_rit_advies.subtitle': 'Wind-slimme routes plannen',
     'baro_rit_advies.intro': 'Plan je ronde op basis van de wind. Baro berekent de optimale route zodat je (grotendeels) wind mee hebt op de terugweg.',
     'baro_rit_advies.credits_remaining': 'Baro Credits: {count}',
@@ -673,6 +673,10 @@ export const nl: Dictionary = {
     'pricing.title': 'Prijzen',
     'pricing.subtitle': 'Kies je pakket',
     'pricing.subtitle_desc': 'Alle functies zijn nu onderdeel van het gratis pakket. pro verhoogt voornamelijk de datalimieten.',
+    'pricing.credits_title': 'Jouw Saldo',
+    'pricing.weather_credits': 'Weather Credits',
+    'pricing.baro_credits': 'Baro Credits',
+    'pricing.credits_desc': 'Huidig overzicht van je beschikbare credits.',
     'pricing.baro_powered': 'Baro powered',
     'pricing.free_price': '$0',
     'pricing.baro_price': '$ 2,50',

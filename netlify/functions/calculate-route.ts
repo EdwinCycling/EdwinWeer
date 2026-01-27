@@ -134,6 +134,8 @@ export const handler: Handler = async (event) => {
         }
 
         let turnaroundPoint;
+        let figureStartPoint = startPoint;
+        const connectorDist = currentDistance * 0.05; // 5% connector
         
         if (returnLocation) {
              turnaroundPoint = turf.point([returnLocation.lng, returnLocation.lat]);
@@ -154,101 +156,155 @@ export const handler: Handler = async (event) => {
             let bearing = (baseBearing + rotationOffset + 360) % 360;
             
             // Calculate turnaround point (Ideal)
-            // Reduced factor from 0.7 to 0.55 to be more conservative with length
-            // Dynamic Adjustment: If high randomness, reduce radius to compensate for wiggles
             const maxRandomness = Math.max(randomnessOutbound || 0, randomnessInbound || 0);
             const radiusFactor = 0.55 - (maxRandomness > 5 ? (maxRandomness - 5) * 0.02 : 0);
             const legDistance = (currentDistance / 2) * radiusFactor; 
 
             turnaroundPoint = turf.destination(startPoint, legDistance, bearing, { units: 'kilometers' });
+            
+            // Figure Start Point (after connector)
+            figureStartPoint = turf.destination(startPoint, connectorDist, bearing, { units: 'kilometers' });
         }
         
         // Waypoints array for ORS
         let waypoints = [startPoint];
 
         if (shape === 'square' && !returnLocation) {
-             const side = (currentDistance / 4) * 0.67; 
+             const side = (currentDistance / 4) * 0.40; // 20% larger than 0.33
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
-             const p1 = turf.destination(startPoint, side, initialBearing, { units: 'kilometers' });
+             const p1 = turf.destination(figureStartPoint, side, initialBearing, { units: 'kilometers' });
              const p2 = turf.destination(p1, side, (initialBearing + 90) % 360, { units: 'kilometers' });
              const p3 = turf.destination(p2, side, (initialBearing + 180) % 360, { units: 'kilometers' });
              
-             waypoints.push(p1, p2, p3, startPoint);
+             waypoints.push(figureStartPoint, p1, p2, p3, figureStartPoint, startPoint);
         } else if (shape === 'triangle' && !returnLocation) {
-             // Re-calc for equilateral
-             const triSide = (currentDistance / 3) * 0.67;
+             const triSide = (currentDistance / 3) * 0.40; // 20% larger than 0.33
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
-             const t1 = turf.destination(startPoint, triSide, initialBearing - 30, { units: 'kilometers' });
+             const t1 = turf.destination(figureStartPoint, triSide, initialBearing - 30, { units: 'kilometers' });
              const t2 = turf.destination(t1, triSide, (initialBearing - 30 + 120) % 360, { units: 'kilometers' });
              
-             waypoints.push(t1, t2, startPoint);
+             waypoints.push(figureStartPoint, t1, t2, figureStartPoint, startPoint);
         } else if (shape === 'figure8' && !returnLocation) {
-             const loopDist = (currentDistance / 2) * 0.26;
+             const loopDist = (currentDistance / 2) * 0.16; // 20% larger than 0.13
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
              // Loop 1
-             const cp1 = turf.destination(startPoint, loopDist * 0.7, initialBearing - 45, { units: 'kilometers' });
-             const apex1 = turf.destination(startPoint, loopDist, initialBearing, { units: 'kilometers' });
-             const cp2 = turf.destination(startPoint, loopDist * 0.7, initialBearing + 45, { units: 'kilometers' });
-             waypoints.push(cp1, apex1, cp2, startPoint);
+             const cp1 = turf.destination(figureStartPoint, loopDist * 0.7, initialBearing - 45, { units: 'kilometers' });
+             const apex1 = turf.destination(figureStartPoint, loopDist, initialBearing, { units: 'kilometers' });
+             const cp2 = turf.destination(figureStartPoint, loopDist * 0.7, initialBearing + 45, { units: 'kilometers' });
+             waypoints.push(figureStartPoint, cp1, apex1, cp2, figureStartPoint);
              
              // Loop 2
              const bearing2 = (initialBearing + 180) % 360;
-             const cp3 = turf.destination(startPoint, loopDist * 0.7, bearing2 - 45, { units: 'kilometers' });
-             const apex2 = turf.destination(startPoint, loopDist, bearing2, { units: 'kilometers' });
-             const cp4 = turf.destination(startPoint, loopDist * 0.7, bearing2 + 45, { units: 'kilometers' });
-             waypoints.push(cp3, apex2, cp4, startPoint);
+             const cp3 = turf.destination(figureStartPoint, loopDist * 0.7, bearing2 - 45, { units: 'kilometers' });
+             const apex2 = turf.destination(figureStartPoint, loopDist, bearing2, { units: 'kilometers' });
+             const cp4 = turf.destination(figureStartPoint, loopDist * 0.7, bearing2 + 45, { units: 'kilometers' });
+             waypoints.push(cp3, apex2, cp4, figureStartPoint, startPoint);
         } else if (shape === 'hexagon' && !returnLocation) {
-             const side = (currentDistance / 6) * 0.71;
+             const side = (currentDistance / 6) * 0.42; // 20% larger than 0.35
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
-             const p1 = turf.destination(startPoint, side, initialBearing - 60, { units: 'kilometers' });
+             const p1 = turf.destination(figureStartPoint, side, initialBearing - 60, { units: 'kilometers' });
              const p2 = turf.destination(p1, side, initialBearing, { units: 'kilometers' });
              const p3 = turf.destination(p2, side, initialBearing + 60, { units: 'kilometers' });
              const p4 = turf.destination(p3, side, initialBearing + 120, { units: 'kilometers' });
              const p5 = turf.destination(p4, side, initialBearing + 180, { units: 'kilometers' });
              
-             waypoints.push(p1, p2, p3, p4, p5, startPoint);
+             waypoints.push(figureStartPoint, p1, p2, p3, p4, p5, figureStartPoint, startPoint);
         } else if (shape === 'star' && !returnLocation) {
-             const R = (currentDistance / 5) * 0.51;
+             const R = (currentDistance / 5) * 0.30; // 20% larger than 0.25
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
-             const C = turf.destination(startPoint, R, initialBearing, { units: 'kilometers' });
+             const C = turf.destination(figureStartPoint, R, initialBearing, { units: 'kilometers' });
              
              const v = [];
              for (let i = 0; i < 5; i++) {
                  const angle = initialBearing + 180 + (i * 72); 
                  v.push(turf.destination(C, R, angle, { units: 'kilometers' }));
              }
-             // Star pattern: v[0] is near start. Path: v[0]->v[2]->v[4]->v[1]->v[3]->v[0]
-             waypoints.push(v[2], v[4], v[1], v[3], startPoint);
+             waypoints.push(figureStartPoint, v[2], v[4], v[1], v[3], figureStartPoint, startPoint);
         } else if (shape === 'zigzag' && !returnLocation) {
-             const dist = currentDistance * 0.205;
+             const dist = currentDistance * 0.12; // 20% larger than 0.1
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              const width = dist * 0.2; 
              const seg = dist / 3;
              
-             const c1 = turf.destination(startPoint, seg, initialBearing, { units: 'kilometers' });
+             const c1 = turf.destination(figureStartPoint, seg, initialBearing, { units: 'kilometers' });
              const p1 = turf.destination(c1, width, initialBearing - 90, { units: 'kilometers' });
              
-             const c2 = turf.destination(startPoint, seg * 2, initialBearing, { units: 'kilometers' });
+             const c2 = turf.destination(figureStartPoint, seg * 2, initialBearing, { units: 'kilometers' });
              const p2 = turf.destination(c2, width, initialBearing + 90, { units: 'kilometers' });
              
-             const t = turnaroundPoint;
+             const t = turf.destination(figureStartPoint, dist, initialBearing, { units: 'kilometers' });
              const p3 = turf.destination(c2, width, initialBearing - 90, { units: 'kilometers' });
              const p4 = turf.destination(c1, width, initialBearing + 90, { units: 'kilometers' });
              
-             waypoints.push(p1, p2, t, p3, p4, startPoint);
+             waypoints.push(figureStartPoint, p1, p2, t, p3, p4, figureStartPoint, startPoint);
         } else if (shape === 'boomerang' && !returnLocation) {
-             const dist = turf.distance(startPoint, turnaroundPoint, { units: 'kilometers' });
+             const dist = turf.distance(startPoint, turnaroundPoint, { units: 'kilometers' }) * 0.6; // 20% larger than 0.5
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
-             const mid = turf.midpoint(startPoint, turnaroundPoint);
+             const miniTurnaround = turf.destination(figureStartPoint, dist, initialBearing, { units: 'kilometers' });
+             const mid = turf.midpoint(figureStartPoint, miniTurnaround);
              
-             // A curved shape: S -> Out -> T -> In -> S ? 
-             // Let's do a simple heavy curve to one side
              const p1 = turf.destination(mid, dist * 0.55, initialBearing - 90, { units: 'kilometers' });
-             waypoints.push(p1, turnaroundPoint, startPoint);
+             waypoints.push(figureStartPoint, p1, miniTurnaround, figureStartPoint, startPoint);
+        } else if (shape === 'kerstboom' && !returnLocation) {
+             const h = (currentDistance / 17); // 20% larger than /20
+             const initialBearing = turf.bearing(startPoint, turnaroundPoint);
+             
+             const p1 = turf.destination(figureStartPoint, h * 1.5, initialBearing - 45, { units: 'kilometers' });
+             const p2 = turf.destination(p1, h * 0.8, initialBearing + 90, { units: 'kilometers' });
+             const p3 = turf.destination(p2, h * 1.2, initialBearing - 45, { units: 'kilometers' });
+             const p4 = turf.destination(p3, h * 0.6, initialBearing + 90, { units: 'kilometers' });
+             const p5 = turf.destination(p4, h * 1.0, initialBearing - 45, { units: 'kilometers' });
+             const top = turf.destination(p5, h * 0.5, initialBearing + 90, { units: 'kilometers' });
+             
+             const p6 = turf.destination(top, h * 0.5, initialBearing + 90, { units: 'kilometers' });
+             const p7 = turf.destination(p6, h * 1.0, initialBearing + 225, { units: 'kilometers' });
+             const p8 = turf.destination(p7, h * 0.6, initialBearing + 90, { units: 'kilometers' });
+             const p9 = turf.destination(p8, h * 1.2, initialBearing + 225, { units: 'kilometers' });
+             const p10 = turf.destination(p9, h * 0.8, initialBearing + 90, { units: 'kilometers' });
+             const p11 = turf.destination(p10, h * 1.5, initialBearing + 225, { units: 'kilometers' });
+             
+             waypoints.push(figureStartPoint, p1, p2, p3, p4, p5, top, p6, p7, p8, p9, p10, p11, figureStartPoint, startPoint);
+        } else if (shape === 'kerstman' && !returnLocation) {
+             const R = (currentDistance / 20); // 20% larger than /24
+             const initialBearing = turf.bearing(startPoint, turnaroundPoint);
+             const center = turf.destination(figureStartPoint, R * 2, initialBearing, { units: 'kilometers' });
+             
+             waypoints.push(figureStartPoint);
+             for (let i = 0; i <= 360; i += 60) {
+                 waypoints.push(turf.destination(center, R, initialBearing + i, { units: 'kilometers' }));
+             }
+             const headTop = turf.destination(center, R, initialBearing, { units: 'kilometers' });
+             const hatTip = turf.destination(headTop, R * 1.2, initialBearing, { units: 'kilometers' });
+             const hatLeft = turf.destination(headTop, R * 0.4, initialBearing - 90, { units: 'kilometers' });
+             const hatRight = turf.destination(headTop, R * 0.4, initialBearing + 90, { units: 'kilometers' });
+             waypoints.push(hatLeft, hatTip, hatRight, headTop, figureStartPoint, startPoint);
+        } else if (shape === 'pashaas' && !returnLocation) {
+             const R = (currentDistance / 25); // 20% larger than /30
+             const initialBearing = turf.bearing(startPoint, turnaroundPoint);
+             const center = turf.destination(figureStartPoint, R * 2, initialBearing, { units: 'kilometers' });
+             
+             waypoints.push(figureStartPoint);
+             for (let i = 0; i <= 360; i += 72) {
+                 waypoints.push(turf.destination(center, R, initialBearing + i, { units: 'kilometers' }));
+             }
+             const earBase = turf.destination(center, R, initialBearing, { units: 'kilometers' });
+             const ear1 = turf.destination(earBase, R * 2.5, initialBearing - 15, { units: 'kilometers' });
+             const ear2 = turf.destination(earBase, R * 2.5, initialBearing + 15, { units: 'kilometers' });
+             waypoints.push(ear1, earBase, ear2, figureStartPoint, startPoint);
+        } else if (shape === 'dieren' && !returnLocation) {
+             const L = (currentDistance / 13); // 20% larger than /16
+             const initialBearing = turf.bearing(startPoint, turnaroundPoint);
+             const bodyMid = turf.destination(figureStartPoint, L/2, initialBearing, { units: 'kilometers' });
+             const bodyTop = turf.destination(bodyMid, L/3, initialBearing - 90, { units: 'kilometers' });
+             const nose = turf.destination(figureStartPoint, L, initialBearing, { units: 'kilometers' });
+             const bodyBottom = turf.destination(bodyMid, L/3, initialBearing + 90, { units: 'kilometers' });
+             const tail1 = turf.destination(figureStartPoint, L/2, initialBearing + 160, { units: 'kilometers' });
+             const tail2 = turf.destination(figureStartPoint, L/2, initialBearing + 200, { units: 'kilometers' });
+             waypoints.push(figureStartPoint, bodyTop, nose, bodyBottom, figureStartPoint, tail1, tail2, figureStartPoint, startPoint);
         } else {
             // Bending Logic & Randomness
             const midPoint = turf.midpoint(startPoint, turnaroundPoint);
@@ -320,9 +376,39 @@ export const handler: Handler = async (event) => {
             if (extraPointsIn.length > 0) waypoints.push(...extraPointsIn);
             
             waypoints.push(startPoint); 
-        } 
+        }
 
-        // 3. Call ORS
+        // --- Apply Avontuur (Randomness) and Bending to Shapes ---
+        if (shape !== 'loop' && !returnLocation) {
+            const randOut = randomnessOutbound !== undefined ? randomnessOutbound : (randomness || 0);
+            const bendOut = bendingOutbound !== undefined ? bendingOutbound : (bending || 0);
+            
+            // Apply modifications to all points EXCEPT startPoint and the final return to startPoint
+            // waypoints[0] is startPoint, waypoints[1] is figureStartPoint, waypoints[last] is startPoint
+            for (let i = 1; i < waypoints.length - 1; i++) {
+                let p = waypoints[i];
+                
+                // 1. Randomness (Avontuur)
+                if (randOut > 0) {
+                    const jitterDist = (Math.random() * (randOut / 10) * (currentDistance * 0.05)); 
+                    const jitterBearing = Math.random() * 360;
+                    p = turf.destination(p, jitterDist, jitterBearing, { units: 'kilometers' });
+                }
+                
+                // 2. Bending (Rotate shape points slightly around figureStartPoint if bend > 0)
+                if (bendOut > 0 && i > 1) {
+                    const distToCenter = turf.distance(figureStartPoint, p, { units: 'kilometers' });
+                    const bearingToPoint = turf.bearing(figureStartPoint, p);
+                    // Shift bearing based on bending
+                    const newBearing = (bearingToPoint + (bendOut * 0.5)) % 360;
+                    p = turf.destination(figureStartPoint, distToCenter, newBearing, { units: 'kilometers' });
+                }
+                
+                waypoints[i] = p;
+            }
+        }
+
+        // 3. Request from ORS
         const coordinates = waypoints.map(p => p.geometry.coordinates);
         
         if (!ORS_API_KEY) {

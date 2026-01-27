@@ -268,7 +268,7 @@ export const handler = async (event, context) => {
 
                 // Check Credits
                 const usage = userData.usage || {};
-                const baroCredits = usage.baroCredits || 0;
+                const baroCredits = usage.baroCredits !== undefined ? usage.baroCredits : (userData.baroCredits || 0);
                 
                 if (baroCredits <= 0) {
                     console.log(`Skipping ${doc.id} event ${ev.name}: No Baro credits`);
@@ -331,9 +331,11 @@ export const handler = async (event, context) => {
                     });
                     
                     // Deduct credit
-                    await db.collection('users').doc(doc.id).update({
-                        'usage.baroCredits': admin.firestore.FieldValue.increment(-1)
-                    });
+                    await db.collection('users').doc(doc.id).set({
+                        usage: {
+                            baroCredits: admin.firestore.FieldValue.increment(-1)
+                        }
+                    }, { merge: true });
 
                     results.push({ userId: doc.id, event: ev.name, status: 'sent' });
                 }

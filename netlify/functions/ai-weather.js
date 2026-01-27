@@ -124,8 +124,9 @@ export const handler = async (event) => {
           
           const data = doc.data();
           const usage = data.usage || {};
-          const baroCredits = usage.baroCredits || 0;
-          const weatherCredits = usage.weatherCredits || 0;
+          // Fallback to root level if not in usage object
+          const baroCredits = usage.baroCredits !== undefined ? usage.baroCredits : (data.baroCredits || 0);
+          const weatherCredits = usage.weatherCredits !== undefined ? usage.weatherCredits : (data.weatherCredits || 0);
 
           // Check Requirements
           // 1. Must have > 150 Weather Credits (Pro/Active user check)
@@ -139,10 +140,12 @@ export const handler = async (event) => {
           }
 
           // Deduct 1 Baro Credit
-          t.update(userRef, {
-              'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-              'usage.aiCalls': admin.firestore.FieldValue.increment(1) // Track stats
-          });
+          t.set(userRef, {
+              usage: {
+                  baroCredits: admin.firestore.FieldValue.increment(-1),
+                  aiCalls: admin.firestore.FieldValue.increment(1)
+              }
+          }, { merge: true });
       });
 
   } catch (error) {

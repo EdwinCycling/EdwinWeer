@@ -667,7 +667,7 @@ const App: React.FC = () => {
                                     </div>
                                 </button>
 
-                                {/* Baro Rit Advies */}
+                                {/* Baro Route planner */}
                                 <button onClick={() => { navigate(ViewState.BARO_RIT_ADVIES); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                         <Icon name="alt_route" className="text-xl md:text-2xl" />

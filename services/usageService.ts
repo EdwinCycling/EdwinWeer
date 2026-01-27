@@ -45,7 +45,7 @@ export interface UsageStats {
 const DEFAULT_STATS: UsageStats = {
     totalCalls: 0,
     aiCalls: 0,
-    aiCallsDayStart: new Date().toISOString().split('T')[0],
+    aiCallsDayStart: '', // Empty to force reset on first load if needed
     
     weatherCredits: 0,
     baroCredits: 0,
@@ -57,10 +57,10 @@ const DEFAULT_STATS: UsageStats = {
     hourStart: Date.now(),
     
     dayCount: 0,
-    dayStart: new Date().toISOString().split('T')[0],
+    dayStart: '', // Empty to force reset/check on first load (especially for new users)
     
     monthCount: 0,
-    monthStart: new Date().toISOString().slice(0, 7),
+    monthStart: '',
 
     alerts: {
         day80: false,
@@ -85,6 +85,16 @@ const sendAlert = async (type: string, current: number, limit: number) => {
     // Disabled
 };
 
+export const clearLocalUsage = () => {
+    try {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    } catch (e) {
+        console.error('Failed to clear local usage', e);
+    }
+};
+
 export const loadRemoteUsage = async (uid: string) => {
     if (!db) return;
     try {
@@ -93,10 +103,28 @@ export const loadRemoteUsage = async (uid: string) => {
         
         if (snapshot.exists()) {
             const data = snapshot.data();
-            if (data.usage) {
-                const remoteUsage = data.usage as UsageStats;
-                const localUsage = getUsage();
-                const mergedUsage = { ...DEFAULT_STATS, ...localUsage };
+            
+            // Construct remoteUsage from usage object OR root fields (legacy/migration support)
+            const usageData = data.usage || {};
+            const remoteUsage: Partial<UsageStats> = { ...usageData };
+
+            // FIX: Check for root-level legacy data if usage is missing or empty
+            // This handles cases where data structure is flattened (e.g. weatherCredits at root)
+            if (remoteUsage.weatherCredits === undefined && data.weatherCredits !== undefined) {
+                 remoteUsage.weatherCredits = data.weatherCredits;
+            }
+            if (remoteUsage.baroCredits === undefined && data.baroCredits !== undefined) {
+                 remoteUsage.baroCredits = data.baroCredits;
+            }
+            
+            // Fix for legacy counters
+            if (remoteUsage.dayCount === undefined && data.dayCount !== undefined) remoteUsage.dayCount = data.dayCount;
+            if (remoteUsage.dayStart === undefined && data.dayStart !== undefined) remoteUsage.dayStart = data.dayStart;
+            if (remoteUsage.monthCount === undefined && data.monthCount !== undefined) remoteUsage.monthCount = data.monthCount;
+            if (remoteUsage.monthStart === undefined && data.monthStart !== undefined) remoteUsage.monthStart = data.monthStart;
+
+            const localUsage = getUsage();
+            const mergedUsage = { ...DEFAULT_STATS, ...localUsage };
 
                 // 1. Total Calls & AI Calls
                 mergedUsage.totalCalls = Math.max(localUsage.totalCalls, remoteUsage.totalCalls || 0);
@@ -160,7 +188,6 @@ export const loadRemoteUsage = async (uid: string) => {
                 if (typeof window !== "undefined") {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedUsage));
                 }
-            }
         }
     } catch (e) {
         console.error("Error loading remote usage:", e);
@@ -272,10 +299,11 @@ export const checkLimit = (): void => {
  */
 export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: string) => {
     const today = new Date().toISOString().split('T')[0];
+    const isFirstTimeEver = !currentStats.dayStart; // Empty string means never initialized
     
-    // If it's a new day
+    // If it's a new day (or first time)
     if (currentStats.dayStart !== today) {
-        console.log(`New day detected (Old: ${currentStats.dayStart}, New: ${today}). Checking credits...`);
+        console.log(`[Usage] ${isFirstTimeEver ? 'First time initialization' : 'New day detected'} (Old: ${currentStats.dayStart}, New: ${today}). Checking credits...`);
         
         // 1. Reset counters
         currentStats.dayCount = 0;
@@ -284,30 +312,31 @@ export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: s
         currentStats.alerts.day100 = false;
         
         // 2. Check Credits Top-up
-        const freeDaily = API_LIMITS.CREDITS?.FREE_DAILY || 10;
+        // Requirement: New users (first login) get 50, daily top-up is 20
+        const targetCredits = isFirstTimeEver 
+            ? (API_LIMITS.CREDITS?.NEW_USER_BONUS || 50)
+            : (API_LIMITS.CREDITS?.FREE_DAILY || 20);
         
         // Ensure we handle undefined or missing weatherCredits gracefully
         if (currentStats.weatherCredits === undefined) currentStats.weatherCredits = 0;
         const currentCredits = currentStats.weatherCredits;
         
-        if (currentCredits < freeDaily) {
-            const topUp = freeDaily - currentCredits;
-            console.log(`Topping up credits by ${topUp} to reach ${freeDaily}`);
+        if (currentCredits < targetCredits) {
+            const topUp = targetCredits - currentCredits;
+            console.log(`[Usage] Topping up credits by ${topUp} to reach ${targetCredits}`);
             
             // Apply locally
-            currentStats.weatherCredits = freeDaily;
+            currentStats.weatherCredits = targetCredits;
             
             // Apply remotely (negative consumption = addition)
             if (db && uid) {
                 try {
                     const userRef = doc(db, 'users', uid);
-                    // Use increment to be safe with concurrent updates, but we want to reach exactly freeDaily.
-                    // However, we only do this if we are the first to switch the day.
-                    // A cleaner way is to just set it if it's low, but increment is safer for concurrent usage.
-                    // But we already calculated topUp.
-                    await updateDoc(userRef, {
-                        'usage.weatherCredits': increment(topUp)
-                    });
+                    await setDoc(userRef, {
+                        usage: {
+                            weatherCredits: increment(topUp)
+                        }
+                    }, { merge: true });
                 } catch (e) {
                     console.error("Error topping up credits:", e);
                 }
@@ -325,17 +354,8 @@ export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: s
  */
 export const ensureDailyCredits = async (uid: string) => {
     const stats = getUsage();
-    const today = new Date().toISOString().split('T')[0];
-    const freeDaily = API_LIMITS.CREDITS?.FREE_DAILY || 10;
-
     // If dayStart is not today, checkAndResetDailyCredits will handle it.
-    // But if dayStart IS today, but credits < 10 (and user expects reset? No, only once per day).
-    // The requirement is: "you get 10 weathercredits again, but only if it's the first time that day."
-    // So if I used 10 credits today, logged out, logged in -> I should NOT get more.
-    // So checkAndResetDailyCredits is correct.
-    
-    // However, for a NEW user, dayStart might be empty or old.
-    // Or if local storage was cleared.
+    // If it's a new user (empty dayStart), it will also handle the 50 credits bonus.
     await checkAndResetDailyCredits(stats, uid);
 };
 
@@ -343,10 +363,12 @@ export const consumeCredit = async (type: 'weather' | 'baro', amount: number = 1
     if (!currentUserId || !db) return;
     try {
         const userRef = doc(db, 'users', currentUserId);
-        const field = type === 'weather' ? 'usage.weatherCredits' : 'usage.baroCredits';
-        await updateDoc(userRef, {
-            [field]: increment(-amount)
-        });
+        const fieldKey = type === 'weather' ? 'weatherCredits' : 'baroCredits';
+        await setDoc(userRef, {
+            usage: {
+                [fieldKey]: increment(-amount)
+            }
+        }, { merge: true });
     } catch (err) {
         console.error("Error consuming credit:", err);
     }
@@ -539,10 +561,12 @@ export const trackAiCall = () => {
     // Increment AI calls in Firestore (atomic)
     if (currentUserId && db) {
         const userRef = doc(db, 'users', currentUserId);
-        updateDoc(userRef, {
-            'usage.aiCalls': increment(1),
-            'usage.aiCallsDayStart': today
-        }).catch(err => console.error("Error updating AI calls in Firestore:", err));
+        setDoc(userRef, {
+            usage: {
+                aiCalls: increment(1),
+                aiCallsDayStart: today
+            }
+        }, { merge: true }).catch(err => console.error("Error updating AI calls in Firestore:", err));
     }
 };
 

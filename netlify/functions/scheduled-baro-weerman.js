@@ -188,7 +188,7 @@ function generateHtmlTable(options, settings) {
     return `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff;">
             <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 24px; border-radius: 16px 16px 0 0; color: white;">
-                <h2 style="margin: 0; font-size: 24px;">🚴 Baro Rit Advies</h2>
+                <h2 style="margin: 0; font-size: 24px;">🚴 Baro Route planner</h2>
                 <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">Jouw dagelijkse update voor vandaag</p>
             </div>
             
@@ -225,7 +225,7 @@ function generateHtmlTable(options, settings) {
             </div>
             
             <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-                <p>Je ontvangt dit bericht omdat je Baro Rit Advies hebt ingesteld.</p>
+                <p>Je ontvangt dit bericht omdat je Baro Route planner hebt ingesteld.</p>
             </div>
         </div>
     `;
@@ -271,7 +271,7 @@ async function sendTelegram(chatId, html) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: chatId,
-                text: "Je Baro Rit Advies staat klaar! Check je email voor de details of open de app.",
+                text: "Je Baro Route planner staat klaar! Check je email voor de details of open de app.",
                 parse_mode: 'HTML'
             })
         });
@@ -361,7 +361,7 @@ export const handler = async (event, context) => {
             // Always prefer Email for this rich format
             const email = userData.email;
             if (email) {
-                sent = await sendEmail(email, `Baro Rit Advies: Jouw opties voor vandaag`, html);
+                sent = await sendEmail(email, `Baro Route planner: Jouw opties voor vandaag`, html);
             }
             
             // Optional: Send Telegram notification that email is ready (or simplified version)

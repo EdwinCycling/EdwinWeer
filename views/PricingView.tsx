@@ -15,7 +15,7 @@ interface Props {
 
 export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
   const t = (key: string, params?: Record<string, any>) => getTranslation(key, settings.language, params);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
@@ -347,6 +347,47 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 >
                     {loading ? t('pricing.loading') : t('pricing.baro_buy')}
                 </button>
+            </div>
+
+            {/* Credits Overview */}
+            <div className="bg-bg-card/80 backdrop-blur-md rounded-3xl p-8 border border-border-color shadow-sm relative overflow-hidden flex flex-col">
+                <h3 className="text-2xl font-bold mb-2 text-text-main">{t('pricing.credits_title')}</h3>
+                <p className="text-text-muted mb-8">{t('pricing.credits_desc')}</p>
+
+                <div className="space-y-6 mt-auto">
+                    <div className="bg-bg-subtle/50 p-4 rounded-2xl border border-border-color/50">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-text-muted">{t('pricing.weather_credits')}</span>
+                            <Icon name="cloud" className="text-primary" />
+                        </div>
+                        <div className="text-3xl font-bold text-text-main">
+                            {usageStats?.weatherCredits?.toLocaleString() || 0}
+                        </div>
+                    </div>
+
+                    <div className="bg-bg-subtle/50 p-4 rounded-2xl border border-border-color/50">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-text-muted">{t('pricing.baro_credits')}</span>
+                            <Icon name="bolt" className="text-purple-500" />
+                        </div>
+                        <div className="text-3xl font-bold text-text-main">
+                            {usageStats?.baroCredits?.toLocaleString() || 0}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-border-color">
+                    <button 
+                        onClick={async () => {
+                            await logout();
+                            onNavigate(ViewState.CURRENT);
+                        }} 
+                        className="w-full py-3 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors font-medium flex items-center justify-center gap-2"
+                    >
+                        <Icon name="logout" />
+                        {t('auth.logout')}
+                    </button>
+                </div>
             </div>
         </div>
 

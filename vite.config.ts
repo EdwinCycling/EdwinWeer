@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        port: 3000,
+        port: 3050,
         strictPort: true,
         host: '0.0.0.0',
         watch: {
@@ -26,9 +26,9 @@ export default defineConfig(({ mode }) => {
             secure: false,
           },
         },
-        headers: {
-          'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-        },
+        // headers: {
+        //   'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+        // },
       },
       plugins: [
         react(),

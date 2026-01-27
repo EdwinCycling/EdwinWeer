@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInWithPopup, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider } from 'firebase/auth';
+import { User, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider } from 'firebase/auth';
 import { auth, googleProvider, db } from '../services/firebase';
 import { setStorageUserId, loadRemoteData } from '../services/storageService';
-import { setUsageUserId, loadRemoteUsage, checkAndResetDailyCredits, getUsage } from '../services/usageService';
+import { setUsageUserId, loadRemoteUsage, checkAndResetDailyCredits, getUsage, clearLocalUsage } from '../services/usageService';
 import { logAuthEvent } from '../services/auditService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { AppUser, UserRole } from '../types';
@@ -35,9 +35,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return getTranslation(key, settings.language);
   };
 
+  // Handle redirect result (for mobile logins)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          console.log("AuthContext: Successfully logged in via Redirect!", result.user);
+          await logAuthEvent(result.user.uid, 'login');
+          sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+        }
+      })
+      .catch((error) => {
+        console.error("AuthContext: Error after redirect login:", error);
+      });
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
+        setLoading(true); // Ensure loading is true when we start processing a user
+        
         // Check stored expiration
         const storedExpiry = localStorage.getItem('session_expiry');
         const now = new Date();
@@ -66,64 +83,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('session_expiry', newExpiry.toISOString());
         setSessionExpiry(newExpiry);
 
-     // Sync with Firestore
-            setStorageUserId(currentUser.uid);
-            setUsageUserId(currentUser.uid, currentUser.email);
-        
-            // Sync basic user info to Firestore for Admin/Baro usage
-            try {
-                await setDoc(doc(db, 'users', currentUser.uid), {
-                    email: currentUser.email,
-                    displayName: currentUser.displayName,
-                    photoURL: currentUser.photoURL,
-                    lastLogin: new Date()
-                }, { merge: true });
-            } catch (e) {
-                console.error("AuthContext: Error syncing user to Firestore", e);
-            }
+        // Sync IDs immediately
+        setStorageUserId(currentUser.uid);
+        setUsageUserId(currentUser.uid, currentUser.email);
 
-        // Audit Log: Session Start (if new browser session)
-        const sessionKey = `session_logged_${currentUser.uid}`;
-        if (!sessionStorage.getItem(sessionKey)) {
-            logAuthEvent(currentUser.uid, 'session_start');
-            sessionStorage.setItem(sessionKey, 'true');
-        }
-
-        let role: UserRole = 'user';
-        let isBanned = false;
         try {
-          // Load remote data (settings, usage)
-          // We wait for this so the app renders with correct settings
-          const [docSnap] = await Promise.all([
-              getDoc(doc(db, 'users', currentUser.uid)),
-              loadRemoteData(currentUser.uid),
-              loadRemoteUsage(currentUser.uid)
-          ]);
+            // Parallelize everything that doesn't strictly depend on each other
+            const sessionKey = `session_logged_${currentUser.uid}`;
+            const shouldLogSession = !sessionStorage.getItem(sessionKey);
 
-          // Daily Credit Check (Login Hook)
-          await checkAndResetDailyCredits(getUsage(), currentUser.uid);
-
-          if (docSnap.exists()) {
-              const userData = docSnap.data();
-              if (userData.role) {
-                  role = userData.role as UserRole;
-              }
-              if (userData.isBanned) {
-                  isBanned = true;
-              }
-          }
-        } catch (error) {
-          console.error("AuthContext: Error loading remote data", error);
-        }
-
-        setUser({
-            uid: currentUser.uid,
+            // 1. Sync basic user info
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        
+        const baseData: any = {
             email: currentUser.email,
             displayName: currentUser.displayName,
             photoURL: currentUser.photoURL,
-            role: role,
-            isBanned: isBanned
-        });
+            lastLogin: new Date()
+        };
+        
+        // Ensure role exists (default to 'user' if missing)
+        // This fixes issues where legacy users or incomplete sign-ups miss a role, causing permission errors
+        if (!userSnap.exists() || !userSnap.data()?.role) {
+            baseData.role = 'user';
+        }
+
+        await setDoc(userRef, baseData, { merge: true });
+
+            // 2. Load remote data & usage (Wait for this to ensure local usage is synced)
+            const remoteDataResults = await Promise.allSettled([
+                getDoc(doc(db, 'users', currentUser.uid)),
+                loadRemoteData(currentUser.uid),
+                loadRemoteUsage(currentUser.uid)
+            ]);
+
+            // 3. Daily Credit Check (Now safe to run as local usage reflects remote state or defaults)
+            // This handles the "New User" case (defaults with empty dayStart -> top up to 10)
+            // And the "Daily Reset" case (existing user with old dayStart -> top up to 10)
+            // And ensures "Max 1x per day" (if dayStart matches today, no top up)
+            await checkAndResetDailyCredits(getUsage(), currentUser.uid);
+
+            // 4. Audit Log (Don't let this block the UI transition if it's slow)
+            if (shouldLogSession) {
+                logAuthEvent(currentUser.uid, 'session_start').then(() => {
+                    sessionStorage.setItem(sessionKey, 'true');
+                });
+            }
+            
+            // Extract role and banned status from the getDoc result
+            let role: UserRole = 'user';
+            let isBanned = false;
+            
+            const docSnapResult = remoteDataResults[0];
+            if (docSnapResult.status === 'fulfilled' && docSnapResult.value && docSnapResult.value.exists()) {
+                const userData = docSnapResult.value.data();
+                if (userData.role) {
+                    role = userData.role as UserRole;
+                }
+                if (userData.isBanned) {
+                    isBanned = true;
+                }
+            }
+
+            setUser({
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName,
+                photoURL: currentUser.photoURL,
+                role: role,
+                isBanned: isBanned
+            });
+        } catch (error) {
+            console.error("AuthContext: Error during initialization", error);
+            // Still set the user even if some remote data failed to load
+            setUser({
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName,
+                photoURL: currentUser.photoURL,
+                role: 'user',
+                isBanned: false
+            });
+        }
       } else {
         setStorageUserId(null);
         setUsageUserId(null);
@@ -138,11 +180,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-          await logAuthEvent(result.user.uid, 'login');
-          // Mark session as logged to avoid duplicate session_start log
-          sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+      // Check if mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, googleProvider);
+        // Page will redirect, so no need to handle result here immediately
+      } else {
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result.user) {
+            await logAuthEvent(result.user.uid, 'login');
+            // Mark session as logged to avoid duplicate session_start log
+            sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+        }
       }
       // Expiry will be set in onAuthStateChanged
     } catch (error) {
@@ -153,10 +203,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithProvider = async (provider: FirebaseAuthProvider) => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-          await logAuthEvent(result.user.uid, 'login');
-          sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+      // Check if mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+         await signInWithRedirect(auth, provider);
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+            await logAuthEvent(result.user.uid, 'login');
+            sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+        }
       }
     } catch (error) {
       console.error("Error signing in with provider", error);
@@ -173,7 +230,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signOut(auth);
       setStorageUserId(null);
       setUsageUserId(null);
-      localStorage.removeItem('session_expiry');
+      // Secure cleanup: Clear all local storage to remove potential sensitive data
+      // This includes usage stats, cached reports, etc.
+      localStorage.clear(); 
       setSessionExpiry(null);
     } catch (error) {
       console.error("Error signing out", error);
@@ -228,7 +287,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           </div>
         </div>
       ) : null}
-      {loading ? <LoadingSpinner /> : children}
+      {loading ? (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg-main">
+            <div className="flex flex-col items-center gap-4">
+                <LoadingSpinner />
+                <p className="text-text-muted animate-pulse">Laden van gebruikersgegevens...</p>
+            </div>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 };

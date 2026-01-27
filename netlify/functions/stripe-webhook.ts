@@ -225,6 +225,32 @@ export const handler = async (event: any) => {
           // Update Firestore
           const userRef = db.collection('users').doc(userId);
           
+          // Bonus Logic: Check for Baro purchase and low Weather credits
+          if (updates['baroCredits'] && updates['baroCredits'] > 0) {
+              try {
+                  const userDoc = await userRef.get();
+                  if (userDoc.exists) {
+                      const userData = userDoc.data();
+                      // Check deeply nested usage.weatherCredits or root level legacy
+                      const currentWeather = (userData?.usage?.weatherCredits !== undefined) 
+                          ? userData.usage.weatherCredits 
+                          : (userData?.weatherCredits || 0);
+                      
+                      // If purchasing Baro credits and Weather credits are low (< 100), 
+                      // top up Weather credits to 100 as a bonus.
+                      if (currentWeather < 100) {
+                          const bonus = 100 - currentWeather;
+                          console.log(`[Stripe Webhook] Bonus: Topping up weather credits for user ${userId} (Current: ${currentWeather}, Bonus: ${bonus})`);
+                          
+                          // Add to updates
+                          updates['weatherCredits'] = (updates['weatherCredits'] || 0) + bonus;
+                      }
+                  }
+              } catch (e) {
+                  console.error("Error checking user for bonus credits:", e);
+              }
+          }
+          
           console.log(`[Stripe Webhook] Updating user ${userId} with:`, updates);
 
           const updateData: Record<string, any> = {};

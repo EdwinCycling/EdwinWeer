@@ -324,14 +324,16 @@ export const handler = async (event, context) => {
                 if (pushSent) {
                     // Deduct Credits & Update Usage
                     try {
-                        const updates = {
-                            'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                            'usage.totalCalls': admin.firestore.FieldValue.increment(1),
-                            'usage.aiCalls': admin.firestore.FieldValue.increment(1),
-                            'usage.pushCount': admin.firestore.FieldValue.increment(1)
+                        const nestedUpdates = {
+                            usage: {
+                                baroCredits: admin.firestore.FieldValue.increment(-1),
+                                totalCalls: admin.firestore.FieldValue.increment(1),
+                                aiCalls: admin.firestore.FieldValue.increment(1),
+                                pushCount: admin.firestore.FieldValue.increment(1)
+                            }
                         };
                         
-                        await db.collection('users').doc(userId).update(updates);
+                        await db.collection('users').doc(userId).set(nestedUpdates, { merge: true });
                         
                         // Audit Log
                         await auditRef.set({

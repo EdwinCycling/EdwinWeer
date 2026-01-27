@@ -1,11 +1,11 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.9260126.1",
+  "version": "0.9260127.1",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
-    "dev:vite": "vite --port 3000",
+    "dev:vite": "vite --port 3050",
     "dev:netlify": "netlify functions:serve --port 9998",
     "sync-blocked": "node scripts/sync_blocked_countries.cjs",
     "build": "npm run sync-blocked && vite build",

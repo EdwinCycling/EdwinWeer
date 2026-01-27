@@ -27,7 +27,12 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && (
         isAdmin() || 
-        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+        (request.auth.uid == userId && (
+          // Optie 1: Rol wordt niet gewijzigd
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+          // Optie 2: Rol wordt geïnitialiseerd naar 'user' (als deze nog niet bestond)
+          (resource.data.get('role', null) == null && request.resource.data.role == 'user')
+        ))
       );
       
       // Audit logs binnen een gebruiker

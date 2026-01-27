@@ -82,7 +82,7 @@ export const handler = async (event: any, context: any) => {
             }
 
             const usage = data.usage || {};
-            const baroCredits = usage.baroCredits || 0;
+            const baroCredits = usage.baroCredits !== undefined ? usage.baroCredits : (data.baroCredits || 0);
 
             // Must have > 0 Baro Credits (Cost)
             if (baroCredits <= 0) {
@@ -90,10 +90,12 @@ export const handler = async (event: any, context: any) => {
             }
 
             // Deduct 1 Baro Credit
-            t.update(userRef, {
-                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                'usage.aiCalls': admin.firestore.FieldValue.increment(1)
-            });
+            t.set(userRef, {
+                usage: {
+                    baroCredits: admin.firestore.FieldValue.increment(-1),
+                    aiCalls: admin.firestore.FieldValue.increment(1)
+                }
+            }, { merge: true });
         });
 
     } catch (error: any) {

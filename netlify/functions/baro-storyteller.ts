@@ -142,7 +142,9 @@ export const handler: Handler = async (event) => {
             return { statusCode: 403, headers, body: JSON.stringify({ error: 'User is banned' }) };
         }
 
-        const baroCredits = userData?.usage?.baroCredits || 0;
+        const baroCredits = userData?.usage?.baroCredits !== undefined 
+            ? userData.usage.baroCredits 
+            : (userData?.baroCredits || 0);
 
         if (baroCredits < 1) {
             return { statusCode: 402, headers, body: JSON.stringify({ error: 'Insufficient Baro Credits' }) };
@@ -284,14 +286,17 @@ export const handler: Handler = async (event) => {
                 const userRef = db.collection('users').doc(uid);
                 const doc = await t.get(userRef);
                 const data = doc.data();
-                const currentCredits = data?.usage?.baroCredits || 0;
+                const usage = data?.usage || {};
+                const currentCredits = usage.baroCredits !== undefined ? usage.baroCredits : (data?.baroCredits || 0);
 
                 if (currentCredits < 1) throw new Error('Insufficient credits at final check');
 
-                t.update(userRef, {
-                    'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                    'usage.storytellerCalls': admin.firestore.FieldValue.increment(1)
-                });
+                t.set(userRef, {
+                    usage: {
+                        baroCredits: admin.firestore.FieldValue.increment(-1),
+                        storytellerCalls: admin.firestore.FieldValue.increment(1)
+                    }
+                }, { merge: true });
             });
         } catch (creditError) {
             console.error("Credit deduction failed after story generation:", creditError);

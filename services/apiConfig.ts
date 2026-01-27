@@ -3,7 +3,7 @@ export const API_LIMITS = {
     MINUTE: 50,
     HOUR: 500,
     FREE: {
-        DAY: 10,
+        DAY: 20,
         MONTH: 250
     },
     PRO: {
@@ -12,9 +12,10 @@ export const API_LIMITS = {
     },
     // Centralized Credit Configuration
     CREDITS: {
-    FREE_DAILY: 10,
-    MAX_DAILY: 250
-  }
+        FREE_DAILY: 20,
+        NEW_USER_BONUS: 50,
+        MAX_DAILY: 250
+    }
 };
 
 export const STORAGE_KEY = 'weather_app_usage_v3'; // Bump version
