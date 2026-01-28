@@ -177,6 +177,7 @@ export interface AppUser {
     photoURL: string | null;
     role: UserRole;
     isBanned?: boolean;
+    hasSeenWelcome?: boolean;
 }
 
 export interface HeatwaveSettings {

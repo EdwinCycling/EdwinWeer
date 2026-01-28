@@ -3,6 +3,7 @@ import { TripOption } from '../services/tripPlannerService';
 import { GPXPoint, calculateBearing } from '../services/gpxService';
 import { AppSettings, OpenMeteoResponse } from '../types';
 import { Icon } from './Icon';
+import { LoadingSpinner } from './LoadingSpinner';
 import { getTranslation } from '../services/translations';
 import { convertWind } from '../services/weatherService';
 import { reverseGeocode } from '../services/geoService';
@@ -47,6 +48,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
     const contentRef = useRef<HTMLDivElement>(null);
     const [routePoints, setRoutePoints] = useState<RoutePoint[]>([]);
     const [locationNames, setLocationNames] = useState<Record<number, string>>({});
+    const [loadingPlaces, setLoadingPlaces] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -496,6 +498,14 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
 
     return (
         <div className="fixed inset-0 z-[3000] flex flex-col bg-bg-page/30 backdrop-blur-md animate-in fade-in duration-200 max-h-screen">
+            {loadingPlaces && (
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[3100] bg-bg-card/90 backdrop-blur border border-border-color px-6 py-3 rounded-full shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+                    <LoadingSpinner className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-bold text-text-main">
+                        {settings.language === 'nl' ? 'Plaatsen ophalen...' : 'Fetching places...'}
+                    </span>
+                </div>
+            )}
             {toast && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2000] bg-bg-card text-text-main border border-border-color px-4 py-2 rounded-full shadow-lg text-sm font-bold animate-in fade-in slide-in-from-top-4">
                     {toast}

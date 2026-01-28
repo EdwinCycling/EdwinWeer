@@ -9,8 +9,8 @@ export const nl: Dictionary = {
     'error_fetching_weather': 'Kon weerdata niet ophalen.',
     'sun_chance': 'Zonneschijn (kans)',
     'copied': 'Gekopieerd!',
-    'nav.trip_planner': 'Baro route planner',
-    'trip_planner.title': 'Baro route planner',
+    'nav.trip_planner': 'Baro Tijdstip planner Fiets/Wandel',
+    'trip_planner.title': 'Baro Tijdstip planner Fiets/Wandel',
     'trip_planner.subtitle': 'Vind het beste startmoment voor je rit',
     'trip_planner.settings': 'Instellingen',
     'trip_planner.activity': 'Activiteit',
@@ -351,7 +351,7 @@ export const nl: Dictionary = {
     'info.card.soil_title': 'Diepe bodem & landbouw',
     
     // Baro Route planner
-    'baro_rit_advies.title': 'Baro Route planner',
+    'baro_rit_advies.title': 'Baro route maker',
     'baro_rit_advies.subtitle': 'Wind-slimme routes plannen',
     'baro_rit_advies.intro': 'Plan je ronde op basis van de wind. Baro berekent de optimale route zodat je (grotendeels) wind mee hebt op de terugweg.',
     'baro_rit_advies.credits_remaining': 'Baro Credits: {count}',
@@ -1948,4 +1948,13 @@ export const nl: Dictionary = {
     'solar.advice.moderate_energy': 'Matige zonne-energie.',
     'solar.advice.low_sun_today': 'Te weinig zon voor gratis stroom.',
     'solar.advice.low_energy_forecast': 'Weinig zonne-energie verwacht.',
+
+    // New keys
+    'trip_planner.gpx_import_name': 'Baro Route Import',
+    'trip_planner.gpx_start_name': 'Baro Route Start',
+    'trip_planner.gpx_import_country': 'GPX Import',
+    'trip_planner.gpx_start_country': 'GPX Start',
+    'chart.elevation': 'Hoogte',
+    'chart.lowest': 'Laagste',
+    'chart.highest': 'Hoogste',
 };

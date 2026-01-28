@@ -131,9 +131,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
             }
             
-            // Extract role and banned status from the getDoc result
+            // Extract role, banned status, and welcome status
             let role: UserRole = 'user';
             let isBanned = false;
+            let hasSeenWelcome = false;
             
             const docSnapResult = remoteDataResults[0];
             if (docSnapResult.status === 'fulfilled' && docSnapResult.value && docSnapResult.value.exists()) {
@@ -144,6 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (userData.isBanned) {
                     isBanned = true;
                 }
+                if (userData.hasSeenWelcome) {
+                    hasSeenWelcome = true;
+                }
             }
 
             setUser({
@@ -152,7 +156,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 displayName: currentUser.displayName,
                 photoURL: currentUser.photoURL,
                 role: role,
-                isBanned: isBanned
+                isBanned: isBanned,
+                hasSeenWelcome: hasSeenWelcome
             });
         } catch (error) {
             console.error("AuthContext: Error during initialization", error);
@@ -163,7 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 displayName: currentUser.displayName,
                 photoURL: currentUser.photoURL,
                 role: 'user',
-                isBanned: false
+                isBanned: false,
+                hasSeenWelcome: false
             });
         }
       } else {
@@ -171,7 +177,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUsageUserId(null);
         setUser(null);
         setSessionExpiry(null);
-        localStorage.removeItem('session_expiry');
+        
+        // CRITICAL FIX: When no user is detected (logout or switch), we MUST clear local storage
+        // to prevent the next user from inheriting the previous user's settings if they have no remote data.
+        // We preserve 'theme' as it is often device-specific.
+        const currentTheme = localStorage.getItem('theme');
+        localStorage.clear();
+        if (currentTheme) {
+            localStorage.setItem('theme', currentTheme);
+        }
       }
       setLoading(false);
     });

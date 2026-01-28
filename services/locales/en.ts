@@ -9,8 +9,8 @@ export const en: Dictionary = {
     'error_fetching_weather': 'Could not fetch weather data.',
     'sun_chance': 'Sunshine (chance)',
     'copied': 'Copied!',
-    'nav.trip_planner': 'Baro route planner',
-    'trip_planner.title': 'Baro route planner',
+    'nav.trip_planner': 'Baro Time Planner Bike/Walk',
+    'trip_planner.title': 'Baro Time Planner Bike/Walk',
     'trip_planner.subtitle': 'Find the best start time for your trip',
     'trip_planner.settings': 'Settings',
     'trip_planner.activity': 'Activity',
@@ -55,8 +55,8 @@ export const en: Dictionary = {
     'trip_planner.pdf_error': 'Error creating report',
     'trip_planner.speed': 'Snelheid',
     'trip_planner.speed_hint': 'Gemiddelde incl. pauzes',
-    'trip_planner.calculated_duration': 'Berekende duur',
-    'trip_planner.sun_chance': 'Zonneschijn',
+    'trip_planner.calculated_duration': 'Calculated duration',
+    'trip_planner.sun_chance': 'Sunshine',
     
     'nav.current': 'Current',
     'nav.forecast': 'Forecast',
@@ -303,7 +303,7 @@ export const en: Dictionary = {
     'your_day.menu_title': 'Weather your day',
 
     // Baro Route planner
-    'baro_rit_advies.title': 'Baro Route planner',
+    'baro_rit_advies.title': 'Baro route maker',
     'baro_rit_advies.subtitle': 'Plan wind-smart routes',
     'baro_rit_advies.intro': 'Plan your loop based on the wind. Baro calculates the optimal route so you (mostly) have a tailwind on the way back.',
     'baro_rit_advies.credits_remaining': 'Baro Credits: {count}',
@@ -845,7 +845,14 @@ export const en: Dictionary = {
     'profile.teaser.pro_only': 'Available for pro users',
 
     // GPX & Trip Planner Details
-    'wind.tail': 'Mee',
+    'trip_planner.gpx_import_name': 'Baro Route Import',
+    'trip_planner.gpx_start_name': 'Baro Route Start',
+    'trip_planner.gpx_import_country': 'GPX Import',
+    'trip_planner.gpx_start_country': 'GPX Start',
+    'chart.elevation': 'Elevation',
+    'chart.lowest': 'Lowest',
+    'chart.highest': 'Highest',
+    'wind.tail': 'Tail',
     'wind.head': 'Tegen',
     'wind.side': 'Zij',
     'dist': 'Afst',

@@ -101,7 +101,7 @@ const WindMarkers = ({ data, wind, unit }: { data: any, wind: { direction: numbe
     return <>{markers}</>;
 };
 
-const ElevationChart = ({ data }: { data: any[] }) => {
+const ElevationChart = ({ data, t }: { data: any[], t: (key: string) => string }) => {
     if (!data || data.length === 0) return null;
     
     const minEle = Math.min(...data.map(d => d.ele));
@@ -140,15 +140,15 @@ const ElevationChart = ({ data }: { data: any[] }) => {
                     <Tooltip 
                         contentStyle={{ backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '12px' }}
                         itemStyle={{ color: 'var(--text-main)' }}
-                        formatter={(value: number) => [`${Math.round(value)}m`, 'Hoogte']}
+                        formatter={(value: number) => [`${Math.round(value)}m`, t('chart.elevation')]}
                         labelFormatter={() => ''}
                     />
                     <Area type="monotone" dataKey="ele" stroke="#4f46e5" fillOpacity={1} fill="url(#colorEle)" strokeWidth={2} />
                 </AreaChart>
             </ResponsiveContainer>
             <div className="flex justify-between text-[10px] text-text-muted mt-1 px-2">
-                <span>Laagste: {Math.round(minEle)}m</span>
-                <span>Hoogste: {Math.round(maxEle)}m</span>
+                <span>{t('chart.lowest')}: {Math.round(minEle)}m</span>
+                <span>{t('chart.highest')}: {Math.round(maxEle)}m</span>
             </div>
         </div>
     );
@@ -1574,7 +1574,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 {elevationData.length > 0 && (
                                     <div className="mb-6 bg-bg-page p-4 rounded-xl border border-border-color">
                                         <div className="text-xs text-text-muted uppercase font-bold mb-1">Hoogteprofiel</div>
-                                        <ElevationChart data={elevationData} />
+                                        <ElevationChart data={elevationData} t={t} />
                                     </div>
                                 )}
 

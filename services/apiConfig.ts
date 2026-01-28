@@ -3,7 +3,7 @@ export const API_LIMITS = {
     MINUTE: 50,
     HOUR: 500,
     FREE: {
-        DAY: 20,
+        DAY: 21,
         MONTH: 250
     },
     PRO: {
@@ -12,7 +12,7 @@ export const API_LIMITS = {
     },
     // Centralized Credit Configuration
     CREDITS: {
-        FREE_DAILY: 20,
+        FREE_DAILY: 21,
         NEW_USER_BONUS: 50,
         MAX_DAILY: 250
     }

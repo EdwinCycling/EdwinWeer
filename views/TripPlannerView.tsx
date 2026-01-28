@@ -81,11 +81,11 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                 const points = parseGpx(passedGpx);
                 if (points.length > 0) {
                     setGpxRoute(points);
-                    setGpxName("Baro Route Import");
+                    setGpxName(t('trip_planner.gpx_import_name'));
                     // Set location to start point
                     setLocation({
-                        name: "Baro Route Start",
-                        country: "GPX Import",
+                        name: t('trip_planner.gpx_start_name'),
+                        country: t('trip_planner.gpx_import_country'),
                         lat: points[0].lat,
                         lon: points[0].lon,
                         timezone: 'Europe/Amsterdam'
@@ -162,7 +162,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     // Set location to start point
                     setLocation({
                         name: file.name.replace('.gpx', ''),
-                        country: 'GPX Start',
+                        country: t('trip_planner.gpx_start_country'),
                         lat: points[0].lat,
                         lon: points[0].lon,
                         timezone: 'Europe/Amsterdam' // Default or fetch?

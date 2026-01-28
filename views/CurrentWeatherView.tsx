@@ -1686,10 +1686,16 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       />
       <WelcomeModal 
           isOpen={showWelcomeModal} 
-          onClose={() => {
+          onClose={async () => {
               setShowWelcomeModal(false);
               if (user) {
-                  localStorage.setItem(`welcome_seen_${user.uid}`, 'true');
+                  // Persist to Firestore so it never shows again for this user
+                  try {
+                      const userRef = doc(db, 'users', user.uid);
+                      await setDoc(userRef, { hasSeenWelcome: true }, { merge: true });
+                  } catch (e) {
+                      console.error("Error updating welcome status:", e);
+                  }
               }
           }}
           settings={settings}

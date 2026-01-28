@@ -109,6 +109,18 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
+  // RELOAD SETTINGS WHEN USER CHANGES (Fix for account switching issue)
+  useEffect(() => {
+      if (!loading) {
+          // When auth loading finishes (whether user is null or logged in),
+          // we should refresh settings from storage because loadRemoteData might have updated them.
+          const current = loadSettings();
+          // Only update if different to avoid loops (though setSettings does shallow compare usually, objects are new)
+          // We can just set it, as it will trigger saveSettings which is fine as long as it's the correct data.
+          setSettings(current);
+      }
+  }, [user, loading]);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [extraMenuOpen, setExtraMenuOpen] = useState(false);
   const [baroMenuOpen, setBaroMenuOpen] = useState(false);
@@ -670,7 +682,7 @@ const App: React.FC = () => {
                                 {/* Baro Route planner */}
                                 <button onClick={() => { navigate(ViewState.BARO_RIT_ADVIES); setBaroMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
                                     <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                        <Icon name="alt_route" className="text-xl md:text-2xl" />
+                                        <Icon name="directions_bike" className="text-xl md:text-2xl" />
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full">{t('baro_rit_advies.title')}</span>

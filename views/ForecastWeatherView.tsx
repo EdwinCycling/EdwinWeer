@@ -163,10 +163,19 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
   }, [trendArrows]);
 
   useEffect(() => {
-    if (viewMode === 'graph' && visibleDays < 7) {
+    if ((viewMode === 'graph' || viewMode === 'graph2' || viewMode === 'table2') && visibleDays < 7) {
         setVisibleDays(7);
     }
   }, [viewMode]);
+
+  useEffect(() => {
+    if (isMobile && viewMode === 'graph2') {
+        setViewMode('graph');
+    }
+    if (isMobile && viewMode === 'table2') {
+        setViewMode('table');
+    }
+  }, [isMobile, viewMode]);
 
   const expandedMode = viewMode === 'expanded';
 
@@ -317,6 +326,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               sunshineHours,
               windMax,
               windDir,
+              windDirRaw,
               activityScores,
               comfort,
               dayParts,
@@ -345,6 +355,17 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
       }));
   }, [dailyForecast, isMobile]);
 
+  const getIconColorClass = (iconName: string) => {
+      if (iconName === 'wb_sunny' || iconName === 'clear_day') return 'text-yellow-500';
+      if (iconName.includes('partly_cloudy')) return 'text-yellow-500'; 
+      if (iconName === 'cloud' || iconName === 'cloud_queue') return 'text-gray-400';
+      if (iconName.includes('rain') || iconName.includes('water')) return 'text-blue-500';
+      if (iconName.includes('snow') || iconName.includes('ac_unit')) return 'text-sky-300';
+      if (iconName.includes('thunder')) return 'text-purple-500';
+      if (iconName.includes('fog') || iconName.includes('mist')) return 'text-slate-400';
+      return 'text-text-main';
+  };
+
   const CustomTopTick = ({ x, y, payload }: any) => {
       const data = graphData[payload.index];
       if (!data) return null;
@@ -360,7 +381,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                </foreignObject>
                <foreignObject x={-15} y={-45} width={30} height={30}>
                    <div className="flex justify-center items-center h-full w-full relative">
-                       <Icon name={data.icon} className="text-2xl text-text-main" />
+                       <Icon name={data.icon} className={`text-2xl ${getIconColorClass(data.icon)}`} />
                        {data.holiday && (
                            <div className="absolute -top-1 -right-1 bg-accent-primary rounded-full p-[2px] shadow-sm border border-bg-page flex items-center justify-center">
                               <Icon name="celebration" className="text-[8px] text-white" />
@@ -375,7 +396,53 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
       );
   };
 
-  const CustomBottomTick = ({ x, y, payload }: any) => {
+  const CustomTopTickGraph2 = ({ x, y, payload }: any) => {
+       const data = graphData[payload.index];
+       if (!data) return null;
+       return (
+           <g transform={`translate(${x},${y})`}>
+                <text x={5} y={-5} textAnchor="start" fill={colors.textMuted} fontSize={12} className="font-bold uppercase" transform="rotate(-45)">
+                    {data.dayShort}
+                </text>
+           </g>
+       );
+   };
+
+  const CustomGraph2Dot = (props: any) => {
+      const { cx, cy, payload } = props;
+      const data = payload;
+      if (!data) return null;
+      
+      return (
+          <g transform={`translate(${cx},${cy})`}>
+              <circle cx={0} cy={0} r={18} fill={colors.bgCard} stroke={colors.borderColor} strokeWidth={1} />
+              <foreignObject x={-12} y={-12} width={24} height={24}>
+                   <div className="flex justify-center items-center h-full w-full">
+                       <Icon name={data.icon} className={`text-xl ${getIconColorClass(data.icon)}`} />
+                   </div>
+              </foreignObject>
+          </g>
+      );
+  };
+
+  const CustomBottomTickGraph2 = ({ x, y, payload }: any) => {
+       const data = graphData[payload.index];
+       if (!data) return null;
+       return (
+           <g transform={`translate(${x},${y})`}>
+               <circle cx={0} cy={15} r={12} fill={colors.bgCard} stroke={colors.borderColor || '#e2e8f0'} strokeWidth={1} />
+               <text x={0} y={19} textAnchor="middle" fontSize={10} fontWeight="bold" fill={colors.textMain}>{data.windMax}</text>
+               <g transform={`translate(0, 15) rotate(${data.windDirRaw})`}>
+                    <path d="M0,-12 L-4,-18 L4,-18 Z" fill={colors.textMain} /> 
+               </g>
+               <text x={0} y={40} textAnchor="middle" fill={colors.textMuted} fontSize={10} className="uppercase">
+                   {data.windDir}
+               </text>
+           </g>
+       );
+   };
+
+   const CustomBottomTick = ({ x, y, payload }: any) => {
       const data = graphData[payload.index];
       if (!data) return null;
       return (
@@ -711,14 +778,30 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 onClick={() => setViewMode('graph')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'graph' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Grafiek
+                                Grafiek 1
                             </button>
+                            {!isMobile && (
+                                <button  
+                                    onClick={() => setViewMode('graph2')}
+                                    className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'graph2' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                                >
+                                    Grafiek 2
+                                </button>
+                            )}
                              <button  
                                 onClick={() => setViewMode('table')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'table' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Tabel
+                                Tabel 1
                             </button>
+                            {!isMobile && (
+                                <button  
+                                    onClick={() => setViewMode('table2')}
+                                    className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'table2' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                                >
+                                    Tabel 2
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -813,7 +896,136 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             </button>
                         </div>
                     </div>
-                ) : viewMode === 'graph' ? (
+                ) : viewMode === 'table2' ? (
+                    <div className="flex flex-col w-full mt-4">
+                        {[0, 7].map((offset) => {
+                            if (visibleDays <= 7 && offset > 0) return null;
+                            const weekData = graphData.slice(offset, offset + 7);
+                            if (weekData.length === 0) return null;
+
+                            const maxTemp = Math.max(...weekData.map(d => d.max));
+                            const minTemp = Math.min(...weekData.map(d => d.min));
+                            const tempRange = maxTemp - minTemp;
+                            
+                            return (
+                                <div key={offset} className="mb-8">
+                                    <h3 className="text-sm font-bold text-text-muted mb-4 px-2">
+                                        {offset === 0 ? 'Komende 7 dagen' : 'Week erna'}
+                                    </h3>
+                                    <div className="bg-bg-card border border-border-color rounded-xl overflow-hidden shadow-sm">
+                                        <div className="grid grid-cols-7 divide-x divide-border-color">
+                                            {weekData.map((d, i) => (
+                                                <div key={i} className="flex flex-col relative group">
+                                                    {/* Row 1: Rating */}
+                                                    <div className="h-12 flex items-center justify-center border-b border-border-color/50 bg-bg-page/30">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${d.comfort.colorClass}`}>
+                                                            {d.comfort.score}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Row 2: Date */}
+                                                    <div className="h-14 flex flex-col items-center justify-center border-b border-border-color/50 p-1">
+                                                        <span className="text-[11px] font-bold text-text-main uppercase">{d.day.split(' ')[0]}</span>
+                                                        <span className="text-[10px] text-text-muted">{d.day.split(' ').slice(1).join(' ')}</span>
+                                                    </div>
+
+                                                    {/* Row 3: Icon */}
+                                                    <div className="h-14 flex items-center justify-center border-b border-border-color/50">
+                                                        <Icon name={d.icon} className={`text-2xl ${getIconColorClass(d.icon)}`} />
+                                                    </div>
+
+                                                    {/* Row 4: Sun */}
+                                                    <div className="h-12 flex flex-col items-center justify-center border-b border-border-color/50 text-[10px]">
+                                                        <div className="flex items-center gap-1 text-orange-500">
+                                                            <Icon name="wb_sunny" className="text-[10px]" />
+                                                            <span className="font-bold">{d.sunshineHours}u</span>
+                                                        </div>
+                                                        <span className="text-text-muted mt-0.5">UV {Math.round(d.mjValue / 3.6)}</span>
+                                                    </div>
+
+                                                    {/* Row 5: Temperature Graph */}
+                                                    <div className="h-24 relative border-b border-border-color/50 bg-bg-page/5">
+                                                        <div className="absolute inset-0 flex flex-col justify-between py-2 items-center z-10">
+                                                            <span className="text-xs font-bold text-red-500">{Math.round(d.max)}°</span>
+                                                            <span className="text-xs font-bold text-blue-500">{Math.round(d.min)}°</span>
+                                                        </div>
+                                                        {/* Visual Representation */}
+                                                        <div className="absolute inset-x-0 top-8 bottom-8 mx-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                                            <div 
+                                                                className="absolute w-full bg-red-400/20"
+                                                                style={{ 
+                                                                    bottom: '50%',
+                                                                    height: `${((d.max - minTemp) / (tempRange || 1)) * 50}%`
+                                                                }}
+                                                            />
+                                                            <div 
+                                                                className="absolute w-full bg-blue-400/20"
+                                                                style={{ 
+                                                                    top: '50%',
+                                                                    height: `${((maxTemp - d.min) / (tempRange || 1)) * 50}%`
+                                                                }}
+                                                            />
+                                                            {/* Actual bar */}
+                                                            <div 
+                                                                className="absolute w-full bg-gradient-to-b from-red-400 to-blue-400 opacity-50"
+                                                                style={{ 
+                                                                    bottom: `${((d.min - minTemp) / (tempRange || 1)) * 100}%`,
+                                                                    height: `${((d.max - d.min) / (tempRange || 1)) * 100}%`
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Row 6: Precip */}
+                                                    <div className="h-20 flex flex-col items-center justify-end pb-2 border-b border-border-color/50 relative overflow-hidden">
+                                                        <div className="z-10 flex flex-col items-center text-[10px] mb-1">
+                                                            <div className="flex items-center gap-0.5 text-blue-500 font-bold">
+                                                                <Icon name="water_drop" className="text-[8px]" />
+                                                                <span>{Math.round(d.precipProb)}%</span>
+                                                            </div>
+                                                            <span className="text-text-main">{d.precipAmount}mm</span>
+                                                        </div>
+                                                        {/* Blue wave fill */}
+                                                        <div 
+                                                            className="absolute bottom-0 left-0 right-0 bg-blue-500/20 transition-all duration-500"
+                                                            style={{ height: `${Math.min(100, d.precip * 5)}%` }}
+                                                        />
+                                                        <div 
+                                                            className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500/40"
+                                                            style={{ opacity: d.precip > 0 ? 1 : 0 }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Row 7: Wind */}
+                                                    <div className="h-12 flex items-center justify-center bg-bg-page/30 cursor-pointer hover:bg-bg-page/50 transition-colors">
+                                                        <div className="flex items-center gap-1">
+                                                            <div 
+                                                                className="w-5 h-5 rounded-full border border-text-muted flex items-center justify-center"
+                                                                style={{ transform: `rotate(${d.windDirRaw}deg)` }}
+                                                            >
+                                                                <Icon name="arrow_upward" className="text-[10px] text-text-main" />
+                                                            </div>
+                                                            <Icon name="add_circle" className="text-text-muted text-xs opacity-50" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        
+                        <div className="flex justify-center mt-4">
+                             <button 
+                                onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : 7)}
+                                className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
+                            >
+                                {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
+                            </button>
+                        </div>
+                    </div>
+                ) : (viewMode === 'graph' || viewMode === 'graph2') ? (
                     <div className="flex flex-col w-full mt-4">
                         <div 
                             className="w-full h-[400px] select-none pr-2 overflow-x-auto scrollbar-hide no-swipe"
@@ -821,14 +1033,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         >
                             <div className="h-full" style={{ minWidth: visibleDays > 7 ? '800px' : '100%' }}>
                                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                                    <ComposedChart data={graphData} margin={{ top: 40, right: 10, left: isMobile ? 0 : -20, bottom: 40 }}>
+                                    <ComposedChart data={graphData} margin={{ top: 40, right: 20, left: 20, bottom: 40 }}>
                                         {getWeekendAreas()}
-                                        <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} opacity={0.1} stroke={colors.textMuted} />
+                                        <CartesianGrid strokeDasharray={viewMode === 'graph2' ? "0" : "3 3"} vertical={true} horizontal={false} opacity={0.1} stroke={colors.textMuted} />
                                         <XAxis 
                                             dataKey="day" 
                                             axisLine={false} 
                                             tickLine={false} 
-                                            tick={<CustomTopTick />} 
+                                            tick={viewMode === 'graph' ? <CustomTopTick /> : <CustomTopTickGraph2 />} 
                                             orientation="top"
                                             interval={0}
                                             height={60}
@@ -838,7 +1050,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                             dataKey="day" 
                                             axisLine={false} 
                                             tickLine={false} 
-                                            tick={<CustomBottomTick />} 
+                                            tick={viewMode === 'graph2' ? <CustomBottomTickGraph2 /> : <CustomBottomTick />} 
                                             orientation="bottom"
                                             interval={0}
                                             height={60}
@@ -846,16 +1058,26 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                         <YAxis yAxisId="temp" hide domain={['dataMin - 2', 'dataMax + 2']} />
                                         <YAxis yAxisId="precip" hide domain={[0, 10]} />
                                         
-                                        <Bar yAxisId="precip" dataKey="visualPrecip" fill="#0ea5e9" barSize={40} radius={[4, 4, 0, 0]} opacity={0.6}>
-                                            <LabelList dataKey="precipAmount" position="top" offset={5} fontSize={10} fill="#0ea5e9" formatter={(val: any) => val > 0 ? val : ''} />
-                                        </Bar>
+                                        {viewMode === 'graph' && (
+                                            <Bar yAxisId="precip" dataKey="visualPrecip" fill="#0ea5e9" barSize={40} radius={[4, 4, 0, 0]} opacity={0.6}>
+                                                <LabelList dataKey="precipAmount" position="top" offset={5} fontSize={10} fill="#0ea5e9" formatter={(val: any) => val > 0 ? val : ''} />
+                                            </Bar>
+                                        )}
                                         
-                                        <Line yAxisId="temp" type="monotone" dataKey="max" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', strokeWidth: 0 }} isAnimationActive={true}>
-                                             <LabelList dataKey="max" position="top" offset={10} fontSize={12} fontWeight="bold" fill="#ef4444" formatter={(val: any) => `${Math.round(val)}°`} />
-                                        </Line>
-                                        <Line yAxisId="temp" type="monotone" dataKey="min" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} isAnimationActive={true}>
-                                             <LabelList dataKey="min" position="bottom" offset={10} fontSize={12} fontWeight="bold" fill="#3b82f6" formatter={(val: any) => `${Math.round(val)}°`} />
-                                        </Line>
+                                        {viewMode === 'graph2' ? (
+                                            <Line yAxisId="temp" type="monotone" dataKey="max" stroke={colors.textMain} strokeWidth={2} dot={<CustomGraph2Dot />} isAnimationActive={true}>
+                                                 <LabelList dataKey="max" position="top" offset={20} fontSize={14} fontWeight="bold" fill={colors.textMain} formatter={(val: any) => `${Math.round(val)}°`} />
+                                            </Line>
+                                        ) : (
+                                            <>
+                                                <Line yAxisId="temp" type="monotone" dataKey="max" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', strokeWidth: 0 }} isAnimationActive={true}>
+                                                     <LabelList dataKey="max" position="top" offset={10} fontSize={12} fontWeight="bold" fill="#ef4444" formatter={(val: any) => `${Math.round(val)}°`} />
+                                                </Line>
+                                                <Line yAxisId="temp" type="monotone" dataKey="min" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} isAnimationActive={true}>
+                                                     <LabelList dataKey="min" position="bottom" offset={10} fontSize={12} fontWeight="bold" fill="#3b82f6" formatter={(val: any) => `${Math.round(val)}°`} />
+                                                </Line>
+                                            </>
+                                        )}
                                     </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
