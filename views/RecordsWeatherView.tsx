@@ -2085,8 +2085,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         {currentWeather && (
             <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
-                    <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
-                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                    <div className="bg-bg-card/40 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color/20 shadow-lg">
+                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
                             {currentTemp}°
                         </h1>
                     </div>
@@ -2118,15 +2118,15 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
                 </div>
                 
-                <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
-                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                <div className="bg-bg-card/40 backdrop-blur-md px-6 py-4 rounded-3xl border border-border-color/20 shadow-lg mt-4 flex flex-col items-center">
+                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-text-main">
                             <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
                         {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
                     </p>
-                    <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                    <p className="text-text-main/80 text-base font-normal drop-shadow-md mt-1">
                         H:{highTemp}° L:{lowTemp}°
                     </p>
-                    <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
+                    <p className="text-text-main/60 text-sm mt-2 font-normal drop-shadow-md">
                         {formatDateTime()}
                     </p>
                 </div>

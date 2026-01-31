@@ -89,7 +89,7 @@ export const ImmersiveBackground = React.memo(({ weatherCode, isDay, precipAmoun
                       style={{ backgroundColor: color, opacity: opacity * 0.6, animationDuration: '60s' }} />
                  
                  {isDark && (
-                    <div className="absolute top-0 left-0 w-full h-full bg-gray-600/30 mix-blend-multiply" />
+                    <div className="absolute top-0 left-0 w-full h-full bg-bg-subtle/30 mix-blend-multiply" />
                  )}
             </div>
         );

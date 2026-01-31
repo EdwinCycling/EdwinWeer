@@ -103,15 +103,15 @@ export const GlobalBanner: React.FC = () => {
     // Scenario B: Full blocking
     if (config?.disable_app) {
         return (
-            <div className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-md flex items-center justify-center p-6 transition-all duration-500">
-                <div className="bg-[#FF9800] text-white p-8 rounded-[2rem] shadow-2xl max-w-lg w-full text-center border-4 border-white/20 transform transition-all duration-300 scale-100 opacity-100">
+            <div className="fixed inset-0 z-[10000] bg-bg-page/90 backdrop-blur-md flex items-center justify-center p-6 transition-all duration-500">
+                <div className="bg-bg-page text-text-main p-8 rounded-[2rem] shadow-2xl max-w-lg w-full text-center border-4 border-border-color/20 transform transition-all duration-300 scale-100 opacity-100">
                      <div className="mb-6 flex justify-center">
-                        <div className="bg-white/20 p-4 rounded-full">
-                            <Icon name="warning" className="text-6xl" />
+                        <div className="bg-accent-primary/20 p-4 rounded-full">
+                            <Icon name="warning" className="text-6xl text-accent-primary" />
                         </div>
                      </div>
                      <h2 className="text-3xl font-black mb-4 uppercase tracking-tight">App Niet Beschikbaar</h2>
-                     <div className="h-1 w-20 bg-white/40 mx-auto mb-6 rounded-full" />
+                     <div className="h-1 w-20 bg-border-color mx-auto mb-6 rounded-full" />
                      <p className="text-xl font-bold leading-relaxed whitespace-pre-wrap">
                         {config.maintenance_message || "De applicatie is momenteel niet beschikbaar wegens onderhoud."}
                      </p>
@@ -124,14 +124,14 @@ export const GlobalBanner: React.FC = () => {
     if (isClosed) return null;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-[#FF9800] text-white px-4 py-3 shadow-md flex items-center justify-between transition-transform duration-300">
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-bg-subtle text-text-main px-4 py-3 shadow-md border-b border-border-color flex items-center justify-between transition-transform duration-300">
             <div className="flex items-center gap-3 flex-1 justify-center">
-                <Icon name="info" className="text-xl shrink-0" />
+                <Icon name="info" className="text-xl text-accent-primary shrink-0" />
                 <span className="font-medium text-center">{config?.maintenance_message}</span>
             </div>
             <button 
                 onClick={() => setIsClosed(true)}
-                className="p-1.5 hover:bg-white/20 rounded-full transition-colors ml-4 shrink-0"
+                className="p-1.5 hover:bg-bg-page/50 rounded-full transition-colors ml-4 shrink-0"
                 aria-label="Sluiten"
             >
                 <Icon name="close" className="text-xl" />

@@ -1051,7 +1051,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 Klaar
                             </button>
                         </div>
-                        <div className="bg-white/90 dark:bg-black/80 px-3 py-1 rounded-full text-xs font-bold text-text-main shadow-sm backdrop-blur-sm border border-white/20">
+                        <div className="bg-bg-card/90 px-3 py-1 rounded-full text-xs font-bold text-text-main shadow-sm backdrop-blur-sm border border-border-color/20">
                             Tip: Gebruik de gum of rechtermuisknop om punten te verwijderen
                         </div>
                     </div>
@@ -1125,7 +1125,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                 )}
                 
                 {!isEditing && (
-                    <div className="absolute bottom-2 left-4 z-[900] bg-white/80 dark:bg-black/60 px-3 py-1 rounded-full text-xs text-text-muted pointer-events-none backdrop-blur-sm">
+                    <div className="absolute bottom-2 left-4 z-[900] bg-bg-card/80 px-3 py-1 rounded-full text-xs text-text-muted pointer-events-none backdrop-blur-sm border border-border-color/10">
                         Klik op de kaart om startpunt te wijzigen
                     </div>
                 )}

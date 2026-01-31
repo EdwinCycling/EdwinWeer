@@ -666,7 +666,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                 <h3 className="text-sm font-bold uppercase text-text-muted mt-2">{t('during_ride')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                      <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded-2xl border border-blue-100 dark:border-blue-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-blue-500"><Icon name="thermostat" /></div>
+                        <div className="bg-bg-subtle p-2 rounded-full text-blue-500"><Icon name="thermostat" /></div>
                         <div>
                             <p className="text-xs text-text-muted uppercase font-bold">{t('avg_temp')}</p>
                             <p className="text-xl font-bold text-blue-700 dark:text-blue-100">{rideData.weather.temp}°</p>
@@ -674,7 +674,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-500/10 p-3 rounded-2xl border border-slate-200 dark:border-slate-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-text-muted"><Icon name="thermometer" /></div>
+                        <div className="bg-bg-subtle p-2 rounded-full text-text-muted"><Icon name="thermometer" /></div>
                         <div>
                             <p className="text-xs text-text-muted uppercase font-bold">{t('start_temp')}</p>
                             <p className="text-xl font-bold text-text-main">{rideData.startTemp}°</p>
@@ -682,7 +682,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-500/10 p-3 rounded-2xl border border-slate-200 dark:border-slate-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-text-muted"><Icon name="thermometer" /></div>
+                        <div className="bg-bg-subtle p-2 rounded-full text-text-muted"><Icon name="thermometer" /></div>
                         <div>
                             <p className="text-xs text-text-muted uppercase font-bold">{t('end_temp')}</p>
                             <p className="text-xl font-bold text-text-main">{rideData.endTemp}°</p>
@@ -690,14 +690,14 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     </div>
 
                      <div className="bg-green-50 dark:bg-green-500/10 p-3 rounded-2xl border border-green-100 dark:border-green-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-green-500"><Icon name="air" /></div>
+                        <div className="bg-bg-subtle p-2 rounded-full text-green-500"><Icon name="air" /></div>
                         <div>
                             <p className="text-xs text-text-muted uppercase font-bold">{t('max_wind')}</p>
                             <p className="text-xl font-bold text-green-700 dark:text-green-100">{rideData.weather.wind} <span className="text-xs">{settings.windUnit}</span></p>
                         </div>
                     </div>
                      <div className="bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 shadow-sm flex items-center gap-3">
-                        <div className="bg-white dark:bg-white/10 p-2 rounded-full text-indigo-500"><Icon name="explore" /></div>
+                        <div className="bg-bg-subtle p-2 rounded-full text-indigo-500"><Icon name="explore" /></div>
                         <div>
                              <p className="text-xs text-text-muted uppercase font-bold">{t('wind_dir')}</p>
                              <div className="flex items-center gap-2">
@@ -710,7 +710,7 @@ export const StravaWeatherView: React.FC<Props> = ({ onNavigate, settings }) => 
                     </div>
                     {rideData.weather.precip >= 0 && (
                         <div className="bg-cyan-50 dark:bg-cyan-500/10 p-3 rounded-2xl border border-cyan-100 dark:border-cyan-500/20 shadow-sm flex items-center gap-3">
-                            <div className="bg-white dark:bg-white/10 p-2 rounded-full text-cyan-500"><Icon name="rainy" /></div>
+                            <div className="bg-bg-subtle p-2 rounded-full text-cyan-500"><Icon name="rainy" /></div>
                             <div>
                                 <p className="text-xs text-text-muted uppercase font-bold">{t('total_rain')}</p>
                                 <p className="text-xl font-bold text-cyan-700 dark:text-cyan-100">{rideData.weather.precip} <span className="text-xs">{settings.precipUnit}</span></p>

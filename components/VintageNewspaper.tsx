@@ -193,7 +193,7 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto pt-16 print:p-0 print:bg-white print:static print:block">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-bg-page/80 backdrop-blur-sm p-4 overflow-y-auto pt-16 print:p-0 print:bg-white print:static print:block">
             <style>
                 {`
                 @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap');
@@ -259,13 +259,13 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
                 <div className="absolute -top-12 right-0 flex gap-2 no-print">
                     <button 
                         onClick={() => setShowPrintModal(true)}
-                        className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold shadow-lg hover:bg-slate-100 transition-colors flex items-center gap-2"
+                        className="bg-bg-card text-text-main px-4 py-2 rounded-lg font-bold shadow-lg hover:bg-bg-subtle transition-colors flex items-center gap-2"
                     >
                         <span>🖨️</span> {t('newspaper.print_edition')}
                     </button>
                     <button 
                         onClick={onClose}
-                        className="bg-white/10 text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
+                        className="bg-bg-subtle text-text-main p-2 rounded-lg hover:bg-bg-card transition-colors"
                     >
                         <Icon name="close" />
                     </button>
@@ -411,11 +411,11 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
 
             {/* Print Modal */}
             {showPrintModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-bg-page/60 backdrop-blur-md animate-in fade-in duration-200">
                     <div className="bg-bg-card rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-text-main">{t('newspaper.print_edition')}</h3>
-                            <button onClick={() => setShowPrintModal(false)} className="p-2 hover:bg-bg-page rounded-full transition-colors text-text-muted">
+                            <button onClick={() => setShowPrintModal(false)} className="p-2 hover:bg-bg-subtle rounded-full transition-colors text-text-muted">
                                 <Icon name="close" className="w-5 h-5" />
                             </button>
                         </div>
@@ -424,9 +424,9 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
                             <button 
                                 onClick={handleDownload}
                                 disabled={isExporting}
-                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-border-color hover:border-indigo-200 dark:hover:border-indigo-800 rounded-xl transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-bg-subtle border border-border-color hover:border-accent-primary rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-indigo-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-accent-primary">
                                     <Icon name="download" className="w-6 h-6" />
                                 </div>
                                 <span className="font-medium text-text-main">{t('newspaper.download_pdf')}</span>
@@ -435,9 +435,9 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
                             <button 
                                 onClick={handlePrint}
                                 disabled={isExporting}
-                                className="hidden flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border border-border-color hover:border-emerald-200 dark:hover:border-emerald-800 rounded-xl transition-all group"
+                                className="hidden flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-bg-subtle border border-border-color hover:border-accent-primary rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-emerald-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-accent-primary">
                                     <Icon name="print" className="w-6 h-6" />
                                 </div>
                                 <span className="font-medium text-text-main">{t('newspaper.print')}</span>
@@ -446,9 +446,9 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
                             <button 
                                 onClick={handleCopy}
                                 disabled={isExporting}
-                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-amber-50 dark:hover:bg-amber-900/20 border border-border-color hover:border-amber-200 dark:hover:border-amber-800 rounded-xl transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-bg-subtle border border-border-color hover:border-accent-primary rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-amber-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-accent-primary">
                                     <Icon name="content_copy" className="w-6 h-6" />
                                 </div>
                                 <span className="font-medium text-text-main">{t('newspaper.copy')}</span>
@@ -457,9 +457,9 @@ export const VintageNewspaper: React.FC<Props> = ({ data, weatherData, onClose, 
                             <button 
                                 onClick={handleShare}
                                 disabled={isExporting}
-                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-pink-50 dark:hover:bg-pink-900/20 border border-border-color hover:border-pink-200 dark:hover:border-pink-800 rounded-xl transition-all group"
+                                className="flex flex-col items-center justify-center gap-3 p-4 bg-bg-page hover:bg-bg-subtle border border-border-color hover:border-accent-primary rounded-xl transition-all group"
                             >
-                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-pink-600">
+                                <div className="p-3 bg-bg-card rounded-full shadow-sm group-hover:scale-110 transition-transform text-accent-primary">
                                     <Icon name="share" className="w-6 h-6" />
                                 </div>
                                 <span className="font-medium text-text-main">{t('newspaper.share')}</span>

@@ -388,7 +388,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             <div className="absolute top-6 left-6 z-[100]">
                  <button 
                     onClick={() => onNavigate(ViewState.CURRENT)} 
-                    className="p-3 bg-bg-card/40 backdrop-blur-md rounded-full text-text-main hover:bg-bg-card/60 transition-colors border border-white/10 shadow-lg"
+                    className="p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-main hover:bg-bg-card transition-colors border border-border-color shadow-lg ring-1 ring-border-color/10"
                 >
                     <Icon name="arrow_back" className="text-2xl" />
                 </button>
@@ -407,8 +407,8 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                         onClick={() => handleSkinChange(s.id as any)}
                         className={`px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md transition-all border ${
                             skin === s.id 
-                                ? 'bg-accent-primary text-white border-accent-primary shadow-lg shadow-accent-primary/30' 
-                                : 'bg-bg-card/40 text-text-muted hover:bg-bg-card/60 border-white/10'
+                                ? 'bg-accent-primary text-text-inverse border-accent-primary shadow-lg shadow-accent-primary/30' 
+                                : 'bg-bg-card/80 text-text-muted hover:bg-bg-card hover:text-text-main border-border-color shadow-sm'
                         }`}
                     >
                         <Icon name={s.icon} className="text-lg" />
@@ -419,19 +419,19 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
 
             {/* Controls */}
             <div className="absolute top-6 right-6 z-[100] flex flex-col gap-2 scale-75 md:scale-100 origin-top-right">
-                <div className="flex flex-col bg-bg-card/40 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
-                    <button onClick={() => handleControl('zoomIn')} className="p-1.5 sm:p-3 hover:bg-white/10 active:bg-white/20 transition-colors"><Icon name="add" /></button>
-                    <button onClick={() => handleControl('zoomOut')} className="p-1.5 sm:p-3 hover:bg-white/10 active:bg-white/20 transition-colors border-t border-white/10"><Icon name="remove" /></button>
+                <div className="flex flex-col bg-bg-card/80 backdrop-blur-md rounded-xl border border-border-color overflow-hidden shadow-lg ring-1 ring-border-color/10">
+                    <button onClick={() => handleControl('zoomIn')} className="p-1.5 sm:p-3 hover:bg-bg-page/50 text-text-main active:bg-bg-page transition-colors"><Icon name="add" /></button>
+                    <button onClick={() => handleControl('zoomOut')} className="p-1.5 sm:p-3 hover:bg-bg-page/50 text-text-main active:bg-bg-page transition-colors border-t border-border-color"><Icon name="remove" /></button>
                 </div>
-                <div className="grid grid-cols-3 gap-1 bg-bg-card/40 backdrop-blur-md rounded-xl border border-white/10 p-1">
+                <div className="grid grid-cols-3 gap-1 bg-bg-card/80 backdrop-blur-md rounded-xl border border-border-color p-1 shadow-lg ring-1 ring-border-color/10">
                      <div />
-                     <button onClick={() => handleControl('up')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_up" /></button>
+                     <button onClick={() => handleControl('up')} className="p-1 sm:p-2 hover:bg-bg-page/50 text-text-main rounded transition-colors"><Icon name="keyboard_arrow_up" /></button>
                      <div />
-                     <button onClick={() => handleControl('left')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_left" /></button>
-                     <div className="flex items-center justify-center"><Icon name="public" className="text-xs opacity-50"/></div>
-                     <button onClick={() => handleControl('right')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_right" /></button>
+                     <button onClick={() => handleControl('left')} className="p-1 sm:p-2 hover:bg-bg-page/50 text-text-main rounded transition-colors"><Icon name="keyboard_arrow_left" /></button>
+                     <div className="flex items-center justify-center"><Icon name="public" className="text-xs text-text-muted opacity-50"/></div>
+                     <button onClick={() => handleControl('right')} className="p-1 sm:p-2 hover:bg-bg-page/50 text-text-main rounded transition-colors"><Icon name="keyboard_arrow_right" /></button>
                      <div />
-                     <button onClick={() => handleControl('down')} className="p-1 sm:p-2 hover:bg-white/10 rounded"><Icon name="keyboard_arrow_down" /></button>
+                     <button onClick={() => handleControl('down')} className="p-1 sm:p-2 hover:bg-bg-page/50 text-text-main rounded transition-colors"><Icon name="keyboard_arrow_down" /></button>
                      <div />
                 </div>
             </div>
@@ -439,9 +439,9 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             {/* Toast Instruction */}
             {showToast && (
                 <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[90] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="bg-black/60 backdrop-blur-xl px-6 py-3 rounded-full text-white text-sm font-medium border border-white/10 shadow-xl flex flex-col items-center gap-1 text-center">
+                    <div className="bg-bg-card/90 backdrop-blur-xl px-6 py-3 rounded-full text-text-main text-sm font-medium border border-border-color shadow-xl flex flex-col items-center gap-1 text-center ring-1 ring-border-color/10">
                         <span>Draai de wereldbol en klik op een locatie</span>
-                        <span className="text-xs text-white/60 font-normal">PC: Sleep met muis | Mobiel: Sleep met vinger</span>
+                        <span className="text-xs text-text-muted font-normal">PC: Sleep met muis | Mobiel: Sleep met vinger</span>
                     </div>
                 </div>
             )}
@@ -498,9 +498,9 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                 }`}
             >
                 <div 
-                    className="relative w-full h-full md:w-[80vh] md:h-[80vh] rounded-full overflow-hidden border-2 border-white/20 shadow-2xl backdrop-blur-sm"
+                    className="relative w-full h-full md:w-[80vh] md:h-[80vh] rounded-full overflow-hidden border-2 border-border-color shadow-2xl backdrop-blur-sm"
                     style={{
-                        boxShadow: '0 0 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.2)'
+                        boxShadow: '0 0 50px rgba(0,0,0,0.3), inset 0 0 20px var(--border-color)'
                     }}
                 >
                      {viewMode === 'map' && (
@@ -545,7 +545,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                         {/* Close Button */}
                         <button 
                             onClick={() => setSelectedPoint(null)}
-                            className="absolute top-3 right-3 sm:-top-2 sm:-right-2 md:top-0 md:right-0 p-2 bg-bg-page/50 hover:bg-bg-page rounded-full text-text-muted transition-colors z-30 border border-white/10"
+                            className="absolute top-3 right-3 sm:-top-2 sm:-right-2 md:top-0 md:right-0 p-2 bg-bg-page/80 hover:bg-bg-page rounded-full text-text-muted transition-colors z-30 border border-border-color shadow-sm"
                             title="Sluit venster"
                         >
                             <Icon name="close" />
@@ -620,7 +620,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {/* Current Weather Card */}
-                                    <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                    <div className="bg-bg-card/40 rounded-2xl p-5 border border-border-color/50 hover:border-border-color transition-colors shadow-sm">
                                         <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
                                             <Icon name="thermostat" className="text-accent-primary" />
                                             Huidig Weer
@@ -656,7 +656,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                                     </div>
 
                                     {/* Wind & Atmosphere */}
-                                    <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                    <div className="bg-bg-card/40 rounded-2xl p-5 border border-border-color/50 hover:border-border-color transition-colors shadow-sm">
                                         <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
                                             <Icon name="air" className="text-blue-400" />
                                             Wind & Atmosfeer
@@ -689,7 +689,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
 
                                     {/* Sun & Moon */}
                                     {weatherData.daily && weatherData.daily.sunrise && (
-                                        <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-colors">
+                                        <div className="bg-bg-card/40 rounded-2xl p-5 border border-border-color/50 hover:border-border-color transition-colors shadow-sm">
                                             <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
                                                 <Icon name="wb_sunny" className="text-yellow-500" />
                                                 Zon & Dag
@@ -727,7 +727,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                                                     <span className="text-text-muted text-sm">Golfperiode</span>
                                                     <span className="text-text-main font-bold">{marineData.current.wave_period || '--'}s</span>
                                                 </div>
-                                                <div className="mt-3 pt-3 border-t border-white/5">
+                                                <div className="mt-3 pt-3 border-t border-border-color/20">
                                                      <div className="flex items-center gap-2">
                                                          <span className="text-2xl">{calculateTideStrength().label.split(' ')[0]}</span>
                                                          <span className="text-sm font-medium text-text-main">{calculateTideStrength().label.replace(/^[^\s]+\s+/, '')}</span>
@@ -740,14 +740,14 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                                 
                                 {/* 7 Day Forecast Preview */}
                                 {weatherData.daily && (
-                                    <div className="bg-bg-page/50 rounded-2xl p-5 border border-white/5 mt-4">
+                                    <div className="bg-bg-card/40 rounded-2xl p-5 border border-border-color/50 mt-4 shadow-sm">
                                         <h3 className="text-sm font-bold text-text-muted mb-4 flex items-center gap-2">
                                             <Icon name="calendar_today" />
                                             Verwachting
                                         </h3>
                                         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
                                             {weatherData.daily.time.slice(1, 8).map((t: string, i: number) => (
-                                                <div key={t} className="flex flex-col items-center min-w-[60px] p-2 rounded-xl bg-bg-card/30 border border-white/5">
+                                                <div key={t} className="flex flex-col items-center min-w-[60px] p-2 rounded-xl bg-bg-card/60 border border-border-color/30 shadow-sm">
                                                     <span className="text-xs text-text-muted font-bold mb-1">
                                                         {new Date(t).toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { weekday: 'short' })}
                                                     </span>

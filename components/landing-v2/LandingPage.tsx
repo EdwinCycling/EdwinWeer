@@ -48,29 +48,29 @@ const FeatureSection = ({ icon: Icon, title, desc, image, reversed, onLogin }: {
       className={`flex flex-col lg:flex-row items-center gap-12 py-24 ${reversed ? 'lg:flex-row-reverse' : ''}`}
   >
       <div className="flex-1 w-full group perspective-1000">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 border border-white/10 transform transition-transform duration-700 hover:rotate-y-2 hover:scale-[1.02] bg-slate-900/50 backdrop-blur-sm">
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-bg-page/50 border border-border-color/10 transform transition-transform duration-700 hover:rotate-y-2 hover:scale-[1.02] bg-bg-card/50 backdrop-blur-sm">
           <img 
               src={image} 
               alt={title} 
               className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500" 
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-page/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           </div>
       </div>
       <div className="flex-1 text-left">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 text-blue-400 mb-6 border border-white/10 shadow-lg shadow-blue-500/10 backdrop-blur-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-bg-subtle/50 text-accent-primary mb-6 border border-border-color/10 shadow-lg shadow-accent-primary/10 backdrop-blur-md">
               <Icon className="w-8 h-8" />
           </div>
-          <h3 className="text-3xl md:text-4xl font-bold mb-6 text-white leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+          <h3 className="text-3xl md:text-4xl font-bold mb-6 text-text-main leading-tight">
               {title}
           </h3>
-          <p className="text-lg text-white/60 leading-relaxed mb-8">
+          <p className="text-lg text-text-muted leading-relaxed mb-8">
               {desc}
           </p>
           <Button 
               onClick={onLogin}
               variant="outline"
-              className="group border-white/10 hover:bg-white/10 text-white gap-2 pl-6 pr-4 rounded-full"
+              className="group border-border-color/20 hover:bg-bg-subtle text-text-main gap-2 pl-6 pr-4 rounded-full"
           >
               Start Direct <Icon name="arrow_forward" className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Button>
@@ -233,13 +233,13 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       <div className="relative z-10">
         
         {/* Navbar (Copied & Adapted) */}
-        <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-black/30 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
+        <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-bg-page/30 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
                 {/* Logo */}
                 <div className="flex items-center gap-3">
-                <img src="/icons/baro-icon-192.png" alt="Baro Logo" className="size-10 rounded-xl shadow-lg shadow-blue-500/30 transform hover:rotate-12 transition-transform duration-300" />
-                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                <img src="/icons/baro-icon-192.png" alt="Baro Logo" className="size-10 rounded-xl shadow-lg shadow-accent-primary/30 transform hover:rotate-12 transition-transform duration-300" />
+                <span className="text-2xl font-bold text-text-main">
                     Baro
                 </span>
                 </div>
@@ -249,7 +249,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="relative">
                     <button 
                     onClick={() => setLangOpen(!langOpen)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-all text-sm font-medium border border-white/10 text-white"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-bg-subtle hover:bg-bg-card transition-all text-sm font-medium border border-border-color/20 text-text-main"
                     >
                     <FlagIcon countryCode={lang} className="w-6 h-4 rounded-sm shadow-sm" />
                     <span>{lang.toUpperCase()}</span>
@@ -257,7 +257,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     </button>
                     
                     {langOpen && (
-                        <div className="absolute top-full right-0 mt-2 bg-slate-900/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/10 p-2 min-w-[150px] z-50">
+                        <div className="absolute top-full right-0 mt-2 bg-bg-card backdrop-blur-xl rounded-xl shadow-xl border border-border-color p-2 min-w-[150px] z-50">
                             {languages.map(l => (
                                 <button 
                                     key={l.code}
@@ -267,11 +267,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                                         saveSettings({ ...currentSettings, language: l.code });
                                         setLangOpen(false);
                                     }}
-                                    className={`flex items-center gap-3 w-full p-2 hover:bg-white/10 rounded-lg text-left transition-colors ${lang === l.code ? 'bg-white/5' : ''} text-white`}
+                                    className={`flex items-center gap-3 w-full p-2 hover:bg-bg-subtle rounded-lg text-left transition-colors ${lang === l.code ? 'bg-bg-card/5' : ''} text-text-main`}
                                 >
                                     <FlagIcon countryCode={l.code} className="w-6 h-4 rounded-sm shadow-sm" />
                                     <span className="font-medium">{l.label}</span>
-                                    {lang === l.code && <Icon name="check" className="ml-auto text-blue-400 text-sm" />}
+                                    {lang === l.code && <Icon name="check" className="ml-auto text-accent-primary text-sm" />}
                                 </button>
                             ))}
                         </div>
@@ -280,7 +280,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 
                 <button 
                     onClick={handleLogin}
-                    className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-full font-bold hover:opacity-90 transition-all hover:shadow-lg hover:scale-105 active:scale-95 shadow-blue-500/20"
+                    className="hidden md:flex items-center gap-2 bg-gradient-to-r from-accent-primary to-purple-600 text-white px-6 py-2.5 rounded-full font-bold hover:opacity-90 transition-all hover:shadow-lg hover:scale-105 active:scale-95 shadow-accent-primary/20"
                 >
                     <Icon name="login" />
                     {t('landing.login_google')}
@@ -303,7 +303,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                         {t('landing.hero_title_1')}
                     </span>
                     <br />
-                    <span className="text-white">
+                    <span className="text-text-main">
                         {t('landing.hero_title_2')}
                     </span>
                 </motion.h1>
@@ -311,7 +311,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-xl md:text-2xl text-white/70 max-w-3xl mx-auto mb-12 leading-relaxed"
+                    className="text-xl md:text-2xl text-text-muted max-w-3xl mx-auto mb-12 leading-relaxed"
                 >
                     {t('landing.hero_subtitle')}
                 </motion.p>
@@ -323,18 +323,18 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 >
                     <button 
                         onClick={handleLogin}
-                        className="group relative px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 rounded-2xl font-bold text-lg shadow-xl shadow-white/10 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 overflow-hidden border border-slate-200 h-14 flex items-center justify-center"
+                        className="group relative px-8 py-4 bg-bg-card hover:bg-bg-subtle text-text-main rounded-2xl font-bold text-lg shadow-xl shadow-bg-card/10 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 overflow-hidden border border-border-color h-14 flex items-center justify-center"
                     >
-                        <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-slate-400/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                        <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-text-muted/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
                         <span className="flex items-center gap-2 relative z-10">
-                            <Icon name="rocket_launch" className="text-blue-600" />
+                            <Icon name="rocket_launch" className="text-accent-primary" />
                             {t('landing.start_now')}
                         </span>
                     </button>
                     <Button 
                         size="lg" 
                         variant="outline" 
-                        className="border-white/20 text-white hover:bg-white/10 text-lg h-14 px-8 rounded-full bg-transparent"
+                        className="border-border-color/20 text-text-main hover:bg-bg-subtle text-lg h-14 px-8 rounded-full bg-transparent"
                         onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                     >
                         {t('landing.discover_features')}
@@ -357,16 +357,16 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 hover:bg-white/10 transition-colors group"
+                            className="bg-bg-card/5 backdrop-blur-xl rounded-3xl border border-border-color/10 p-8 hover:bg-bg-card/10 transition-colors group"
                         >
                             <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                                 <feature.icon className="w-8 h-8 text-white" />
                             </div>
                             <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
-                            <p className="text-white/70 mb-6 text-lg">{feature.description}</p>
-                            <div className="bg-black/20 rounded-xl p-6 border border-white/5">
-                                <p className="text-white/90 italic mb-4">"{feature.quote}"</p>
-                                <p className="text-sm text-white/50 font-medium">— {feature.author}</p>
+                            <p className="text-text-muted mb-6 text-lg">{feature.description}</p>
+                            <div className="bg-bg-page/20 rounded-xl p-6 border border-border-color/5">
+                                <p className="text-text-main italic mb-4">"{feature.quote}"</p>
+                                <p className="text-sm text-text-muted font-medium">— {feature.author}</p>
                             </div>
                         </motion.div>
                     ))}
@@ -414,7 +414,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         </section>
 
         {/* Models Section */}
-        <section className="py-24 bg-white/5 backdrop-blur-md border-y border-white/10">
+        <section className="py-24 bg-bg-card/5 backdrop-blur-md border-y border-border-color/10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                  <h2 className="text-3xl font-bold mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                     {t('landing.models_title')}

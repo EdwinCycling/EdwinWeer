@@ -777,7 +777,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
 
       <div className="max-w-3xl mx-auto space-y-6">
           {/* Location & Controls */}
-          <div className="bg-white dark:bg-card-dark rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5">
+          <div className="bg-bg-card rounded-3xl p-6 shadow-sm border border-border-color">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                   <div className="flex items-center gap-3">
                       <div className="size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
@@ -842,22 +842,22 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                                   <span className="block text-xs uppercase tracking-wider opacity-70 mb-1">{t('climate.max')}</span>
                                   <span className="text-4xl md:text-5xl font-bold tracking-tight">{currentNormal.max}°</span>
                               </div>
-                              <div className="w-px bg-white/20"></div>
+                              <div className="w-px bg-border-color/30"></div>
                               <div className="text-center">
                                   <span className="block text-xs uppercase tracking-wider opacity-70 mb-1">{t('climate.min')}</span>
                                   <span className="text-4xl md:text-5xl font-bold tracking-tight">{currentNormal.min}°</span>
                               </div>
                           </div>
                           
-                          <div className="mt-6 pt-6 border-t border-white/10 text-xs md:text-sm opacity-70 flex items-center justify-center gap-2">
+                          <div className="mt-6 pt-6 border-t border-border-color/20 text-xs md:text-sm opacity-70 flex items-center justify-center gap-2">
                               <Icon name="info" className="text-base" />
                               {t('climate.info')}
                           </div>
                       </div>
                       
                       {/* Decorative circles */}
-                      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-                      <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black/10 rounded-full blur-2xl"></div>
+                      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-bg-card/20 rounded-full blur-2xl"></div>
+                      <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-bg-page/20 rounded-full blur-2xl"></div>
                   </div>
               )}
           </div>

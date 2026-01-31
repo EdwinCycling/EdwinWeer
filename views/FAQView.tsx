@@ -127,14 +127,14 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
       {/* Header */}
       <div className={`sticky top-0 z-30 border-b ${
           isLandingV2 
-            ? 'bg-black/20 backdrop-blur-xl border-white/10' 
+            ? 'bg-bg-card/40 backdrop-blur-xl border-border-color/20' 
             : 'bg-bg-page/90 backdrop-blur-md border-border-color'
       }`}>
         <div className="max-w-3xl mx-auto p-4 flex items-center gap-4">
           <button 
             onClick={() => onNavigate(isLandingV2 ? ViewState.LANDING_V2 : ViewState.CURRENT)} 
             className={`size-10 flex items-center justify-center rounded-full transition-colors ${
-                isLandingV2 ? 'hover:bg-white/10 text-white' : 'hover:bg-bg-subtle text-text-main'
+                isLandingV2 ? 'hover:bg-bg-subtle text-text-main' : 'hover:bg-bg-subtle text-text-main'
             }`}
           >
             <Icon name="arrow_back_ios_new" />
@@ -154,12 +154,12 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
         {/* Search & Categories */}
         <div className={`backdrop-blur-md rounded-2xl p-4 shadow-sm border sticky top-[73px] z-20 ${
             isLandingV2 
-                ? 'bg-white/5 border-white/10 shadow-black/20' 
+                ? 'bg-bg-card/20 border-border-color/20 shadow-black/20' 
                 : 'bg-bg-card/80 border-border-color shadow-sm'
         }`}>
           <div className="relative mb-4">
             <Icon name="search" className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-                isLandingV2 ? 'text-white/40' : 'text-text-muted'
+                isLandingV2 ? 'text-text-main/60' : 'text-text-muted'
             }`} />
             <input 
               type="text"
@@ -168,7 +168,7 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
               onChange={(e) => setSearchQuery(e.target.value)}
               className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition-all ${
                 isLandingV2 
-                    ? 'bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:ring-blue-500/50' 
+                    ? 'bg-bg-card/20 border-border-color/20 text-text-main placeholder:text-text-main/30 focus:ring-accent-primary/50' 
                     : 'bg-bg-page border-border-color text-text-main placeholder:text-text-muted focus:ring-primary/50'
               }`}
             />
@@ -181,8 +181,8 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === cat.id 
-                    ? (isLandingV2 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-primary text-white shadow-md')
-                    : (isLandingV2 ? 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10' : 'bg-bg-page text-text-muted hover:bg-bg-subtle border border-border-color')
+                    ? (isLandingV2 ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20' : 'bg-primary text-white shadow-md')
+                    : (isLandingV2 ? 'bg-bg-card/20 text-text-main/60 hover:bg-bg-card/40 border border-border-color/20' : 'bg-bg-page text-text-muted hover:bg-bg-subtle border border-border-color')
                 }`}
               >
                 {cat.label}
@@ -201,7 +201,7 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
                   key={item.id} 
                   className={`backdrop-blur-md rounded-2xl border transition-all duration-300 overflow-hidden ${
                     isLandingV2
-                        ? (isExpanded ? 'bg-white/10 border-blue-500/50 shadow-lg shadow-blue-500/10' : 'bg-white/5 border-white/10 hover:border-white/20')
+                        ? (isExpanded ? 'bg-bg-card/40 border-accent-primary/50 shadow-lg shadow-accent-primary/10' : 'bg-bg-card/20 border-border-color/20 hover:border-border-color/40')
                         : (isExpanded ? 'bg-bg-card/80 border-primary shadow-md ring-1 ring-primary/20' : 'bg-bg-card/80 border-border-color hover:border-primary/30')
                   }`}
                 >
@@ -211,8 +211,8 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
                   >
                     <span className={`font-bold transition-colors ${
                         isExpanded 
-                            ? (isLandingV2 ? 'text-blue-400' : 'text-primary') 
-                            : (isLandingV2 ? 'text-white' : 'text-text-main')
+                            ? (isLandingV2 ? 'text-accent-primary' : 'text-primary') 
+                            : (isLandingV2 ? 'text-text-main' : 'text-text-main')
                     }`}>
                       {t(item.questionKey)}
                     </span>
@@ -228,7 +228,7 @@ export const FAQView: React.FC<Props> = ({ onNavigate, settings, isLandingV2 }) 
                     <div className="overflow-hidden">
                       <div className={`p-4 pt-0 leading-relaxed border-t mt-2 ${
                           isLandingV2 
-                            ? 'text-white/70 border-white/5' 
+                            ? 'text-text-main/70 border-border-color/10' 
                             : 'text-text-muted border-border-color/50'
                       }`}>
                          {t(item.answerKey)}

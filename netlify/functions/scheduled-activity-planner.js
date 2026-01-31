@@ -545,7 +545,7 @@ export const handler = async (event, context) => {
             // Log for debugging (remove in production if too noisy)
             // console.log(`User ${userId} local hour: ${userHour} (${userTimezone})`);
 
-            if (userHour < 4 || userHour > 6) continue;
+            if (!isTest && (userHour < 4 || userHour > 6)) continue;
 
             // Check Day (Tomorrow)
             // Notification is sent TODAY (at 04:00) for TOMORROW.
@@ -555,7 +555,7 @@ export const handler = async (event, context) => {
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowDay = tomorrow.getDay(); // 0=Sun, 1=Mon...
 
-            if (!config.days.includes(tomorrowDay)) continue;
+            if (!isTest && !config.days.includes(tomorrowDay)) continue;
 
             // Prevent duplicate sending for this day/activity
             const dateStr = tomorrow.toISOString().split('T')[0]; // Target date
@@ -563,7 +563,7 @@ export const handler = async (event, context) => {
             const auditRef = db.collection('audit_logs').doc(auditKey); // or specific collection
             const auditDoc = await auditRef.get();
 
-            if (auditDoc.exists) {
+            if (!isTest && auditDoc.exists) {
                 console.log(`Skipping ${userId}: already sent for ${dateStr}`);
                 continue;
             }

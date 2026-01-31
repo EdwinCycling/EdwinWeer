@@ -210,7 +210,7 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                 <button
                     onClick={() => setMode('heat')}
                     className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
-                        mode === 'heat' ? 'bg-red-500 text-white shadow-lg' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/20'
+                        mode === 'heat' ? 'bg-red-500 text-white shadow-lg' : 'bg-bg-subtle text-text-muted hover:bg-bg-card'
                     }`}
                 >
                     <Icon name="thermostat" />
@@ -219,7 +219,7 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                 <button
                     onClick={() => setMode('cold')}
                     className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
-                        mode === 'cold' ? 'bg-blue-500 text-white shadow-lg' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/20'
+                        mode === 'cold' ? 'bg-blue-500 text-white shadow-lg' : 'bg-bg-subtle text-text-muted hover:bg-bg-card'
                     }`}
                 >
                     <Icon name="ac_unit" />
@@ -228,7 +228,7 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                 <button
                     onClick={() => setMode('rain')}
                     className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
-                        mode === 'rain' ? 'bg-blue-800 text-white shadow-lg' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/20'
+                        mode === 'rain' ? 'bg-blue-800 text-white shadow-lg' : 'bg-bg-subtle text-text-muted hover:bg-bg-card'
                     }`}
                 >
                     <Icon name="rainy" />
@@ -237,7 +237,7 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                 <button
                     onClick={() => setMode('sun')}
                     className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
-                        mode === 'sun' ? 'bg-yellow-500 text-white shadow-lg' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/20'
+                        mode === 'sun' ? 'bg-yellow-500 text-white shadow-lg' : 'bg-bg-subtle text-text-muted hover:bg-bg-card'
                     }`}
                 >
                     <Icon name="wb_sunny" />
@@ -257,21 +257,21 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                                 y={15}
                                 fontSize={10}
                                 fill="currentColor"
-                                className="text-slate-400 dark:text-slate-500"
+                                className="text-text-muted"
                             >
                                 {l.label}
                             </text>
                         ))}
 
                         {/* Day Labels (Ma, Wo, Vr) */}
-                        <text x={-20} y={30 + 1 * (cellSize + gap) + 10} fontSize={9} fill="currentColor" className="text-slate-300 dark:text-slate-600 hidden">Ma</text>
+                        <text x={-20} y={30 + 1 * (cellSize + gap) + 10} fontSize={9} fill="currentColor" className="text-text-muted/50 hidden">Ma</text>
 
                         {/* Grid */}
                         <g transform="translate(0, 30)">
                              {/* Day Labels */}
-                             <text x={-5} y={1 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-slate-400 dark:fill-slate-500">Ma</text>
-                             <text x={-5} y={3 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-slate-400 dark:fill-slate-500">Wo</text>
-                             <text x={-5} y={5 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-slate-400 dark:fill-slate-500">Vr</text>
+                             <text x={-5} y={1 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-text-muted">Ma</text>
+                             <text x={-5} y={3 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-text-muted">Wo</text>
+                             <text x={-5} y={5 * (cellSize + gap) + 9} fontSize={9} textAnchor="end" className="fill-text-muted">Vr</text>
 
                             {processedData.map((item) => (
                                 <g key={item.date}>
@@ -288,7 +288,7 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                                                                 : `${convertTemp(item.value, settings.tempUnit)}°`
                                                     ) : 'Geen data'}
                                                 </div>
-                                                <div className="text-[10px] text-slate-300 mt-1">Klik voor details</div>
+                                                <div className="text-[10px] text-text-muted/60 mt-1">Klik voor details</div>
                                             </div>
                                         }
                                     >
@@ -298,7 +298,7 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
                                             width={cellSize}
                                             height={cellSize}
                                             fill={item.value !== null ? getColor(item.value, mode) : 'transparent'}
-                                            className={`${item.value !== null ? 'cursor-pointer hover:stroke-white/50 hover:stroke-1' : ''} transition-all duration-200`}
+                                            className={`${item.value !== null ? 'cursor-pointer hover:stroke-text-main/50 hover:stroke-1' : ''} transition-all duration-200`}
                                             onClick={() => item.value !== null && onDayClick?.(item.date)}
                                             rx={2}
                                         />
@@ -314,8 +314,8 @@ export const HeatmapComponent: React.FC<Props> = ({ data, year, settings, onDayC
             <div className="flex flex-wrap justify-center items-center gap-2 px-4">
                 {currentScale.map((item, index) => (
                     <div key={index} className="flex items-center gap-1.5">
-                        <div className="w-4 h-4 rounded-sm shadow-sm border border-slate-200 dark:border-white/10" style={{ backgroundColor: item.color }}></div>
-                        <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">{item.label}</span>
+                        <div className="w-4 h-4 rounded-sm shadow-sm border border-border-color" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-[10px] font-medium text-text-muted">{item.label}</span>
                     </div>
                 ))}
             </div>

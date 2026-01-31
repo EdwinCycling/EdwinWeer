@@ -23,6 +23,8 @@ import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { StarMapModal } from '../components/StarMapModal';
+import { AuroraCard } from '../components/AuroraCard';
+import { fetchKpIndex, calculateAuroraChance, AuroraResult } from '../services/auroraService';
 import { HorizonCompassView } from '../components/HorizonCompassView';
 import { getUsage } from '../services/usageService';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
@@ -63,6 +65,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitError, setLimitError] = useState('');
+  const [auroraResult, setAuroraResult] = useState<AuroraResult | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -125,7 +128,29 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       if (!weatherData) return;
       setMoonPhase(calculateMoonPhase(new Date()));
       checkAlerts();
-  }, [weatherData]);
+
+      // Load Aurora Data
+      const loadAurora = async () => {
+          if (settings.enableAurora === false) return;
+          
+          const kpData = await fetchKpIndex();
+          if (kpData) {
+              const isDay = weatherData.current.is_day === 1;
+              const cloudCover = weatherData.current.cloud_cover;
+              const lat = location.lat;
+              
+              const result = calculateAuroraChance(
+                  kpData.kp_index,
+                  lat,
+                  cloudCover,
+                  isDay,
+                  t
+              );
+              setAuroraResult(result);
+          }
+      };
+      loadAurora();
+  }, [weatherData, settings.enableAurora]);
 
   const checkAlerts = () => {
       if (!weatherData) return;
@@ -931,34 +956,34 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         {/* Header */}
         <div className="flex flex-col pt-20 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-white/90 hover:bg-bg-card/50 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
                 <div className="text-center relative z-20">
                     {loadingCity ? (
-                        <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
-                             <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                             <span className="font-medium text-white">{t('search')}</span>
+                        <div className="flex items-center gap-2 bg-bg-card/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color">
+                             <div className="animate-spin h-5 w-5 border-2 border-text-main border-t-transparent rounded-full" />
+                             <span className="font-medium text-text-main">{t('search')}</span>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
-                            <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
+                        <div className="flex flex-col items-center bg-bg-card/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color shadow-lg">
+                            <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-text-main">
                                 <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
                                 <span className="hidden md:inline">{location.name}, {location.country}</span>
                             </h2>
                             {localTime && (
-                                <p className="text-white/90 text-sm font-medium mt-1 flex items-center gap-2">
+                                <p className="text-text-muted text-sm font-medium mt-1 flex items-center gap-2">
                                     <Icon name="schedule" className="text-xs" />
                                     {localTime} 
-                                    {timeDiff && <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] text-white">{timeDiff}</span>}
+                                    {timeDiff && <span className="bg-bg-card/40 px-1.5 py-0.5 rounded text-[10px] text-text-main border border-border-color">{timeDiff}</span>}
                                 </p>
                             )}
                         </div>
                     )}
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/30 backdrop-blur-md text-white/90 hover:bg-bg-card/50 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -1095,8 +1120,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <>
                 <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main">
                     <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
-                        <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
-                            <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                        <div className="bg-bg-card/80 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10">
+                            <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
                                 {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
                             </h1>
                         </div>
@@ -1195,18 +1220,18 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
                     <div 
                         onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
-                        className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform group"
+                        className="bg-bg-card/80 backdrop-blur-md px-6 py-4 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10 mt-4 flex flex-col items-center cursor-pointer hover:scale-105 transition-transform group"
                     >
-                        <p className="text-2xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                        <p className="text-2xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-text-main">
                              <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-3xl" />
                             {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                         </p>
                         <div 
-                            className="text-white/90 text-lg font-normal drop-shadow-md mt-1 flex items-center gap-1"
+                            className="text-text-muted text-lg font-normal drop-shadow-md mt-1 flex items-center gap-1"
                         >
                             H:{highTemp}° L:{lowTemp}° <Icon name="arrow_forward" className="text-sm opacity-70 group-hover:translate-x-1 transition-transform" />
                         </div>
-                        <p className="text-white/70 text-sm font-normal drop-shadow-md mt-2">
+                        <p className="text-text-muted/80 text-sm font-normal drop-shadow-md mt-2">
                             {t('measured')}: {weatherData.current.time ? new Date(weatherData.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                                 hour: '2-digit', 
                                 minute: '2-digit',
@@ -1295,6 +1320,16 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <SunElevationGraph />
                     </div>
 
+                    {/* Aurora Card */}
+                    {auroraResult && settings.enableAurora !== false && (
+                         <AuroraCard 
+                            data={auroraResult} 
+                            language={settings.language} 
+                            onToggleNotification={(enabled) => onUpdateSettings && onUpdateSettings({...settings, auroraNotification: enabled})}
+                            notificationEnabled={settings.auroraNotification}
+                         />
+                    )}
+
                     {/* Solar Power Widget - only show when sun graph is shown (is_day) */}
                     {weatherData.current.is_day === 1 && (
                         <SolarPowerWidget weatherData={weatherData} settings={settings} />
@@ -1305,24 +1340,24 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                              {frostWarning && (
                                  <div 
                                     onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                    className="bg-black/20 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-black/30 transition-colors shadow-lg"
+                                    className="bg-bg-card border border-border-color rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-bg-card/80 transition-colors shadow-sm"
                                  >
-                                     <Icon name="ac_unit" className="text-white text-xl" />
+                                     <Icon name="ac_unit" className="text-text-main text-xl" />
                                      <div>
-                                         <p className="text-white font-bold text-sm">{t('frost_warning')}</p>
-                                         <p className="text-white/70 text-xs">{t('frost_desc')}</p>
+                                         <p className="text-text-main font-bold text-sm">{t('frost_warning')}</p>
+                                         <p className="text-text-muted text-xs">{t('frost_desc')}</p>
                                      </div>
                                  </div>
                              )}
                              {rainAlert && (
                                  <div 
                                     onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                    className="bg-black/20 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-black/30 transition-colors shadow-lg"
+                                    className="bg-bg-card border border-border-color rounded-xl p-3 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 cursor-pointer hover:bg-bg-card/80 transition-colors shadow-sm"
                                  >
-                                     <Icon name="rainy" className="text-white text-xl" />
+                                     <Icon name="rainy" className="text-text-main text-xl" />
                                      <div>
-                                        <p className="text-white font-bold text-sm">{t('rain_expected')}</p>
-                                        <p className="text-white/70 text-xs">
+                                        <p className="text-text-main font-bold text-sm">{t('rain_expected')}</p>
+                                        <p className="text-text-muted text-xs">
                                             {rainAlert.inHours === 0 
                                                 ? t('rain.raining_now')
                                                 : t('rain_desc').replace('{hours}', rainAlert.inHours.toString()).replace('{time}', rainAlert.time).replace('{amount}', rainAlert.amount.toString() + settings.precipUnit)

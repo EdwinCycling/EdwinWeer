@@ -86,7 +86,7 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
     };
 
     return (
-        <article className="relative w-full h-full min-w-full md:min-w-full snap-center flex-shrink-0 overflow-hidden border-r border-white/10">
+        <article className="relative w-full h-full min-w-full md:min-w-full snap-center flex-shrink-0 overflow-hidden border-r border-border-color/10">
             {/* Visual Engine - Alleen renderen als we in de buurt zijn */}
             {isNear ? (
                 <ImmersiveBackground 
@@ -97,11 +97,11 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
                     isVisible={isVisible}
                 />
             ) : (
-                <div className="absolute inset-0 bg-gray-900" />
+                <div className="absolute inset-0 bg-bg-card" />
             )}
 
             {/* Content Layout (Screenshot Look) */}
-            <div className="absolute inset-0 z-10 p-6 pt-36 pb-24 flex flex-col justify-between text-white select-none">
+            <div className="absolute inset-0 z-10 p-6 pt-36 pb-24 flex flex-col justify-between text-text-main select-none">
                 
                 {/* Top Section */}
                 <div className="flex flex-col items-start gap-4">
@@ -124,10 +124,10 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
                     </div>
 
                     {/* Sun/Moon Visual - Moved BELOW Temp */}
-                    <div className="relative w-48 h-24 bg-black/10 backdrop-blur-sm rounded-t-full border-t border-l border-r border-white/20 shadow-lg overflow-hidden mt-2">
-                        <div className="absolute bottom-0 w-full h-px bg-white/40" />
-                        <div className="absolute bottom-1 left-3 text-[10px] text-white/70 font-medium">{getTranslation('immersive.rise', settings.language)}</div>
-                        <div className="absolute bottom-1 right-3 text-[10px] text-white/70 font-medium">{getTranslation('immersive.set', settings.language)}</div>
+                    <div className="relative w-48 h-24 bg-bg-subtle/10 backdrop-blur-sm rounded-t-full border-t border-l border-r border-border-color/20 shadow-lg overflow-hidden mt-2">
+                        <div className="absolute bottom-0 w-full h-px bg-text-main/40" />
+                        <div className="absolute bottom-1 left-3 text-[10px] text-text-muted font-medium">{getTranslation('immersive.rise', settings.language)}</div>
+                        <div className="absolute bottom-1 right-3 text-[10px] text-text-muted font-medium">{getTranslation('immersive.set', settings.language)}</div>
                         {data.sunAltitude > -10 && (
                             <div 
                                 className="absolute w-6 h-6 bg-yellow-400 rounded-full shadow-[0_0_20px_rgba(255,215,0,0.8)] transition-all duration-1000 flex items-center justify-center text-[8px] text-yellow-900 font-bold z-10"
@@ -147,13 +147,13 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
                     {/* Wind & Details */}
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-4">
-                            <div className="relative w-16 h-16 flex items-center justify-center bg-black/10 backdrop-blur-sm rounded-full border border-white/20 shadow-lg">
-                                <div className="absolute inset-0 border-2 border-white/30 rounded-full m-1" />
-                                <div className="absolute top-1 text-[8px] font-bold text-white shadow-black drop-shadow-sm">N</div>
-                                <div className="absolute bottom-1 text-[8px] font-bold text-white shadow-black drop-shadow-sm">S</div>
-                                <div className="absolute left-1.5 text-[8px] font-bold text-white shadow-black drop-shadow-sm">W</div>
-                                <div className="absolute right-1.5 text-[8px] font-bold text-white shadow-black drop-shadow-sm">E</div>
-                                <Icon name="north" className="text-2xl text-white drop-shadow-md" style={getWindArrow(data.windDir)} />
+                            <div className="relative w-16 h-16 flex items-center justify-center bg-bg-subtle/10 backdrop-blur-sm rounded-full border border-border-color/20 shadow-lg">
+                                <div className="absolute inset-0 border-2 border-border-color/30 rounded-full m-1" />
+                                <div className="absolute top-1 text-[8px] font-bold text-text-main shadow-bg-page drop-shadow-sm">N</div>
+                                <div className="absolute bottom-1 text-[8px] font-bold text-text-main shadow-bg-page drop-shadow-sm">S</div>
+                                <div className="absolute left-1.5 text-[8px] font-bold text-text-main shadow-bg-page drop-shadow-sm">W</div>
+                                <div className="absolute right-1.5 text-[8px] font-bold text-text-main shadow-bg-page drop-shadow-sm">E</div>
+                                <Icon name="north" className="text-2xl text-text-main drop-shadow-md" style={getWindArrow(data.windDir)} />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-2xl font-bold leading-none">{Math.round(data.windSpeed)}</span>
@@ -162,10 +162,10 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
                         </div>
 
                         {/* Pressure & Humidity */}
-                        <div className="flex flex-col gap-2 pl-4 border-l border-white/20">
+                        <div className="flex flex-col gap-2 pl-4 border-l border-border-color/20">
                             {/* Pressure */}
                             <div className="flex items-center gap-2">
-                                <Icon name="compress" className="text-white/70 text-sm" />
+                                <Icon name="compress" className="text-text-muted text-sm" />
                                 <span className="text-sm font-medium">{Math.round(data.pressure)} hPa</span>
                                 {getTrendArrow(data.pressureTrend, "text-sm", "ml-0")}
                             </div>
@@ -181,7 +181,7 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
                 {/* Middle Left: Description */}
                 <div className="mt-auto mb-auto flex flex-col items-start gap-4">
                     <div className="flex flex-col">
-                        <span className="text-3xl font-medium tracking-wide drop-shadow-lg bg-black/10 px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/10">
+                        <span className="text-3xl font-medium tracking-wide drop-shadow-lg bg-bg-subtle/10 px-4 py-2 rounded-2xl backdrop-blur-sm border border-border-color/10">
                             {getWeatherDescription(data.code)}
                         </span>
                         {!data.isDay && (
@@ -193,7 +193,7 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
 
                     {/* Precip Details - Moved Here */}
                     {data.precip > 0 && (
-                        <div className="flex items-center gap-2 bg-blue-500/30 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 shadow-lg">
+                        <div className="flex items-center gap-2 bg-blue-500/30 backdrop-blur-md px-3 py-2 rounded-xl border border-border-color/20 shadow-lg">
                             <span className="text-xl">💧</span>
                             <div className="flex flex-col items-start">
                                 <span className="font-bold">{data.precip} mm</span>
@@ -204,7 +204,7 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-between items-end mt-8 border-t border-white/20 pt-4 bg-gradient-to-t from-black/40 to-transparent -mx-6 -mb-10 px-6 pb-10">
+                <div className="flex justify-between items-end mt-8 border-t border-border-color/20 pt-4 bg-gradient-to-t from-bg-page/40 to-transparent -mx-6 -mb-10 px-6 pb-10">
                     <div className="flex flex-col min-w-[150px]">
                         <span className="text-4xl font-bold drop-shadow-md">{timeStr}</span>
                         <span className="text-sm opacity-90 uppercase tracking-widest mb-2">{dateStr}</span>
@@ -229,7 +229,7 @@ export const ImmersiveSlide = React.memo(({ data, settings, isVisible = true, is
 
                             {/* Moon */}
                             {(data.moonrise || data.moonset) && (
-                                <div className="flex flex-col gap-0.5 border-l border-white/10 pl-4">
+                                <div className="flex flex-col gap-0.5 border-l border-border-color/10 pl-4">
                                     {data.moonrise && (
                                         <span className="text-xs opacity-70 flex items-center gap-1">
                                             <Icon name="dark_mode" className="text-sm text-gray-300"/> <span className="text-[10px]">{getTranslation('immersive.rise', settings.language)}</span> {data.moonrise}

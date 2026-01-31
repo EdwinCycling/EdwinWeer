@@ -257,14 +257,33 @@ export const handler = async (event: any, context: any) => {
 
     try {
         const now = new Date();
-        // 1. Notion Data
+        const today = now.toISOString().split('T')[0];
+
+        // 1. Process Users (Check first if anyone is listening)
+        const usersSnapshot = await db.collection('users')
+            .where('settings.cycling_updates.enabled', '==', true)
+            .get();
+
+        const activeUsers = usersSnapshot.docs;
+        
+        if (activeUsers.length === 0) {
+            console.log("No users subscribed to cycling updates. Skipping race processing.");
+            return { statusCode: 200, body: "No subscribed users" };
+        }
+
+        const uniqueLanguages = new Set<string>();
+        activeUsers.forEach(doc => {
+            const lang = doc.data().settings?.language || 'nl';
+            uniqueLanguages.add(lang);
+        });
+
+        // 2. Notion Data
         const databaseId = process.env.NOTION_DATABASE_ID;
         if (!databaseId) {
             console.error("Missing NOTION_DATABASE_ID");
             throw new Error("Missing NOTION_DATABASE_ID");
         }
 
-        const today = now.toISOString().split('T')[0];
         console.log(`Querying Notion for date: ${today}`);
         
         const cleanDbId = databaseId.trim().replace(/-/g, '');
@@ -314,22 +333,12 @@ export const handler = async (event: any, context: any) => {
             return { statusCode: 200, body: "No races today" };
         }
 
-        // 3. Process Users
-        const usersSnapshot = await db.collection('users')
-            .where('settings.cycling_updates.enabled', '==', true)
-            .get();
-
-        const activeUsers = usersSnapshot.docs;
-
-        const uniqueLanguages = new Set<string>();
-        activeUsers.forEach(doc => {
-            const lang = doc.data().settings?.language || 'nl';
-            uniqueLanguages.add(lang);
-        });
-
-        // 2. Prepare Race Data (Generic)
+        // 3. Prepare Race Data (Generic)
         const raceReports = [];
         for (const race of races) {
+            // Rate limit between races to prevent Gemini overload
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
             const props = (race as any).properties;
             const fullTitle = props.Koers?.title?.[0]?.plain_text || 
                               props.Name?.title?.[0]?.plain_text || "Onbekende Koers";
@@ -426,7 +435,7 @@ export const handler = async (event: any, context: any) => {
             });
         }
 
-        // 3. Process Users (Continue with activeUsers)
+        // 4. Send Reports to Users
         let count = 0;
         for (const userDoc of activeUsers) {
             const userData = userDoc.data();

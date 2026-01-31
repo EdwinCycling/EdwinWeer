@@ -938,18 +938,18 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         {/* Header */}
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
-                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
+                <div className="flex flex-col items-center bg-bg-card/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color/20 shadow-lg">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-text-main">
                         <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
                         <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -1031,8 +1031,8 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         {currentWeather && (
             <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
-                    <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
-                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                    <div className="bg-bg-card/40 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color/20 shadow-lg">
+                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
                             {currentTemp}°
                         </h1>
                     </div>
@@ -1061,15 +1061,15 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         />
                     )}
                 </div>
-                <div className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center">
-                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                <div className="bg-bg-card/40 backdrop-blur-md px-6 py-4 rounded-3xl border border-border-color/20 shadow-lg mt-4 flex flex-col items-center">
+                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-text-main">
                             <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
                         {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}
                     </p>
-                    <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                    <p className="text-text-main/80 text-base font-normal drop-shadow-md mt-1">
                         H:{highTemp}° L:{lowTemp}°
                     </p>
-                    <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
+                    <p className="text-text-main/60 text-sm mt-2 font-normal drop-shadow-md">
                         {new Date(currentWeather.current.time).toLocaleString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
                             hour: '2-digit', 
                             minute: '2-digit',
@@ -1118,7 +1118,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                             }} 
                                             className="sr-only peer" 
                                         />
-                                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/40 rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                                        <div className="w-9 h-5 bg-bg-subtle peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/40 rounded-full peer dark:bg-bg-card peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
                                         <span className="ml-2 text-xs font-bold text-text-muted">{t('compare')}</span>
                                     </label>
                                 </div>
@@ -1144,7 +1144,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                     data-no-swipe="true"
                                 >
                                     {ENSEMBLE_MODELS.map(m => (
-                                        <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer transition-colors text-text-main">
+                                        <label key={m.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-bg-subtle cursor-pointer transition-colors text-text-main">
                                             <input 
                                                 type="checkbox"
                                                 checked={uiSelectedModels.includes(m.id)}
@@ -1175,7 +1175,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                                     setComparisonModels([]);
                                                     setUiSelectedModels([]);
                                                 }}
-                                                className="px-3 py-2 bg-bg-card border border-border-color text-text-main rounded-lg text-xs font-bold hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                                className="px-3 py-2 bg-bg-card border border-border-color text-text-main rounded-lg text-xs font-bold hover:bg-bg-subtle transition-colors"
                                             >
                                                 {t('cancel')}
                                             </button>
@@ -1201,17 +1201,17 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                     <div className="flex gap-4 w-full md:w-auto">
                         {/* Hourly/Daily Toggle */}
                         <div className="flex-1 md:flex-none">
-                             <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('forecast_type')}</label>
-                             <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+                             <label className="block text-xs font-bold uppercase text-text-muted mb-2">{t('forecast_type')}</label>
+                             <div className="flex bg-bg-subtle p-1 rounded-xl">
                                 <button
                                     onClick={() => setTimeStep('hourly')}
-                                    className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeStep === 'hourly' ? 'bg-white dark:bg-white/20 shadow-sm text-primary' : 'text-slate-500'}`}
+                                    className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeStep === 'hourly' ? 'bg-bg-card shadow-sm text-primary' : 'text-text-muted'}`}
                                 >
                                     {t('hourly')}
                                 </button>
                                 <button
                                     onClick={() => setTimeStep('daily')}
-                                    className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeStep === 'daily' ? 'bg-white dark:bg-white/20 shadow-sm text-primary' : 'text-slate-500'}`}
+                                    className={`flex-1 px-4 py-2 rounded-lg text-xs font-bold transition-all ${timeStep === 'daily' ? 'bg-bg-card shadow-sm text-primary' : 'text-text-muted'}`}
                                 >
                                     {t('daily')}
                                 </button>
@@ -1220,10 +1220,10 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
                         {/* Pro Mode Toggle */}
                         <div className="flex flex-col items-center">
-                             <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">Pro Mode</label>
+                             <label className="block text-xs font-bold uppercase text-text-muted mb-2">Pro Mode</label>
                              <button
                                 onClick={() => setProMode(!proMode)}
-                                className={`w-12 h-8 rounded-full transition-colors relative ${proMode ? 'bg-primary' : 'bg-slate-300 dark:bg-white/10'}`}
+                                className={`w-12 h-8 rounded-full transition-colors relative ${proMode ? 'bg-primary' : 'bg-bg-subtle'}`}
                              >
                                 <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full transition-transform ${proMode ? 'translate-x-4' : ''}`} />
                              </button>
@@ -1233,7 +1233,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
 
                 {/* Variable Selector */}
                 <div>
-                    <label className="block text-xs font-bold uppercase text-slate-500 dark:text-white/60 mb-2">{t('variable')}</label>
+                    <label className="block text-xs font-bold uppercase text-text-muted mb-2">{t('variable')}</label>
                     <select 
                         value={selectedVariable} 
                         onChange={(e) => setSelectedVariable(e.target.value)}

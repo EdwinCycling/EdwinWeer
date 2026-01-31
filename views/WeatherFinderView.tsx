@@ -1001,7 +1001,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                         <p className="text-2xl font-black">{matches.length}</p>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/10">
+                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border-color/10">
                                         <div>
                                             <p className="text-[10px] uppercase tracking-wider opacity-70 font-bold">Laatste 12 maanden</p>
                                             <p className="text-xl font-bold">
@@ -1058,7 +1058,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                     </p>
                                 </div>
                                 
-                                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+                                <div className="flex bg-bg-subtle p-1 rounded-xl">
                                     {(['day', 'week', 'month'] as const).map((view) => (
                                         <button
                                             key={view}
@@ -1122,7 +1122,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                                     content={({ active, payload, label }) => {
                                                         if (active && payload && payload.length) {
                                                             return (
-                                                                <div className="bg-slate-900/95 border border-white/10 p-3 rounded-lg shadow-xl backdrop-blur-sm">
+                                                                <div className="bg-bg-card/95 border border-border-color/20 p-3 rounded-lg shadow-xl backdrop-blur-sm">
                                                                     <p className="text-white font-medium mb-1">{label}</p>
                                                                     {payload[0].payload.range && (
                                                                         <p className="text-slate-400 text-xs mb-2">{payload[0].payload.range}</p>
@@ -1165,7 +1165,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                         {matches.length > 0 && (
                             <button 
                                 onClick={handleExportCSV}
-                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-bold transition-all shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2 bg-bg-card hover:bg-bg-subtle text-text-main rounded-xl border border-border-color text-sm font-bold transition-all shadow-sm"
                             >
                                 <Icon name="download" className="text-lg" />
                                 Export CSV
@@ -1180,7 +1180,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                                 const daysAgo = Math.floor((new Date().getTime() - new Date(match.date).getTime()) / (1000 * 3600 * 24));
                                 
                                 return (
-                                    <div key={match.date} className={`p-4 rounded-2xl border ${isRecent ? 'bg-bg-card border-purple-200 dark:border-purple-500/30 ring-1 ring-purple-100 dark:ring-purple-500/20' : 'bg-bg-page dark:bg-white/5 border-transparent'} transition-all`}>
+                                    <div key={match.date} className={`p-4 rounded-2xl border ${isRecent ? 'bg-bg-card border-accent-primary/30 ring-1 ring-accent-primary/20' : 'bg-bg-page border-transparent'} transition-all`}>
                                         <div className="flex justify-between items-start mb-2">
                                             <div className="font-bold text-text-main">
                                                 {new Date(match.date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1238,7 +1238,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
                             })}
                         </div>
                     ) : (
-                         <div className="p-8 text-center bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 text-slate-500">
+                         <div className="p-8 text-center bg-bg-subtle rounded-2xl border border-border-color/20 text-text-muted">
                             <p>Geen historische dagen gevonden die voldoen aan deze criteria.</p>
                         </div>
                     )}
@@ -1250,7 +1250,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4 fade-in duration-300">
-            <div className="bg-text-main/90 backdrop-blur-md text-bg-page px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10">
+            <div className="bg-bg-card/90 backdrop-blur-md text-text-main px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-border-color">
                 <Icon name="check_circle" className="text-green-400" />
                 <span className="font-bold text-sm">{toast}</span>
             </div>

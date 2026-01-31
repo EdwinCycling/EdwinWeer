@@ -233,6 +233,8 @@ export interface AppSettings {
         channel: 'email' | 'telegram';
     };
     startWithImmersive?: boolean;
+    enableAurora?: boolean; // Default true
+    auroraNotification?: boolean; // Default false
 }
 
 export interface TripPlannerSettings {

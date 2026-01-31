@@ -126,7 +126,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
        <div className="relative z-10 p-6">
        {/* Success Modal */}
        {showSuccess && (
-            <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-bg-page/60 backdrop-blur-sm">
                 <div className="bg-bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-xl text-center border border-border-color">
                     <div className="p-8">
                         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -167,7 +167,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
 
         {/* Confirmation Modal */}
         {confirmModal.show && confirmModal.priceId && (
-            <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 bg-bg-page/60 backdrop-blur-sm">
                 <div className="bg-bg-card rounded-2xl w-full max-w-md overflow-hidden shadow-xl border border-border-color">
                     <div className="p-6">
                         <h3 className="text-xl font-bold mb-4 text-text-main">
@@ -260,7 +260,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
             </div>
 
             {/* Pro Tier */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-3xl p-8 border border-white/10 shadow-xl relative overflow-hidden text-white flex flex-col">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-3xl p-8 border border-border-color shadow-xl relative overflow-hidden text-white flex flex-col">
                 <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-xs font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider text-white">
                     {t('pricing.pro_badge')}
                 </div>
@@ -292,7 +292,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </ul>
 
                 {hasProCredits && (
-                    <div className="mb-4 p-3 bg-white/10 rounded-xl text-center">
+                    <div className="mb-4 p-3 bg-bg-card/20 rounded-xl text-center">
                         <p className="text-sm text-slate-300">{t('pricing.credits_remaining_prefix')}<strong className="text-white">{usageStats?.weatherCredits}</strong>{t('pricing.credits_remaining_suffix')}</p>
                     </div>
                 )}
@@ -342,7 +342,7 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                 </ul>
 
                 {hasBaroCredits && (
-                    <div className="mb-4 p-3 bg-white/10 rounded-xl text-center">
+                    <div className="mb-4 p-3 bg-bg-card/20 rounded-xl text-center">
                         <p className="text-sm text-purple-100">{t('pricing.credits_remaining_prefix')}<strong className="text-white">{usageStats?.baroCredits}</strong>{t('pricing.credits_remaining_suffix')}</p>
                     </div>
                 )}

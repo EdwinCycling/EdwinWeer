@@ -320,36 +320,36 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                 </div>
 
                 {/* Sticky Action Bar */}
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-full p-2 flex gap-2 z-50">
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-bg-card/90 backdrop-blur-xl border border-border-color shadow-2xl rounded-full p-2 flex gap-2 z-50">
                     <button 
                         onClick={handleDownloadPDF}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-700 dark:text-white flex items-center gap-2 pr-4"
+                        className="p-3 hover:bg-bg-subtle rounded-full transition-colors text-text-main flex items-center gap-2 pr-4"
                         title={t('storyteller.action.pdf')}
                     >
                         <Icon name="download" />
                         <span className="text-sm font-bold hidden md:inline">{t('pdf')}</span>
                     </button>
-                    <div className="w-px bg-slate-200 dark:bg-white/10 my-2" />
+                    <div className="w-px bg-border-color my-2" />
                     <button 
                         onClick={handleShare}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-700 dark:text-white flex items-center gap-2 pr-4"
+                        className="p-3 hover:bg-bg-subtle rounded-full transition-colors text-text-main flex items-center gap-2 pr-4"
                         title={t('storyteller.action.share')}
                     >
                         <Icon name="share" />
                         <span className="text-sm font-bold hidden md:inline">{t('share')}</span>
                     </button>
-                    <div className="w-px bg-slate-200 dark:bg-white/10 my-2" />
+                    <div className="w-px bg-border-color my-2" />
                     <button 
                         onClick={handleCopy}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-700 dark:text-white"
+                        className="p-3 hover:bg-bg-subtle rounded-full transition-colors text-text-main"
                         title={t('storyteller.action.copy')}
                     >
                         <Icon name="content_copy" />
                     </button>
-                    <div className="w-px bg-slate-200 dark:bg-white/10 my-2" />
+                    <div className="w-px bg-border-color my-2" />
                     <button 
                         onClick={() => setStep('form')}
-                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-700 dark:text-white"
+                        className="p-3 hover:bg-bg-subtle rounded-full transition-colors text-text-main"
                         title={t('close')}
                     >
                         <Icon name="close" />

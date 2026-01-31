@@ -151,11 +151,11 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
     const fixedTicks = [0, 50, 100, 200, 300, 400, 500, 600];
 
     return (
-        <div className={`mb-8 p-4 rounded-2xl border shadow-sm backdrop-blur-md transition-all ${advice.borderColor} ${advice.bgColor}`}>
+        <div className={`mb-8 p-4 rounded-xl border border-border-color shadow-sm transition-all bg-bg-card`}>
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-full ${advice.bgColor} border border-white/10`}>
+                    <div className={`p-2 rounded-full ${advice.bgColor} border border-border-color`}>
                          <Icon name={advice.icon} className={`${advice.color} text-xl`} />
                     </div>
                     <div>
@@ -170,7 +170,7 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
             </div>
 
             {/* Advice Text */}
-            <div className="mb-4 bg-bg-page/40 p-3 rounded-xl border border-white/5">
+            <div className={`mb-4 ${advice.bgColor} p-3 rounded-xl border ${advice.borderColor}`}>
                 <p className="text-sm font-medium text-text-main">{advice.text}</p>
                 {showStats && isToday && (
                     <div className="mt-2 flex gap-4 text-xs text-text-muted">

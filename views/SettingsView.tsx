@@ -610,6 +610,28 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     )}
                                 </div>
 
+                                {/* Aurora Settings */}
+                                <div className="p-4 border-t border-border-color">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Icon name="sparkles" className="text-text-main/80" />
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-text-main">{t('settings.enable_aurora')}</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => updateSetting('enableAurora', settings.enableAurora !== false ? false : true)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${settings.enableAurora !== false ? 'bg-accent-primary' : 'bg-bg-page'}`}
+                                        >
+                                            <span
+                                                className={`${
+                                                    settings.enableAurora !== false ? 'translate-x-6 bg-white' : 'translate-x-1 bg-text-muted'
+                                                } inline-block h-4 w-4 transform rounded-full transition-transform`}
+                                            />
+                                        </button>
+                                    </div>
+                                </div>
+
                              </div>
                         </section>
 

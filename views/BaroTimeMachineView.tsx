@@ -198,28 +198,28 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
             <div className="flex items-center gap-4 mb-2">
                 <button 
                     onClick={() => onNavigate(ViewState.CURRENT)}
-                    className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors"
+                    className="p-2 hover:bg-bg-subtle rounded-full transition-colors"
                 >
                     <Icon name="arrow_back" className="w-6 h-6" />
                 </button>
                 <div>
                     <h1 className="text-2xl font-bold">{t('baro_time_machine.title')}</h1>
-                    <p className="text-slate-500 dark:text-white/60">{t('baro_time_machine.subtitle')}</p>
+                    <p className="text-text-muted">{t('baro_time_machine.subtitle')}</p>
                 </div>
             </div>
 
             {/* Info Box */}
-            <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-3xl p-6">
+            <div className="bg-bg-card border border-border-color rounded-3xl p-6">
                 <div className="flex gap-4">
-                    <div className="size-12 rounded-2xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                    <div className="size-12 rounded-2xl bg-bg-subtle flex items-center justify-center text-accent-primary flex-shrink-0">
                         <Icon name="history_edu" className="text-2xl" />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <h2 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">{t('baro_time_machine.info_title')}</h2>
-                        <p className="text-sm text-indigo-800/80 dark:text-indigo-300/60 leading-relaxed">
+                        <h2 className="text-lg font-bold text-text-main">{t('baro_time_machine.info_title')}</h2>
+                        <p className="text-sm text-text-muted leading-relaxed">
                             {t('baro_time_machine.info_text')}
                         </p>
-                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 rounded-full text-xs font-bold text-indigo-700 dark:text-indigo-400 w-fit">
+                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-bg-subtle rounded-full text-xs font-bold text-accent-primary w-fit">
                             <Icon name="stars" className="w-4 h-4" />
                             {t('baro_time_machine.cost')}
                         </div>
@@ -228,20 +228,20 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
             </div>
 
             {/* Credit Balance */}
-            <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-3xl p-6 flex justify-between items-center">
+            <div className="bg-bg-card border border-border-color rounded-3xl p-6 flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                    <div className="size-10 rounded-full bg-bg-subtle flex items-center justify-center text-accent-primary">
                         <Icon name="toll" />
                     </div>
                     <div>
-                        <span className="block text-xs text-slate-500 dark:text-white/40 font-bold uppercase tracking-wider">{t('baro_time_machine.credits_balance')}</span>
+                        <span className="block text-xs text-text-muted font-bold uppercase tracking-wider">{t('baro_time_machine.credits_balance')}</span>
                         <span className="text-xl font-black">{baroCredits} Credits</span>
                     </div>
                 </div>
                 {baroCredits === 0 && (
                     <button 
                         onClick={() => onNavigate(ViewState.PRICING)}
-                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-amber-500/20"
+                        className="px-4 py-2 bg-accent-primary hover:bg-accent-primary/90 text-white rounded-xl text-sm font-bold transition-colors shadow-lg shadow-accent-primary/20"
                     >
                         {t('baro_time_machine.get_credits')}
                     </button>
@@ -249,13 +249,13 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
             </div>
 
             {/* Main Form */}
-            <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-8 shadow-xl shadow-slate-200/50 dark:shadow-none">
+            <div className="bg-bg-card border border-border-color rounded-3xl p-6 md:p-8 space-y-8 shadow-sm">
                 {/* City Selection */}
                 <div className="space-y-3">
-                    <label className="text-sm font-bold text-slate-500 dark:text-white/40 uppercase tracking-wider px-1">{t('baro_time_machine.select_city')}</label>
+                    <label className="text-sm font-bold text-text-muted uppercase tracking-wider px-1">{t('baro_time_machine.select_city')}</label>
                     <div className="relative">
                         <div className="relative group">
-                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-text-muted group-focus-within:text-accent-primary transition-colors">
                                 <Icon name="location_on" />
                             </div>
                             <input
@@ -266,28 +266,28 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                                     handleCitySearch(e.target.value);
                                 }}
                                 placeholder={t('city_search.placeholder')}
-                                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium"
+                                className="w-full bg-bg-page border border-border-color rounded-2xl pl-12 pr-4 py-4 focus:ring-2 focus:ring-accent-primary outline-none transition-all font-medium"
                             />
                             {loadingCity && (
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                    <div className="size-5 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                                    <div className="size-5 border-2 border-border-color/20 border-t-accent-primary rounded-full animate-spin" />
                                 </div>
                             )}
                         </div>
 
                         {showDropdown && searchResults.length > 0 && (
-                            <div className="absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute z-50 left-0 right-0 mt-2 bg-bg-card border border-border-color rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                 {searchResults.map((loc) => (
                                     <button
                                         key={`${loc.lat}-${loc.lon}`}
                                         onClick={() => handleSelectLocation(loc)}
-                                        className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between transition-colors border-b border-slate-100 dark:border-white/5 last:border-0"
+                                        className="w-full px-6 py-4 text-left hover:bg-bg-subtle flex items-center justify-between transition-colors border-b border-border-color/50 last:border-0"
                                     >
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-slate-900 dark:text-white">{loc.name}</span>
-                                            <span className="text-xs text-slate-500 dark:text-white/40">{loc.admin1}{loc.country ? `, ${loc.country}` : ''}</span>
+                                            <span className="font-bold text-text-main">{loc.name}</span>
+                                            <span className="text-xs text-text-muted">{loc.admin1}{loc.country ? `, ${loc.country}` : ''}</span>
                                         </div>
-                                        <Icon name="chevron_right" className="text-slate-300" />
+                                        <Icon name="chevron_right" className="text-text-muted" />
                                     </button>
                                 ))}
                             </div>
@@ -358,15 +358,15 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                     <button
                         onClick={handleGenerate}
                         disabled={!selectedLocation || isGenerating || isLimitReached}
-                        className={`w-full py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all shadow-xl ${
+                        className={`w-full py-5 rounded-2xl ${
                             !selectedLocation || isGenerating || isLimitReached
-                            ? 'bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed shadow-none' 
-                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98]'
-                        }`}
+                            ? 'bg-bg-subtle text-text-muted cursor-not-allowed shadow-none' 
+                            : 'bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]'
+                        } flex items-center justify-center gap-3 font-bold transition-all duration-300 relative overflow-hidden group border border-border-color/10`}
                     >
                         {isGenerating ? (
                             <>
-                                <div className="size-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                                <div className="size-6 border-3 border-border-color/30 border-t-accent-primary rounded-full animate-spin" />
                                 {t('baro_time_machine.generating')}
                             </>
                         ) : (
@@ -377,13 +377,13 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                         )}
                     </button>
                 ) : (
-                    <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl p-6 flex flex-col items-center text-center gap-3">
-                        <div className="size-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 flex flex-col items-center text-center gap-3">
+                        <div className="size-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-500">
                             <Icon name="error_outline" className="text-2xl" />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="font-bold text-red-900 dark:text-red-300">{t('baro_time_machine.no_credits_title')}</h3>
-                            <p className="text-sm text-red-800/60 dark:text-red-300/60">{t('baro_time_machine.no_credits_text')}</p>
+                            <h3 className="font-bold text-red-500">{t('baro_time_machine.no_credits_title')}</h3>
+                            <p className="text-sm text-red-500/80">{t('baro_time_machine.no_credits_text')}</p>
                         </div>
                         <button 
                             onClick={() => onNavigate(ViewState.PRICING)}
@@ -397,21 +397,21 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
 
             {/* Generation Modal */}
             {isGenerating && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-slate-100 dark:border-white/10 relative overflow-hidden">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-page/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-bg-card p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-border-color relative overflow-hidden">
                          {/* Background Pattern */}
                          <div className="absolute top-0 right-0 p-10 opacity-5">
                              <Icon name="history_edu" className="text-9xl" />
                          </div>
 
                         <div className="relative z-10 text-center space-y-6">
-                            <div className="size-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <div className="size-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="size-16 bg-bg-subtle rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="size-8 border-3 border-accent-primary border-t-transparent rounded-full animate-spin" />
                             </div>
                             
                             <div>
                                 <h3 className="text-xl font-bold mb-2">{t('baro_time_machine.generating')}</h3>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                                <p className="text-text-muted text-sm">
                                     {generationStep === 1 && "Weerdata ophalen..."}
                                     {generationStep === 2 && "Historie analyseren..."}
                                     {generationStep === 3 && "Krant drukken (AI)..."}
@@ -419,9 +419,9 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                             </div>
 
                             {/* Progress Bar */}
-                            <div className="h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-2 bg-bg-page border border-border-color/20 rounded-full overflow-hidden">
                                 <div 
-                                    className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                                    className="h-full bg-accent-primary transition-all duration-500 ease-out"
                                     style={{ width: `${(generationStep / 3) * 100}%` }}
                                 />
                             </div>

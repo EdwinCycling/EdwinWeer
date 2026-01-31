@@ -437,13 +437,13 @@ const App: React.FC = () => {
                     </div>
                     <button
                         onClick={() => navigate(ViewState.PRICING)}
-                        className="text-xs bg-white/20 hover:bg-white/30 rounded px-2 py-1 font-bold transition-colors"
+                        className="text-xs bg-bg-card/40 hover:bg-bg-card/60 rounded px-2 py-1 font-bold transition-colors border border-border-color/20"
                     >
                         {t('nav.pricing')}
                     </button>
                     <button
                         onClick={() => verifyLimit()}
-                        className="text-xs bg-white/20 hover:bg-white/30 rounded px-2 py-1 font-bold transition-colors ml-2"
+                        className="text-xs bg-bg-card/40 hover:bg-bg-card/60 rounded px-2 py-1 font-bold transition-colors ml-2 border border-border-color/20"
                     >
                         <Icon name="refresh" className="text-sm" />
                     </button>
@@ -485,9 +485,9 @@ const App: React.FC = () => {
 
         {showPWABanner && deferredPrompt && (
             <div className={`fixed inset-x-0 flex justify-center z-[2900] px-4 pointer-events-none transition-all duration-300 ${usageWarning ? 'top-32' : 'top-4'}`}>
-                <div className="max-w-xl w-full bg-blue-600 text-white rounded-2xl shadow-xl px-4 py-3 flex items-center justify-between gap-3 pointer-events-auto">
+                <div className="max-w-xl w-full bg-accent-primary text-text-inverse rounded-2xl shadow-xl px-4 py-3 flex items-center justify-between gap-3 pointer-events-auto">
                     <div className="flex items-center gap-3">
-                        <div className="bg-white/20 p-2 rounded-lg">
+                        <div className="bg-bg-card/20 p-2 rounded-lg">
                             <Icon name="download" className="text-xl" />
                         </div>
                         <div>
@@ -498,13 +498,13 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <button 
                             onClick={() => setShowPWABanner(false)}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                            className="p-2 hover:bg-bg-card/10 rounded-lg transition-colors"
                         >
                             <Icon name="close" />
                         </button>
                         <button 
                             onClick={installPWA}
-                            className="px-3 py-1.5 bg-white text-blue-600 rounded-lg text-xs font-bold hover:bg-white/90 transition-colors"
+                            className="px-3 py-1.5 bg-bg-card text-accent-primary rounded-lg text-xs font-bold hover:bg-bg-card/90 transition-colors"
                         >
                             {t('install')}
                         </button>
@@ -579,7 +579,7 @@ const App: React.FC = () => {
 
         {/* Baro Weerman Menu Overlay */}
         {baroMenuOpen && (
-            <div className="fixed inset-0 z-[1500] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
+            <div className="fixed inset-0 z-[1500] bg-bg-page/60 backdrop-blur-sm animate-in fade-in" onClick={() => setBaroMenuOpen(false)}>
                 <div 
                     className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -704,7 +704,7 @@ const App: React.FC = () => {
 
         {/* Extra Menu Overlay */}
         {extraMenuOpen && (
-            <div className="fixed inset-0 z-[1500] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
+            <div className="fixed inset-0 z-[1500] bg-bg-page/60 backdrop-blur-sm animate-in fade-in" onClick={() => setExtraMenuOpen(false)}>
                 <div 
                     className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -854,7 +854,7 @@ const App: React.FC = () => {
 
         {/* Hamburger Menu Overlay */}
         {menuOpen && (
-            <div className="fixed inset-0 z-[1500] bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
+            <div className="fixed inset-0 z-[1500] bg-bg-page/60 backdrop-blur-sm animate-in fade-in" onClick={() => setMenuOpen(false)}>
                 <div 
                     className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-5xl bg-bg-card rounded-t-[32px] p-4 md:p-6 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 border-t border-border-color shadow-2xl no-scrollbar" 
                     style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -924,7 +924,7 @@ const App: React.FC = () => {
 
         {/* Modals */}
         {modal && (
-            <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={closeModal}>
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-page/60 backdrop-blur-sm animate-in fade-in" onClick={closeModal}>
                 <div className="bg-bg-card border border-border-color rounded-3xl p-6 max-w-md w-full shadow-2xl relative text-text-main" onClick={e => e.stopPropagation()}>
                     <button onClick={closeModal} className="absolute top-4 right-4 text-text-muted hover:text-text-main">
                         <Icon name="close" />

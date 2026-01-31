@@ -159,7 +159,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
 
     // Safety check
     if (!enrichedHours.length) {
-        return <div className="text-white p-10">Data niet beschikbaar voor deze periode.</div>;
+        return <div className="text-text-main p-10">Data niet beschikbaar voor deze periode.</div>;
     }
 
     const [scrollInit, setScrollInit] = React.useState(false);
@@ -208,7 +208,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
     };
 
     return (
-        <div className="flex-1 w-full bg-black flex flex-col items-center overflow-hidden relative">
+        <div className="flex-1 w-full bg-bg-page flex flex-col items-center overflow-hidden relative">
             {/* PC Navigation Buttons */}
             {isPC && (
                 <div className="absolute inset-0 pointer-events-none z-50">
@@ -216,19 +216,19 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                         {currentIndex > 0 && (
                             <button 
                                 onClick={() => navigate('prev')}
-                                className="absolute left-4 top-[65%] -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
+                                className="absolute left-4 top-[65%] -translate-y-1/2 pointer-events-auto p-4 bg-bg-card/20 hover:bg-bg-card/40 backdrop-blur-md rounded-full border border-border-color/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
                             >
-                                <Icon name="arrow_back_ios" className="text-white text-2xl group-hover:-translate-x-1 transition-transform" />
-                                <span className="text-[10px] text-white/70 font-bold uppercase">{formatTime(enrichedHours[currentIndex - 1].time)}</span>
+                                <Icon name="arrow_back_ios" className="text-text-main text-2xl group-hover:-translate-x-1 transition-transform" />
+                                <span className="text-[10px] text-text-muted font-bold uppercase">{formatTime(enrichedHours[currentIndex - 1].time)}</span>
                             </button>
                         )}
                         {currentIndex < enrichedHours.length - 1 && (
                             <button 
                                 onClick={() => navigate('next')}
-                                className="absolute right-4 top-[65%] -translate-y-1/2 pointer-events-auto p-4 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
+                                className="absolute right-4 top-[65%] -translate-y-1/2 pointer-events-auto p-4 bg-bg-card/20 hover:bg-bg-card/40 backdrop-blur-md rounded-full border border-border-color/20 transition-all flex flex-col items-center gap-1 group shadow-xl"
                             >
-                                <Icon name="arrow_forward_ios" className="text-white text-2xl group-hover:translate-x-1 transition-transform pl-1" />
-                                <span className="text-[10px] text-white/70 font-bold uppercase">{formatTime(enrichedHours[currentIndex + 1].time)}</span>
+                                <Icon name="arrow_forward_ios" className="text-text-main text-2xl group-hover:translate-x-1 transition-transform pl-1" />
+                                <span className="text-[10px] text-text-muted font-bold uppercase">{formatTime(enrichedHours[currentIndex + 1].time)}</span>
                             </button>
                         )}
                     </div>
@@ -236,7 +236,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
             )}
 
             {/* Centered Content Window */}
-            <div className="w-full max-w-5xl h-full relative overflow-hidden flex flex-col items-center bg-gray-900 shadow-2xl">
+            <div className="w-full max-w-5xl h-full relative overflow-hidden flex flex-col items-center bg-bg-card shadow-2xl">
                 <div 
                     ref={containerRef}
                     onScroll={handleScroll}
@@ -266,7 +266,7 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                     {enrichedHours.map((_, idx) => (
                         <div 
                             key={idx} 
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-white w-4' : 'bg-white/30'}`}
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'bg-text-main w-4' : 'bg-text-muted/30'}`}
                         />
                     ))}
                 </div>

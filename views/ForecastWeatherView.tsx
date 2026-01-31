@@ -175,6 +175,9 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
     if (isMobile && viewMode === 'table2') {
         setViewMode('table');
     }
+    if (isMobile && viewMode === 'expanded2') {
+        setViewMode('expanded');
+    }
   }, [isMobile, viewMode]);
 
   const expandedMode = viewMode === 'expanded';
@@ -343,6 +346,19 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
   const tempScaleMin = dailyForecast.length > 0 ? Math.min(...dailyForecast.map(d => d.min)) : 0;
   const tempScaleMax = dailyForecast.length > 0 ? Math.max(...dailyForecast.map(d => d.max)) : 1;
   const tempScaleRange = Math.max(1, tempScaleMax - tempScaleMin);
+
+  const getTempColor = (temp: number, min: number, max: number) => {
+      // Create gradient from blue (cold) to red (hot)
+      const ratio = Math.max(0, Math.min(1, (temp - min) / (max - min || 1)));
+      
+      // RGB for blue-500: 59, 130, 246
+      // RGB for red-500: 239, 68, 68
+      const r = Math.round(59 + (239 - 59) * ratio);
+      const g = Math.round(130 + (68 - 130) * ratio);
+      const b = Math.round(246 + (68 - 246) * ratio);
+      
+      return `rgb(${r}, ${g}, ${b})`;
+  };
 
   const graphData = useMemo(() => {
       return dailyForecast.map((d, i) => ({
@@ -551,18 +567,18 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
         {/* Header */}
         <div className="flex flex-col pt-8 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="flex flex-col items-center bg-black/20 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-lg">
-                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-white">
+                <div className="flex flex-col items-center bg-bg-card/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color shadow-lg">
+                    <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-text-main">
                         <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
                         <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -641,8 +657,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
         {weatherData && (
             <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-white">
                 <div className="flex items-center gap-4">
-                    <div className="bg-black/20 backdrop-blur-md px-6 py-2 rounded-3xl border border-white/10 shadow-lg">
-                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-white">
+                    <div className="bg-bg-card/80 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10">
+                        <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
                             {currentTemp}°
                         </h1>
                     </div>
@@ -678,16 +694,16 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                 </div>
                 <div 
                     onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
-                    className="bg-black/20 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-lg mt-4 flex flex-col items-center cursor-pointer hover:bg-black/30 transition-colors hover:scale-105 transform duration-300"
+                    className="bg-bg-card/80 backdrop-blur-md px-6 py-4 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10 mt-4 flex flex-col items-center cursor-pointer hover:bg-bg-card transition-colors hover:scale-105 transform duration-300"
                 >
-                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-white">
+                    <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-text-main">
                             <Icon name={mapWmoCodeToIcon(weatherData.current.weather_code, weatherData.current.is_day === 0)} className="text-2xl" />
                         {mapWmoCodeToText(weatherData.current.weather_code, settings.language)}
                     </p>
-                    <p className="text-white/80 text-base font-normal drop-shadow-md mt-1">
+                    <p className="text-text-muted text-base font-normal drop-shadow-md mt-1">
                         H:{highTemp}° L:{lowTemp}° <span className="text-xs opacity-70 ml-1">(48u)</span>
                     </p>
-                    <p className="text-white/60 text-sm mt-2 font-normal drop-shadow-md">
+                    <p className="text-text-muted/60 text-sm mt-2 font-normal drop-shadow-md">
                         {formatDateTime()}
                     </p>
                 </div>
@@ -766,8 +782,16 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 onClick={() => setViewMode('expanded')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'expanded' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Uitgebreid
+                                Uitgebreid 1
                             </button>
+                            {!isMobile && (
+                                <button  
+                                    onClick={() => setViewMode('expanded2')}
+                                    className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'expanded2' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                                >
+                                    Uitgebreid 2
+                                </button>
+                            )}
                             <button 
                                 onClick={() => setViewMode('compact')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'compact' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
@@ -906,6 +930,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             const maxTemp = Math.max(...weekData.map(d => d.max));
                             const minTemp = Math.min(...weekData.map(d => d.min));
                             const tempRange = maxTemp - minTemp;
+
+                            // Global max/min for color scale
+                            const globalMaxTemp = Math.max(...graphData.map(d => d.max));
+                            const globalMinTemp = Math.min(...graphData.map(d => d.min));
                             
                             return (
                                 <div key={offset} className="mb-8">
@@ -946,20 +974,22 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                     {/* Row 5: Temperature Graph */}
                                                     <div className="h-24 relative border-b border-border-color/50 bg-bg-page/5">
                                                         <div className="absolute inset-0 flex flex-col justify-between py-2 items-center z-10">
-                                                            <span className="text-xs font-bold text-red-500">{Math.round(d.max)}°</span>
-                                                            <span className="text-xs font-bold text-blue-500">{Math.round(d.min)}°</span>
+                                                            <span className="text-xs font-bold text-white drop-shadow-md">{Math.round(d.max)}°</span>
+                                                            <span className="text-xs font-bold text-white drop-shadow-md">{Math.round(d.min)}°</span>
                                                         </div>
                                                         {/* Visual Representation */}
-                                                        <div className="absolute inset-x-0 top-8 bottom-8 mx-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="absolute inset-x-0 top-8 bottom-8 mx-2 rounded-full overflow-hidden shadow-inner bg-bg-subtle"
+                                                        >
                                                             <div 
-                                                                className="absolute w-full bg-red-400/20"
+                                                                className="absolute w-full bg-bg-page/10"
                                                                 style={{ 
                                                                     bottom: '50%',
                                                                     height: `${((d.max - minTemp) / (tempRange || 1)) * 50}%`
                                                                 }}
                                                             />
                                                             <div 
-                                                                className="absolute w-full bg-blue-400/20"
+                                                                className="absolute w-full bg-bg-page/10"
                                                                 style={{ 
                                                                     top: '50%',
                                                                     height: `${((maxTemp - d.min) / (tempRange || 1)) * 50}%`
@@ -967,7 +997,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                             />
                                                             {/* Actual bar */}
                                                             <div 
-                                                                className="absolute w-full bg-gradient-to-b from-red-400 to-blue-400 opacity-50"
+                                                                className="absolute w-full bg-text-main/20 backdrop-blur-sm"
                                                                 style={{ 
                                                                     bottom: `${((d.min - minTemp) / (tempRange || 1)) * 100}%`,
                                                                     height: `${((d.max - d.min) / (tempRange || 1)) * 100}%`
@@ -997,7 +1027,10 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                     </div>
 
                                                     {/* Row 7: Wind */}
-                                                    <div className="h-12 flex items-center justify-center bg-bg-page/30 cursor-pointer hover:bg-bg-page/50 transition-colors">
+                                                    <div 
+                                                        className="h-12 flex items-center justify-center bg-bg-page/30 cursor-pointer hover:bg-bg-page/50 transition-colors"
+                                                        onClick={() => setSelectedDayIndex(i + offset)}
+                                                    >
                                                         <div className="flex items-center gap-1">
                                                             <div 
                                                                 className="w-5 h-5 rounded-full border border-text-muted flex items-center justify-center"
@@ -1024,6 +1057,93 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
                             </button>
                         </div>
+                    </div>
+                ) : viewMode === 'expanded2' ? (
+                    <div className="flex flex-col w-full mt-4 gap-2">
+                        <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-xs font-bold text-text-muted uppercase tracking-wider">
+                            <div className="col-span-3">Datum / Weer</div>
+                            <div className="col-span-1 text-center">Score</div>
+                            <div className="col-span-3 text-center">Temperatuur</div>
+                            <div className="col-span-2 text-center">Neerslag</div>
+                            <div className="col-span-2 text-center">Wind</div>
+                            <div className="col-span-1 text-center">Zon</div>
+                        </div>
+
+                        {dailyForecast.map((d, i) => (
+                            <div key={i} onClick={() => setSelectedDayIndex(i)} className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-2 p-4 sm:px-4 sm:py-3 bg-bg-card/50 hover:bg-bg-card rounded-xl border border-border-color transition-colors cursor-pointer group items-center relative overflow-hidden">
+                                
+                                <div className="col-span-3 flex items-center gap-3">
+                                    <div className="flex flex-col items-center min-w-[40px]">
+                                         <span className="font-bold text-sm text-text-main uppercase">{d.day.split(' ')[0]}</span>
+                                         <span className="text-[10px] text-text-muted">{d.day.split(' ').slice(1).join(' ')}</span>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-full bg-bg-page flex items-center justify-center text-xl shadow-sm">
+                                        <Icon name={d.icon} className={getIconColorClass(d.icon)} />
+                                    </div>
+                                    {d.holiday && (
+                                        <div className="flex flex-col">
+                                            <Icon name="celebration" className="text-accent-primary text-xs" />
+                                            <span className="text-[9px] text-accent-primary truncate max-w-[80px]">{d.holiday.localName}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="col-span-1 flex items-center justify-center">
+                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm ${d.comfort.colorClass}`}>
+                                        {d.comfort.score}
+                                     </div>
+                                </div>
+
+                                <div className="col-span-3 flex items-center gap-2 justify-center">
+                                    <span className="text-xs font-bold text-blue-500 w-8 text-right">{Math.round(d.min)}°</span>
+                                    <div className="flex-1 h-1.5 bg-bg-page rounded-full overflow-hidden relative max-w-[120px]">
+                                        <div 
+                                            className={`absolute h-full rounded-full bg-gradient-to-r ${d.color}`} 
+                                            style={{ 
+                                                left: `${((d.min - tempScaleMin) / tempScaleRange) * 100}%`, 
+                                                width: `${Math.max(5, ((d.max - d.min) / tempScaleRange) * 100)}%` 
+                                            }}
+                                        />
+                                    </div>
+                                    <span className="text-xs font-bold text-red-500 w-8 text-left">{Math.round(d.max)}°</span>
+                                </div>
+
+                                <div className="col-span-2 flex flex-col items-center justify-center">
+                                    <div className="flex items-center gap-1">
+                                        <span className={`font-bold text-sm ${d.precipAmount > 0 ? 'text-blue-500' : 'text-text-muted'}`}>{d.precipAmount}</span>
+                                        <span className="text-[10px] text-text-muted">{settings.precipUnit}</span>
+                                    </div>
+                                    {d.precip > 0 && (d.precipProb > 0) && (
+                                        <span className="text-[10px] text-blue-400 font-medium">{Math.round(d.precipProb)}% kans</span>
+                                    )}
+                                </div>
+
+                                <div className="col-span-2 flex flex-col items-center justify-center">
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-bold text-sm">{d.windMax}</span>
+                                        <span className="text-[10px] text-text-muted">{settings.windUnit}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <div 
+                                            className="w-4 h-4 flex items-center justify-center"
+                                            style={{ transform: `rotate(${d.windDirRaw}deg)` }}
+                                        >
+                                            <Icon name="arrow_upward" className="text-[10px] text-text-muted" />
+                                        </div>
+                                        <span className="text-[10px] text-text-muted uppercase">{d.windDir}</span>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-1 flex flex-col items-center justify-center text-orange-500">
+                                    <div className="flex items-center gap-1">
+                                        <Icon name="wb_sunny" className="text-xs" />
+                                        <span className="font-bold text-sm">{d.sunshineHours}</span>
+                                    </div>
+                                    <span className="text-[9px] text-text-muted">uur</span>
+                                </div>
+
+                            </div>
+                        ))}
                     </div>
                 ) : (viewMode === 'graph' || viewMode === 'graph2') ? (
                     <div className="flex flex-col w-full mt-4">
@@ -1332,7 +1452,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
       {/* Details Modal */}
       {selectedDayIndex !== null && weatherData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedDayIndex(null)} />
+            <div className="absolute inset-0 bg-bg-page/60 backdrop-blur-sm" onClick={() => setSelectedDayIndex(null)} />
             <div className="relative z-[110] w-[95vw] max-w-3xl max-h-[90vh] flex flex-col bg-bg-card rounded-2xl border border-border-color shadow-2xl overflow-hidden">
                 
                 {/* Comfort Score Banner - Fixed at top */}
@@ -1344,7 +1464,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setShowComfortModal(true)}
-                                className="flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-inner hover:bg-white/30 transition-colors cursor-pointer"
+                                className="flex items-center justify-center w-16 h-16 rounded-2xl bg-bg-card/20 backdrop-blur-sm border border-border-color/30 shadow-inner hover:bg-bg-card/30 transition-colors cursor-pointer"
                             >
                                 <span className="text-4xl font-bold text-white">{Math.round(dailyForecast[selectedDayIndex].comfort.score)}</span>
                             </button>
@@ -1357,7 +1477,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         </div>
                         <button 
                             onClick={() => setSelectedDayIndex(null)}
-                            className="p-2 rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors backdrop-blur-md"
+                            className="p-2 rounded-full bg-bg-card/20 hover:bg-bg-card/40 text-white transition-colors backdrop-blur-md"
                         >
                             <Icon name="close" className="text-xl" />
                         </button>
