@@ -1,8 +1,7 @@
 
 import { Handler } from '@netlify/functions';
 import admin from 'firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_MODEL } from './config/ai.js';
+import { callAI, extractJSON } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -218,11 +217,7 @@ export const handler: Handler = async (event) => {
              throw new Error('Incomplete weather data for this date');
         }
 
-        // 5. Generate Story with Gemini
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-        
-        const genAI = new GoogleGenerativeAI(apiKey);
+        // 5. Generate Story with AI
         
         const weatherContext = `
         Ochtend: ${morning.temp}°C, ${language === 'nl' ? morning.text_nl : morning.text_en}.
@@ -256,28 +251,18 @@ export const handler: Handler = async (event) => {
         `;
 
         let storyData;
-        let lastError;
 
         try {
-            console.log(`Attempting generation with ${GEMINI_MODEL}...`);
-            const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-            const result = await model.generateContent(prompt);
-            const responseText = result.response.text();
-            
-            // Clean markdown code blocks if present
-            const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-            storyData = JSON.parse(cleanJson);
+            console.log(`Attempting generation with AI...`);
+            const responseText = await callAI(prompt, { jsonMode: true, temperature: 0.7 });
+            storyData = extractJSON(responseText);
             
             if (storyData && storyData.title && storyData.story) {
-                console.log(`Success with ${GEMINI_MODEL}`);
+                console.log(`Success with AI`);
             }
         } catch (err: any) {
-            lastError = err;
-            console.warn(`Error with ${GEMINI_MODEL}:`, err.message);
-        }
-
-        if (!storyData) {
-            throw new Error(lastError?.message || 'Failed to generate story with configured model');
+            console.warn(`Error with AI:`, err.message);
+            throw err;
         }
 
         // 6. Deduct Credit ONLY after successful generation

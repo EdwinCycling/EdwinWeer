@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { ViewState, AppSettings, Location } from '../types';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../hooks/useAuth';
+import { auth } from '../services/firebase';
 import { getUsage, loadRemoteUsage } from '../services/usageService';
 import { getTranslation } from '../services/translations';
 import { searchCityByName } from '../services/geoService';
@@ -96,7 +97,7 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
         setError(null);
 
         try {
-            const token = await user?.getIdToken();
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
             const response = await fetch('/.netlify/functions/generate-song', {
                 method: 'POST',
                 headers: {

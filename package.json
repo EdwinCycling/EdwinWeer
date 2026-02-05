@@ -1,7 +1,7 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.9260121.1",
+  "version": "0.9260205.1",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
@@ -12,6 +12,7 @@
     "preview": "vite preview --port 4173 --strictPort"
   },
   "dependencies": {
+    "@cerebras/cerebras_cloud_sdk": "^1.64.1",
     "@geoman-io/leaflet-geoman-free": "^2.19.0",
     "@getbrevo/brevo": "^3.0.1",
     "@google/generative-ai": "^0.24.1",

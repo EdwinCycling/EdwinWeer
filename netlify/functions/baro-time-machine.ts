@@ -1,34 +1,46 @@
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callAI, extractJSON } from './config/ai.js';
 import admin from 'firebase-admin';
-import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
-if (!admin.apps.length) {
-    try {
-        let serviceAccount;
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
-            serviceAccount = {
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Handle newlines in private key
-                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            };
-        }
+let initError: string | null = null;
 
-        if (serviceAccount) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
+const initFirebase = () => {
+    if (!admin.apps.length) {
+        try {
+            let serviceAccount;
+            if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+                try {
+                    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+                } catch (parseError: any) {
+                    console.error("JSON Parse Error for FIREBASE_SERVICE_ACCOUNT:", parseError);
+                    initError = `JSON Parse Error: ${parseError.message}`;
+                    return;
+                }
+            } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
+                serviceAccount = {
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    // Handle newlines in private key
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                };
+            } else {
+                initError = "No Firebase credentials found in environment variables (FIREBASE_SERVICE_ACCOUNT or FIREBASE_PRIVATE_KEY/CLIENT_EMAIL/PROJECT_ID)";
+                return;
+            }
+
+            if (serviceAccount) {
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount)
+                });
+                console.log("Firebase Admin initialized successfully");
+            }
+        } catch (e: any) {
+            console.error("Error initializing Firebase Admin:", e);
+            initError = `Init Error: ${e.message}`;
         }
-    } catch (e) {
-        console.error("Error initializing Firebase Admin:", e);
     }
-}
-
-const db = admin.firestore();
+};
 
 export const handler = async (event: any, context: any) => {
     const headers = {
@@ -37,6 +49,32 @@ export const handler = async (event: any, context: any) => {
         'Access-Control-Allow-Methods': 'POST, OPTIONS'
     };
 
+    // Initialize Firebase on first request
+    initFirebase();
+    
+    if (!admin.apps.length) {
+        console.error("Firebase not initialized. Check environment variables.");
+        console.error("FIREBASE_SERVICE_ACCOUNT present:", !!process.env.FIREBASE_SERVICE_ACCOUNT);
+        console.error("FIREBASE_PRIVATE_KEY present:", !!process.env.FIREBASE_PRIVATE_KEY);
+        console.error("FIREBASE_CLIENT_EMAIL present:", !!process.env.FIREBASE_CLIENT_EMAIL);
+        console.error("FIREBASE_PROJECT_ID present:", !!process.env.FIREBASE_PROJECT_ID);
+        
+        return { 
+            statusCode: 500, 
+            headers, 
+            body: JSON.stringify({ 
+                error: 'Server configuration error: Firebase not initialized',
+                details: initError || 'Unknown initialization error',
+                env_check: {
+                    has_service_account: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+                    has_private_key: !!process.env.FIREBASE_PRIVATE_KEY,
+                    service_account_length: process.env.FIREBASE_SERVICE_ACCOUNT ? process.env.FIREBASE_SERVICE_ACCOUNT.length : 0
+                }
+            }) 
+        };
+    }
+    const db = admin.firestore();
+    
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers, body: '' };
     }
@@ -112,14 +150,6 @@ export const handler = async (event: any, context: any) => {
     try {
         const { weatherData, location, date, language, lastWeekWeather } = JSON.parse(event.body);
         
-        if (!process.env.GEMINI_API_KEY) {
-            console.error("GEMINI_API_KEY is missing");
-            return { statusCode: 500, headers, body: JSON.stringify({ error: "Server configuration error" }) };
-        }
-
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
         let prompt = "";
         
         if (language === 'nl') {
@@ -355,13 +385,8 @@ export const handler = async (event: any, context: any) => {
             Return ONLY the JSON object, no markdown formatting.`;
         }
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        // Clean markdown code blocks if present
-        const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
-        const json = JSON.parse(jsonStr);
+        const text = await callAI(prompt, { jsonMode: true, temperature: 0.7 });
+        const json = extractJSON(text);
 
         return {
             statusCode: 200,
@@ -369,15 +394,21 @@ export const handler = async (event: any, context: any) => {
             body: JSON.stringify(json)
         };
     } catch (error: any) {
-        console.error("Gemini Error:", error);
+        console.error("Gemini/AI Error:", error);
+        
+        // Log stack trace for debugging
+        if (error.stack) {
+             console.error(error.stack);
+        }
+
         const statusCode = error.status || 500;
         return {
             statusCode,
             headers,
             body: JSON.stringify({ 
                 error: error.message || "Failed to generate newspaper",
-                details: error.errorDetails || null,
-                status: statusCode
+                details: error.errorDetails || error.toString(), // Include full error string
+                stack: error.stack // Include stack trace in dev response
             })
         };
     }

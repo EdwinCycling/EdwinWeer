@@ -202,7 +202,8 @@ export const generateVintageNewspaper = async (
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Service Error: ${response.status} ${errorText}`);
+            console.error("Netlify Function Error Response:", errorText); // LOG FULL ERROR
+            throw new Error(`Service Error: ${response.status} ${errorText.substring(0, 200)}`);
         }
 
         return await response.json();

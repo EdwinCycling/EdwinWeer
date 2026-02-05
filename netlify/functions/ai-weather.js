@@ -1,6 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callAI } from './config/ai.js';
 import admin from 'firebase-admin';
-import { GEMINI_MODEL } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -160,16 +159,6 @@ export const handler = async (event) => {
   }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("Missing GEMINI_API_KEY");
-      return { 
-        statusCode: 500, 
-        headers, 
-        body: JSON.stringify({ error: "Server configuration error" }) 
-      };
-    }
-
     let body;
     try {
       body = JSON.parse(event.body || '{}');
@@ -190,9 +179,6 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: "Missing weather data or profile" })
       };
     }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL }); // Upgraded model
 
     const toCommaList = (value, fallback) => {
       if (Array.isArray(value)) return value.filter(Boolean).join(", ") || fallback;
@@ -401,8 +387,7 @@ export const handler = async (event) => {
         `;
     }
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await callAI(prompt, { temperature: 0.7 });
 
     return {
       statusCode: 200,

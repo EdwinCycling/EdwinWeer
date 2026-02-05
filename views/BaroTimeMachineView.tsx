@@ -193,6 +193,7 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
     const years = Array.from({ length: new Date().getFullYear() - 1940 + 1 }, (_, i) => (new Date().getFullYear() - i).toString());
 
     return (
+        <>
         <div className="bg-bg-page min-h-screen text-text-main p-4 pb-24 flex flex-col gap-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex items-center gap-4 mb-2">
@@ -298,20 +299,20 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                 {/* Date Selection */}
                 <div className="space-y-3">
                     <label className="text-sm font-bold text-text-muted uppercase tracking-wider px-1">{t('baro_time_machine.select_date')}</label>
-                    <div className="grid grid-cols-3 gap-3 md:gap-4">
+                    <div className="grid grid-cols-[0.8fr_1.4fr_1fr] gap-2 md:gap-4">
                         <div className="space-y-2">
                             <span className="text-[10px] font-bold uppercase text-text-muted px-1">{t('baro_time_machine.day')}</span>
                             <div className="relative">
                                 <select 
                                     value={day}
                                     onChange={(e) => setDay(e.target.value)}
-                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main"
+                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-2 md:px-4 py-3 md:py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main text-sm md:text-base"
                                 >
                                     {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(d => (
                                         <option key={d} value={d} className="bg-bg-page text-text-main">{d}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                                <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                                     <Icon name="expand_more" />
                                 </div>
                             </div>
@@ -322,13 +323,13 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                                 <select 
                                     value={month}
                                     onChange={(e) => setMonth(e.target.value)}
-                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main"
+                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-2 md:px-4 py-3 md:py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main text-sm md:text-base"
                                 >
                                     {months.map(m => (
                                         <option key={m.value} value={m.value} className="bg-bg-page text-text-main">{m.label}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                                <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                                     <Icon name="expand_more" />
                                 </div>
                             </div>
@@ -339,13 +340,13 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                                 <select 
                                     value={year}
                                     onChange={(e) => setYear(e.target.value)}
-                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-4 py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main"
+                                    className="w-full bg-bg-page border border-border-color rounded-2xl px-2 md:px-4 py-3 md:py-4 focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold appearance-none cursor-pointer text-text-main text-sm md:text-base"
                                 >
                                     {years.map(y => (
                                         <option key={y} value={y} className="bg-bg-page text-text-main">{y}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                                <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
                                     <Icon name="expand_more" />
                                 </div>
                             </div>
@@ -394,10 +395,11 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                     </div>
                 )}
             </div>
+        </div>
 
             {/* Generation Modal */}
             {isGenerating && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-page/60 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-bg-page/60 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-bg-card p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-border-color relative overflow-hidden">
                          {/* Background Pattern */}
                          <div className="absolute top-0 right-0 p-10 opacity-5">
@@ -439,6 +441,6 @@ export const BaroTimeMachineView: React.FC<Props> = ({ onNavigate, settings, onU
                     lang={settings.language}
                 />
             )}
-        </div>
+        </>
     );
 };
