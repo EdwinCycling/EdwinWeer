@@ -1,41 +1,10 @@
 
 import { Handler } from '@netlify/functions';
-import admin from 'firebase-admin';
+import { initFirebase, getDb, admin } from './config/firebaseAdmin.js';
 import { callAI, extractJSON } from './config/ai.js';
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-    try {
-        let serviceAccount;
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
-            serviceAccount = {
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Handle newlines in private key
-                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            };
-        }
-
-        if (serviceAccount) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-        }
-    } catch (e) {
-        console.error("Error initializing Firebase Admin:", e);
-    }
-}
-
-let db: admin.firestore.Firestore;
-try {
-    if (admin.apps.length) {
-        db = admin.firestore();
-    }
-} catch (e) {
-    console.error("Error getting Firestore instance:", e);
-}
+initFirebase();
+let db = getDb();
 
 const WEATHER_CODES: Record<number, { en: string, nl: string }> = {
     0: { en: 'Clear sky', nl: 'Onbewolkt' },

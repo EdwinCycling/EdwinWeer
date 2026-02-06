@@ -1,31 +1,6 @@
-import admin from 'firebase-admin';
+import { initFirebase, admin } from './config/firebaseAdmin.js';
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-    try {
-        let serviceAccount;
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
-            serviceAccount = {
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Handle newlines in private key which are often escaped in env vars
-                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            };
-        }
-
-        if (serviceAccount) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-        } else {
-            console.error("Missing Firebase Admin credentials");
-        }
-    } catch (e) {
-        console.error("Error initializing Firebase Admin:", e);
-    }
-}
+initFirebase();
 
 async function sendPushNotification(token, title, body) {
     if (!token) return false;
