@@ -5,6 +5,7 @@ import { useThemeColors } from '../hooks/useThemeColors';
 import { fetchHistoricalFull, fetchHistorical, fetchHistoricalDaily, convertTemp } from '../services/weatherService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, ReferenceLine } from 'recharts';
 import { getTranslation } from '../services/translations';
+import { VisualStatsBlocks } from '../components/VisualStatsBlocks';
 
 interface Props {
   date: Date;
@@ -18,10 +19,71 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
   const [weatherData, setWeatherData] = useState<OpenMeteoResponse | null>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [yearData, setYearData] = useState<any[]>([]);
+  const [currentYearData, setCurrentYearData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   const t = (key: string) => getTranslation(key, settings.language);
+
+  const hasValidArray = (arr: any) => Array.isArray(arr) && arr.some((v) => v !== null && v !== undefined);
+
+  const computeAvgByDay = (times: string[] | undefined, values: Array<number | null> | undefined) => {
+      if (!times || !values || times.length !== values.length) return null;
+      const sumMap = new Map<string, number>();
+      const countMap = new Map<string, number>();
+      for (let i = 0; i < times.length; i++) {
+          const value = values[i];
+          if (value === null || value === undefined) continue;
+          const day = times[i].split('T')[0];
+          sumMap.set(day, (sumMap.get(day) ?? 0) + value);
+          countMap.set(day, (countMap.get(day) ?? 0) + 1);
+      }
+      const avgMap = new Map<string, number>();
+      sumMap.forEach((sum, day) => {
+          const count = countMap.get(day) ?? 0;
+          if (count > 0) avgMap.set(day, sum / count);
+      });
+      return avgMap;
+  };
+
+  const computeMaxByDay = (times: string[] | undefined, values: Array<number | null> | undefined) => {
+      if (!times || !values || times.length !== values.length) return null;
+      const maxMap = new Map<string, number>();
+      for (let i = 0; i < times.length; i++) {
+          const value = values[i];
+          if (value === null || value === undefined) continue;
+          const day = times[i].split('T')[0];
+          const current = maxMap.get(day);
+          if (current === undefined || value > current) {
+              maxMap.set(day, value);
+          }
+      }
+      return maxMap;
+  };
+
+  const buildDailyFallback = (data: any) => {
+      if (!data || !data.daily || !data.daily.time) return null;
+      const daily = data.daily;
+      const time = daily.time as string[];
+      const result = { ...daily };
+      if (!hasValidArray(daily.cloud_cover_mean)) {
+          const avgCloud = computeAvgByDay(data.hourly?.time, data.hourly?.cloud_cover);
+          if (avgCloud) {
+              result.cloud_cover_mean = time.map((d: string) => avgCloud.get(d) ?? null);
+          }
+      }
+      if (!hasValidArray(daily.wind_gusts_10m_max)) {
+          if (hasValidArray(daily.wind_speed_10m_max)) {
+              result.wind_gusts_10m_max = daily.wind_speed_10m_max;
+          } else {
+              const maxWind = computeMaxByDay(data.hourly?.time, data.hourly?.wind_speed_10m);
+              if (maxWind) {
+                  result.wind_gusts_10m_max = time.map((d: string) => maxWind.get(d) ?? null);
+              }
+          }
+      }
+      return result;
+  };
 
   useEffect(() => {
     loadData();
@@ -139,9 +201,25 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
              setYearData(processedYears);
          }
 
-    } catch (e) {
+        // 4. Fetch Current Year Data (Jan 1 to Yesterday)
+        const currentYear = new Date().getFullYear();
+        const startCurrent = `${currentYear}-01-01`;
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        // Ensure yesterday is not before start of year (e.g. on Jan 1)
+        if (yesterday.getFullYear() === currentYear) {
+             const endCurrent = getDateString(yesterday);
+             const currentYearRes = await fetchHistorical(location.lat, location.lon, startCurrent, endCurrent);
+             if (currentYearRes && currentYearRes.daily) {
+                 const dailyWithFallback = buildDailyFallback(currentYearRes);
+                 setCurrentYearData(dailyWithFallback || currentYearRes.daily);
+             }
+        }
+
+    } catch (e: any) {
         console.error(e);
-        setError(t('error'));
+        setError(e.message || t('error'));
     } finally {
         setLoading(false);
     }
@@ -153,6 +231,21 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
       return (
         <div className="fixed inset-0 z-50 bg-bg-page flex items-center justify-center">
             <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      );
+  }
+
+  if (error) {
+      return (
+        <div className="fixed inset-0 z-50 bg-bg-page flex items-center justify-center p-4">
+            <div className="bg-bg-card p-6 rounded-2xl border border-red-500/20 text-center max-w-md">
+                <Icon name="error" className="text-4xl text-red-500 mb-4 mx-auto" />
+                <h3 className="text-xl font-bold mb-2">{t('error')}</h3>
+                <p className="text-text-muted mb-4">{error}</p>
+                <button onClick={onClose} className="px-4 py-2 bg-bg-subtle rounded-lg font-bold">
+                    {t('close')}
+                </button>
+            </div>
         </div>
       );
   }
@@ -192,7 +285,7 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                     <h3 className="text-lg font-bold mb-4">{t('historical.temp_trend')} {t('historical.trend_range')}</h3>
                     <div className="h-[250px] w-full bg-bg-page rounded-2xl p-2 border border-border-color">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <LineChart data={trendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                                 <CartesianGrid vertical={false} stroke={colors.borderColor} />
                                 <XAxis 
                                     dataKey="date" 
@@ -238,7 +331,7 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                     </p>
                     <div className="h-[250px] w-full bg-bg-page rounded-2xl p-2 border border-border-color">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={yearData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <LineChart data={yearData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                                 <CartesianGrid vertical={false} stroke={colors.borderColor} />
                                 <XAxis 
                                     dataKey="year" 
@@ -279,6 +372,29 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                 </div>
             )}
             */}
+
+            <div className="mb-8">
+                <h3 className="text-lg font-bold mb-4">{t('month_stats.visual') || 'Jaar Overzicht (t/m gisteren)'}</h3>
+                <div className="bg-bg-page rounded-2xl p-4 border border-border-color overflow-hidden">
+                    {currentYearData ? (
+                        <VisualStatsBlocks 
+                            data={currentYearData} 
+                            settings={settings} 
+                            columns={10}
+                            variant="compact"
+                        />
+                    ) : (
+                        <div className="p-8 text-center text-text-muted text-sm">
+                            <Icon name="event_busy" className="text-2xl mb-2 opacity-50" />
+                            <p>Nog geen data beschikbaar voor dit jaar.</p>
+                        </div>
+                    )}
+                </div>
+                <div className="mt-4 p-4 bg-bg-subtle rounded-xl text-xs text-text-muted flex flex-wrap gap-4 justify-center w-full">
+                    <p className="flex items-center gap-1 w-full justify-center text-center font-bold mb-1"><Icon name="info" className="text-sm"/> {t('month_stats.visual.explanation_title')}</p>
+                    <p className="text-center opacity-80 leading-relaxed max-w-4xl">{t('month_stats.visual.explanation_legend')}</p>
+                </div>
+            </div>
 
 
 

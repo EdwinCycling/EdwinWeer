@@ -539,7 +539,7 @@ export const fetchHistorical = async (lat: number, lon: number, startDate: strin
   const useArchive = end < today || spanDays > 40;
   
   const hourlyVars = 'temperature_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m,sunshine_duration,pressure_msl,cloud_cover';
-  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_speed_10m_mean,daylight_duration,sunshine_duration,cloud_cover_mean';
+  const dailyVars = 'weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_speed_10m_mean,daylight_duration,sunshine_duration,cloud_cover_mean';
 
   let url = '';
 

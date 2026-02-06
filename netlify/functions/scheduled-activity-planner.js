@@ -536,16 +536,19 @@ export const handler = async (event, context) => {
             
             if (!settings) continue;
 
-            // Check Telegram connection
-            if (!userData.telegramChatId) continue;
-
             // Find enabled activity
+
             const activityKey = Object.keys(settings).find(key => settings[key].enabled);
             if (!activityKey) continue;
 
             const config = settings[activityKey];
 
-            // Determine User Local Time
+            // Check Channels
+            const sendTelegram = (config.channels?.telegram !== false) && userData.telegramChatId; // Default true if undefined
+            const sendEmail = config.channels?.email === true && userData.email;
+
+            if (!sendTelegram && !sendEmail && !event.testEmail) continue;
+
             const userTimezone = userData.settings?.timezone || 'Europe/Amsterdam';
             
             // Robust time checking using Intl.DateTimeFormat
@@ -646,7 +649,7 @@ export const handler = async (event, context) => {
             const aiText = await generateAIContent(weather, activityKey, scoreData, userName);
             const safeAiText = escapeHTML(aiText);
 
-            // Send Telegram
+            // Send Notifications
             const activityName = activityNames[activityKey] || activityKey;
             
             // Format date for message (DD-MM)
@@ -667,22 +670,84 @@ ${safeAiText}
 <a href="https://askbaro.com">Open App</a>
             `;
 
-        try {
-                if (event.testEmail) {
+            try {
+                // Telegram
+                if (sendTelegram || event.testEmail) {
+                    if (event.testEmail) {
+                        const sendSmtpEmail = new Brevo.SendSmtpEmail();
+                        sendSmtpEmail.subject = `TEST Activity Planner: ${activityName}`;
+                        sendSmtpEmail.htmlContent = `<html><body>${message.replace(/\n/g, '<br>')}</body></html>`;
+                        sendSmtpEmail.sender = { "name": "Baro Test", "email": "no-reply@askbaro.com" };
+                        sendSmtpEmail.to = [{ "email": event.testEmail }];
+                        await apiInstance.sendTransacEmail(sendSmtpEmail);
+                        console.log(`Sent Test Email to ${event.testEmail}`);
+                    } else {
+                        await sendTelegramNotification(userData.telegramChatId, message);
+                        console.log(`Sent Activity Telegram to ${userId} (${activityKey})`);
+                    }
+                }
+
+                // Email
+                if (sendEmail && !event.testEmail) {
+                    const scoreColor = scoreData.score >= 8 ? '#22c55e' : scoreData.score >= 6 ? '#f59e0b' : '#ef4444';
+                    
+                    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; border-radius: 16px; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
+            <h1 style="color: #0f172a; margin: 0; font-size: 24px;">Activiteiten planner</h1>
+            <p style="color: #64748b; margin: 5px 0 0 0; font-size: 16px;">${activityName}</p>
+        </div>
+
+        <!-- Score Card -->
+        <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 14px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Jouw Score</div>
+            <div style="font-size: 48px; font-weight: 800; color: ${scoreColor}; line-height: 1;">${scoreData.score}<span style="font-size: 24px; color: #94a3b8;">/10</span></div>
+            <div style="font-size: 14px; color: #94a3b8; margin-top: 5px;">Minimaal vereist: ${config.min_score}</div>
+        </div>
+
+        <!-- Weather Details -->
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #334155; font-size: 18px; margin-bottom: 15px;">Weerbericht voor morgen (${dateDisplay})</h3>
+            <div style="font-size: 16px; line-height: 1.6; color: #334155; background-color: #fff; padding: 0;">
+                ${aiText.replace(/\n/g, '<br>')}
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #64748b; font-size: 14px; margin-bottom: 30px;">
+            <span>📍 ${locationName}</span>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+            <a href="https://askbaro.com" style="display: inline-block; background-color: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 16px;">Open Baro App</a>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 20px;">
+                Je ontvangt dit bericht omdat je de activiteiten planner hebt ingesteld.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+                    `;
+
                     const sendSmtpEmail = new Brevo.SendSmtpEmail();
-                    sendSmtpEmail.subject = `TEST Activity Planner: ${activityName}`;
-                    sendSmtpEmail.htmlContent = `<html><body>${message.replace(/\n/g, '<br>')}</body></html>`;
-                    sendSmtpEmail.sender = { "name": "Baro Test", "email": "no-reply@askbaro.com" };
-                    sendSmtpEmail.to = [{ "email": event.testEmail }];
+                    sendSmtpEmail.subject = `Activiteiten planner: ${activityName} (${scoreData.score}/10)`;
+                    sendSmtpEmail.htmlContent = htmlContent;
+                    sendSmtpEmail.sender = { "name": "Baro", "email": "no-reply@askbaro.com" };
+                    sendSmtpEmail.to = [{ "email": userData.email, "name": userName }];
+                    
                     await apiInstance.sendTransacEmail(sendSmtpEmail);
-                    console.log(`Sent Test Email to ${event.testEmail}`);
-                } else {
-                    await sendTelegramNotification(userData.telegramChatId, message);
-                    console.log(`Sent Activity Planner to ${userId} (${activityKey})`);
+                    console.log(`Sent Activity Email to ${userId} (${activityKey})`);
                 }
             } catch (e) {
                 console.error(`Failed to send notification to ${userId}`, e);
             }
+
 
             // Deduct Credit
             if (!event.testEmail) {

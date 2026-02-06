@@ -1,6 +1,23 @@
 import { Dictionary } from '../../types';
 
 export const nl: Dictionary = {
+    'month_stats.title': 'Actuele maandoverzicht',
+    'month_stats.graph': 'Grafiek',
+    'month_stats.visual': 'Visueel',
+    'month_stats.visual.sunny': 'Zonnig',
+    'month_stats.visual.cloudy': 'Bewolkt',
+    'month_stats.visual.hot': 'Heet',
+    'month_stats.visual.warm': 'Warm',
+    'month_stats.visual.cool': 'Koel',
+    'month_stats.visual.freezing': 'Vrieskou',
+    'month_stats.visual.cold_night': 'Koude Nacht',
+    'month_stats.visual.warm_night': 'Warme Nacht',
+    'month_stats.visual.rainy': 'Regenachtig',
+    'month_stats.visual.windy': 'Winderig',
+    'month_stats.visual.explanation_title': 'Blokjes tonen het aantal dagen dat aan de voorwaarde voldoet.',
+    'month_stats.visual.explanation_legend': 'Zonnig (>50% zon), Bewolkt (>50% bewolking), Heet (>30°), Warm (>25°), Koel (<5°), Vrieskou (<0°), Koude Nacht (min <0°), Warme Nacht (min >18°), Regenachtig (>2mm), Winderig (>6 Bft)',
+    'month_stats.sun_days': 'Zondagen',
+    'records.sun_days': 'Zondagen',
     'common.autosave': 'We bewaren automatisch hier...',
     'optional': 'Optioneel',
     'upload_gpx_short': 'Upload GPX',
@@ -321,6 +338,12 @@ export const nl: Dictionary = {
     'barometer.explanation.fall': 'Verslechtering van het weer op komst.',
     'barometer.explanation.stable': 'De luchtdruk is stabiel. het huidige weerbeeld blijft waarschijnlijk aanhouden.',
     'bonus.sunshine': 'Afwisselend zon en regen',
+
+    'humidex.title': 'Vochtigheidsindex',
+    'humidex.little_discomfort': 'Weinig tot geen ongemak',
+    'humidex.some_discomfort': 'Enig ongemak',
+    'humidex.great_discomfort': 'Groot ongemak; vermijd inspanning',
+    'humidex.dangerous': 'Gevaarlijk; hitteberoerte heel goed mogelijk',
 
     'today': 'Vandaag',
     'tomorrow': 'Morgen',
@@ -651,8 +674,10 @@ export const nl: Dictionary = {
     'records.calendar': 'Kalender',
     'records.12month': 'Laatste 12 maanden',
     'records.max_temp_high': 'Hoogste maximum temperatuur',
-    'records.max_amplitude': 'Grootste dagverschil (max-min op 1 dag)',
+    'records.month_amplitude': 'Maand amplitude',
+    'records.max_amplitude': 'Dag amplitude',
     'records.min_amplitude': 'Kleinste dagverschil (max-min op 1 dag)',
+
     'records.colder_13_than_22': '13:00 kouder dan 22:00 (top 3)',
     'records.max_temp_low': 'Laagste maximum temperatuur',
     'records.min_temp_high': 'Hoogste minimum temperatuur',

@@ -1126,17 +1126,22 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         </div>
                         
                         {!isComparisonMode ? (
-                            <select 
-                                value={selectedModel} 
-                                onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
-                                className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors shadow-sm text-text-main"
-                            >
-                                {ENSEMBLE_MODELS.map(m => (
-                                    <option key={m.id} value={m.id} className="text-text-main bg-bg-card">
-                                        {m.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <select 
+                                    value={selectedModel} 
+                                    onChange={(e) => setSelectedModel(e.target.value as EnsembleModel)}
+                                    className="w-full bg-bg-card border border-border-color rounded-xl pl-4 pr-10 py-3 appearance-none font-bold text-sm outline-none focus:border-primary transition-colors shadow-sm text-text-main"
+                                >
+                                    {ENSEMBLE_MODELS.map(m => (
+                                        <option key={m.id} value={m.id} className="text-text-main bg-bg-card">
+                                            {m.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-text-muted">
+                                    <Icon name="expand_more" className="text-xl" />
+                                </div>
+                            </div>
                         ) : (
                             <div className="bg-bg-input border border-border-color rounded-xl p-3 shadow-sm">
                                 <div 

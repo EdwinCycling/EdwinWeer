@@ -34,10 +34,13 @@ import {
 } from 'recharts';
 import { Tooltip as UITooltip } from '../components/Tooltip';
 
+import { VisualStatsBlocks } from '../components/VisualStatsBlocks';
+
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
   settings: AppSettings;
   onUpdateSettings?: (settings: AppSettings) => void;
+  initialParams?: any;
 }
 
 interface RecordEntry {
@@ -174,6 +177,7 @@ interface MonthlyStats {
     minTempLow: { value: number, date: string } | null;
     totalRain: number;
     totalSun: number;
+    sunDays: number;
     frostDays: number;
     iceDays: number;
     summerDays: number;
@@ -195,7 +199,7 @@ interface DailyData {
     isWeekend: boolean;
 }
 
-export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
 
   const formatDateTime = () => {
@@ -211,8 +215,42 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   };
   const [recordType, setRecordType] = useState<'12month' | 'yearly' | 'monthly' | 'calendar' | 'heatmap'>('yearly');
   const [heatmapData, setHeatmapData] = useState<{ dates: string[], maxTemps: (number|null)[], minTemps: (number|null)[], precip: (number|null)[], sun: (number|null)[], daylight: (number|null)[] } | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+      if (initialParams && initialParams.date) {
+          return new Date(initialParams.date).getFullYear();
+      }
+      return new Date().getFullYear();
+  });
+  const [selectedMonth, setSelectedMonth] = useState<number>(() => {
+      if (initialParams && initialParams.date) {
+          return new Date(initialParams.date).getMonth() + 1;
+      }
+      return new Date().getMonth() + 1;
+  });
+  const [externalMonthSelection, setExternalMonthSelection] = useState<boolean>(() => !!(initialParams && initialParams.date));
+
+  const heatmapVisualData = useMemo(() => {
+      if (!heatmapData || !heatmapData.dates || heatmapData.dates.length === 0) return null;
+      return {
+          time: heatmapData.dates,
+          temperature_2m_max: heatmapData.maxTemps,
+          temperature_2m_min: heatmapData.minTemps,
+          precipitation_sum: heatmapData.precip,
+          sunshine_duration: heatmapData.sun,
+          daylight_duration: heatmapData.daylight
+      };
+  }, [heatmapData]);
+
+  useEffect(() => {
+      if (initialParams && initialParams.date) {
+          const dt = new Date(initialParams.date);
+          setSelectedYear(dt.getFullYear());
+          setSelectedMonth(dt.getMonth() + 1);
+          setRecordType('monthly');
+          setExternalMonthSelection(true);
+      }
+  }, [initialParams]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -241,6 +279,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [rainMax, setRainMax] = useState<RecordEntry[]>([]);
   const [maxAmplitude, setMaxAmplitude] = useState<RecordEntry[]>([]);
   const [minAmplitude, setMinAmplitude] = useState<RecordEntry[]>([]);
+  const [monthAmplitude, setMonthAmplitude] = useState<{ value: number, max: number, min: number } | null>(null);
   const [colderAt13Than22, setColderAt13Than22] = useState<TimeTempDiffEntry[]>([]);
   const [yearlyCounts, setYearlyCounts] = useState<YearlyCounts | null>(null);
   const [frostInfo, setFrostInfo] = useState<FrostInfo | null>(null);
@@ -292,11 +331,16 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
   useEffect(() => {
       if (recordType === 'monthly' || recordType === 'calendar') {
+          if (externalMonthSelection) return;
           const now = new Date();
           setSelectedYear(now.getFullYear());
           setSelectedMonth(now.getMonth() + 1);
+          return;
       }
-  }, [recordType]);
+      if (externalMonthSelection) {
+          setExternalMonthSelection(false);
+      }
+  }, [recordType, externalMonthSelection]);
 
   const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, settings.language, params);
 
@@ -415,6 +459,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setMinTempLow([]);
     setRainMax([]);
     setMinAmplitude([]);
+    setMonthAmplitude(null);
     setColderAt13Than22([]);
      setYearlyCounts(null);
     setFrostInfo(null);
@@ -614,6 +659,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           let minTempLowDate = '';
           let totalRain = 0;
           let totalSun = 0;
+          let sunDays = 0;
           let frostDays = 0;
           let iceDays = 0;
           let summerDays = 0;
@@ -677,6 +723,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   
                   if (rain) totalRain += rain;
                   if (sun) totalSun += sun / 3600;
+                  if (sun > 14400) sunDays++;
                   
                   if (tMin < 0) frostDays++;
                   if (tMax <= 0) iceDays++;
@@ -725,6 +772,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               minTempLow: minTempLowVal < Infinity ? { value: minTempLowVal, date: minTempLowDate } : null,
               totalRain,
               totalSun,
+              sunDays,
               frostDays,
               iceDays,
               summerDays,
@@ -788,6 +836,23 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       setRainMax(sortDesc(rainEntries));
       setMaxAmplitude(sortDesc(amplitudeEntries));
       setMinAmplitude(sortAsc(amplitudeEntries));
+
+      // Calculate Month Amplitude (Max of month - Min of month)
+      // We use the absolute max and absolute min from the sorted lists
+      // maxTempHigh is sorted Desc (index 0 is highest)
+      // minTempLow is sorted Asc (index 0 is lowest)
+      const highestMax = maxTempEntries.length > 0 ? Math.max(...maxTempEntries.map(e => e.value)) : null;
+      const lowestMin = minTempEntries.length > 0 ? Math.min(...minTempEntries.map(e => e.value)) : null;
+      
+      if (highestMax !== null && lowestMin !== null) {
+          setMonthAmplitude({
+              value: highestMax - lowestMin,
+              max: highestMax,
+              min: lowestMin
+          });
+      }
+
+
 
       if (hourlyTimes && hourlyTemps && hourlyTimes.length === hourlyTemps.length) {
         const byDay = new Map<string, { t13?: number; t22?: number }>();
@@ -2265,6 +2330,31 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                  {heatmapData && (
                     <>
                         <HeatmapComponent data={heatmapData} year={selectedYear} settings={settings} onDayClick={navigateToHistoricalSingle} />
+
+                        <div className="bg-bg-card rounded-2xl p-4 md:p-6 border border-border-color">
+                            <h3 className="text-lg font-bold mb-4 text-text-main flex items-center gap-2">
+                                <Icon name="grid_view" className="text-accent-primary" />
+                                {t('month_stats.visual') || 'Visueel Overzicht'}
+                            </h3>
+                            {heatmapVisualData ? (
+                                <>
+                                <VisualStatsBlocks 
+                                    data={heatmapVisualData}
+                                    settings={settings}
+                                    columns={10}
+                                    variant="compact"
+                                    excludedCategories={['cloudy', 'windy']}
+                                    onDayClick={navigateToHistoricalSingle}
+                                />
+                                <div className="mt-4 p-4 bg-bg-subtle rounded-xl text-xs text-text-muted flex flex-wrap gap-4 justify-center w-full">
+                                    <p className="flex items-center gap-1 w-full justify-center text-center font-bold mb-1"><Icon name="info" className="text-sm"/> {t('month_stats.visual.explanation_title')}</p>
+                                    <p className="text-center opacity-80 leading-relaxed max-w-4xl">{t('month_stats.visual.explanation_legend')}</p>
+                                </div>
+                                </>
+                            ) : (
+                                <div className="py-8 text-center text-text-muted text-sm">No data available</div>
+                            )}
+                        </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                               <TemperatureDistributionChart data={heatmapData} settings={settings} />
@@ -2315,8 +2405,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                   <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.totalRain.toFixed(1)} {settings.precipUnit}</span>
                               </div>
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
-                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.total_sun')}</span>
-                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.totalSun.toFixed(1)} u</span>
+                                  <span className="text-text-muted text-xs sm:text-sm">{t('records.sun_days')}</span>
+                                  <span className="font-bold text-text-main text-sm sm:text-base">{monthlyStats.sunDays}</span>
                               </div>
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-bg-page rounded-xl border border-border-color h-full gap-1">
                                   <span className="text-text-muted text-xs sm:text-sm">{t('records.rain_days')}</span>
@@ -2361,7 +2451,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       <h3 className="text-lg font-bold mb-2 text-text-main px-2 sm:px-0">{t('records.temperature_graph')}</h3>
                       <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <ComposedChart data={dailyData} margin={{top: 5, right: 5, bottom: 5, left: -25}} syncId="monthlyGraph">
+                        <ComposedChart data={dailyData} margin={{top: 5, right: 5, bottom: 5, left: 20}} syncId="monthlyGraph">
                              {/* Custom Grid Lines */}
                              {tempDomain.ticks.map((tick) => (
                                  <ReferenceLine 
@@ -2393,9 +2483,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 interval={0}
                                 tickCount={tempDomain.yAxisTicks.length}
                                 allowDecimals={false}
-                                stroke="#888888"
-                                tick={{fontSize: 10}}
-                                width={35}
+                                stroke="var(--text-muted)"
+                                tick={{fontSize: 10, fill: 'var(--text-muted)'}}
+                                tickMargin={8}
+                                width={50}
                             />
                             <YAxis 
                                 yAxisId="right" 
@@ -2530,6 +2621,26 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       </ResponsiveContainer>
                   </div>
               </div>
+              
+              {/* Visual Stats Overview */}
+              <div className="w-full max-w-7xl mx-auto px-4 pb-6">
+                <div className="bg-bg-card rounded-2xl p-4 md:p-8 border border-border-color overflow-hidden">
+                    <h3 className="text-lg font-bold mb-4 text-text-main flex items-center gap-2">
+                        <Icon name="grid_view" className="text-accent-primary" />
+                        {t('month_stats.visual') || 'Visueel Overzicht'}
+                    </h3>
+                    <VisualStatsBlocks 
+                        data={dailyData} 
+                        settings={settings} 
+                        sourceType="daily_data" 
+                    />
+                    <div className="mt-4 p-4 bg-bg-subtle rounded-xl text-xs text-text-muted flex flex-wrap gap-4 justify-center w-full">
+                        <p className="flex items-center gap-1 w-full justify-center text-center font-bold mb-1"><Icon name="info" className="text-sm"/> {t('month_stats.visual.explanation_title')}</p>
+                        <p className="text-center opacity-80 leading-relaxed max-w-4xl">{t('month_stats.visual.explanation_legend')}</p>
+                    </div>
+                </div>
+              </div>
+
               </div>
           ) : recordType === 'calendar' ? (
               <div className="w-full max-w-7xl mx-auto px-4 pb-10">
@@ -2758,6 +2869,28 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   minTempLow,
                   value => `${formatTempValue(value)}°`
                 )}
+                {monthAmplitude && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <Icon name="expand" className="text-purple-600" />
+                            {t('records.month_amplitude')}
+                        </h3>
+                        </div>
+                        <ul className="mt-2 space-y-2">
+                            <li className="flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-text-main">
+                                        {formatTempDeltaValue(monthAmplitude.value)}°
+                                    </span>
+                                    <span className="text-xs text-text-muted">
+                                        (Max: {formatTempValue(monthAmplitude.max)}° - Min: {formatTempValue(monthAmplitude.min)}°)
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                )}
                 {renderRecordCard(
                   'records.max_amplitude',
                   'unfold_more',
@@ -2765,6 +2898,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   maxAmplitude,
                   value => `${formatTempDeltaValue(value)}°`
                 )}
+
                 {renderRecordCard(
                   'records.min_amplitude',
                   'unfold_less',

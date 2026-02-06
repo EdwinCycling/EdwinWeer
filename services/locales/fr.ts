@@ -1,6 +1,23 @@
 import { Dictionary } from '../../types';
 
 export const fr: Dictionary = {
+    'month_stats.title': 'Aperçu du mois en cours',
+    'month_stats.graph': 'Graphique',
+    'month_stats.visual': 'Visuel',
+    'month_stats.visual.sunny': 'Ensoleillé',
+    'month_stats.visual.cloudy': 'Nuageux',
+    'month_stats.visual.hot': 'Très chaud',
+    'month_stats.visual.warm': 'Chaud',
+    'month_stats.visual.cool': 'Frais',
+    'month_stats.visual.freezing': 'Gel',
+    'month_stats.visual.cold_night': 'Nuit froide',
+    'month_stats.visual.warm_night': 'Nuit chaude',
+    'month_stats.visual.rainy': 'Pluvieux',
+    'month_stats.visual.windy': 'Venteux',
+    'month_stats.visual.explanation_title': 'Les blocs montrent le nombre de jours remplissant la condition.',
+    'month_stats.visual.explanation_legend': 'Ensoleillé (>50% soleil), Nuageux (>50% nuages), Très chaud (>30°), Chaud (>25°), Frais (<5°), Gel (<0°), Nuit froide (min <0°), Nuit chaude (min >18°), Pluvieux (>2mm), Venteux (>6 Bft)',
+    'month_stats.sun_days': 'Dimanches',
+    'records.sun_days': 'Dimanches',
     'common.autosave': 'Nous sauvegardons automatiquement ici...',
     'optional': 'Optionnel',
     'upload_gpx_short': 'Télécharger GPX',
@@ -353,6 +370,12 @@ export const fr: Dictionary = {
     'barometer.explanation.fall': 'Détérioration du temps à venir.',
     'barometer.explanation.stable': 'La pression est stable. le temps actuel devrait persister.',
     'bonus.sunshine': 'Alternance de soleil et pluie',
+
+    'humidex.title': 'Indice d\'humidité',
+    'humidex.little_discomfort': 'Peu ou pas d\'inconfort',
+    'humidex.some_discomfort': 'Un certain inconfort',
+    'humidex.great_discomfort': 'Grand inconfort; éviter l\'effort',
+    'humidex.dangerous': 'Dangereux; coup de chaleur très possible',
 
     'today': 'Aujourd\'hui',
     'tomorrow': 'Demain',

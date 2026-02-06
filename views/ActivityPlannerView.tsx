@@ -426,19 +426,28 @@ export const ActivityPlannerView: React.FC<Props> = ({ onNavigate, settings, onU
                                 <div>
                                     <label className="block text-sm font-medium mb-2">{t('planner.channels')}</label>
                                     <div className="flex gap-4">
-                                        <div className="flex items-center gap-2 opacity-100">
-                                            <div className="size-5 rounded bg-indigo-500 flex items-center justify-center text-white text-xs">
-                                                <Icon name="check" />
+                                        <button 
+                                            onClick={() => handleUpdate(activity, { channels: { ...config.channels, telegram: !config.channels.telegram } })}
+                                            className={`flex items-center gap-2 transition-opacity ${config.channels.telegram ? 'opacity-100' : 'opacity-60'}`}
+                                        >
+                                            <div className={`size-5 rounded flex items-center justify-center text-white text-xs transition-colors ${config.channels.telegram ? 'bg-indigo-500' : 'border border-border-color bg-bg-page'}`}>
+                                                {config.channels.telegram && <Icon name="check" />}
                                             </div>
                                             <span className="text-sm font-medium">{t('planner.channel.telegram')}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 opacity-50 cursor-not-allowed">
-                                            <div className="size-5 rounded border border-slate-300 dark:border-white/20 flex items-center justify-center">
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => handleUpdate(activity, { channels: { ...config.channels, email: !config.channels.email } })}
+                                            className={`flex items-center gap-2 transition-opacity ${config.channels.email ? 'opacity-100' : 'opacity-60'}`}
+                                        >
+                                            <div className={`size-5 rounded flex items-center justify-center text-white text-xs transition-colors ${config.channels.email ? 'bg-indigo-500' : 'border border-border-color bg-bg-page'}`}>
+                                                {config.channels.email && <Icon name="check" />}
                                             </div>
-                                            <span className="text-sm font-medium">{t('planner.channel.email')}</span>
-                                        </div>
+                                            <span className="text-sm font-medium">{t('planner.channel.email').replace('(binnenkort)', '')}</span>
+                                        </button>
                                     </div>
                                 </div>
+
 
                             </div>
                         )}

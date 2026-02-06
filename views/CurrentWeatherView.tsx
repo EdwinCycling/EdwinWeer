@@ -16,6 +16,7 @@ import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer
 import { Tooltip } from '../components/Tooltip';
 import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
+import { HumidexCard } from '../components/HumidexCard';
 import { WelcomeModal } from '../components/WelcomeModal';
 import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
@@ -30,6 +31,8 @@ import { getUsage } from '../services/usageService';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuth } from '../hooks/useAuth';
+
+import { MonthStatsCard } from '../components/MonthStatsCard';
 
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
@@ -91,8 +94,15 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         // Welcome popup for new users (Only if logged in and not seen yet)
         if (user) {
              const key = `welcome_seen_${user.uid}`;
-             const hasSeen = localStorage.getItem(key);
-             if (!hasSeen) {
+             const hasSeenLocal = localStorage.getItem(key);
+             
+             // If user has seen it (in DB), sync local
+             if (user.hasSeenWelcome) {
+                if (!hasSeenLocal) {
+                    localStorage.setItem(key, 'true');
+                }
+             } else if (!hasSeenLocal) {
+                 // Only show if not seen in DB AND not seen locally
                  setShowWelcomeModal(true);
              }
         }
@@ -710,6 +720,29 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       uv_index: weatherData.daily.uv_index_max?.[0] || 0
   }) : null;
 
+  const maxTempDewPoint = React.useMemo(() => {
+    if (!weatherData) return 0;
+    const todayStr = weatherData.current.time.split('T')[0];
+    let maxT = -999;
+    let maxIndex = -1;
+    
+    weatherData.hourly.time.forEach((time, index) => {
+        if (time.startsWith(todayStr)) {
+            const temp = weatherData.hourly.temperature_2m[index];
+            if (temp > maxT) {
+                maxT = temp;
+                maxIndex = index;
+            }
+        }
+    });
+    
+    if (maxIndex !== -1) {
+         const rh = weatherData.hourly.relative_humidity_2m[maxIndex];
+         return calculateDewPointMagnus(maxT, rh);
+    }
+    return 0;
+  }, [weatherData]);
+
   const todayExtremes = React.useMemo(() => {
     if (!weatherData) return null;
 
@@ -1270,12 +1303,12 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                         </button>
                         <div 
-                            className="flex overflow-x-auto scrollbar-hide -mx-6 px-6 pb-4 gap-5 cursor-pointer no-swipe"
+                            className="flex overflow-x-auto scrollbar-hide -mx-6 px-6 pb-4 gap-5 cursor-pointer no-swipe snap-x snap-mandatory"
                             data-no-swipe="true"
                             onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
                         >
                             {getHourlyForecast().map((hour, idx) => (
-                                <div key={idx} className="flex flex-col items-center gap-3 min-w-[64px] shrink-0 group p-2 rounded-2xl hover:bg-bg-card transition-colors">
+                                <div key={idx} className="flex flex-col items-center gap-3 min-w-[64px] shrink-0 group p-2 rounded-2xl hover:bg-bg-card transition-colors snap-center">
                                     <p className={`text-sm font-medium ${hour.highlight ? 'text-accent-primary' : 'text-text-muted'}`}>{hour.time}</p>
                                     <Icon name={hour.icon} className={`text-3xl transition-transform group-hover:scale-110 ${hour.highlight ? 'text-accent-primary' : 'text-text-main'}`} />
                                     <p className="text-lg font-bold">{hour.temp}°</p>
@@ -1314,6 +1347,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
                         </div>
                     )}
+
+                    {/* New Month Stats Card - Moved here */}
+                    <MonthStatsCard location={location} settings={settings} onNavigate={onNavigate} weatherData={weatherData || undefined} />
 
                     {/* New Sun Graph Widget */}
                     <div className="mb-8">
@@ -1365,6 +1401,18 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                         </p>
                                     </div>
                                  </div>
+                             )}
+
+                             {/* Humidex Card */}
+                             {weatherData && weatherData.daily.temperature_2m_max[0] > 20 && (
+                                <HumidexCard 
+                                    currentTemp={weatherData.current.temperature_2m}
+                                    maxTemp={weatherData.daily.temperature_2m_max[0]}
+                                    currentDewPoint={dewPoint}
+                                    maxDewPoint={maxTempDewPoint}
+                                    tempUnit={settings.tempUnit}
+                                    language={settings.language}
+                                />
                              )}
                         </div>
                     )}
@@ -1724,6 +1772,9 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           onClose={async () => {
               setShowWelcomeModal(false);
               if (user) {
+                  const key = `welcome_seen_${user.uid}`;
+                  localStorage.setItem(key, 'true');
+
                   // Persist to Firestore so it never shows again for this user
                   try {
                       const userRef = doc(db, 'users', user.uid);

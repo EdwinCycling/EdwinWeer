@@ -1,6 +1,23 @@
 import { Dictionary } from '../../types';
 
 export const en: Dictionary = {
+    'month_stats.title': 'Current Month Overview',
+    'month_stats.graph': 'Chart',
+    'month_stats.visual': 'Visual',
+    'month_stats.visual.sunny': 'Sunny',
+    'month_stats.visual.cloudy': 'Cloudy',
+    'month_stats.visual.hot': 'Hot',
+    'month_stats.visual.warm': 'Warm',
+    'month_stats.visual.cool': 'Cool',
+    'month_stats.visual.freezing': 'Freezing',
+    'month_stats.visual.cold_night': 'Cold Night',
+    'month_stats.visual.warm_night': 'Warm Night',
+    'month_stats.visual.rainy': 'Rainy',
+    'month_stats.visual.windy': 'Windy',
+    'month_stats.visual.explanation_title': 'Blocks show the number of days meeting the condition.',
+    'month_stats.visual.explanation_legend': 'Sunny (>50% sun), Cloudy (>50% clouds), Hot (>30°), Warm (>25°), Cool (<5°), Freezing (<0°), Cold Night (min <0°), Warm Night (min >18°), Rainy (>2mm), Windy (>6 Bft)',
+    'month_stats.sun_days': 'Sundays',
+    'records.sun_days': 'Sundays',
     'common.autosave': 'We save automatically here...',
     'optional': 'Optional',
     'upload_gpx_short': 'Upload GPX',
@@ -354,6 +371,12 @@ export const en: Dictionary = {
     'barometer.explanation.fall': 'Pressure is falling, often indicating deteriorating weather, clouds, and chance of rain.',
     'barometer.explanation.stable': 'Pressure is stable. current weather is likely to persist.',
     'bonus.sunshine': 'Mixed sun and rain',
+
+    'humidex.title': 'Humidity Index',
+    'humidex.little_discomfort': 'Little to no discomfort',
+    'humidex.some_discomfort': 'Some discomfort',
+    'humidex.great_discomfort': 'Great discomfort; avoid exertion',
+    'humidex.dangerous': 'Dangerous; heat stroke quite possible',
 
     'today': 'Today',
     'tomorrow': 'Tomorrow',

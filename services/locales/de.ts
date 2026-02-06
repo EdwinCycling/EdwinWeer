@@ -1,6 +1,23 @@
 import { Dictionary } from '../../types';
 
 export const de: Dictionary = {
+    'month_stats.title': 'Aktueller Monatsüberblick',
+    'month_stats.graph': 'Diagramm',
+    'month_stats.visual': 'Visuell',
+    'month_stats.visual.sunny': 'Sonnig',
+    'month_stats.visual.cloudy': 'Bewölkt',
+    'month_stats.visual.hot': 'Heiß',
+    'month_stats.visual.warm': 'Warm',
+    'month_stats.visual.cool': 'Kühl',
+    'month_stats.visual.freezing': 'Frost',
+    'month_stats.visual.cold_night': 'Kalte Nacht',
+    'month_stats.visual.warm_night': 'Warme Nacht',
+    'month_stats.visual.rainy': 'Regnerisch',
+    'month_stats.visual.windy': 'Windig',
+    'month_stats.visual.explanation_title': 'Blöcke zeigen die Anzahl der Tage, die die Bedingung erfüllen.',
+    'month_stats.visual.explanation_legend': 'Sonnig (>50% Sonne), Bewölkt (>50% Wolken), Heiß (>30°), Warm (>25°), Kühl (<5°), Frost (<0°), Kalte Nacht (min <0°), Warme Nacht (min >18°), Regnerisch (>2mm), Windig (>6 Bft)',
+    'month_stats.sun_days': 'Sonntage',
+    'records.sun_days': 'Sonntage',
     'common.autosave': 'Wir speichern hier automatisch...',
     'optional': 'Optional',
     'upload_gpx_short': 'GPX hochladen',
@@ -353,6 +370,12 @@ export const de: Dictionary = {
     'barometer.explanation.fall': 'Wetterverschlechterung in sicht.',
     'barometer.explanation.stable': 'Der luftdruck ist stabil. das aktuelle wetterbild bleibt wahrscheinlich bestehen.',
     'bonus.sunshine': 'Wechselhaft sonne und regen',
+
+    'humidex.title': 'Feuchtigkeitsindex',
+    'humidex.little_discomfort': 'Wenig bis gar kein Unbehagen',
+    'humidex.some_discomfort': 'Etwas Unbehagen',
+    'humidex.great_discomfort': 'Großes Unbehagen; Anstrengung vermeiden',
+    'humidex.dangerous': 'Gefährlich; Hitzschlag durchaus möglich',
 
     'today': 'Heute',
     'tomorrow': 'Morgen',

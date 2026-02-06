@@ -1,6 +1,23 @@
 import { Dictionary } from '../../types';
 
 export const es: Dictionary = {
+    'month_stats.title': 'Resumen del mes actual',
+    'month_stats.graph': 'Gráfico',
+    'month_stats.visual': 'Visual',
+    'month_stats.visual.sunny': 'Soleado',
+    'month_stats.visual.cloudy': 'Nublado',
+    'month_stats.visual.hot': 'Caluroso',
+    'month_stats.visual.warm': 'Cálido',
+    'month_stats.visual.cool': 'Fresco',
+    'month_stats.visual.freezing': 'Helado',
+    'month_stats.visual.cold_night': 'Noche fría',
+    'month_stats.visual.warm_night': 'Noche cálida',
+    'month_stats.visual.rainy': 'Lluvioso',
+    'month_stats.visual.windy': 'Ventoso',
+    'month_stats.visual.explanation_title': 'Los bloques muestran el número de días que cumplen la condición.',
+    'month_stats.visual.explanation_legend': 'Soleado (>50% sol), Nublado (>50% nubes), Caluroso (>30°), Cálido (>25°), Fresco (<5°), Helado (<0°), Noche fría (min <0°), Noche cálida (min >18°), Lluvioso (>2mm), Ventoso (>6 Bft)',
+    'month_stats.sun_days': 'Domingos',
+    'records.sun_days': 'Domingos',
     'common.autosave': 'Guardamos automáticamente aquí...',
     'optional': 'Opcional',
     'upload_gpx_short': 'Subir GPX',
@@ -353,6 +370,12 @@ export const es: Dictionary = {
     'barometer.explanation.fall': 'Empeoramiento del tiempo en camino.',
     'barometer.explanation.stable': 'La presióN es estable. el tiempo actual probablemente persistirá.',
     'bonus.sunshine': 'Alternancia de sol y lluvia',
+
+    'humidex.title': 'Índice de humedad',
+    'humidex.little_discomfort': 'Poco o ningún malestar',
+    'humidex.some_discomfort': 'Algún malestar',
+    'humidex.great_discomfort': 'Gran malestar; evitar esfuerzo',
+    'humidex.dangerous': 'Peligroso; golpe de calor muy posible',
 
     'today': 'Hoy',
     'tomorrow': 'Mañana',

@@ -78,20 +78,21 @@ export const AuroraCard: React.FC<Props> = ({ data, language, onToggleNotificati
         >
             {/* Header */}
             <div className="grid grid-cols-3 items-center mb-6 relative z-10">
-                {/* Left - Spacer or notification toggle if we wanted it here */}
-                <div className="flex justify-start">
-                    {/* Empty spacer to help center the middle column */}
+                {/* Left - Icon and Label */}
+                <div className="flex flex-col justify-center items-start">
+                     <div className="flex items-center gap-2">
+                        <Icon name="sparkles" className={`w-6 h-6 flex-shrink-0 ${isLowActivity ? 'text-text-muted' : 'text-green-400'}`} />
+                        <p className={`text-sm ${textColor} font-medium`}>
+                            {data.label}
+                        </p>
+                     </div>
                 </div>
                 
-                {/* Center - Title and Label */}
+                {/* Center - Title */}
                 <div className="flex flex-col items-center cursor-pointer relative z-20" onClick={() => setIsExpanded(false)}>
-                    <h3 className="text-xl font-bold text-text-main flex flex-col sm:flex-row items-center gap-2 sm:gap-3 justify-center text-center">
-                        <Icon name="sparkles" className={`w-6 h-6 flex-shrink-0 ${isLowActivity ? 'text-text-muted' : 'text-green-400'}`} />
+                    <h3 className="text-xl font-bold text-text-main text-center">
                         <span className="leading-snug break-words">{t('aurora_title')}</span>
                     </h3>
-                    <p className={`text-sm ${textColor} font-medium mt-1 text-center`}>
-                        {data.label}
-                    </p>
                     <div className="mt-1 sm:hidden">
                         <Icon name="expand_less" className="text-text-muted opacity-50" />
                     </div>

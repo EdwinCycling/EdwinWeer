@@ -321,7 +321,7 @@ const App: React.FC = () => {
       case ViewState.MAP:
         return <MapView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.RECORDS:
-        return <RecordsWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+        return <RecordsWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} initialParams={viewParams} />;
       case ViewState.HOURLY_DETAIL:
         return <HourlyDetailView onNavigate={navigate} settings={settings} initialParams={viewParams} />;
       case ViewState.ENSEMBLE:
