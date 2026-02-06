@@ -1,8 +1,7 @@
 import admin from 'firebase-admin';
 import { Client } from '@notionhq/client';
 import * as Brevo from '@getbrevo/brevo';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_MODEL } from './config/ai.js';
+import { callAI } from './config/ai.js';
 
 console.log("MODULE LOAD: daily-cycling-report.ts");
 
@@ -43,10 +42,6 @@ const notion = new Client({
     auth: process.env.NOTION_API_KEY,
 });
 
-// Initialize Gemini
-console.log("Initializing Gemini AI...");
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 // Initialize Brevo
 console.log("Initializing Brevo API...");
 const brevoApi = new Brevo.TransactionalEmailsApi();
@@ -83,11 +78,12 @@ async function sendEmailNotification(email: string, subject: string, htmlContent
     const sendSmtpEmail = new Brevo.SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = htmlContent;
-    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "AskBaroApp@gmail.com" }; // Adjust sender if needed
+    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "no-reply@askbaro.com" }; // Updated to verified sender
     sendSmtpEmail.to = [{ "email": email }];
 
     try {
-        await brevoApi.sendTransacEmail(sendSmtpEmail);
+        const data = await brevoApi.sendTransacEmail(sendSmtpEmail);
+        console.log("Brevo Email Sent:", JSON.stringify(data));
     } catch (e) {
         console.error('Error sending Email:', e);
     }
@@ -178,8 +174,6 @@ async function getWeather(lat: number, lon: number) {
 // Helper: Generate Text with Gemini
 async function generateWeatherText(raceName: string, location: string, weatherData: any, additionalInfo: any = {}, language: string = 'nl') {
     try {
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-        
         const langMap: Record<string, string> = {
             'nl': 'Nederlands',
             'en': 'English',
@@ -207,9 +201,7 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
             ${language === 'nl' ? '' : `IMPORTANT: Provide the output in ${targetLang}.`}
         `;
         
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
+        return await callAI(prompt);
     } catch (e: any) {
         console.error("Error generating text:", e);
         return `Error: ${e.message || (language === 'nl' ? "Geen weerbericht beschikbaar." : "No weather report available.")}`;
@@ -219,7 +211,6 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
 // Helper: Get Location from Gemini for long races
 async function getRaceLocationFromGemini(raceName: string, date: string, info: string = "", country: string = "") {
     try {
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
         const prompt = `
             Je bent een wielerexpert. Baseer je op:
             - Koersnaam: "${raceName}"
@@ -232,10 +223,9 @@ async function getRaceLocationFromGemini(raceName: string, date: string, info: s
             Als je het echt niet weet, geef dan "Unknown" terug.
         `;
         
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text().trim().replace(/[*_#]/g, ''); // Remove formatting
-        return text.toLowerCase().includes("unknown") ? null : text;
+        const text = await callAI(prompt);
+        const cleanText = text.trim().replace(/[*_#]/g, ''); // Remove formatting
+        return cleanText.toLowerCase().includes("unknown") ? null : cleanText;
     } catch (e) {
         console.error("Error getting location from Gemini:", e);
         return null;
@@ -260,11 +250,28 @@ export const handler = async (event: any, context: any) => {
         const today = now.toISOString().split('T')[0];
 
         // 1. Process Users (Check first if anyone is listening)
-        const usersSnapshot = await db.collection('users')
-            .where('settings.cycling_updates.enabled', '==', true)
-            .get();
-
-        const activeUsers = usersSnapshot.docs;
+        let activeUsers: any[] = [];
+        if (event.testEmail) {
+             console.log(`TEST MODE: Targeting only ${event.testEmail}`);
+             activeUsers = [{
+                id: 'test-user',
+                data: () => ({
+                    email: event.testEmail,
+                    settings: {
+                        cycling_updates: { enabled: true, channel: 'email' },
+                        language: 'nl',
+                        timezone: 'Europe/Amsterdam'
+                    },
+                    usage: { baroCredits: 100 },
+                    last_cycling_update_date: '1970-01-01'
+                })
+             }];
+        } else {
+            const usersSnapshot = await db.collection('users')
+                .where('settings.cycling_updates.enabled', '==', true)
+                .get();
+            activeUsers = usersSnapshot.docs;
+        }
         
         if (activeUsers.length === 0) {
             console.log("No users subscribed to cycling updates. Skipping race processing.");
@@ -474,7 +481,7 @@ export const handler = async (event: any, context: any) => {
 
             // Skip if not in allowed window (07:00 - 10:00)
             // Note: In test mode (event.isTest) we skip this check
-            if (!event.isTest && (userHour < 7 || userHour > 10)) {
+            if (!event.testEmail && !event.isTest && (userHour < 7 || userHour > 10)) {
                 console.log(`Skipping user ${userId}: Local time is ${userHour}:00 (only sending between 07:00-10:00).`);
                 continue;
             }
@@ -584,12 +591,14 @@ export const handler = async (event: any, context: any) => {
             }
 
             // Update user usage
-            await db.collection('users').doc(userId).set({
-                usage: {
-                    baroCredits: admin.firestore.FieldValue.increment(-1)
-                },
-                last_cycling_update_date: today
-            }, { merge: true });
+            if (!event.testEmail) {
+                await db.collection('users').doc(userId).set({
+                    usage: {
+                        baroCredits: admin.firestore.FieldValue.increment(-1)
+                    },
+                    last_cycling_update_date: today
+                }, { merge: true });
+            }
             count++;
         }
 

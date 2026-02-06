@@ -1,14 +1,10 @@
 import { Client } from '@notionhq/client';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_MODEL } from './config/ai.js';
+import { callAI } from './config/ai.js';
 
 // Initialize Notion
 const notion = new Client({
     auth: process.env.NOTION_API_KEY,
 });
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Helper: Extract Location Name from Widget HTML
 function extractLocationName(htmlString: string): string | null {
@@ -110,9 +106,8 @@ export const handler = async (event: any, context: any) => {
             let location = extractLocationName(weerHtml);
 
             // Fallback: Als locatie niet in het weer-veld staat, probeer het via AI te vinden
-            if (!location && geminiKey) {
+            if (!location) {
                 try {
-                    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
                     const infoText = properties.Informatie?.rich_text?.[0]?.plain_text || "";
                     const locPrompt = `
                         Je bent een wielerexpert. Baseer je op:
@@ -125,8 +120,7 @@ export const handler = async (event: any, context: any) => {
                         Geef ALLEEN de stad en het land terug (bijv. "Utsunomiya, Japan"). 
                         Als je het echt niet weet, geef dan "Onbekend" terug.
                     `;
-                    const locResult = await model.generateContent(locPrompt);
-                    const aiLoc = locResult.response.text().trim().replace(/[*_#]/g, '');
+                    const aiLoc = (await callAI(locPrompt)).trim().replace(/[*_#]/g, '');
                     if (!aiLoc.toLowerCase().includes("onbekend")) {
                         location = aiLoc;
                         log(`AI Locatie Fallback gevonden: ${location}`);
@@ -147,32 +141,28 @@ export const handler = async (event: any, context: any) => {
 
             // 5. Gemini AI aanroep
             let aiReport = "Baro Rapportage overgeslagen (geen sleutel of fout)";
-            if (geminiKey) {
-                try {
-                    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-                    const prompt = `
-                        Je bent een enthousiaste wieler-weerman. Schrijf een boeiend weerbericht in het Nederlands voor de koers: "${cleanTitle}".
-                        Locatie: ${location}, ${country}.
-                        Focus: Middagweer (13:00-17:00).
-                        
-                        Betrek deze informatie in je verhaal:
-                        - Koersinfo: "${info}"
-                        - Recente winnaars: "${winners}"
-                        - Opmerkelijk: "${notable}"
-                        
-                        Geef een update over wat de renners in de middag/finale kunnen verwachten (wind, temperatuur, neerslag) en wat dit betekent voor de koers (waaiers? gladde wegen? zware finale?).
-                        
-                        Maak er een meeslepend, sportief verhaal van. Gebruik een paar relevante emoji's.
-                        Max 8-10 zinnen.
-                    `;
+            try {
+                const prompt = `
+                    Je bent een enthousiaste wieler-weerman. Schrijf een boeiend weerbericht in het Nederlands voor de koers: "${cleanTitle}".
+                    Locatie: ${location}, ${country}.
+                    Focus: Middagweer (13:00-17:00).
                     
-                    const result = await model.generateContent(prompt);
-                    aiReport = result.response.text();
-                    log(`AI Report generated for ${cleanTitle}`);
-                } catch (aiErr: any) {
-                    log(`AI Error for ${cleanTitle}:`, aiErr.message);
-                    aiReport = `Fout bij genereren AI rapport: ${aiErr.message}`;
-                }
+                    Betrek deze informatie in je verhaal:
+                    - Koersinfo: "${info}"
+                    - Recente winnaars: "${winners}"
+                    - Opmerkelijk: "${notable}"
+                    
+                    Geef een update over wat de renners in de middag/finale kunnen verwachten (wind, temperatuur, neerslag) en wat dit betekent voor de koers (waaiers? gladde wegen? zware finale?).
+                    
+                    Maak er een meeslepend, sportief verhaal van. Gebruik een paar relevante emoji's.
+                    Max 8-10 zinnen.
+                `;
+                
+                aiReport = await callAI(prompt);
+                log(`AI Report generated for ${cleanTitle}`);
+            } catch (aiErr: any) {
+                log(`AI Error for ${cleanTitle}:`, aiErr.message);
+                aiReport = `Fout bij genereren AI rapport: ${aiErr.message}`;
             }
 
             return {

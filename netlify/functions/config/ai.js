@@ -5,6 +5,7 @@ import Cerebras from '@cerebras/cerebras_cloud_sdk';
 // Configuration
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 export const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || "llama-3.3-70b";
+const CEREBRAS_MODEL_FALLBACK = process.env.CEREBRAS_MODEL_FALLBACK;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
@@ -16,12 +17,13 @@ if (!CEREBRAS_API_KEY) {
     console.warn("WARNING: CEREBRAS_API_KEY is missing. Primary AI will be skipped.");
 }
 
-console.log(`AI Config: Primary ${CEREBRAS_MODEL}, Fallback ${GEMINI_MODEL}`);
+console.log(`AI Config: Primary ${CEREBRAS_MODEL}, Fallback 1: ${CEREBRAS_MODEL_FALLBACK || "None"}, Fallback 2: ${GEMINI_MODEL}`);
 
 /**
  * Universal AI Caller with Fallback
  * 1. Cerebras (Primary)
- * 2. Gemini (Fallback)
+ * 2. Cerebras (Fallback Model)
+ * 3. Gemini (Fallback)
  * 
  * @param {string} prompt - The user prompt
  * @param {object} options - Options: { systemInstruction: string, jsonMode: boolean, temperature: number }
@@ -31,10 +33,10 @@ export async function callAI(prompt, options = {}) {
     const { systemInstruction, jsonMode = false, temperature = 0.7 } = options;
     let lastError = null;
 
-    // 1. Try Cerebras
+    // 1. Try Cerebras (Primary)
     if (CEREBRAS_API_KEY) {
         try {
-            console.log(`[AI] Trying Cerebras (${CEREBRAS_MODEL})...`);
+            console.log(`[AI] Trying Cerebras Primary (${CEREBRAS_MODEL})...`);
             const client = new Cerebras({ apiKey: CEREBRAS_API_KEY });
             
             const messages = [];
@@ -51,17 +53,47 @@ export async function callAI(prompt, options = {}) {
             });
 
             const text = completion.choices[0].message.content;
-            console.log(`[AI] Cerebras success.`);
+            console.log(`[AI] Cerebras Primary success.`);
             return text;
 
         } catch (error) {
-            console.error(`[AI] Cerebras failed: ${error.message}`);
+            console.error(`[AI] Cerebras Primary failed: ${error.message}`);
             lastError = error;
-            // Continue to fallback
+            // Continue to fallback 1
         }
     }
 
-    // 2. Fallback to Gemini
+    // 2. Try Cerebras (Fallback Model)
+    if (CEREBRAS_API_KEY && CEREBRAS_MODEL_FALLBACK) {
+        try {
+            console.log(`[AI] Trying Cerebras Fallback (${CEREBRAS_MODEL_FALLBACK})...`);
+            const client = new Cerebras({ apiKey: CEREBRAS_API_KEY });
+            
+            const messages = [];
+            if (systemInstruction) {
+                messages.push({ role: "system", content: systemInstruction });
+            }
+            messages.push({ role: "user", content: prompt });
+
+            const completion = await client.chat.completions.create({
+                messages,
+                model: CEREBRAS_MODEL_FALLBACK,
+                temperature: temperature,
+                response_format: jsonMode ? { type: "json_object" } : undefined
+            });
+
+            const text = completion.choices[0].message.content;
+            console.log(`[AI] Cerebras Fallback success.`);
+            return text;
+
+        } catch (error) {
+            console.error(`[AI] Cerebras Fallback failed: ${error.message}`);
+            lastError = error;
+            // Continue to fallback 2
+        }
+    }
+
+    // 3. Fallback to Gemini
     if (GEMINI_API_KEY) {
         try {
             console.log(`[AI] Fallback to Gemini (${GEMINI_MODEL})...`);

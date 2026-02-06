@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_MODEL } from './config/ai.js';
+import * as Brevo from '@getbrevo/brevo';
+import { callAI } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -31,6 +31,18 @@ if (!admin.apps.length) {
 
 const db = admin.apps.length ? admin.firestore() : null;
 
+// Initialize Brevo
+const apiInstance = new Brevo.TransactionalEmailsApi();
+const apiKey = process.env.BREVO_API_KEY || 'dummy_key';
+if (apiInstance.setApiKey) {
+    apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, apiKey);
+} else {
+    if (!apiInstance.authentications['apiKey']) {
+        apiInstance.authentications['apiKey'] = {};
+    }
+    apiInstance.authentications['apiKey'].apiKey = apiKey;
+}
+
 // Constants
 const SLOTS = {
     breakfast: [6, 7, 8, 9], // 06:00 - 09:59
@@ -54,12 +66,6 @@ async function fetchWeatherData(lat, lon) {
 // Helper: Generate Baro Push Notification Content
 async function generatePushContent(weatherData, profile, userName) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
         const location = profile.location || "onbekend";
         const userSalutation = userName ? userName.split(' ')[0] : (profile.name || "Gebruiker");
 
@@ -92,9 +98,7 @@ async function generatePushContent(weatherData, profile, userName) {
           }
         `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const text = await callAI(prompt, { jsonMode: true });
         
         // Clean up markdown code blocks if present
         const jsonStr = text.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
@@ -160,11 +164,35 @@ export const handler = async (event, context) => {
 
     try {
         // 1. Fetch all users with credits > 0
-        const usersSnapshot = await db.collection('users')
-            .where('usage.baroCredits', '>', 0)
-            .get();
-            
-        const usersToProcess = usersSnapshot.docs;
+        let usersToProcess = [];
+        
+        if (event.testEmail) {
+            console.log(`TEST MODE: Targeting only ${event.testEmail}`);
+            usersToProcess = [{
+                id: 'test-user',
+                data: () => ({
+                    email: event.testEmail,
+                    displayName: 'Test Edwin',
+                    isBanned: false,
+                    usage: { baroCredits: 100 },
+                    fcmToken: 'mock-fcm-token', // Needed to pass check
+                    settings: {
+                        timezone: 'Europe/Amsterdam',
+                        baroProfile: {
+                            id: 'test-profile',
+                            name: 'Edwin',
+                            location: 'Utrecht',
+                            messengerSchedule: { enabled: true, days: [{ day: 'friday', breakfast: true, lunch: true, dinner: true }, { day: 'saturday', breakfast: true, lunch: true, dinner: true }, { day: 'sunday', breakfast: true, lunch: true, dinner: true }, { day: 'monday', breakfast: true, lunch: true, dinner: true }, { day: 'tuesday', breakfast: true, lunch: true, dinner: true }, { day: 'wednesday', breakfast: true, lunch: true, dinner: true }, { day: 'thursday', breakfast: true, lunch: true, dinner: true }] },
+                        }
+                    }
+                })
+            }];
+        } else {
+            const usersSnapshot = await db.collection('users')
+                .where('usage.baroCredits', '>', 0)
+                .get();
+            usersToProcess = usersSnapshot.docs;
+        }
         
         console.log(`Found ${usersToProcess.length} users with credits to check for PUSH.`);
         const results = [];
@@ -203,6 +231,8 @@ export const handler = async (event, context) => {
             if (SLOTS.breakfast.includes(userHour)) matchedSlot = 'breakfast';
             else if (SLOTS.lunch.includes(userHour)) matchedSlot = 'lunch';
             else if (SLOTS.dinner.includes(userHour)) matchedSlot = 'dinner';
+            
+            if (event.testEmail) matchedSlot = 'test_slot';
 
             if (!matchedSlot) continue;
 
@@ -225,6 +255,8 @@ export const handler = async (event, context) => {
                          shouldSendPush = true;
                     }
                 }
+                
+                if (event.testEmail) shouldSendPush = true;
 
                 if (!shouldSendPush) continue;
 
@@ -239,7 +271,7 @@ export const handler = async (event, context) => {
                 const auditRef = db.collection('email_audit_logs').doc(auditKey);
                 const auditDoc = await auditRef.get();
 
-                if (auditDoc.exists) {
+                if (!event.testEmail && auditDoc.exists) {
                     console.log(`User ${userId}: Already processed PUSH for profile ${profileId} for ${auditKey}.`);
                     continue;
                 }
@@ -319,38 +351,52 @@ export const handler = async (event, context) => {
                 const pushContent = await generatePushContent(weatherData, baroProfile, userName);
 
                 // 4. Send Notification
-                const pushSent = await sendPushNotification(userData.fcmToken, pushContent.title, pushContent.body, userId);
+                let pushSent = false;
+                if (event.testEmail) {
+                    const sendSmtpEmail = new Brevo.SendSmtpEmail();
+                    sendSmtpEmail.subject = `TEST PUSH: ${pushContent.title}`;
+                    sendSmtpEmail.htmlContent = `<html><body>${pushContent.body.replace(/\n/g, '<br>')}</body></html>`;
+                    sendSmtpEmail.sender = { "name": "Baro Test", "email": "no-reply@askbaro.com" };
+                    sendSmtpEmail.to = [{ "email": event.testEmail }];
+                    await apiInstance.sendTransacEmail(sendSmtpEmail);
+                    console.log(`Sent Test Push Email to ${event.testEmail}`);
+                    pushSent = true;
+                } else {
+                    pushSent = await sendPushNotification(userData.fcmToken, pushContent.title, pushContent.body, userId);
+                }
 
                 if (pushSent) {
                     // Deduct Credits & Update Usage
-                    try {
-                        const nestedUpdates = {
-                            usage: {
-                                baroCredits: admin.firestore.FieldValue.increment(-1),
-                                totalCalls: admin.firestore.FieldValue.increment(1),
-                                aiCalls: admin.firestore.FieldValue.increment(1),
-                                pushCount: admin.firestore.FieldValue.increment(1)
-                            }
-                        };
-                        
-                        await db.collection('users').doc(userId).set(nestedUpdates, { merge: true });
-                        
-                        // Audit Log
-                        await auditRef.set({
-                            userId,
-                            profileId,
-                            date: dateStr,
-                            slot: matchedSlot,
-                            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                            status: 'sent',
-                            type: 'push'
-                        });
+                    if (!event.testEmail) {
+                        try {
+                            const nestedUpdates = {
+                                usage: {
+                                    baroCredits: admin.firestore.FieldValue.increment(-1),
+                                    totalCalls: admin.firestore.FieldValue.increment(1),
+                                    aiCalls: admin.firestore.FieldValue.increment(1),
+                                    pushCount: admin.firestore.FieldValue.increment(1)
+                                }
+                            };
+                            
+                            await db.collection('users').doc(userId).set(nestedUpdates, { merge: true });
+                            
+                            // Audit Log
+                            await auditRef.set({
+                                userId,
+                                profileId,
+                                date: dateStr,
+                                slot: matchedSlot,
+                                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                                status: 'sent',
+                                type: 'push'
+                            });
 
-                        // Decrement local credits for next profile in loop
-                        currentCredits--;
+                            // Decrement local credits for next profile in loop
+                            currentCredits--;
 
-                    } catch (e) {
-                        console.error(`User ${userId}: Failed to update credits`, e);
+                        } catch (e) {
+                            console.error(`User ${userId}: Failed to update credits`, e);
+                        }
                     }
 
                     results.push({ userId, profileId, status: 'sent', slot: matchedSlot, type: 'push' });

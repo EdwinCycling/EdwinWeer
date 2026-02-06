@@ -1,7 +1,6 @@
 import admin from 'firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Brevo from '@getbrevo/brevo';
-import { GEMINI_MODEL } from './config/ai.js';
+import { callAI } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -59,12 +58,6 @@ async function fetchWeatherData(lat, lon, days) {
 
 async function generateReport(weatherData, event, diff, profileName, userName, language = 'nl') {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
         const duration = event.duration || 1;
         const isPeriod = duration > 1 || !!event.endDate;
         const isNL = language === 'nl';
@@ -142,9 +135,7 @@ async function generateReport(weatherData, event, diff, profileName, userName, l
           Make it enthusiastic!
         `;
 
-        const result = await model.generateContent(isNL ? promptNL : promptEN);
-        const response = await result.response;
-        return response.text();
+        return await callAI(isNL ? promptNL : promptEN);
 
     } catch (e) {
         console.error("Error generating report:", e);
@@ -195,15 +186,48 @@ export const handler = async (event, context) => {
 
     try {
         // Optimization: Filter users with credits > 0 directly
-        const usersSnapshot = await db.collection('users')
-            .where('usage.baroCredits', '>', 0)
-            .get();
+        let usersDocs = [];
+
+        if (event.testEmail) {
+            console.log(`TEST MODE: Targeting only ${event.testEmail}`);
+            // Create a fake event that triggers today (diff 0)
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0]; // "YYYY-MM-DD"
+            // Actually the logic uses month-day.
+            const m = today.getMonth() + 1;
+            const d = today.getDate();
+            const fakeDate = `${m}-${d}`; // e.g. "5-24"
+
+            usersDocs = [{
+                id: 'test-user',
+                data: () => ({
+                    email: event.testEmail,
+                    displayName: 'Test Edwin',
+                    isBanned: false,
+                    usage: { baroCredits: 100 },
+                    settings: { timezone: 'Europe/Amsterdam' },
+                    customEvents: [{
+                        id: 'test-event-1',
+                        active: true,
+                        name: 'Test Event Vandaag',
+                        date: fakeDate,
+                        location: { lat: 52.09, lon: 5.12, name: 'Utrecht' },
+                        duration: 1
+                    }]
+                })
+            }];
+        } else {
+            const usersSnapshot = await db.collection('users')
+                .where('usage.baroCredits', '>', 0)
+                .get();
+            usersDocs = usersSnapshot.docs;
+        }
 
         const results = [];
 
-        console.log(`Found ${usersSnapshot.size} users with credits to check for Custom Events.`);
+        console.log(`Found ${usersDocs.length} users with credits to check for Custom Events.`);
 
-        for (const doc of usersSnapshot.docs) {
+        for (const doc of usersDocs) {
             const userData = doc.data();
             const userId = doc.id;
 
@@ -226,7 +250,7 @@ export const handler = async (event, context) => {
             const userHour = userTime.getHours();
 
             // Send only between 06:00 and 10:00 (Uitloop 6, 7, 8, 9)
-            if (userHour < 6 || userHour > 9) continue;
+            if (!event.testEmail && (userHour < 6 || userHour > 9)) continue;
 
             // Date comparison based on User Time (midnight)
             const dateForComparison = new Date(userTime);
@@ -258,7 +282,7 @@ export const handler = async (event, context) => {
                 const auditRef = db.collection('email_audit_logs').doc(auditKey);
                 const auditDoc = await auditRef.get();
 
-                if (auditDoc.exists) {
+                if (!event.testEmail && auditDoc.exists) {
                     continue;
                 }
 
@@ -323,19 +347,21 @@ export const handler = async (event, context) => {
                 const sent = await sendEmail(userEmail, userName, subject, emailHtml, creditsInfo, language);
 
                 if (sent) {
-                    await auditRef.set({
-                        userId: doc.id,
-                        eventId: ev.id,
-                        diffDays,
-                        timestamp: admin.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Deduct credit
-                    await db.collection('users').doc(doc.id).set({
-                        usage: {
-                            baroCredits: admin.firestore.FieldValue.increment(-1)
-                        }
-                    }, { merge: true });
+                    if (!event.testEmail) {
+                        await auditRef.set({
+                            userId: doc.id,
+                            eventId: ev.id,
+                            diffDays,
+                            timestamp: admin.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Deduct credit
+                        await db.collection('users').doc(doc.id).set({
+                            usage: {
+                                baroCredits: admin.firestore.FieldValue.increment(-1)
+                            }
+                        }, { merge: true });
+                    }
 
                     results.push({ userId: doc.id, event: ev.name, status: 'sent' });
                 }

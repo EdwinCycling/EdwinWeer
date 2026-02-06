@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_MODEL } from './config/ai.js';
+import * as Brevo from '@getbrevo/brevo';
+import { callAI } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -31,6 +31,18 @@ if (!admin.apps.length) {
 
 const db = admin.apps.length ? admin.firestore() : null;
 
+// Initialize Brevo
+const apiInstance = new Brevo.TransactionalEmailsApi();
+const apiKey = process.env.BREVO_API_KEY || 'dummy_key';
+if (apiInstance.setApiKey) {
+    apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, apiKey);
+} else {
+    if (!apiInstance.authentications['apiKey']) {
+        apiInstance.authentications['apiKey'] = {};
+    }
+    apiInstance.authentications['apiKey'].apiKey = apiKey;
+}
+
 // Helper: Escape HTML
 function escapeHTML(text) {
     if (!text) return "";
@@ -46,7 +58,7 @@ function escapeHTML(text) {
 async function fetchWeatherData(lat, lon) {
     try {
         // Fetch forecast for tomorrow (we need hourly for precision)
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,rain,showers,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility,uv_index&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,rain,showers,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,sunshine_duration&timezone=auto`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Weather API error: ${response.status}`);
         return await response.json();
@@ -107,6 +119,9 @@ function calculateScore(weather, activity) {
     // Get tomorrow's data (index 1)
     const i = 1; 
     const day = weather.daily;
+    console.log("Debug calculateScore day:", day);
+    console.log("Debug calculateScore tempMaxArr:", day?.temperature_2m_max);
+
     const hourly = weather.hourly;
     
     // Basic metrics for tomorrow
@@ -406,12 +421,6 @@ const activityNames = {
 // Helper: Generate AI Text
 async function generateAIContent(weather, activity, scoreData, userName) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
         const activityName = activityNames[activity] || activity;
 
         // Mapping focus points
@@ -466,9 +475,7 @@ Gebruik GEEN markdown. Gebruik wel emojis.
 Taal: Nederlands.
 `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
+        return await callAI(prompt);
 
     } catch (e) {
         console.error("AI Error:", e);
@@ -489,13 +496,33 @@ export const handler = async (event, context) => {
 
     try {
         const usersRef = db.collection('users');
-        const snapshot = await usersRef.get(); // Fetch all users (optimize later with where clauses if possible)
-        // Since activity_settings is a map, we can't easily query "activity_settings != null".
-        // We'll filter in memory.
+        let snapshotDocs = [];
+        
+        if (event.testEmail) {
+            console.log(`TEST MODE: Targeting only ${event.testEmail}`);
+            // Mock a user with a valid activity (Cycling) for tomorrow
+            snapshotDocs = [{
+                id: 'test-user',
+                data: () => ({
+                    email: event.testEmail,
+                    displayName: 'Test Edwin',
+                    isBanned: false,
+                    usage: { baroCredits: 100 },
+                    telegramChatId: 'mock-chat-id', // Can't test Telegram without real ID
+                    settings: { timezone: 'Europe/Amsterdam' },
+                    activity_settings: {
+                        cycling: { enabled: true, min_score: 1, days: [0,1,2,3,4,5,6] } // Enabled for all days
+                    }
+                })
+            }];
+        } else {
+             const snapshot = await usersRef.get();
+             snapshotDocs = snapshot.docs;
+        }
 
         const results = [];
 
-        for (const doc of snapshot.docs) {
+        for (const doc of snapshotDocs) {
             const userData = doc.data();
             const userId = doc.id;
             
@@ -545,7 +572,7 @@ export const handler = async (event, context) => {
             // Log for debugging (remove in production if too noisy)
             // console.log(`User ${userId} local hour: ${userHour} (${userTimezone})`);
 
-            if (!isTest && (userHour < 4 || userHour > 6)) continue;
+            if (!event.testEmail && !isTest && (userHour < 4 || userHour > 6)) continue;
 
             // Check Day (Tomorrow)
             // Notification is sent TODAY (at 04:00) for TOMORROW.
@@ -555,7 +582,7 @@ export const handler = async (event, context) => {
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowDay = tomorrow.getDay(); // 0=Sun, 1=Mon...
 
-            if (!isTest && !config.days.includes(tomorrowDay)) continue;
+            if (!event.testEmail && !isTest && !config.days.includes(tomorrowDay)) continue;
 
             // Prevent duplicate sending for this day/activity
             const dateStr = tomorrow.toISOString().split('T')[0]; // Target date
@@ -563,7 +590,7 @@ export const handler = async (event, context) => {
             const auditRef = db.collection('audit_logs').doc(auditKey); // or specific collection
             const auditDoc = await auditRef.get();
 
-            if (!isTest && auditDoc.exists) {
+            if (!event.testEmail && !isTest && auditDoc.exists) {
                 console.log(`Skipping ${userId}: already sent for ${dateStr}`);
                 continue;
             }
@@ -588,7 +615,12 @@ export const handler = async (event, context) => {
 
             // Fetch Weather
             const weather = await fetchWeatherData(lat, lon);
-            if (!weather) continue;
+            if (!weather) {
+                console.error(`Failed to fetch weather for ${locationName}`);
+                continue;
+            }
+            console.log("Weather Data keys:", Object.keys(weather));
+            console.log("Daily keys:", weather.daily ? Object.keys(weather.daily) : "no daily");
 
             // Calculate Score
             const scoreData = calculateScore(weather, activityKey);
@@ -635,27 +667,39 @@ ${safeAiText}
 <a href="https://askbaro.com">Open App</a>
             `;
 
-            try {
-                await sendTelegramNotification(userData.telegramChatId, message);
-                console.log(`Sent Activity Planner to ${userId} (${activityKey})`);
+        try {
+                if (event.testEmail) {
+                    const sendSmtpEmail = new Brevo.SendSmtpEmail();
+                    sendSmtpEmail.subject = `TEST Activity Planner: ${activityName}`;
+                    sendSmtpEmail.htmlContent = `<html><body>${message.replace(/\n/g, '<br>')}</body></html>`;
+                    sendSmtpEmail.sender = { "name": "Baro Test", "email": "no-reply@askbaro.com" };
+                    sendSmtpEmail.to = [{ "email": event.testEmail }];
+                    await apiInstance.sendTransacEmail(sendSmtpEmail);
+                    console.log(`Sent Test Email to ${event.testEmail}`);
+                } else {
+                    await sendTelegramNotification(userData.telegramChatId, message);
+                    console.log(`Sent Activity Planner to ${userId} (${activityKey})`);
+                }
             } catch (e) {
-                console.error(`Failed to send Telegram to ${userId}`, e);
+                console.error(`Failed to send notification to ${userId}`, e);
             }
 
             // Deduct Credit
-            await usersRef.doc(userId).update({
-                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                'usage.aiCalls': admin.firestore.FieldValue.increment(1)
-            });
+            if (!event.testEmail) {
+                await usersRef.doc(userId).update({
+                    'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                    'usage.aiCalls': admin.firestore.FieldValue.increment(1)
+                });
 
-            // Log
-            await auditRef.set({
-                userId,
-                activity: activityKey,
-                targetDate: dateStr,
-                sentAt: admin.firestore.FieldValue.serverTimestamp(),
-                score: scoreData.score
-            });
+                // Log
+                await auditRef.set({
+                    userId,
+                    activity: activityKey,
+                    targetDate: dateStr,
+                    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                    score: scoreData.score
+                });
+            }
 
             results.push({ userId, activity: activityKey, status: 'sent' });
         }

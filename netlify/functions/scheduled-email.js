@@ -1,7 +1,6 @@
 import admin from 'firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Brevo from '@getbrevo/brevo';
-import { GEMINI_MODEL } from './config/ai.js';
+import { callAI } from './config/ai.js';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -69,12 +68,6 @@ async function fetchWeatherData(lat, lon) {
 // Helper: Generate Baro Report (Reusing logic from ai-weather.js)
 async function generateAIReport(weatherData, profile, userName) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
         const daysAhead = Number(profile.daysAhead) || 3;
         const isGeneral = profile.isGeneralReport === true;
         
@@ -160,9 +153,7 @@ async function generateAIReport(weatherData, profile, userName) {
           ${hasHayFever ? `5. HOOIKOORTS: Wijd een aparte alinea (of zin bij 'feitelijk') aan de invloed van het actuele weer op hooikoorts. Leg uit waarom het weer gunstig of ongunstig is.` : ''}
         `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
+        return await callAI(prompt);
 
     } catch (e) {
         console.error("Error generating report:", e);
@@ -245,12 +236,40 @@ export const handler = async (event, context) => {
 
     try {
         // 1. Fetch all users with credits > 0
-        // Optimization: Filter at database level
-        const usersSnapshot = await db.collection('users')
-            .where('usage.baroCredits', '>', 0)
-            .get();
-            
-        const usersToProcess = usersSnapshot.docs;
+        let usersToProcess = [];
+
+        if (event.testEmail) {
+            console.log(`TEST MODE: Targeting only ${event.testEmail}`);
+            usersToProcess = [{
+                id: 'test-user',
+                data: () => ({
+                    email: event.testEmail,
+                    displayName: 'Test Edwin',
+                    isBanned: false,
+                    usage: { baroCredits: 100 },
+                    settings: {
+                        timezone: 'Europe/Amsterdam',
+                        baroProfile: {
+                            id: 'test-profile',
+                            name: 'Edwin',
+                            location: 'Utrecht',
+                            emailSchedule: { enabled: true, days: [{ day: 'friday', breakfast: true, lunch: true, dinner: true }, { day: 'saturday', breakfast: true, lunch: true, dinner: true }, { day: 'sunday', breakfast: true, lunch: true, dinner: true }, { day: 'monday', breakfast: true, lunch: true, dinner: true }, { day: 'tuesday', breakfast: true, lunch: true, dinner: true }, { day: 'wednesday', breakfast: true, lunch: true, dinner: true }, { day: 'thursday', breakfast: true, lunch: true, dinner: true }] }, // Enable for all days for test
+                        },
+                        forceEmailTest: true // Force send
+                    }
+                })
+            }];
+            // Mock date to ensure we hit a slot?
+            // actually the code checks user local time. I'll rely on the fact that the test script runs "now".
+            // I'll update the mock settings to match the current hour if needed, or just bypass slot check in test mode?
+            // The code checks `SLOTS`. I should probably inject a fake time or ensure the mock matches.
+        } else {
+            // Optimization: Filter at database level
+            const usersSnapshot = await db.collection('users')
+                .where('usage.baroCredits', '>', 0)
+                .get();
+            usersToProcess = usersSnapshot.docs;
+        }
         
         console.log(`Found ${usersToProcess.length} users with credits to check.`);
         const results = [];
@@ -286,6 +305,8 @@ export const handler = async (event, context) => {
             if (SLOTS.breakfast.includes(userHour)) matchedSlot = 'breakfast';
             else if (SLOTS.lunch.includes(userHour)) matchedSlot = 'lunch';
             else if (SLOTS.dinner.includes(userHour)) matchedSlot = 'dinner';
+            
+            if (event.testEmail) matchedSlot = 'test_slot'; // Force slot for test
 
             if (!matchedSlot) continue;
 
@@ -311,6 +332,8 @@ export const handler = async (event, context) => {
                         shouldSendEmail = true;
                     }
                 }
+                
+                if (event.testEmail) shouldSendEmail = true; // Force for test
 
                 // Check Messenger Schedule (Telegram ONLY)
                 // Push is handled in scheduled-push.js
@@ -339,7 +362,7 @@ export const handler = async (event, context) => {
                 const auditRef = db.collection('email_audit_logs').doc(auditKey);
                 const auditDoc = await auditRef.get();
 
-                if (auditDoc.exists) {
+                if (!event.testEmail && auditDoc.exists) {
                     console.log(`User ${userId}: Already processed profile ${profileId} for ${auditKey}.`);
                     continue;
                 }
@@ -537,44 +560,46 @@ ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('
 
                 if (emailSent || messengerSent) {
                     // Deduct Credits & Update Usage
-                    try {
-                        const updates = {
-                            'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
-                            'usage.totalCalls': admin.firestore.FieldValue.increment(1),
-                            'usage.aiCalls': admin.firestore.FieldValue.increment(1)
-                        };
-                        
-                        if (messengerSent) {
-                            updates['usage.messengerCount'] = admin.firestore.FieldValue.increment(1);
+                    if (!event.testEmail) {
+                        try {
+                            const updates = {
+                                'usage.baroCredits': admin.firestore.FieldValue.increment(-1),
+                                'usage.totalCalls': admin.firestore.FieldValue.increment(1),
+                                'usage.aiCalls': admin.firestore.FieldValue.increment(1)
+                            };
+                            
+                            if (messengerSent) {
+                                updates['usage.messengerCount'] = admin.firestore.FieldValue.increment(1);
+                            }
+
+                            // Reset force flag if needed
+                            const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
+                            if (forceTest) {
+                                updates.forceEmailTest = false;
+                                updates['settings.forceEmailTest'] = false;
+                            }
+
+                            await db.collection('users').doc(userId).update(updates);
+                            
+                            // Audit Log
+                            if (!forceTest) {
+                                await auditRef.set({
+                                    userId,
+                                    profileId,
+                                    date: dateStr,
+                                    slot: matchedSlot,
+                                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                                    status: 'sent',
+                                    channels: { email: emailSent, messenger: messengerSent }
+                                });
+                            }
+
+                            // Decrement local credits for next profile in loop
+                            currentCredits--;
+
+                        } catch (e) {
+                            console.error(`User ${userId}: Failed to update credits`, e);
                         }
-
-                        // Reset force flag if needed
-                        const forceTest = userData.forceEmailTest || (settings && settings.forceEmailTest);
-                        if (forceTest) {
-                            updates.forceEmailTest = false;
-                            updates['settings.forceEmailTest'] = false;
-                        }
-
-                        await db.collection('users').doc(userId).update(updates);
-                        
-                        // Audit Log
-                        if (!forceTest) {
-                             await auditRef.set({
-                                userId,
-                                profileId,
-                                date: dateStr,
-                                slot: matchedSlot,
-                                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                                status: 'sent',
-                                channels: { email: emailSent, messenger: messengerSent }
-                            });
-                        }
-
-                        // Decrement local credits for next profile in loop
-                        currentCredits--;
-
-                    } catch (e) {
-                        console.error(`User ${userId}: Failed to update credits`, e);
                     }
 
                     results.push({ userId, profileId, status: 'sent', slot: matchedSlot, channels: { email: emailSent, messenger: messengerSent } });
