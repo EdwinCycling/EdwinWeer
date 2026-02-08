@@ -46,7 +46,7 @@ export const ClimateScoreModal: React.FC<Props> = ({ isOpen, onClose, settings }
 
           {/* Hellmann (Winter) */}
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
-            <h3 className="text-lg font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2 mb-2">
               <Icon name="ac_unit" />
               {t('climate.modal.hellmann_title')}
             </h3>
@@ -59,17 +59,17 @@ export const ClimateScoreModal: React.FC<Props> = ({ isOpen, onClose, settings }
             
             <div className="space-y-1">
               <p className="text-xs font-bold text-text-muted uppercase mb-1">{t('climate.modal.score_meaning')}:</p>
-              <div className="grid grid-cols-[60px_1fr] gap-2 text-xs">
-                <span className="font-mono font-bold text-blue-500">&lt; 40</span>
+              <div className="grid grid-cols-[60px_1fr] gap-2 text-xs text-text-main">
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">&lt; 40</span>
                 <span>{t('climate.modal.hellmann_soft')}</span>
                 
-                <span className="font-mono font-bold text-blue-500">&lt; 100</span>
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">&lt; 100</span>
                 <span>{t('climate.modal.hellmann_moderate')}</span>
                 
-                <span className="font-mono font-bold text-blue-500">&gt; 100</span>
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">&gt; 100</span>
                 <span>{t('climate.modal.hellmann_cold')}</span>
                 
-                <span className="font-mono font-bold text-blue-500">&gt; 300</span>
+                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">&gt; 300</span>
                 <span>{t('climate.modal.hellmann_very_cold')}</span>
               </div>
             </div>
@@ -77,7 +77,7 @@ export const ClimateScoreModal: React.FC<Props> = ({ isOpen, onClose, settings }
 
           {/* Warmtegetal (Summer) */}
           <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 border border-orange-100 dark:border-orange-800">
-            <h3 className="text-lg font-bold text-orange-600 dark:text-orange-400 flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-bold text-orange-700 dark:text-orange-300 flex items-center gap-2 mb-2">
               <Icon name="local_fire_department" />
               {t('climate.modal.heat_title')}
             </h3>
@@ -90,17 +90,17 @@ export const ClimateScoreModal: React.FC<Props> = ({ isOpen, onClose, settings }
 
             <div className="space-y-1">
               <p className="text-xs font-bold text-text-muted uppercase mb-1">{t('climate.modal.score_meaning')}:</p>
-              <div className="grid grid-cols-[60px_1fr] gap-2 text-xs">
-                <span className="font-mono font-bold text-orange-500">&lt; 50</span>
+              <div className="grid grid-cols-[60px_1fr] gap-2 text-xs text-text-main">
+                <span className="font-mono font-bold text-orange-600 dark:text-orange-400">&lt; 50</span>
                 <span>{t('climate.modal.heat_moderate')}</span>
                 
-                <span className="font-mono font-bold text-orange-500">&lt; 100</span>
+                <span className="font-mono font-bold text-orange-600 dark:text-orange-400">&lt; 100</span>
                 <span>{t('climate.modal.heat_average')}</span>
                 
-                <span className="font-mono font-bold text-orange-500">&gt; 100</span>
+                <span className="font-mono font-bold text-orange-600 dark:text-orange-400">&gt; 100</span>
                 <span>{t('climate.modal.heat_good')}</span>
                 
-                <span className="font-mono font-bold text-orange-500">&gt; 300</span>
+                <span className="font-mono font-bold text-orange-600 dark:text-orange-400">&gt; 300</span>
                 <span>{t('climate.modal.heat_top')}</span>
               </div>
             </div>

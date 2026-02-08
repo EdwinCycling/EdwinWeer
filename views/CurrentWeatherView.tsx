@@ -31,6 +31,8 @@ import { getUsage } from '../services/usageService';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useAuth } from '../hooks/useAuth';
+import { db } from '../services/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 import { MonthStatsCard } from '../components/MonthStatsCard';
 
@@ -413,6 +415,16 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     if (!weatherData) return null;
     const isDay = weatherData.current.is_day === 1;
 
+    const storageKey = isDay ? 'sun_graph_expanded' : 'moon_info_expanded';
+    const [isExpanded, setIsExpanded] = useState(() => {
+        const saved = localStorage.getItem(storageKey);
+        return saved !== null ? saved === 'true' : true;
+    });
+
+    useEffect(() => {
+        localStorage.setItem(storageKey, String(isExpanded));
+    }, [isExpanded, storageKey]);
+
     // If it's night, show the Moon card instead of graph
     if (!isDay) {
         const daysToFull = Math.round((moonPhase < 0.5 ? 0.5 - moonPhase : 1.5 - moonPhase) * 29.53);
@@ -434,145 +446,152 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
         // Calculate visible planets
         const now = new Date();
-        // Safely get current location with fallback
-        const currentLocation = settings.locations && settings.activeLocationIndex !== undefined 
-            ? settings.locations[settings.activeLocationIndex] 
-            : null;
-        // Use coordinates from current location or fallback to Netherlands center
+        const currentLocation = location;
         const lat = currentLocation?.lat || 52.1;
         const lon = currentLocation?.lon || 5.2;
         
         const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
 
         return (
-            <div className="bg-bg-card border border-border-color rounded-2xl p-4 relative overflow-hidden min-h-[180px] md:h-[180px] flex flex-col md:flex-row gap-4 transition-colors">
-                {/* Left Section: Moon Phase */}
-                <div className="flex-1 flex flex-col justify-between z-10 relative">
-                    <div>
-                        <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <Icon name="dark_mode" className="text-accent-primary" />
-                                <p className="text-text-muted text-xs font-bold uppercase">{t('moon_phase')}</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => {
-                                        const credits = getUsage().weatherCredits;
-                                        if (credits < 250) {
-                                            setShowPremiumModal(true);
-                                        } else {
-                                            setShowHorizon(true);
-                                        }
-                                    }}
-                                    className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold hover:bg-accent-primary/20 transition-all active:scale-95 flex items-center gap-1.5 border border-accent-primary/20 shadow-sm cursor-pointer"
-                                >
-                                    <Icon name="visibility" className="text-[12px]" />
-                                    <span>Horizon</span>
-                                </button>
-                                <button 
-                                    onClick={() => {
-                                        const credits = getUsage().weatherCredits;
-                                        if (credits < 250) {
-                                            setShowPremiumModal(true);
-                                        } else {
-                                            setShowStarMap(true);
-                                        }
-                                    }}
-                                    className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold hover:bg-accent-primary/20 transition-all active:scale-95 flex items-center gap-1.5 border border-accent-primary/20 shadow-sm cursor-pointer"
-                                >
-                                    <Icon name="public" className="text-[12px]" />
-                                    <span>Sterrenkaart</span>
-                                </button>
-                            </div>
-                        </div>
-                        <p className="text-xl font-bold truncate text-text-main">{getMoonPhaseText(moonPhase, settings.language)}</p>
+            <div className={`bg-bg-card border border-border-color rounded-2xl p-4 relative overflow-hidden transition-colors ${isExpanded ? 'min-h-[180px] md:h-[180px]' : ''}`}>
+                <div className="flex items-center justify-between mb-1 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+                    <div className="flex items-center gap-2">
+                        <Icon name="dark_mode" className="text-accent-primary" />
+                        <p className="text-text-muted text-xs font-bold uppercase">{t('moon_phase')}</p>
+                        <Icon name={isExpanded ? "expand_less" : "expand_more"} className="text-text-muted text-xs" />
                     </div>
-
-                    <div className="flex justify-between items-center mt-2">
-                        <div className="flex flex-col gap-1.5 text-xs text-text-muted">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                                <p>{t('moon.days_to_full')}: <span className="font-bold text-text-main">{daysToFull}</span></p>
-                                <p>{t('moon.illumination')}: <span className="font-bold text-text-main">{illumination}%</span></p>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-color pt-1.5">
-                                <div className="flex items-center gap-1">
-                                    <Icon name="vertical_align_top" className="text-[14px] text-accent-primary" />
-                                    <span>{t('moonrise')}: <span className="font-bold text-text-main">{formatTime(moonrise)}</span></span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Icon name="vertical_align_bottom" className="text-[14px] text-accent-primary" />
-                                    <span>{t('moonset')}: <span className="font-bold text-text-main">{formatTime(moonset)}</span></span>
-                                </div>
-                            </div>
+                    {/* Weather Info Text ID */}
+                    <div className="hidden md:block text-[10px] text-text-muted/60">{t('weather_info')}</div>
+                    
+                    {isExpanded && (
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button 
+                                onClick={() => {
+                                    const credits = getUsage().weatherCredits;
+                                    if (credits < 250) {
+                                        setShowPremiumModal(true);
+                                    } else {
+                                        setShowHorizon(true);
+                                    }
+                                }}
+                                className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold hover:bg-accent-primary/20 transition-all active:scale-95 flex items-center gap-1.5 border border-accent-primary/20 shadow-sm cursor-pointer"
+                            >
+                                <Icon name="visibility" className="text-[12px]" />
+                                <span className="hidden sm:inline">Horizon</span>
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    const credits = getUsage().weatherCredits;
+                                    if (credits < 250) {
+                                        setShowPremiumModal(true);
+                                    } else {
+                                        setShowStarMap(true);
+                                    }
+                                }}
+                                className="text-[10px] bg-accent-primary/10 text-accent-primary px-3 py-1 rounded-full font-bold hover:bg-accent-primary/20 transition-all active:scale-95 flex items-center gap-1.5 border border-accent-primary/20 shadow-sm cursor-pointer"
+                            >
+                                <Icon name="public" className="text-[12px]" />
+                                <span className="hidden sm:inline">Sterrenkaart</span>
+                            </button>
                         </div>
-                        <div className="flex-shrink-0 ml-2">
-                            <MoonPhaseVisual phase={moonPhase} size={settings.language === 'nl' ? 56 : 64} />
-                        </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Divider */}
-                <div className="hidden md:block w-px bg-border-color my-1"></div>
-                <div className="md:hidden h-px bg-border-color w-full opacity-50"></div>
+                {isExpanded && (
+                    <div className="flex flex-col md:flex-row gap-4 h-full animate-in fade-in slide-in-from-top-2">
+                        {/* Left Section: Moon Phase */}
+                        <div className="flex-1 flex flex-col justify-between z-10 relative">
+                            <div>
+                                <p className="text-xl font-bold truncate text-text-main">{getMoonPhaseText(moonPhase, settings.language)}</p>
+                            </div>
 
-                {/* Right Section: Visible Planets */}
-                <div className="flex-1 z-10 relative overflow-hidden flex flex-col min-h-[100px] md:min-h-0">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-[10px] uppercase font-bold text-text-muted">{t('moon.visible_planets')}</span>
-                        <span className="text-[9px] text-text-muted">{t('tonight')}</span>
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin max-h-[120px] md:max-h-none">
-                        <div className="flex flex-col gap-2">
-                            {visiblePlanets.length > 0 ? visiblePlanets.map(p => (
-                                <div key={p.name} className="bg-bg-page rounded-lg p-2 border border-border-color flex flex-col gap-1">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-base">{p.icon}</span>
-                                            <span className="text-xs font-bold text-text-main">{p.nameNl}</span>
+                            <div className="flex justify-between items-center mt-2">
+                                <div className="flex flex-col gap-1.5 text-xs text-text-muted">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                        <p>{t('moon.days_to_full')}: <span className="font-bold text-text-main">{daysToFull}</span></p>
+                                        <p>{t('moon.illumination')}: <span className="font-bold text-text-main">{illumination}%</span></p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border-color pt-1.5">
+                                        <div className="flex items-center gap-1">
+                                            <Icon name="vertical_align_top" className="text-[14px] text-accent-primary" />
+                                            <span>{t('moonrise')}: <span className="font-bold text-text-main">{formatTime(moonrise)}</span></span>
                                         </div>
-                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                                            p.status === 'visible' 
-                                            ? 'bg-accent-primary/20 text-accent-primary' 
-                                            : 'bg-bg-card text-text-muted'
-                                        }`}>
-                                            {p.status === 'visible' ? (
-                                                <>
-                                                    <span className="hidden sm:inline">{t('visible')}</span>
-                                                    <Icon name="visibility" className="text-[10px] sm:hidden" />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span className="hidden sm:inline">{t('cloud_cover')}</span>
-                                                    <Icon name="cloud" className="text-[10px] sm:hidden" />
-                                                </>
+                                        <div className="flex items-center gap-1">
+                                            <Icon name="vertical_align_bottom" className="text-[14px] text-accent-primary" />
+                                            <span>{t('moonset')}: <span className="font-bold text-text-main">{formatTime(moonset)}</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex-shrink-0 ml-2">
+                                    <MoonPhaseVisual phase={moonPhase} size={settings.language === 'nl' ? 56 : 64} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="hidden md:block w-px bg-border-color my-1"></div>
+                        <div className="md:hidden h-px bg-border-color w-full opacity-50"></div>
+
+                        {/* Right Section: Visible Planets */}
+                        <div className="flex-1 z-10 relative overflow-hidden flex flex-col min-h-[100px] md:min-h-0">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[10px] uppercase font-bold text-text-muted">{t('moon.visible_planets')}</span>
+                                <span className="text-[9px] text-text-muted">{t('tonight')}</span>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin max-h-[300px] md:max-h-none">
+                                <div className="flex flex-col gap-2">
+                                    {visiblePlanets.length > 0 ? visiblePlanets.map(p => (
+                                        <div key={p.name} className="bg-bg-page rounded-lg p-2 border border-border-color flex flex-col gap-1">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-base">{p.icon}</span>
+                                                    <span className="text-xs font-bold text-text-main">{p.nameNl}</span>
+                                                </div>
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                                                    p.status === 'visible' 
+                                                    ? 'bg-accent-primary/20 text-accent-primary' 
+                                                    : 'bg-bg-card text-text-muted'
+                                                }`}>
+                                                    {p.status === 'visible' ? (
+                                                        <>
+                                                            <span className="hidden sm:inline">{t('visible')}</span>
+                                                            <Icon name="visibility" className="text-[10px] sm:hidden" />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="hidden sm:inline">{t('cloud_cover')}</span>
+                                                            <Icon name="cloud" className="text-[10px] sm:hidden" />
+                                                        </>
+                                                    )}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="flex items-center justify-between text-[10px] text-text-muted pl-6">
+                                                <span>Best: <span className="font-medium text-text-main">{p.bestTime}</span></span>
+                                                <span>{p.direction} • {p.altitude}°</span>
+                                            </div>
+
+                                            {p.conjunction && (
+                                                <div className="mt-0.5 text-[9px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 pl-6">
+                                                    <Icon name="auto_awesome" className="text-[10px]" />
+                                                    {p.conjunction}
+                                                </div>
                                             )}
-                                        </span>
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between text-[10px] text-text-muted pl-6">
-                                        <span>Best: <span className="font-medium text-text-main">{p.bestTime}</span></span>
-                                        <span>{p.direction} • {p.altitude}°</span>
-                                    </div>
-
-                                    {p.conjunction && (
-                                        <div className="mt-0.5 text-[9px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 pl-6">
-                                            <Icon name="auto_awesome" className="text-[10px]" />
-                                            {p.conjunction}
                                         </div>
+                                    )) : (
+                                        <div className="text-xs text-text-muted italic text-center py-4">{t('moon.no_planets_visible')}</div>
                                     )}
                                 </div>
-                            )) : (
-                                <div className="text-xs text-text-muted italic text-center py-4">{t('moon.no_planets_visible')}</div>
-                            )}
+                            </div>
+                        </div>
+
+                        {/* Background Decoration */}
+                        <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
+                                <Icon name="dark_mode" className="text-text-main text-8xl" />
                         </div>
                     </div>
-                </div>
-
-                {/* Background Decoration */}
-                <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
-                     <Icon name="dark_mode" className="text-text-main text-8xl" />
-                </div>
+                )}
             </div>
         )
     }
@@ -636,50 +655,72 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     const sunCy = height - (currentYRatio * todayMaxElev);
 
     return (
-        <div className="bg-bg-card border border-border-color rounded-2xl p-4 h-[180px] relative transition-colors">
-            <div className="flex justify-between items-start mb-2">
-                 <p className="text-text-muted text-xs font-bold uppercase">{t('sun_graph.title')}</p>
+        <div className={`bg-bg-card border border-border-color rounded-2xl p-4 relative transition-colors ${isExpanded ? 'h-[180px]' : ''}`}>
+            <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+                 <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        <p className="text-text-muted text-xs font-bold uppercase">{t('sun_graph.title')}</p>
+                        <Icon name={isExpanded ? "expand_less" : "expand_more"} className="text-text-muted text-xs" />
+                    </div>
+                    {!isExpanded && weatherData?.daily?.sunrise?.[0] && weatherData?.daily?.sunset?.[0] && (
+                        <div className="flex items-center gap-3 text-xs font-medium text-text-main animate-in fade-in slide-in-from-top-1">
+                            <span className="flex items-center gap-1">
+                                <Icon name="wb_twilight" className="text-orange-400 text-[10px]" />
+                                {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                            <span className="text-text-muted">•</span>
+                            <span className="flex items-center gap-1">
+                                <Icon name="wb_twilight" className="text-indigo-400 text-[10px]" />
+                                {new Date(weatherData.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                        </div>
+                    )}
+                 </div>
                  <div className="flex items-center gap-1 bg-bg-page px-2 py-0.5 rounded-lg border border-border-color">
                     <Icon name="cloud" className="text-xs text-text-muted" />
                     <span className="text-xs font-bold text-text-main">{weatherData.current.cloud_cover}%</span>
                  </div>
             </div>
             
-            <div className="absolute inset-x-0 bottom-8 h-[100px] flex justify-center overflow-hidden">
-                <svg viewBox={`0 0 ${width} ${height + 10}`} className="w-full h-full" preserveAspectRatio="none">
-                    <path d={`M ${longestPath}`} fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-text-muted/30" />
-                    <path d={`M ${todayPath}`} fill="none" stroke="#facc15" strokeWidth="3" strokeLinecap="round" />
-                    <defs>
-                        <linearGradient id="sunGradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#facc15" />
-                            <stop offset="50%" stopColor="#facc15" />
-                            <stop offset="100%" stopColor="#facc15" />
-                        </linearGradient>
-                    </defs>
-                    {currentHr > sunriseHr && currentHr < sunsetHr && (
-                         <g transform={`translate(${sunCx}, ${sunCy})`}>
-                            <circle r="6" fill="#facc15" stroke="white" strokeWidth="2" />
-                            <circle r="12" fill="#facc15" opacity="0.3" className="animate-pulse" />
-                        </g>
-                    )}
-                </svg>
-            </div>
+            {isExpanded && (
+                <div className="animate-in fade-in slide-in-from-top-2">
+                    <div className="absolute inset-x-0 bottom-8 h-[100px] flex justify-center overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height + 10}`} className="w-full h-full" preserveAspectRatio="none">
+                            <path d={`M ${longestPath}`} fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-text-muted/30" />
+                            <path d={`M ${todayPath}`} fill="none" stroke="#facc15" strokeWidth="3" strokeLinecap="round" />
+                            <defs>
+                                <linearGradient id="sunGradient" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="#facc15" />
+                                    <stop offset="50%" stopColor="#facc15" />
+                                    <stop offset="100%" stopColor="#facc15" />
+                                </linearGradient>
+                            </defs>
+                            {currentHr > sunriseHr && currentHr < sunsetHr && (
+                                <g transform={`translate(${sunCx}, ${sunCy})`}>
+                                    <circle r="6" fill="#facc15" stroke="white" strokeWidth="2" />
+                                    <circle r="12" fill="#facc15" opacity="0.3" className="animate-pulse" />
+                                </g>
+                            )}
+                        </svg>
+                    </div>
 
-            <div className="absolute bottom-12 left-4 text-[10px] font-bold text-text-muted">
-                {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
-            </div>
-            <div className="absolute bottom-12 right-4 text-[10px] font-bold text-text-muted">
-                {new Date(weatherData.daily.sunset[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
-            </div>
+                    <div className="absolute bottom-12 left-4 text-[10px] font-bold text-text-muted">
+                        {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
+                    </div>
+                    <div className="absolute bottom-12 right-4 text-[10px] font-bold text-text-muted">
+                        {new Date(weatherData.daily.sunset[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
+                    </div>
 
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-text-muted">
-                <div className="flex items-center gap-1">
-                    <span className="w-3 h-0.5 bg-[#facc15]"></span> {t('sun_graph.today')}
+                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-text-muted">
+                        <div className="flex items-center gap-1">
+                            <span className="w-3 h-0.5 bg-[#facc15]"></span> {t('sun_graph.today')}
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span className="w-3 h-0.5 bg-text-muted/50 border-t border-dashed border-text-muted"></span> {t('sun_graph.longest')}
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1">
-                    <span className="w-3 h-0.5 bg-text-muted/50 border-t border-dashed border-text-muted"></span> {t('sun_graph.longest')}
-                </div>
-            </div>
+            )}
         </div>
       );
     };
@@ -796,52 +837,128 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     };
     }, [weatherData, settings.tempUnit, settings.timeFormat]);
   
-  const getCurrentHourly = (key: keyof OpenMeteoResponse['hourly']) => {
+  type HourlyNumericKey = Exclude<keyof OpenMeteoResponse['hourly'], 'time'>;
+
+  const getCurrentHourly = (key: HourlyNumericKey): number => {
       if (!weatherData) return 0;
       const currentHour = getLocationTime().getHours();
       return weatherData.hourly[key]?.[currentHour] ?? 0;
   };
 
+  const [activityMode, setActivityMode] = useState<'current' | 'day_max'>(() => {
+    return localStorage.getItem('activity_mode') as 'current' | 'day_max' || 'current';
+  });
+
+  const [isActivitiesExpanded, setIsActivitiesExpanded] = useState(() => {
+    return localStorage.getItem('activities_expanded') !== 'false';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('activity_mode', activityMode);
+  }, [activityMode]);
+
+  useEffect(() => {
+    localStorage.setItem('activities_expanded', String(isActivitiesExpanded));
+  }, [isActivitiesExpanded]);
+
   const currentActivityScores = React.useMemo(() => {
       if (!weatherData) return [];
       
       const currentHour = getLocationTime().getHours();
-      // Safe access to hourly probability, fallback to 0 if missing
-      const precipProb = weatherData.hourly.precipitation_probability ? weatherData.hourly.precipitation_probability[currentHour] : 0;
       
-      // Extract today's hourly precipitation for score logic
-      // We need 00:00 to 23:00 of the current day to evaluate "before 8:00" logic correctly
+      // Get enabled activities
+      const allActivities: ActivityType[] = ['bbq', 'cycling', 'walking', 'running', 'padel', 'tennis', 'field_sports', 'golf', 'sailing', 'beach', 'gardening', 'stargazing', 'home', 'work'];
+      const enabledActivities = allActivities.filter(t => settings.enabledActivities?.[t] !== false && t !== 'home' && t !== 'work');
+
+      // Common: Hourly Precip for today (00:00 - 23:59)
       const now = getLocationTime();
-      // Format YYYY-MM-DD in local time
       const pad = (n: number) => n.toString().padStart(2, '0');
       const todayDateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      
       const todayStartIndex = weatherData.hourly.time.findIndex(t => t.startsWith(todayDateStr));
-      let hourlyPrecip: number[] | undefined;
       
+      let hourlyPrecip: number[] | undefined;
       if (todayStartIndex !== -1) {
           hourlyPrecip = weatherData.hourly.precipitation.slice(todayStartIndex, todayStartIndex + 24);
       }
 
-      const activityData = {
-          tempFeelsLike: weatherData.current.apparent_temperature,
-          windKmh: weatherData.current.wind_speed_10m,
-          precipMm: weatherData.current.precipitation,
-          precipProb: precipProb,
-          gustsKmh: weatherData.current.wind_gusts_10m,
-          weatherCode: weatherData.current.weather_code,
-          sunChance: 100 - weatherData.current.cloud_cover,
-          cloudCover: weatherData.current.cloud_cover,
-          visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000,
-          hourlyPrecip // Pass hourly data
-      };
+      let activityData: any;
 
-      const activities: ActivityType[] = ['bbq', 'cycling', 'walking', 'running', 'padel', 'tennis', 'field_sports'];
-      return activities.map(type => ({
+      if (activityMode === 'current') {
+          // Current Weather Logic
+          const precipProb = weatherData.hourly.precipitation_probability ? weatherData.hourly.precipitation_probability[currentHour] : 0;
+          
+          activityData = {
+              tempFeelsLike: weatherData.current.apparent_temperature,
+              windKmh: weatherData.current.wind_speed_10m,
+              precipMm: weatherData.current.precipitation,
+              precipProb: precipProb,
+              gustsKmh: weatherData.current.wind_gusts_10m,
+              weatherCode: weatherData.current.weather_code,
+              sunChance: 100 - weatherData.current.cloud_cover,
+              cloudCover: weatherData.current.cloud_cover,
+              visibility: weatherData.hourly.visibility ? weatherData.hourly.visibility[currentHour] : 10000,
+              hourlyPrecip
+          };
+      } else {
+          // Day Max / Average Logic
+          // 1. Max Temp Feels Like
+          // 2. Avg Wind
+          // 3. Avg Rain (Total / 24) & Avg Prob
+          
+          let maxFeelsLike = -999;
+          let sumWind = 0;
+          let sumRain = 0;
+          let sumProb = 0;
+          let maxGusts = 0;
+          let sumCloud = 0;
+          let count = 0;
+
+          if (todayStartIndex !== -1) {
+              const hoursToCheck = Math.min(24, weatherData.hourly.time.length - todayStartIndex);
+              
+              for (let i = 0; i < hoursToCheck; i++) {
+                  const idx = todayStartIndex + i;
+                  
+                  const fl = weatherData.hourly.apparent_temperature[idx];
+                  if (fl > maxFeelsLike) maxFeelsLike = fl;
+                  
+                  sumWind += weatherData.hourly.wind_speed_10m[idx];
+                  sumRain += weatherData.hourly.precipitation[idx];
+                  sumProb += weatherData.hourly.precipitation_probability[idx] || 0;
+                  
+                  const g = weatherData.hourly.wind_gusts_10m[idx];
+                  if (g > maxGusts) maxGusts = g;
+                  
+                  sumCloud += weatherData.hourly.cloud_cover[idx];
+                  
+                  count++;
+              }
+          }
+
+          const avgWind = count > 0 ? sumWind / count : 0;
+          const avgRain = count > 0 ? sumRain / count : 0; // mm/h avg
+          const avgProb = count > 0 ? sumProb / count : 0;
+          const avgCloud = count > 0 ? sumCloud / count : 0;
+
+          activityData = {
+              tempFeelsLike: maxFeelsLike,
+              windKmh: avgWind,
+              precipMm: avgRain,
+              precipProb: avgProb,
+              gustsKmh: maxGusts,
+              weatherCode: weatherData.current.weather_code, // Keep current code as general indicator, or use most frequent? Current is fine as fallback
+              sunChance: 100 - avgCloud,
+              cloudCover: avgCloud,
+              visibility: 10000, // Default good visibility for daily avg
+              hourlyPrecip
+          };
+      }
+
+      return enabledActivities.map(type => ({
           type,
           ...calculateActivityScore(activityData, type, settings.language)
       }));
-  }, [weatherData, settings.language]);
+  }, [weatherData, settings.language, activityMode, settings.enabledActivities]);
 
     const getActivityIcon = (type: ActivityType) => {
         switch (type) {
@@ -1349,7 +1466,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     )}
 
                     {/* New Month Stats Card - Moved here */}
-                    <MonthStatsCard location={location} settings={settings} onNavigate={onNavigate} weatherData={weatherData || undefined} />
+                    <MonthStatsCard location={location} settings={settings} onNavigate={onNavigate} onUpdateSettings={onUpdateSettings} weatherData={weatherData as any} />
 
                     {/* New Sun Graph Widget */}
                     <div className="mb-8">
@@ -1363,12 +1480,18 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             language={settings.language} 
                             onToggleNotification={(enabled) => onUpdateSettings && onUpdateSettings({...settings, auroraNotification: enabled})}
                             notificationEnabled={settings.auroraNotification}
+                            defaultCollapsed={true}
                          />
                     )}
 
                     {/* Solar Power Widget - only show when sun graph is shown (is_day) */}
                     {weatherData.current.is_day === 1 && (
-                        <SolarPowerWidget weatherData={weatherData} settings={settings} />
+                        <SolarPowerWidget 
+                            weatherData={weatherData} 
+                            settings={settings} 
+                            collapsible={true}
+                            storageKey="solar_widget_expanded"
+                        />
                     )}
 
                     {(frostWarning || rainAlert) && (
@@ -1423,61 +1546,108 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         
                         {/* Activities Section */}
                         {currentActivityScores.length > 0 && (
-                            <>
-                                <p className="text-xs text-text-muted mb-2 italic">
-                                    Activiteitenscores op basis van actuele weersomstandigheden (momentopname)
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                                    {currentActivityScores.map(score => (
-                                    <div key={score.type} className="bg-bg-card rounded-xl p-3 border border-border-color flex flex-row items-center justify-between shadow-sm gap-2">
-                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                            <div className={`p-2 rounded-lg bg-bg-page shrink-0 ${getScoreColor(score.score10)}`}>
-                                                <Icon name={getActivityIcon(score.type)} className="text-lg sm:text-xl" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-bold text-xs sm:text-sm capitalize truncate">{t('activity.' + score.type)}</p>
-                                                <p className="text-[9px] sm:text-[10px] text-text-muted italic truncate">"{score.text}"</p>
-                                            </div>
+                            <div className="mb-4 border border-border-color rounded-xl bg-bg-card overflow-hidden">
+                                <div 
+                                    className="p-3 flex items-center justify-between bg-bg-card border-b border-border-color cursor-pointer"
+                                    onClick={() => {
+                                        const newState = !isActivitiesExpanded;
+                                        setIsActivitiesExpanded(newState);
+                                        localStorage.setItem('activities_expanded', String(newState));
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-bg-page p-2 rounded-lg">
+                                            <Icon name="directions_run" />
                                         </div>
-                                        <div className="flex flex-col items-end shrink-0">
-                                            <span className={`text-lg sm:text-xl font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
-                                            <div className="flex gap-0.5">
-                                                {[1,2,3,4,5].map(s => {
-                                                    const isFull = s <= score.stars;
-                                                    const isHalf = !isFull && (s - 0.5 <= score.stars);
-                                                    
-                                                    if (isHalf) {
-                                                        return (
-                                                            <div key={s} className="relative w-[12px] h-[12px]">
-                                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                                    <Icon name="star" className="text-[12px] text-text-muted/20" />
-                                                                </div>
-                                                                <div className="absolute inset-y-0 left-0 w-[50%] overflow-hidden">
-                                                                    <div className="w-[12px] h-full flex items-center justify-center">
-                                                                         <Icon name="star" className="text-[12px] text-yellow-400 drop-shadow-sm" />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    
-                                                    return (
-                                                        <div key={s} className="w-[12px] h-[12px] flex items-center justify-center">
-                                                            <Icon 
-                                                                name="star" 
-                                                                className={`text-[12px] ${isFull ? "text-yellow-400 drop-shadow-sm" : "text-text-muted/20"}`} 
-                                                            />
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                                        <h3 className="text-sm font-bold uppercase text-text-muted">{t('activities') || "Activiteiten"}</h3>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex bg-bg-page rounded-lg p-1 border border-border-color" onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                                onClick={() => setActivityMode('current')}
+                                                className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-colors ${activityMode === 'current' ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                                            >
+                                                Actueel
+                                            </button>
+                                            <button 
+                                                onClick={() => setActivityMode('day_max')}
+                                                className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-colors ${activityMode === 'day_max' ? 'bg-primary text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                                            >
+                                                Max dag
+                                            </button>
+                                        </div>
+
+                                        <div className="p-1 rounded-full hover:bg-bg-page text-text-muted transition-colors">
+                                            <Icon name={isActivitiesExpanded ? "expand_less" : "expand_more"} className="text-xl" />
                                         </div>
                                     </div>
-                                ))}
+                                </div>
+
+                                {isActivitiesExpanded && (
+                                    <div className="p-3 bg-bg-page/30">
+                                        <p className="text-xs text-text-muted mb-3 italic px-1">
+                                            {activityMode === 'current' 
+                                                ? "Activiteitenscores op basis van actuele weersomstandigheden (momentopname)" 
+                                                : "Activiteitenscores op basis van dagelijkse maxima en gemiddelden (regen, wind, temp)"
+                                            }
+                                        </p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {currentActivityScores.map(score => (
+                                                <div key={score.type} className="bg-bg-card rounded-xl p-3 border border-border-color flex flex-row items-center justify-between shadow-sm gap-2">
+                                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                                        <div className={`p-2 rounded-lg bg-bg-page shrink-0 ${getScoreColor(score.score10)}`}>
+                                                            <Icon name={getActivityIcon(score.type)} className="text-lg sm:text-xl" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-xs sm:text-sm capitalize truncate">{t('activity.' + score.type)}</p>
+                                                            <p className="text-[9px] sm:text-[10px] text-text-muted italic truncate">"{score.text}"</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end shrink-0">
+                                                        <span className={`text-lg sm:text-xl font-bold ${getScoreColor(score.score10)}`}>{score.score10}</span>
+                                                        <div className="flex gap-0.5">
+                                                            {[1,2,3,4,5].map(s => {
+                                                                const isFull = s <= score.stars;
+                                                                const isHalf = !isFull && (s - 0.5 <= score.stars);
+                                                                
+                                                                if (isHalf) {
+                                                                    return (
+                                                                        <div key={s} className="relative w-[12px] h-[12px]">
+                                                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                                                <Icon name="star" className="text-[12px] text-text-muted/20" />
+                                                                            </div>
+                                                                            <div className="absolute inset-y-0 left-0 w-[50%] overflow-hidden">
+                                                                                <div className="w-[12px] h-full flex items-center justify-center">
+                                                                                     <Icon name="star" className="text-[12px] text-yellow-400 drop-shadow-sm" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                
+                                                                return (
+                                                                    <div key={s} className="w-[12px] h-[12px] flex items-center justify-center">
+                                                                        <Icon 
+                                                                            name="star" 
+                                                                            className={`text-[12px] ${isFull ? "text-yellow-400 drop-shadow-sm" : "text-text-muted/20"}`} 
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </>
                         )}
                         
+                        <div className="h-8 md:h-10" />
+                        <h3 className="text-lg font-bold mb-4">{t('weather_info') || "Weer Info"}</h3>
+
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {/* Thermodynamics */}
                             <div onClick={() => setShowFeelsLikeModal(true)} className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm relative group cursor-pointer hover:bg-bg-card transition-colors">
@@ -1765,7 +1935,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               setShowFavorites(false);
           }}
           settings={settings}
-          onOpenGlobe={() => onNavigate(ViewState.GLOBE)}
       />
       <WelcomeModal 
           isOpen={showWelcomeModal} 
@@ -1831,7 +2000,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                 <button 
                     onClick={() => {
                         setShowPremiumModal(false);
-                        onNavigate('settings');
+                        onNavigate(ViewState.SETTINGS);
                     }}
                     className="bg-accent-primary text-white py-2 px-4 rounded-lg font-bold hover:bg-accent-secondary transition-colors w-full"
                 >

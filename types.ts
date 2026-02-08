@@ -235,6 +235,9 @@ export interface AppSettings {
     startWithImmersive?: boolean;
     enableAurora?: boolean; // Default true
     auroraNotification?: boolean; // Default false
+    currentView?: {
+        monthStatsExpanded?: boolean;
+    };
 }
 
 export interface TripPlannerSettings {

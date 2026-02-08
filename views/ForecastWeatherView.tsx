@@ -199,7 +199,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
       return weatherData.daily.time.map((ts, i) => {
           const date = new Date(ts);
           const locale = getLocale(settings.language);
-          let dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : date.toLocaleDateString(locale, { weekday: 'long' });
+          let dayName = date.toLocaleDateString(locale, { weekday: 'long' });
           
           if (i > 0) {
              const dayMonth = date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
@@ -911,19 +911,35 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             </tbody>
                         </table>
                         
-                        <div className="flex justify-center mt-4">
+                        <div className="flex flex-col items-center mt-4 gap-3">
                              <button 
-                                onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : 7)}
+                                onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : visibleDays <= 14 ? 16 : 7)}
                                 className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
                             >
-                                {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
+                                {visibleDays <= 7 ? 'Toon 14 dagen' : visibleDays <= 14 ? 'Toon 16 dagen' : 'Toon 7 dagen'}
                             </button>
+
+                            {visibleDays >= 14 && (
+                                <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
+                                    <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
+                                        Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                    </p>
+                                    <button 
+                                        onClick={() => onNavigate(ViewState.HOLIDAY)}
+                                        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="flight" className="text-lg" />
+                                        6-Maanden / Vakantieweer
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ) : viewMode === 'table2' ? (
                     <div className="flex flex-col w-full mt-4">
-                        {[0, 7].map((offset) => {
+                        {[0, 7, 14].map((offset) => {
                             if (visibleDays <= 7 && offset > 0) return null;
+                            if (visibleDays <= 14 && offset > 7) return null;
                             const weekData = graphData.slice(offset, offset + 7);
                             if (weekData.length === 0) return null;
 
@@ -1049,13 +1065,28 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             );
                         })}
                         
-                        <div className="flex justify-center mt-4">
+                        <div className="flex flex-col items-center mt-4 gap-3">
                              <button 
-                                onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : 7)}
+                                onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : visibleDays <= 14 ? 16 : 7)}
                                 className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
                             >
-                                {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
+                                {visibleDays <= 7 ? 'Toon 14 dagen' : visibleDays <= 14 ? 'Toon 16 dagen' : 'Toon 7 dagen'}
                             </button>
+
+                            {visibleDays >= 14 && (
+                                <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
+                                    <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
+                                        Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                    </p>
+                                    <button 
+                                        onClick={() => onNavigate(ViewState.HOLIDAY)}
+                                        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="flight" className="text-lg" />
+                                        6-Maanden / Vakantieweer
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ) : viewMode === 'expanded2' ? (
@@ -1144,6 +1175,27 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
 
                             </div>
                         ))}
+                        
+                        <div className="flex flex-col items-center mt-4 gap-3">
+                            <button onClick={() => setVisibleDays(visibleDays === 3 ? 7 : visibleDays === 7 ? 16 : 3)} className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color text-text-muted">
+                                {visibleDays === 3 ? t('current.seven_days') : visibleDays === 7 ? t('current.sixteen_days') : t('current.less')}
+                            </button>
+
+                            {visibleDays >= 14 && (
+                                <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
+                                    <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
+                                        Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                    </p>
+                                    <button 
+                                        onClick={() => onNavigate(ViewState.HOLIDAY)}
+                                        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="flight" className="text-lg" />
+                                        6-Maanden / Vakantieweer
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 ) : (viewMode === 'graph' || viewMode === 'graph2') ? (
                     <div className="flex flex-col w-full mt-4">

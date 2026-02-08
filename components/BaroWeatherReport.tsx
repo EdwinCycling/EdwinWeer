@@ -4,7 +4,7 @@ import { OpenMeteoResponse, BaroProfile, ViewState, ActivityType, AppLanguage } 
 import { generateBaroWeatherReport } from '../services/geminiService';
 import { Icon } from './Icon';
 import { useAuth } from '../hooks/useAuth';
-import { getUsage, getLimit, trackCall, decrementLocalBaroCredit, trackBaroCall, trackAiCall } from '../services/usageService';
+import { getUsage, getLimit, trackCall, decrementLocalBaroCredit, loadRemoteUsage } from '../services/usageService';
 import { searchCityByName } from '../services/geoService';
 import { fetchForecast, getActivityIcon, getScoreColor } from '../services/weatherService';
 import { calculateActivityScore, ActivityScore, ActivityWeatherData } from '../services/activityService';
@@ -190,10 +190,10 @@ export const BaroWeatherReport: React.FC<Props> = ({ weatherData: appWeatherData
             setReportDate(new Date());
             setShowModal(true); // Open modal on success
             
-            // Deduct credits (Strict)
-            trackBaroCall();
-            // Also deduct weather credit as we used data
-            trackAiCall();
+            // Refresh credits from server (since backend deducted them)
+            if (user) {
+                await loadRemoteUsage(user.uid); // Sync new credit balance
+            }
 
         } catch (e: any) {
             console.error("Baro Generation Error:", e);

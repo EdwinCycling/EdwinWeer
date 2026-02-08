@@ -976,8 +976,9 @@ export const calculateComfortScore = (weather: {
     else if (temp < 20) baseScore = 8;
     else if (temp <= 28) baseScore = 10;
     else if (temp <= 32) baseScore = 8;
-    else if (temp <= 35) baseScore = 5;
-    else baseScore = 3;
+    else if (temp <= 35) baseScore = 6;
+    else if (temp <= 40) baseScore = 4;
+    else baseScore = 2; // > 40 is extreme heat
 
     let score = baseScore;
     let mainFactor = '';

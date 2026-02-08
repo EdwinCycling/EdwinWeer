@@ -7,6 +7,7 @@ import * as turf from '@turf/turf';
 import { generateGpx } from '../services/gpxService';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
+import { auth } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { loadSettings } from '../services/storageService';
 import { searchCityByName } from '../services/geoService';
@@ -16,7 +17,7 @@ import { convertWind, throttledFetch } from '../services/weatherService';
 import { RouteDetailModal } from '../components/RouteDetailModal';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { Modal } from '../components/Modal';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 
 // Fix Leaflet marker icons
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -29,6 +30,22 @@ let DefaultIcon = L.icon({
     iconAnchor: [12, 41]
 });
 L.Marker.prototype.options.icon = DefaultIcon;
+
+const SliderIcon = L.divIcon({
+    className: 'slider-marker-icon',
+    html: `
+      <div style="
+        width: 16px;
+        height: 16px;
+        background: #ef4444;
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+      "></div>
+    `,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+});
 
 const MapRecenter = ({ center }: { center: [number, number] }) => {
     const map = useMap();
@@ -154,6 +171,70 @@ const ElevationChart = ({ data, t }: { data: any[], t: (key: string) => string }
     );
 };
 
+const WindChart = ({ data }: { data: any[] }) => {
+    if (!data || data.length === 0) return null;
+
+    const maxWind = Math.max(...data.map(d => Math.abs(d.wind)));
+    const domainMax = Math.ceil(maxWind / 5) * 5;
+
+    const gradientOffset = () => {
+        const dataMax = Math.max(...data.map((i) => i.wind));
+        const dataMin = Math.min(...data.map((i) => i.wind));
+      
+        if (dataMax <= 0) return 0;
+        if (dataMin >= 0) return 1;
+      
+        return dataMax / (dataMax - dataMin);
+    };
+    
+    const off = gradientOffset();
+
+    return (
+        <div className="h-40 w-full mt-2 bg-bg-page/50 rounded-lg p-2 border border-border-color/50">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset={off} stopColor="#22c55e" stopOpacity={1} />
+                            <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.5} />
+                    <YAxis 
+                        domain={[-domainMax, domainMax]}
+                        tick={{ fontSize: 10, fill: 'var(--text-muted)' }} 
+                        width={35}
+                        tickFormatter={(val) => `${Math.round(val)}`}
+                        allowDecimals={false}
+                    />
+                    <Tooltip 
+                        contentStyle={{ backgroundColor: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '12px' }}
+                        itemStyle={{ color: 'var(--text-main)' }}
+                        formatter={(value: number) => [
+                            `${Math.abs(Math.round(value))} km/u`, 
+                            value > 0 ? 'Mewind' : 'Tegenwind'
+                        ]}
+                        labelFormatter={() => ''}
+                    />
+                    <ReferenceLine y={0} stroke="var(--text-muted)" strokeDasharray="3 3" />
+                    <Area 
+                        type="monotone" 
+                        dataKey="wind" 
+                        stroke="#8884d8" 
+                        fill="url(#splitColor)" 
+                        strokeWidth={0}
+                        fillOpacity={0.6}
+                    />
+                </AreaChart>
+            </ResponsiveContainer>
+            <div className="flex justify-between text-[10px] text-text-muted mt-1 px-2">
+                <span className="text-red-500">Max Tegen: {Math.round(Math.abs(Math.min(...data.map(d => d.wind), 0)))} km/u</span>
+                <span className="text-green-500">Max Mee: {Math.round(Math.max(...data.map(d => d.wind), 0))} km/u</span>
+            </div>
+        </div>
+    );
+};
+
 interface Props {
     onNavigate?: (view: ViewState) => void;
 }
@@ -244,6 +325,52 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
     const [isSnapping, setIsSnapping] = useState(false);
     const [originalRouteData, setOriginalRouteData] = useState<any>(null);
     const routeLayerRef = useRef<any>(null);
+
+    const [chartMode, setChartMode] = useState<'elevation' | 'wind'>('elevation');
+    const [sliderValue, setSliderValue] = useState<number>(0);
+
+    // Reset slider when route changes
+    useEffect(() => {
+        if (routeData) {
+            setSliderValue(0);
+        }
+    }, [routeData]);
+
+    const getSliderPosition = () => {
+        if (!routeData || !routeData.features || !routeData.features[0]) return null;
+        
+        try {
+            const geometry = routeData.features[0].geometry;
+            const line = turf.lineString(geometry.coordinates);
+            const length = turf.length(line, { units: 'kilometers' });
+            
+            const dist = (sliderValue / 100) * length;
+            const point = turf.along(line, dist, { units: 'kilometers' });
+            
+            // Calculate time
+            const timeInMinutes = (dist / averageSpeed) * 60;
+            const hours = Math.floor(timeInMinutes / 60);
+            const minutes = Math.round(timeInMinutes % 60);
+            
+            // Format arrival time
+            const [startH, startM] = selectedTime.split(':').map(Number);
+            const startDate = new Date();
+            startDate.setHours(startH, startM, 0, 0);
+            startDate.setMinutes(startDate.getMinutes() + timeInMinutes);
+            const arrivalTime = startDate.toTimeString().substring(0, 5);
+
+            return {
+                lat: point.geometry.coordinates[1],
+                lng: point.geometry.coordinates[0],
+                dist: dist.toFixed(1),
+                time: `${hours > 0 ? `${hours}u ` : ''}${minutes}m`,
+                arrivalTime
+            };
+        } catch (e) {
+            console.warn("Error calculating slider position", e);
+            return null;
+        }
+    };
 
     // Listen for credit updates
     useEffect(() => {
@@ -388,10 +515,22 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
     const handleCalculate = async () => {
         if (!startLocation) return;
         
-        // Credit Check
-        if (!hasBaroCredits()) {
-            setError(t('baro_rit_advies.no_credits'));
-            return;
+        // Credit Check Pre-flight (Frontend)
+        // If logged in but no credits, show warning immediately to save a call
+        // If not logged in, we let it fail at backend or handle it here?
+        // User requirement: "Als je geen baro credits hebt..." -> "baro credits nodig"
+        
+        if (auth.currentUser) {
+            // We can check local stats if available, but backend is source of truth
+            if (!hasBaroCredits()) {
+                setError("Baro credits nodig om routes te berekenen.");
+                return;
+            }
+        } else {
+             // Not logged in -> "Niet geautoriseerd" logic via backend or explicit here
+             // User said: "Als je niet bent ingelogd: Je krijgt een melding 'Niet geautoriseerd...'"
+             // Wait, user said: "Als je geen baro credits hebt... baro credits nodig"
+             // Let's assume backend handles the exact messaging for consistency
         }
 
         setLoading(true);
@@ -400,9 +539,15 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
         setRouteData(null);
 
         try {
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch('/.netlify/functions/calculate-route', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                     startLocation,
                     returnLocation: windStrategy === 'custom' ? returnLocation : undefined,
@@ -425,8 +570,14 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
             });
 
             if (!response.ok) {
-                const text = await response.text();
-                throw new Error(text || 'Failed to calculate route');
+                let errorMessage = 'Failed to calculate route';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.message || errorMessage;
+                } catch (e) {
+                    errorMessage = await response.text();
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
@@ -517,7 +668,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
     const simplifyRouteForEdit = (routeFeature: any) => {
         if (!routeFeature?.geometry?.coordinates || !Array.isArray(routeFeature.geometry.coordinates)) return routeFeature;
 
-        const targetMax = 800;
+        const targetMax = 25; // Hard limit for editing as requested
         let current = routeFeature;
         let currentCount = routeFeature.geometry.coordinates.length;
         if (currentCount <= targetMax) return routeFeature;
@@ -603,7 +754,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
             const allCoords = flatLatLngs.map((ll: any) => [ll.lng, ll.lat]);
             
             // Filter to reduce points
-            const maxPoints = 50;
+            const maxPoints = 25; // Limit to 25 points as requested
             const step = Math.max(1, Math.floor(allCoords.length / maxPoints));
             const filteredCoords = allCoords.filter((_, i) => i === 0 || i === allCoords.length - 1 || i % step === 0);
 
@@ -775,6 +926,58 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
             ele: c[2] || 0
         }));
     }, [routeData]);
+
+    // Process Wind Data
+    const windGraphData = React.useMemo(() => {
+        if (!routeData || !routeData.features[0] || (!currentWind && !routeData.features[0].properties.wind)) return [];
+        
+        const coords = routeData.features[0].geometry.coordinates;
+        // Use wind from route or currentWind
+        const windDir = routeData.features[0].properties.wind?.direction || currentWind?.direction || 0;
+        const windSpeed = routeData.features[0].properties.wind?.speed || currentWind?.speed || 0;
+        
+        // Sample to max 100 points
+        const step = Math.max(1, Math.ceil(coords.length / 100));
+        
+        return coords.filter((_: any, i: number) => i % step === 0).map((c: number[], i: number, arr: any[]) => {
+            // Calculate bearing
+            let bearing = 0;
+            // Original index is i * step (roughly, but arr is filtered... wait. map callback i is index in filtered array)
+            // But here coords.filter creates a new array.
+            // So i is index in filtered array.
+            
+            if (i < arr.length - 1) {
+                const p1 = turf.point([c[0], c[1]]);
+                const next = arr[i+1];
+                const p2 = turf.point([next[0], next[1]]);
+                bearing = turf.bearing(p1, p2);
+            } else if (i > 0) {
+                const prev = arr[i-1];
+                const p1 = turf.point([prev[0], prev[1]]);
+                const p2 = turf.point([c[0], c[1]]);
+                bearing = turf.bearing(p1, p2);
+            }
+            
+            // Wind Direction (FROM)
+            // Blowing towards = WindDir + 180
+            const windVectorAngle = (windDir + 180) % 360;
+            
+            // Bearing (-180 to 180) -> 0-360
+            const bearing360 = (bearing + 360) % 360;
+            
+            // Angle difference
+            const diff = windVectorAngle - bearing360;
+            const diffRad = (diff * Math.PI) / 180;
+            
+            // Component: Positive = Tailwind, Negative = Headwind
+            const component = windSpeed * Math.cos(diffRad);
+            
+            return {
+                dist: i,
+                wind: component
+            };
+        });
+    }, [routeData, currentWind]);
 
     const getEndTime = (startTime: string, distanceMeters: number, speedKmh: number) => {
         const [h, m] = startTime.split(':').map(Number);
@@ -988,7 +1191,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                         <div className="relative">
                             <input
                                 type="text"
-                                placeholder="Zoek startlocatie..."
+                                placeholder={t('baro_rit_advies.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
@@ -1020,7 +1223,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             onClick={handleStartEdit}
                             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-text-main rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
                         >
-                            <span className="text-lg">✏️</span> Route Aanpassen
+                            <span className="text-lg">✏️</span> {t('baro_rit_advies.edit_route')}
                         </button>
                     </div>
                  )}
@@ -1035,24 +1238,24 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-colors ${isSnapping ? 'bg-gray-100 text-gray-400' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
                             >
                                 {isSnapping ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"/> : <span>🧲</span>}
-                                Snap to Road
+                                {t('baro_rit_advies.snap_to_road')}
                             </button>
                             <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
                             <button
                                 onClick={handleCancelEdit}
                                 className="px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-sm font-medium transition-colors"
                             >
-                                Annuleren
+                                {t('baro_rit_advies.cancel')}
                             </button>
                             <button
                                 onClick={handleSaveEdit}
                                 className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-sm font-bold shadow-md transition-colors"
                             >
-                                Klaar
+                                {t('baro_rit_advies.done')}
                             </button>
                         </div>
                         <div className="bg-bg-card/90 px-3 py-1 rounded-full text-xs font-bold text-text-main shadow-sm backdrop-blur-sm border border-border-color/20">
-                            Tip: Gebruik de gum of rechtermuisknop om punten te verwijderen
+                            {t('baro_rit_advies.edit_tip')}
                         </div>
                     </div>
                  )}
@@ -1085,12 +1288,12 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                         </LayersControl>
                         
                         <Marker position={[startLocation.lat, startLocation.lng]}>
-                            <Popup>Startpunt</Popup>
+                            <Popup>{t('baro_rit_advies.start_point')}</Popup>
                         </Marker>
 
                         {returnLocation && (
                             <Marker position={[returnLocation.lat, returnLocation.lng]}>
-                                <Popup>Keerpunt</Popup>
+                                <Popup>{t('baro_rit_advies.return_point')}</Popup>
                             </Marker>
                         )}
                         
@@ -1110,6 +1313,25 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                         unit={settings.windUnit || WindUnit.KMH}
                                     />
                                 )}
+                                
+                                {/* Slider Marker */}
+                                {(() => {
+                                    const pos = getSliderPosition();
+                                    if (pos) {
+                                        return (
+                                            <Marker position={[pos.lat, pos.lng]} icon={SliderIcon} zIndexOffset={1000}>
+                                                <Popup autoClose={false} closeOnClick={false}>
+                                                    <div className="text-center min-w-[100px]">
+                                                        <div className="font-bold text-sm">{pos.dist} km</div>
+                                                        <div className="text-xs">{pos.time} onderweg</div>
+                                                        <div className="text-[10px] text-gray-500 mt-1">🕒 {pos.arrivalTime}</div>
+                                                    </div>
+                                                </Popup>
+                                            </Marker>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                             </>
                         )}
                         
@@ -1119,17 +1341,49 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                     <div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-900">
                         <div className="text-center text-text-muted">
                             <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mx-auto mb-2"></div>
-                            <p>Locatie bepalen...</p>
+                            <p>{t('baro_rit_advies.locating')}</p>
                         </div>
                     </div>
                 )}
                 
                 {!isEditing && (
                     <div className="absolute bottom-2 left-4 z-[900] bg-bg-card/80 px-3 py-1 rounded-full text-xs text-text-muted pointer-events-none backdrop-blur-sm border border-border-color/10">
-                        Klik op de kaart om startpunt te wijzigen
+                        {t('baro_rit_advies.map_click_hint')}
                     </div>
                 )}
             </div>
+
+            {/* Slider Control */}
+            {routeData && (
+                <div className="bg-bg-card border-b border-border-color p-4 shadow-sm z-20 relative">
+                     <div className="max-w-4xl mx-auto">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-bold text-text-main flex items-center gap-2">
+                                ⏱️ {t('baro_rit_advies.route_timeline')}
+                            </span>
+                            <span className="text-xs font-mono bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded">
+                                {getSliderPosition()?.arrivalTime || '--:--'}
+                            </span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={sliderValue}
+                            onChange={(e) => setSliderValue(Number(e.target.value))}
+                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        />
+                        <div className="flex justify-between text-[10px] text-text-muted mt-1">
+                            <span>{t('baro_rit_advies.start_label')} {selectedTime}</span>
+                            <span>{getSliderPosition()?.dist || '0'} km</span>
+                        </div>
+                        <div className="text-[10px] text-center text-text-muted -mt-4 pointer-events-none">
+                             {t('baro_rit_advies.en_route')}
+                        </div>
+                     </div>
+                </div>
+            )}
 
             {/* 3. Settings & Results (Below Map) */}
             <div className="flex-1 bg-bg-page p-4 md:p-8">
@@ -1162,7 +1416,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                         {/* Average Speed */}
                         <div className={`bg-bg-card p-4 rounded-xl border border-border-color ${windStrategy === 'custom' ? 'opacity-50 pointer-events-none' : ''}`}>
                             <div className="flex justify-between mb-2">
-                                <label className="text-sm font-medium text-text-main">Gemiddelde Snelheid</label>
+                                <label className="text-sm font-medium text-text-main">{t('baro_rit_advies.avg_speed')}</label>
                                 <span className="text-sm font-bold text-indigo-600">{averageSpeed} km/u</span>
                             </div>
                             <input 
@@ -1181,7 +1435,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                         <div className="bg-bg-card p-4 rounded-xl border border-border-color">
                             <div className="flex justify-between items-center mb-3">
                                 <label className="text-sm font-medium text-text-main flex items-center gap-2">
-                                    <Icon name="schedule" /> Vertrek
+                                    <Icon name="schedule" /> {t('baro_rit_advies.departure')}
                                 </label>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -1190,13 +1444,13 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                         onClick={() => setSelectedDate('today')}
                                         className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${selectedDate === 'today' ? 'bg-indigo-600 text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                                     >
-                                        Vandaag
+                                        {t('baro_rit_advies.today')}
                                     </button>
                                     <button 
                                         onClick={() => setSelectedDate('tomorrow')}
                                         className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-colors ${selectedDate === 'tomorrow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                                     >
-                                        Morgen
+                                        {t('baro_rit_advies.tomorrow')}
                                     </button>
                                 </div>
                                 <select 
@@ -1306,17 +1560,17 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                              <div className="space-y-4">
                                 {/* Shape Selector */}
                                 <div>
-                                    <label className="text-xs font-medium text-text-main mb-2 block">Basis Vorm</label>
+                                    <label className="text-xs font-medium text-text-main mb-2 block">{t('baro_rit_advies.shape_label')}</label>
                                     <div className="grid grid-cols-4 gap-1 bg-bg-page rounded-lg p-1 border border-border-color">
                                         {[
-                                            { id: 'loop', label: 'Lus' },
-                                            { id: 'figure8', label: 'Achtje' },
-                                            { id: 'square', label: 'Vierkant' },
-                                            { id: 'triangle', label: 'Driehoek' },
-                                            { id: 'star', label: 'Ster' },
-                                            { id: 'hexagon', label: 'Zeshoek' },
-                                            { id: 'zigzag', label: 'Zigzag' },
-                                            { id: 'boomerang', label: 'Boomerang' }
+                                            { id: 'loop', label: t('baro_rit_advies.shape.loop') },
+                                            { id: 'figure8', label: t('baro_rit_advies.shape.figure8') },
+                                            { id: 'square', label: t('baro_rit_advies.shape.square') },
+                                            { id: 'triangle', label: t('baro_rit_advies.shape.triangle') },
+                                            { id: 'star', label: t('baro_rit_advies.shape.star') },
+                                            { id: 'hexagon', label: t('baro_rit_advies.shape.hexagon') },
+                                            { id: 'zigzag', label: t('baro_rit_advies.shape.zigzag') },
+                                            { id: 'boomerang', label: t('baro_rit_advies.shape.boomerang') }
                                         ].map(s => (
                                             <button 
                                                 key={s.id}
@@ -1331,13 +1585,13 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
 
                                 {/* Figures Dropdown */}
                                 <div>
-                                    <label className="text-xs font-medium text-text-main mb-2 block">Speciale Figuren</label>
+                                    <label className="text-xs font-medium text-text-main mb-2 block">{t('baro_rit_advies.special_figures')}</label>
                                     <select 
                                         value={['kerstboom', 'kerstman', 'pashaas', 'dieren'].includes(shape) ? shape : ''}
                                         onChange={(e) => e.target.value && setShape(e.target.value as any)}
                                         className="w-full bg-bg-page text-text-main text-xs rounded-lg px-3 py-2 border border-border-color focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer"
                                     >
-                                        <option value="">-- Kies een figuur --</option>
+                                        <option value="">{t('baro_rit_advies.select_figure')}</option>
                                         <option value="kerstboom">🎄 Kerstboom</option>
                                         <option value="kerstman">🎅 Kerstman</option>
                                         <option value="pashaas">🐰 Pashaas</option>
@@ -1348,10 +1602,10 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 {/* Bending Outbound */}
                                 <div>
                                     <div className="flex justify-between mb-1">
-                                        <label className="text-xs font-medium text-text-main">Ronding Heen (Bending)</label>
+                                        <label className="text-xs font-medium text-text-main">{t('baro_rit_advies.bending_outbound')}</label>
                                         <span className="text-xs font-bold text-indigo-600">{bendingOutbound}%</span>
                                     </div>
-                                    <input 
+                                    <input  
                                         type="range" 
                                         min="0" 
                                         max="45" 
@@ -1364,7 +1618,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 {/* Bending Inbound */}
                                 <div>
                                     <div className="flex justify-between mb-1">
-                                        <label className="text-xs font-medium text-text-main">Ronding Terug (Bending)</label>
+                                        <label className="text-xs font-medium text-text-main">{t('baro_rit_advies.bending_inbound')}</label>
                                         <span className="text-xs font-bold text-indigo-600">{bendingInbound}%</span>
                                     </div>
                                     <input 
@@ -1376,8 +1630,8 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                         className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                                     />
                                     <div className="flex justify-between text-[10px] text-text-muted mt-1">
-                                        <span>Recht</span>
-                                        <span>Cirkel</span>
+                                        <span>{t('baro_rit_advies.straight')}</span>
+                                        <span>{t('baro_rit_advies.circle')}</span>
                                     </div>
                                 </div>
 
@@ -1400,7 +1654,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                 {/* Randomness Inbound */}
                                 <div>
                                     <div className="flex justify-between mb-1">
-                                        <label className="text-xs font-medium text-text-main">Avontuur Terug</label>
+                                        <label className="text-xs font-medium text-text-main">{t('baro_rit_advies.adventure_inbound')}</label>
                                         <span className="text-xs font-bold text-indigo-600">{randomnessInbound}/10</span>
                                     </div>
                                     <input 
@@ -1461,7 +1715,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             {loading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                                    <span>Route Berekenen...</span>
+                                    <span>{t('baro_rit_advies.calculating')}</span>
                                 </>
                             ) : credits <= 0 ? (
                                 <>
@@ -1476,7 +1730,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             ) : (
                                 <>
                                     <Icon name="directions_bike" />
-                                    <span>Bereken Route</span>
+                                    <span>{t('baro_rit_advies.calculate_route')}</span>
                                 </>
                             )}
                         </button>
@@ -1485,7 +1739,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             <div className="p-4 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm rounded-xl border border-red-200 dark:border-red-800 flex items-start gap-3">
                                 <Icon name="error" className="text-xl mt-0.5" />
                                 <div>
-                                    <p className="font-bold">Foutmelding</p>
+                                    <p className="font-bold">{t('baro_rit_advies.error_title')}</p>
                                     <p>{error}</p>
                                 </div>
                             </div>
@@ -1495,7 +1749,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             <div className={`p-4 ${daylightInfo.isCritical ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800'} text-sm rounded-xl border flex items-start gap-3 mt-4 animate-in fade-in slide-in-from-bottom-2`}>
                                 <Icon name="nights_stay" className="text-xl mt-0.5" />
                                 <div>
-                                    <p className="font-bold">{daylightInfo.isCritical ? 'Daglicht Waarschuwing' : 'Schemering Info'}</p>
+                                    <p className="font-bold">{daylightInfo.isCritical ? t('baro_rit_advies.daylight_warning') : t('baro_rit_advies.twilight_info')}</p>
                                     <p>{daylightInfo.warning}</p>
                                 </div>
                             </div>
@@ -1505,7 +1759,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                              <div className="p-4 bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 text-sm rounded-xl border border-amber-200 dark:border-amber-800 flex items-start gap-3">
                                 <Icon name="warning" className="text-xl mt-0.5" />
                                 <div>
-                                    <p className="font-bold">Let op</p>
+                                    <p className="font-bold">{t('baro_rit_advies.attention')}</p>
                                     <p>{warning}</p>
                                 </div>
                             </div>
@@ -1526,7 +1780,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                     <div className="bg-bg-page p-4 rounded-xl text-center border border-border-color col-span-2">
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="text-xs text-text-muted uppercase font-bold">{t('baro_rit_advies.distance')}</div>
-                                            <div className="text-xs text-text-muted uppercase font-bold">Geschatte Duur</div>
+                                            <div className="text-xs text-text-muted uppercase font-bold">{t('baro_rit_advies.estimated_duration')}</div>
                                         </div>
                                         <div className="flex justify-between items-end">
                                             <div className="text-2xl font-bold text-text-main">
@@ -1570,35 +1824,58 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                     </div>
                                 </div>
                                 
-                                {/* Elevation Profile */}
-                                {elevationData.length > 0 && (
+                                {/* Elevation/Wind Profile */}
+                                {(elevationData.length > 0 || windGraphData.length > 0) && (
                                     <div className="mb-6 bg-bg-page p-4 rounded-xl border border-border-color">
-                                        <div className="text-xs text-text-muted uppercase font-bold mb-1">Hoogteprofiel</div>
-                                        <ElevationChart data={elevationData} t={t} />
+                                        <div className="flex justify-between items-center mb-1">
+                                            <div className="text-xs text-text-muted uppercase font-bold">
+                                                {chartMode === 'elevation' ? t('baro_rit_advies.elevation_profile') : t('baro_rit_advies.wind_profile')}
+                                            </div>
+                                            <div className="flex bg-bg-subtle rounded-lg p-0.5 border border-border-color">
+                                                <button
+                                                    onClick={() => setChartMode('elevation')}
+                                                    className={`px-2 py-1 text-[10px] font-bold rounded-md transition-colors ${chartMode === 'elevation' ? 'bg-white shadow-sm text-indigo-600' : 'text-text-muted hover:text-text-main'}`}
+                                                >
+                                                    {t('baro_rit_advies.elevation_profile').split(' ')[0]}
+                                                </button>
+                                                <button
+                                                    onClick={() => setChartMode('wind')}
+                                                    className={`px-2 py-1 text-[10px] font-bold rounded-md transition-colors ${chartMode === 'wind' ? 'bg-white shadow-sm text-indigo-600' : 'text-text-muted hover:text-text-main'}`}
+                                                >
+                                                    {t('baro_rit_advies.wind')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {chartMode === 'elevation' ? (
+                                            <ElevationChart data={elevationData} t={t} />
+                                        ) : (
+                                            <WindChart data={windGraphData} />
+                                        )}
                                     </div>
                                 )}
 
                                 {/* Surface Info */}
                                 {surfaceInfo && (
                                     <div className="mb-6 bg-bg-page p-4 rounded-xl border border-border-color">
-                                        <div className="text-xs text-text-muted uppercase font-bold mb-2">Wegdek</div>
+                                        <div className="text-xs text-text-muted uppercase font-bold mb-2">{t('baro_rit_advies.surface')}</div>
                                         <div className="flex h-4 w-full rounded-full overflow-hidden">
-                                            <div style={{ width: `${surfaceInfo.pavedPct}%` }} className="bg-indigo-600 h-full" title="Verhard" />
-                                            <div style={{ width: `${surfaceInfo.unpavedPct}%` }} className="bg-amber-500 h-full" title="Onverhard" />
-                                            <div style={{ width: `${surfaceInfo.unknownPct}%` }} className="bg-slate-400 h-full" title="Onbekend" />
+                                            <div style={{ width: `${surfaceInfo.pavedPct}%` }} className="bg-indigo-600 h-full" title={t('baro_rit_advies.surface.paved')} />
+                                            <div style={{ width: `${surfaceInfo.unpavedPct}%` }} className="bg-amber-500 h-full" title={t('baro_rit_advies.surface.unpaved')} />
+                                            <div style={{ width: `${surfaceInfo.unknownPct}%` }} className="bg-slate-400 h-full" title={t('baro_rit_advies.surface.unknown')} />
                                         </div>
                                         <div className="flex justify-between text-xs mt-1 font-medium">
                                             <span className="flex items-center gap-1 text-indigo-700 dark:text-indigo-400">
                                                 <div className="w-2 h-2 rounded-full bg-indigo-600" />
-                                                Verhard: {surfaceInfo.pavedPct}%
+                                                {t('baro_rit_advies.surface.paved')}: {surfaceInfo.pavedPct}%
                                             </span>
                                             <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400">
                                                 <div className="w-2 h-2 rounded-full bg-amber-500" />
-                                                Onverhard: {surfaceInfo.unpavedPct}%
+                                                {t('baro_rit_advies.surface.unpaved')}: {surfaceInfo.unpavedPct}%
                                             </span>
                                             <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
                                                 <div className="w-2 h-2 rounded-full bg-slate-400" />
-                                                Onbekend: {surfaceInfo.unknownPct}%
+                                                {t('baro_rit_advies.surface.unknown')}: {surfaceInfo.unknownPct}%
                                             </span>
                                         </div>
                                     </div>
@@ -1606,7 +1883,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
 
                                 {steepnessInfo && (
                                     <div className="mb-6 bg-bg-page p-4 rounded-xl border border-border-color">
-                                        <div className="text-xs text-text-muted uppercase font-bold mb-2">Helling</div>
+                                        <div className="text-xs text-text-muted uppercase font-bold mb-2">{t('baro_rit_advies.steepness')}</div>
                                         <div className="flex flex-col gap-2">
                                             {steepnessInfo.slice(0, 3).map((item: any) => (
                                                 <div key={`steep-${item.value}`} className="flex items-center justify-between text-xs">
@@ -1620,7 +1897,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
 
                                 {waytypeInfo && (
                                     <div className="mb-6 bg-bg-page p-4 rounded-xl border border-border-color">
-                                        <div className="text-xs text-text-muted uppercase font-bold mb-2">Wegtype</div>
+                                        <div className="text-xs text-text-muted uppercase font-bold mb-2">{t('baro_rit_advies.waytype')}</div>
                                         <div className="flex flex-col gap-2">
                                             {waytypeInfo.slice(0, 3).map((item: any) => (
                                                 <div key={`waytype-${item.value}`} className="flex items-center justify-between text-xs">
@@ -1646,7 +1923,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition-colors flex items-center justify-center gap-2"
                                     >
                                         <Icon name="timeline" className="text-xl" />
-                                        Analyseer in Rit Planner
+                                        {t('baro_rit_advies.analyze_in_planner')}
                                     </button>
 
                                     <div className="grid grid-cols-2 gap-3">
@@ -1681,7 +1958,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                         ) : (
                             <div className="bg-bg-card border border-border-color border-dashed rounded-xl p-8 text-center h-64 flex flex-col items-center justify-center text-text-muted">
                                 <Icon name="map" className="text-4xl mb-2 opacity-20" />
-                                <p>Kies je instellingen en klik op "{t('baro_rit_advies.calculate')}" om te beginnen.</p>
+                                <p>{t('baro_rit_advies.start_instruction')} "{t('baro_rit_advies.calculate_button')}" {t('baro_rit_advies.to_start')}</p>
                             </div>
                         )}
 
@@ -1690,10 +1967,10 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                             <div className="bg-bg-card p-4 rounded-xl border border-border-color animate-in fade-in slide-in-from-bottom-2">
                                 <div className="flex justify-between items-center mb-3">
                                     <label className="text-sm font-medium text-text-main flex items-center gap-2">
-                                        <Icon name="partly_cloudy_day" /> Weerbericht
+                                        <Icon name="partly_cloudy_day" /> {t('baro_rit_advies.weather_report')}
                                     </label>
                                     <span className="text-xs text-text-muted">
-                                        {selectedDate === 'today' ? 'Vandaag' : 'Morgen'}
+                                        {selectedDate === 'today' ? t('baro_rit_advies.today') : t('baro_rit_advies.tomorrow')}
                                     </span>
                                 </div>
                                 
@@ -1701,23 +1978,23 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                                     {/* Departure */}
                                     <div className="space-y-2">
                                         <div className="text-xs font-bold text-text-muted uppercase text-center border-b border-border-color pb-1 mb-2">
-                                            Vertrek {selectedTime}
+                                            {t('baro_rit_advies.departure')} {selectedTime}
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                                <span className="text-[10px] text-text-muted uppercase">Temp</span>
+                                                <span className="text-[10px] text-text-muted uppercase">{t('baro_rit_advies.temp')}</span>
                                                 <span className="font-bold">{Math.round(forecastData.temp)}°</span>
                                             </div>
                                             <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                                <span className="text-[10px] text-text-muted uppercase">Wind</span>
+                                                <span className="text-[10px] text-text-muted uppercase">{t('baro_rit_advies.wind')}</span>
                                                 <span className="font-bold">{convertWind(forecastData.windSpeed, settings.windUnit || WindUnit.KMH)}</span>
                                             </div>
                                             <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                                <span className="text-[10px] text-text-muted uppercase">Regen</span>
+                                                <span className="text-[10px] text-text-muted uppercase">{t('baro_rit_advies.rain')}</span>
                                                 <span className="font-bold">{forecastData.precipProb}%</span>
                                             </div>
                                             <div className="flex flex-col p-2 bg-bg-page rounded-lg text-center">
-                                                <span className="text-[10px] text-text-muted uppercase">Zon</span>
+                                                <span className="text-[10px] text-text-muted uppercase">{t('baro_rit_advies.sun')}</span>
                                                 <span className="font-bold">{100 - forecastData.cloudCover}%</span>
                                             </div>
                                         </div>

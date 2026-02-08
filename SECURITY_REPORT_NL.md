@@ -69,3 +69,21 @@ Hoewel de applicatie nu veilig is, zijn hier nog enkele 'best practices' voor de
 U kunt de wijzigingen testen op de interne server:
 - De applicatie draait op: `http://localhost:3000`
 - De API endpoints zijn beveiligd en accepteren alleen calls van toegestane domeinen.
+
+## 5. Update 2026-02-07 (Security Check)
+**Bevindingen en Acties:**
+
+1.  **Kritiek: Firestore Rules (Credits)**
+    - **Probleem:** De regels stonden updates toe op het `usage` veld (waar credits staan) zolang de `role` niet wijzigde. Hierdoor kon een gebruiker technisch gezien zijn eigen credits ophogen.
+    - **Oplossing:** `firestore.rules` aangescherpt. Gebruikers kunnen nu alleen nog credits **verlagen** (consumeren) of gelijk houden. Ophogen is geblokkeerd en kan alleen door de backend/admin.
+
+2.  **Bug: Dubbele Credit Afschrijving (Baro Weerbericht)**
+    - **Probleem:** Bij het genereren van een AI weerbericht werden credits twee keer afgeschreven: één keer door de backend (veilig) en één keer door de frontend (visueel).
+    - **Oplossing:** De frontend-afschrijving is verwijderd in `BaroWeatherReport.tsx`. De frontend synchroniseert nu netjes de stand met de server na generatie.
+
+3.  **Aandachtspunt: Client-side Credit Checks**
+    - **Status:** Functies zoals 'Rit Advies' (`calculate-route`) controleren credits alleen in de frontend. Een technisch onderlegde gebruiker kan dit omzeilen.
+    - **Advies:** Voor nu acceptabel (laag risico), maar bij een volgende update moet de credit-check naar de backend verplaatst worden (vereist Auth header integratie).
+
+4.  **Conclusie**
+    - De applicatie is nu **veiliger** (geen gratis credits meer mogelijk via hack) en **eerlijker** (geen dubbele kosten meer voor gebruikers).

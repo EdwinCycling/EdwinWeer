@@ -11,12 +11,13 @@ interface Props {
     language: AppLanguage;
     onToggleNotification?: (enabled: boolean) => void;
     notificationEnabled?: boolean;
+    defaultCollapsed?: boolean;
 }
 
-export const AuroraCard: React.FC<Props> = ({ data, language, onToggleNotification, notificationEnabled }) => {
-    // Start collapsed if Kp is 0 (rounded)
+export const AuroraCard: React.FC<Props> = ({ data, language, onToggleNotification, notificationEnabled, defaultCollapsed = false }) => {
+    // Start collapsed if Kp is 0 (rounded) or defaultCollapsed is true
     const isLowActivity = Math.round(data.kp) === 0;
-    const [isExpanded, setIsExpanded] = useState(!isLowActivity);
+    const [isExpanded, setIsExpanded] = useState(defaultCollapsed ? false : !isLowActivity);
     const [showTip, setShowTip] = useState(false);
     const t = (key: string) => getTranslation(key, language);
 
@@ -89,7 +90,7 @@ export const AuroraCard: React.FC<Props> = ({ data, language, onToggleNotificati
                 </div>
                 
                 {/* Center - Title */}
-                <div className="flex flex-col items-center cursor-pointer relative z-20" onClick={() => setIsExpanded(false)}>
+                <div className="flex flex-col items-center cursor-pointer relative z-20 w-full py-4 -my-4" onClick={() => setIsExpanded(false)}>
                     <h3 className="text-xl font-bold text-text-main text-center">
                         <span className="leading-snug break-words">{t('aurora_title')}</span>
                     </h3>

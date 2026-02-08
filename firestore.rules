@@ -23,15 +23,24 @@ service cloud.firestore {
       // Lezen mag als het je eigen profiel is of als je admin bent
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       
-      // Belangrijk: Gebruiker mag NIET zijn eigen rol aanpassen!
+      // Belangrijk: Gebruiker mag NIET zijn eigen rol of credits aanpassen!
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isSignedIn() && (
         isAdmin() || 
         (request.auth.uid == userId && (
-          // Optie 1: Rol wordt niet gewijzigd
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
-          // Optie 2: Rol wordt geïnitialiseerd naar 'user' (als deze nog niet bestond)
-          (resource.data.get('role', null) == null && request.resource.data.role == 'user')
+          // 1. Rol mag niet wijzigen
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) &&
+          
+          // 2. Credits mogen NIET wijzigen (tenzij omlaag, maar dat blokkeren we hier ook voor de zekerheid - laat backend dit doen)
+          // We checken of de nieuwe waarde KLEINER OF GELIJK is aan de oude waarde voor gevoelige velden.
+          // Dit staat toe dat de client credits 'consumeert' (verlaagt), maar niet ophoogt.
+          (
+            (request.resource.data.usage.get('weatherCredits', 0) <= resource.data.usage.get('weatherCredits', 0)) &&
+            (request.resource.data.usage.get('baroCredits', 0) <= resource.data.usage.get('baroCredits', 0))
+          ) &&
+          
+          // 3. Andere gevoelige velden
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isBanned', 'subscription'])
         ))
       );
       

@@ -36,11 +36,31 @@ import { Tooltip as UITooltip } from '../components/Tooltip';
 
 import { VisualStatsBlocks } from '../components/VisualStatsBlocks';
 
+import { MonthlyBoxPlotChart } from '../components/MonthlyBoxPlotChart';
+import { MonthlyRainChart } from '../components/MonthlyRainChart';
+import { MonthlySunChart } from '../components/MonthlySunChart';
+import { ProgressBar } from '../components/ProgressBar';
+
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
   settings: AppSettings;
   onUpdateSettings?: (settings: AppSettings) => void;
   initialParams?: any;
+}
+
+export interface DailyData {
+    day: number;
+    date: string;
+    maxTemp: number | null;
+    minTemp: number | null;
+    rain: number | null;
+    sun: number | null;
+    sunHours: number | null;
+    daylightHours: number | null;
+    cloudCover: number | null;
+    windGust: number | null;
+    windSpeed: number | null;
+    isWeekend: boolean;
 }
 
 interface RecordEntry {
@@ -186,19 +206,6 @@ interface MonthlyStats {
     rainDays: number;
 }
 
-interface DailyData {
-    day: number;
-    date: string;
-    maxTemp: number | null;
-    minTemp: number | null;
-    rain: number | null;
-    sun: number | null;
-    cloudCover: number | null;
-    windGust: number | null;
-    windSpeed: number | null;
-    isWeekend: boolean;
-}
-
 export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
 
@@ -252,6 +259,26 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   }, [initialParams]);
 
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+      let interval: NodeJS.Timeout;
+      if (loading) {
+          setProgress(0);
+          interval = setInterval(() => {
+              setProgress(prev => {
+                  if (prev >= 90) return 90; // Stall at 90% until done
+                  // Slow down as we get higher
+                  const increment = prev < 50 ? 10 : prev < 80 ? 5 : 1;
+                  return prev + increment;
+              });
+          }, 200);
+      } else {
+          setProgress(100);
+      }
+      return () => clearInterval(interval);
+  }, [loading]);
+
   const [error, setError] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -632,6 +659,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       minTemp: convertTemp(tMin, settings.tempUnit),
                       rain: convertPrecip(rain || 0, settings.precipUnit),
                       sun: sunPct,
+                      sunHours: sun / 3600,
+                      daylightHours: daylight / 3600,
                       cloudCover: cloudCover,
                       windGust: windGust,
                       windSpeed: windSpeed,
@@ -745,6 +774,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       minTemp: convertTemp(tMin, settings.tempUnit),
                       rain: convertPrecip(rain || 0, settings.precipUnit),
                       sun: sunPct,
+                      sunHours: sun / 3600,
+                      daylightHours: daylight / 3600,
                       cloudCover: cloudCover,
                       windGust: windGust,
                       windSpeed: windSpeed,
@@ -758,6 +789,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       minTemp: null,
                       rain: null,
                       sun: null,
+                      sunHours: null,
+                      daylightHours: null,
                       cloudCover: null,
                       windGust: null,
                       windSpeed: null,
@@ -2274,11 +2307,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
             {(recordType === 'yearly' || recordType === 'monthly' || recordType === 'calendar' || recordType === 'heatmap') && (
                 <div className="flex gap-2">
-                     <div className="relative">
+                     <div className="relative min-w-[100px]">
                         <select
                         value={selectedYear}
                         onChange={e => setSelectedYear(parseInt(e.target.value, 10))}
-                        className="appearance-none bg-bg-card border border-border-color rounded-xl px-4 py-2 pr-10 text-sm font-bold text-text-main outline-none focus:border-accent-primary/50"
+                        className="w-full appearance-none bg-bg-card border border-border-color rounded-xl px-4 py-2 pr-10 text-sm font-bold text-text-main outline-none focus:border-accent-primary/50 cursor-pointer hover:border-accent-primary/50 transition-colors shadow-sm"
                         >
                         {years.map(year => (
                             <option key={year} value={year} className="text-text-main bg-bg-page">
@@ -2292,11 +2325,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
                     
                     {(recordType === 'monthly' || recordType === 'calendar') && (
-                         <div className="relative">
+                         <div className="relative min-w-[120px]">
                             <select
                             value={selectedMonth}
                             onChange={e => setSelectedMonth(parseInt(e.target.value, 10))}
-                            className="appearance-none bg-bg-card border border-border-color rounded-xl px-4 py-2 pr-10 text-sm font-bold text-text-main outline-none focus:border-accent-primary/50"
+                            className="w-full appearance-none bg-bg-card border border-border-color rounded-xl px-4 py-2 pr-10 text-sm font-bold text-text-main outline-none focus:border-accent-primary/50 cursor-pointer hover:border-accent-primary/50 transition-colors shadow-sm"
                             >
                             {months.map(month => (
                                 <option key={month} value={month} className="text-text-main bg-bg-page" disabled={selectedYear === new Date().getFullYear() && month > new Date().getMonth() + 1}>
@@ -2322,9 +2355,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           )}
 
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin h-10 w-10 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
+            <ProgressBar progress={progress} message={t('loading')} />
           ) : recordType === 'heatmap' ? (
               <div className="px-4 pb-10 w-full max-w-5xl mx-auto flex flex-col gap-8">
                  {heatmapData && (
@@ -3461,26 +3492,22 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                 <span className="text-xs text-blue-500">{dayData.minTemp}°</span>
                                             </div>
                                             {(() => {
-                                                // Baro Score Calc
-                                                let baroScore = 10;
-                                                if (dayData.maxTemp < 10) baroScore -= 2;
-                                                else if (dayData.maxTemp < 15) baroScore -= 1;
-                                                else if (dayData.maxTemp > 30) baroScore -= 1;
-
-                                                if (dayData.rain !== null) {
-                                                    if (dayData.rain > 0) baroScore -= 1;
-                                                    if (dayData.rain > 2) baroScore -= 1;
-                                                    if (dayData.rain > 5) baroScore -= 1;
-                                                }
-                                                
-                                                if (dayData.sun !== null && dayData.sun < 20) baroScore -= 1;
-                                                if (dayData.windGust !== null && dayData.windGust > 40) baroScore -= 1;
-
-                                                baroScore = Math.max(1, Math.min(10, Math.round(baroScore)));
+                                                // Baro Score Calc - Use centralized logic
+                                                const comfort = calculateComfortScore({
+                                                    temperature_2m: dayData.maxTemp,
+                                                    wind_speed_10m: dayData.windSpeed ?? 0,
+                                                    relative_humidity_2m: 50, // Neutral assumption
+                                                    precipitation_sum: dayData.rain ?? 0,
+                                                    cloud_cover: dayData.cloudCover ?? 0,
+                                                    precipitation_probability: 0,
+                                                    weather_code: 0,
+                                                    wind_gusts_10m: dayData.windGust ?? 0
+                                                });
+                                                const baroScore = comfort.score;
                                                 
                                                 let scoreColor = 'bg-red-500 text-white';
                                                 if (baroScore >= 8) scoreColor = 'bg-green-500 text-white';
-                                                else if (baroScore >= 6) scoreColor = 'bg-blue-500 text-white';
+                                                else if (baroScore >= 6) scoreColor = 'bg-amber-500 text-white';
                                                 else if (baroScore >= 4) scoreColor = 'bg-orange-500 text-white';
                                                 
                                                 return (
@@ -3521,7 +3548,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
                 </div>
               )}
-
+              
               {/* Diverse Records */}
               {recordType === 'yearly' && diverseRecords && (
                   <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color">
@@ -4051,6 +4078,22 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                               </div>
                           </div>
                       </div>
+                  </div>
+              )}
+
+              {(recordType === 'yearly' || recordType === '12month') && dailyData.length > 0 && (
+                  <div className="w-full max-w-2xl mt-6">
+                      <MonthlyBoxPlotChart data={dailyData} settings={settings} />
+                  </div>
+              )}
+              {(recordType === 'yearly' || recordType === '12month') && dailyData.length > 0 && (
+                  <div className="w-full max-w-2xl mt-6">
+                      <MonthlyRainChart data={dailyData} settings={settings} />
+                  </div>
+              )}
+              {(recordType === 'yearly' || recordType === '12month') && dailyData.length > 0 && (
+                  <div className="w-full max-w-2xl mt-6">
+                      <MonthlySunChart data={dailyData} settings={settings} />
                   </div>
               )}
             </div>

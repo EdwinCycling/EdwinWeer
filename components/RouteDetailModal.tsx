@@ -52,11 +52,15 @@ export const RouteDetailModal: React.FC<Props> = ({ isOpen, onClose, routeData, 
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<any>(null);
     const locationMarkersRef = useRef<any>(null);
+    const timelineMarkerRef = useRef<any>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const [routePoints, setRoutePoints] = useState<RoutePoint[]>([]);
     const [locationNames, setLocationNames] = useState<Record<number, string>>({});
     const [toast, setToast] = useState<string | null>(null);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+    const [timelineDistanceKm, setTimelineDistanceKm] = useState(0);
+    const [totalDistanceKm, setTotalDistanceKm] = useState(0);
+    const [totalDurationSec, setTotalDurationSec] = useState<number | null>(null);
 
     // Toast auto-hide
     useEffect(() => {
@@ -133,6 +137,10 @@ export const RouteDetailModal: React.FC<Props> = ({ isOpen, onClose, routeData, 
         if (points.length > 0 && resampledPoints[resampledPoints.length-1] !== points[points.length-1]) resampledPoints.push(points[points.length-1]);
 
         setRoutePoints(resampledPoints);
+        setTotalDistanceKm(totalDist);
+        const durationSec = routeData?.features?.[0]?.properties?.summary?.duration;
+        setTotalDurationSec(typeof durationSec === 'number' && Number.isFinite(durationSec) ? durationSec : null);
+        setTimelineDistanceKm(0);
 
     }, [isOpen, routeData, wind]);
 
@@ -183,6 +191,7 @@ export const RouteDetailModal: React.FC<Props> = ({ isOpen, onClose, routeData, 
              mapInstanceRef.current.remove();
              mapInstanceRef.current = null;
         }
+        timelineMarkerRef.current = null;
 
         const map = L.map(mapContainerRef.current, { zoomControl: true, attributionControl: false });
         mapInstanceRef.current = map;
@@ -258,6 +267,44 @@ export const RouteDetailModal: React.FC<Props> = ({ isOpen, onClose, routeData, 
         }
 
     }, [isOpen, routeData, settings.theme, wind, colors]);
+
+    useEffect(() => {
+        if (!mapInstanceRef.current || !routeData || !totalDistanceKm) return;
+
+        const L = (window as any).L;
+        if (!L) return;
+
+        const coords = routeData.features[0].geometry.coordinates;
+        const line = turf.lineString(coords);
+        const clampedDist = Math.max(0, Math.min(timelineDistanceKm, totalDistanceKm));
+        const point = turf.along(line, clampedDist, { units: 'kilometers' });
+        const [lon, lat] = point.geometry.coordinates;
+
+        if (!timelineMarkerRef.current) {
+            timelineMarkerRef.current = L.circleMarker([lat, lon], {
+                radius: 7,
+                color: colors.accentPrimary,
+                weight: 3,
+                fillColor: colors.bgCard,
+                fillOpacity: 1
+            }).addTo(mapInstanceRef.current);
+        } else {
+            timelineMarkerRef.current.setLatLng([lat, lon]);
+        }
+    }, [timelineDistanceKm, totalDistanceKm, routeData, colors]);
+
+    const formatDuration = (elapsedSec: number | null) => {
+        if (elapsedSec === null) return t('no_data_available');
+        const totalMinutes = Math.round(elapsedSec / 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+
+    const getElapsedSeconds = () => {
+        if (!totalDurationSec || !totalDistanceKm) return null;
+        return (timelineDistanceKm / totalDistanceKm) * totalDurationSec;
+    };
 
     // Update Location Markers
     useEffect(() => {
@@ -347,6 +394,28 @@ export const RouteDetailModal: React.FC<Props> = ({ isOpen, onClose, routeData, 
                 {/* Map */}
                 <div className="h-64 rounded-2xl overflow-hidden shadow-lg border border-border-color relative z-0">
                      <div ref={mapContainerRef} className="h-full w-full bg-bg-page" />
+                </div>
+
+                <div className="bg-bg-card p-4 rounded-2xl border border-border-color shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-bold text-text-main">{t('baro_rit_advies.timeline')}</div>
+                        <div className="text-xs text-text-muted">
+                            {timelineDistanceKm.toFixed(1)} km • {formatDuration(getElapsedSeconds())}
+                        </div>
+                    </div>
+                    <input
+                        type="range"
+                        min={0}
+                        max={Math.max(totalDistanceKm, 0)}
+                        step={0.1}
+                        value={timelineDistanceKm}
+                        onChange={(e) => setTimelineDistanceKm(Number(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-text-muted mt-1">
+                        <span>0 km</span>
+                        <span>{totalDistanceKm ? totalDistanceKm.toFixed(1) : '0'} km</span>
+                    </div>
                 </div>
 
                 {/* Table */}

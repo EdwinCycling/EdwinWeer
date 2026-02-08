@@ -79,6 +79,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
     weekStartDay: 'monday',
     enableSolar: true,
+    currentView: {
+        monthStatsExpanded: true
+    },
     solarPowerWp: 0,
     countryCode: 'NL',
     climatePeriodType: '30year',

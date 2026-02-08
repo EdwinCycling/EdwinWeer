@@ -1,13 +1,48 @@
 import { Handler } from '@netlify/functions';
 import * as turf from '@turf/turf';
+import { initFirebase, admin } from './config/firebaseAdmin.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
 const ORS_API_KEY = process.env.ORS_API_KEY;
+
+// Rate Limit Helper
+async function checkRateLimit(userId: string): Promise<{ allowed: boolean; message?: string }> {
+    const db = initFirebase();
+    if (!db) {
+        console.error("Firebase DB not initialized");
+        return { allowed: true }; // Fail open if DB config is missing
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const docRef = db.collection('route_limits').doc(`${userId}_${today}`);
+
+    try {
+        const doc = await docRef.get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.count >= 10) {
+                return { allowed: false, message: 'Dagelijkse limiet van 10 routes bereikt.' };
+            }
+            await docRef.update({ count: admin.firestore.FieldValue.increment(1) });
+        } else {
+            await docRef.set({ 
+                count: 1, 
+                userId, 
+                date: today,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        return { allowed: true };
+    } catch (e) {
+        console.error("Rate limit check failed:", e);
+        return { allowed: true }; // Fail open on error
+    }
+}
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -18,9 +53,63 @@ export const handler: Handler = async (event) => {
     return { statusCode: 405, headers: CORS_HEADERS, body: 'Method Not Allowed' };
   }
 
+  // Security Check: Verify User
+  let userId = null;
+  try {
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return {
+              statusCode: 401,
+              headers: CORS_HEADERS,
+              body: JSON.stringify({ error: 'Niet geautoriseerd. Log in om routes te berekenen.' })
+          };
+      }
+      
+      const token = authHeader.split('Bearer ')[1];
+      // Init firebase if not already done (checkRateLimit does it too, but we need admin.auth here)
+      initFirebase(); 
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      userId = decodedToken.uid;
+
+      // Credit Check
+      const db = initFirebase();
+      const userDoc = await db.collection('users').doc(userId).get();
+      const userData = userDoc.data();
+      const baroCredits = userData?.usage?.baroCredits || 0;
+
+      if (baroCredits <= 0) {
+          return {
+              statusCode: 403,
+              headers: CORS_HEADERS,
+              body: JSON.stringify({ error: 'Baro credits nodig om routes te berekenen.' })
+          };
+      }
+
+      // Rate Limit Check
+      const limitCheck = await checkRateLimit(userId);
+      if (!limitCheck.allowed) {
+          return {
+              statusCode: 429,
+              headers: CORS_HEADERS,
+              body: JSON.stringify({ error: limitCheck.message })
+          };
+      }
+
+  } catch (e) {
+      console.error("Auth/RateLimit Error:", e);
+      return {
+          statusCode: 401,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ error: 'Authenticatie mislukt of sessie verlopen.' })
+      };
+  }
+
   try {
     const body = JSON.parse(event.body || '{}');
     const { startLocation, returnLocation, distance, windStrategy, bending, bendingOutbound, bendingInbound, randomness, randomnessOutbound, randomnessInbound, options, dateTime, maximizeElevation, shape, waypoints } = body;
+
+    const hasValidLatLng = (loc: any) => loc && typeof loc.lat === 'number' && typeof loc.lng === 'number' && Number.isFinite(loc.lat) && Number.isFinite(loc.lng);
+    const hasWaypoints = Array.isArray(waypoints) && waypoints.length > 0;
 
     // Logging for debug
     console.log("Calculate Route Request:", {
@@ -39,16 +128,36 @@ export const handler: Handler = async (event) => {
     });
 
     // startLocation expected as { lat: number, lng: number } from Leaflet
-    if ((!startLocation || (!distance && !returnLocation)) && !waypoints) {
-      return { 
-        statusCode: 400, 
-        headers: CORS_HEADERS, 
-        body: JSON.stringify({ error: 'Missing parameters: startLocation and distance (or returnLocation) are required, or provide waypoints' }) 
-      };
+    if (!hasWaypoints) {
+        if (!hasValidLatLng(startLocation)) {
+            return {
+                statusCode: 400,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ error: 'Error: Invalid startLocation' })
+            };
+        }
+
+        if (returnLocation && !hasValidLatLng(returnLocation)) {
+            return {
+                statusCode: 400,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ error: 'Error: Invalid returnLocation' })
+            };
+        }
+
+        if (!returnLocation) {
+            if (typeof distance !== 'number' || !Number.isFinite(distance) || distance <= 0) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Error: Invalid distance' })
+                };
+            }
+        }
     }
 
     // 0. Handle Waypoints (Snap to Road / Edit Mode)
-    if (waypoints && Array.isArray(waypoints) && waypoints.length > 0) {
+    if (hasWaypoints) {
         // Determine ORS Profile
         let orsProfile = 'cycling-road';
         const { surfacePreference } = body;
@@ -99,9 +208,16 @@ export const handler: Handler = async (event) => {
     }
 
     // 1. Get Wind Data
-    const windData = await getWindData(startLocation.lat, startLocation.lng, dateTime);
-    const windDir = windData.wind_direction_10m;
-    const windSpeed = windData.wind_speed_10m;
+    let windData;
+    try {
+        windData = await getWindData(startLocation.lat, startLocation.lng, dateTime);
+    } catch (e) {
+        console.error("Wind data fetch failed, using defaults:", e);
+        windData = { wind_speed_10m: 0, wind_direction_10m: 0 };
+    }
+    
+    const windDir = windData?.wind_direction_10m ?? 0;
+    const windSpeed = windData?.wind_speed_10m ?? 0;
 
     // 2. Calculate Waypoints and Route with Retry
     // Turf uses [lon, lat]
@@ -110,7 +226,8 @@ export const handler: Handler = async (event) => {
     let attempt = 0;
     // Increased retries to try rotations
     const MAX_ATTEMPTS = 6;
-    let currentDistance = distance * 1.05; // 5% extra margin per user request
+    const baseDistance = typeof distance === 'number' && Number.isFinite(distance) ? distance : 0;
+    let currentDistance = baseDistance * 1.05; // 5% extra margin per user request
     let rotationOffset = 0; // Degrees to rotate the whole route
     let finalResponse = null;
     let lastError = "";
@@ -126,10 +243,10 @@ export const handler: Handler = async (event) => {
         }
 
         if (!returnLocation) {
-            if (attempt === 2) currentDistance = distance * 0.8;
+            if (attempt === 2) currentDistance = baseDistance * 0.8;
             if (attempt === 3) rotationOffset = 30;
             if (attempt === 4) rotationOffset = -30;
-            if (attempt === 5) { currentDistance = distance * 0.6; rotationOffset = 0; }
+            if (attempt === 5) { currentDistance = baseDistance * 0.6; rotationOffset = 0; }
             if (attempt === 6) rotationOffset = 90;
         }
 
@@ -170,7 +287,7 @@ export const handler: Handler = async (event) => {
         let waypoints = [startPoint];
 
         if (shape === 'square' && !returnLocation) {
-             const side = (currentDistance / 4) * 0.40; // 20% larger than 0.33
+             const side = (currentDistance / 4) * 0.38; // 15% larger than 0.33
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
              const p1 = turf.destination(figureStartPoint, side, initialBearing, { units: 'kilometers' });
@@ -179,7 +296,7 @@ export const handler: Handler = async (event) => {
              
              waypoints.push(figureStartPoint, p1, p2, p3, figureStartPoint, startPoint);
         } else if (shape === 'triangle' && !returnLocation) {
-             const triSide = (currentDistance / 3) * 0.40; // 20% larger than 0.33
+             const triSide = (currentDistance / 3) * 0.38; // 15% larger than 0.33
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
              const t1 = turf.destination(figureStartPoint, triSide, initialBearing - 30, { units: 'kilometers' });
@@ -187,7 +304,7 @@ export const handler: Handler = async (event) => {
              
              waypoints.push(figureStartPoint, t1, t2, figureStartPoint, startPoint);
         } else if (shape === 'figure8' && !returnLocation) {
-             const loopDist = (currentDistance / 2) * 0.16; // 20% larger than 0.13
+             const loopDist = (currentDistance / 2) * 0.15; // 15% larger than 0.13
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
              // Loop 1
@@ -203,7 +320,7 @@ export const handler: Handler = async (event) => {
              const cp4 = turf.destination(figureStartPoint, loopDist * 0.7, bearing2 + 45, { units: 'kilometers' });
              waypoints.push(cp3, apex2, cp4, figureStartPoint, startPoint);
         } else if (shape === 'hexagon' && !returnLocation) {
-             const side = (currentDistance / 6) * 0.42; // 20% larger than 0.35
+             const side = (currentDistance / 6) * 0.40; // 15% larger than 0.35
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              
              const p1 = turf.destination(figureStartPoint, side, initialBearing - 60, { units: 'kilometers' });
@@ -214,7 +331,7 @@ export const handler: Handler = async (event) => {
              
              waypoints.push(figureStartPoint, p1, p2, p3, p4, p5, figureStartPoint, startPoint);
         } else if (shape === 'star' && !returnLocation) {
-             const R = (currentDistance / 5) * 0.30; // 20% larger than 0.25
+             const R = (currentDistance / 5) * 0.29; // 15% larger than 0.25
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              const C = turf.destination(figureStartPoint, R, initialBearing, { units: 'kilometers' });
              
@@ -225,7 +342,7 @@ export const handler: Handler = async (event) => {
              }
              waypoints.push(figureStartPoint, v[2], v[4], v[1], v[3], figureStartPoint, startPoint);
         } else if (shape === 'zigzag' && !returnLocation) {
-             const dist = currentDistance * 0.12; // 20% larger than 0.1
+             const dist = currentDistance * 0.115; // 15% larger than 0.1
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              const width = dist * 0.2; 
              const seg = dist / 3;
@@ -242,7 +359,7 @@ export const handler: Handler = async (event) => {
              
              waypoints.push(figureStartPoint, p1, p2, t, p3, p4, figureStartPoint, startPoint);
         } else if (shape === 'boomerang' && !returnLocation) {
-             const dist = turf.distance(startPoint, turnaroundPoint, { units: 'kilometers' }) * 0.6; // 20% larger than 0.5
+             const dist = turf.distance(startPoint, turnaroundPoint, { units: 'kilometers' }) * 0.575; // 15% larger than 0.5
              const initialBearing = turf.bearing(startPoint, turnaroundPoint);
              const miniTurnaround = turf.destination(figureStartPoint, dist, initialBearing, { units: 'kilometers' });
              const mid = turf.midpoint(figureStartPoint, miniTurnaround);
@@ -492,24 +609,24 @@ export const handler: Handler = async (event) => {
                             newCoords.push(coords[i]);
                             
                             let foundLoop = false;
-                            // Look ahead for a return to this point (approx 30m tolerance)
-                            // Limit lookahead to avoid O(N^2) on large routes, 50 points is usually enough for a spur
-                            const lookAhead = Math.min(coords.length, i + 50); 
+                            // Look ahead for a return to this point (approx 50m tolerance)
+                            // Increased lookahead to catch larger dead ends
+                            const lookAhead = Math.min(coords.length, i + 200); 
                             
                             for (let j = i + 2; j < lookAhead; j++) {
                                 const p1 = turf.point(coords[i]);
                                 const p2 = turf.point(coords[j]);
                                 const d = turf.distance(p1, p2, { units: 'kilometers' });
                                 
-                                if (d < 0.03) { // 30 meters
+                                if (d < 0.05) { // 50 meters
                                     // Calculate path length of the loop
                                     let pathLen = 0;
                                     for (let k = i; k < j; k++) {
                                         pathLen += turf.distance(turf.point(coords[k]), turf.point(coords[k+1]), { units: 'kilometers' });
                                     }
                                     
-                                    // If spur is less than 1km total (e.g. 500m out, 500m back)
-                                    if (pathLen < 1.0) { 
+                                    // If spur is less than 5km total (e.g. 2.5km out, 2.5km back)
+                                    if (pathLen < 5.0) { 
                                         i = j; // Skip the spur
                                         foundLoop = true;
                                         break; 
@@ -539,7 +656,7 @@ export const handler: Handler = async (event) => {
                 // If we retried, add a warning about shortened/rotated route
                 if (attempt > 1) {
                     let warnText = "Route aangepast (zee/onbegaanbaar).";
-                    if (currentDistance < distance) warnText += ` Ingekort tot ${(routeData.features[0].properties.summary.distance / 1000).toFixed(1)}km.`;
+                    if (currentDistance < baseDistance) warnText += ` Ingekort tot ${(routeData.features[0].properties.summary.distance / 1000).toFixed(1)}km.`;
                     if (rotationOffset !== 0) warnText += ` Gedraaid met ${rotationOffset}°.`;
                     routeData.features[0].properties.warning = warnText;
                 }
@@ -585,7 +702,7 @@ export const handler: Handler = async (event) => {
                          features: [{
                              type: 'Feature',
                              properties: {
-                                 summary: { duration: (distance/25)*3600, distance: distance * 1000 },
+                                 summary: { duration: (baseDistance/25)*3600, distance: baseDistance * 1000 },
                                  wind: { direction: windDir, speed: windSpeed, strategy: windStrategy },
                                  warning: `${warningMsg} (Status: ${orsResponse.status}) Details: ${detailedError}`
                              },
@@ -597,14 +714,14 @@ export const handler: Handler = async (event) => {
         }
     }
 
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: "Unexpected loop exit" }) };
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: "Error: Unexpected loop exit" }) };
 
   } catch (error: any) {
     console.error('Error in calculate-route:', error);
-    return { 
-        statusCode: 500, 
-        headers: CORS_HEADERS, 
-        body: JSON.stringify({ error: error.message || 'Internal Server Error' }) 
+    return {
+        statusCode: 500,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ error: `Error: ${error.message || 'Internal Server Error'}` })
     };
   }
 };

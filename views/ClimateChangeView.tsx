@@ -94,7 +94,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       // If not cached, we check credits
       const usage = getUsage();
       if (usage.weatherCredits < 150) {
-          setError('Je hebt minimaal 150 weather credits nodig om deze functie te gebruiken.');
+          setError(t('climate.error.min_credits'));
           setClimateData([]);
           setRawDailyData(null);
           setCurrentNormal(null);
@@ -120,13 +120,15 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
   }, [settings.climatePeriodType, settings.tempUnit, settings.windUnit, settings.precipUnit, day, month]);
 
   const months = [
-      t('tab.month'), // Placeholder or just use index
-      "Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"
+      t('tab.month'), 
+      t('month.jan'), t('month.feb'), t('month.mar'), t('month.apr'), t('month.may'), t('month.jun'),
+      t('month.jul'), t('month.aug'), t('month.sep'), t('month.oct'), t('month.nov'), t('month.dec')
   ];
   
-  // Fix for "Mrt" / "May" etc translation if needed, but for now hardcoded or simple array is fine.
-  // Better to use a proper date formatter or the array from user input.
-  const monthNames = ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+  const monthNames = [
+      t('month.jan'), t('month.feb'), t('month.mar'), t('month.apr'), t('month.may'), t('month.jun'),
+      t('month.jul'), t('month.aug'), t('month.sep'), t('month.oct'), t('month.nov'), t('month.dec')
+  ];
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -157,7 +159,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       // 2. Check credits ONLY if we need to fetch
       const usage = getUsage();
       if (usage.weatherCredits < 150) {
-          setError('Je hebt minimaal 150 weather credits nodig om nieuwe klimaatdata op te halen. (Opgeslagen locaties werken wel)');
+          setError(t('climate.error.min_credits'));
           return;
       }
       
@@ -167,12 +169,12 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
 
       // If NOT cached, we need to fetch. Check if we already fetched today.
       if (lastUse === today) {
-          setError('Je mag deze functie slechts 1x per dag gebruiken (nieuwe data ophalen). Probeer het morgen opnieuw.');
+          setError(t('climate.error.daily_limit'));
           return;
       }
 
       setLoading(true);
-      setLoadingProgress('Initialiseren...');
+      setLoadingProgress(t('climate.initializing'));
       setError(null);
       try {
           // Optimization: Fetch all data in one go (approx 50kb)
@@ -181,7 +183,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
           const startDate = '1950-01-01';
           const endDate = `${endYear}-12-31`;
           
-          setLoadingProgress(`Data ophalen (1950-${endYear})...`);
+          setLoadingProgress(t('climate.loading_data').replace('{year}', endYear.toString()));
           
           // Use the exact parameters needed for the view
           const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${selectedLocation.lat}&longitude=${selectedLocation.lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunshine_duration,daylight_duration&timezone=auto`;
@@ -726,23 +728,23 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       <Modal
           isOpen={showLimitModal}
           onClose={() => setShowLimitModal(false)}
-          title={t('error.too_many_requests') || "Even geduld a.u.b."}
+          title={t('climate.error.too_many_requests_title')}
       >
           <div className="flex flex-col items-center gap-4 text-center">
               <div className="bg-orange-100 dark:bg-orange-900/30 p-4 rounded-full">
                   <Icon name="timer" className="text-3xl text-orange-500" />
               </div>
               <div>
-                  <h3 className="text-lg font-bold mb-2">{t('error.too_many_requests') || "Het is momenteel erg druk"}</h3>
+                  <h3 className="text-lg font-bold mb-2">{t('climate.error.too_many_requests_title')}</h3>
                   <p className="text-slate-600 dark:text-slate-300">
-                      {t('error.too_many_requests.desc') || "We hebben het maximum aantal verzoeken voor historische data bereikt. Probeer het over een paar minuten nog eens."}
+                      {t('climate.error.too_many_requests_desc')}
                   </p>
               </div>
               <button
                   onClick={() => setShowLimitModal(false)}
                   className="mt-2 px-6 py-2 bg-primary text-white rounded-full font-bold hover:opacity-90 transition-opacity"
               >
-                  Begrepen
+                  {t('climate.understood')}
               </button>
           </div>
       </Modal>
@@ -751,7 +753,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
       <Modal
           isOpen={loading}
           onClose={() => {}} // Prevent closing by user easily, or allow it but keep state? Better to keep it open.
-          title="Gegevens ophalen"
+          title={t('climate.fetching_data_title')}
       >
           <div className="flex flex-col items-center gap-6 text-center py-4">
               <div className="relative">
@@ -762,9 +764,9 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
               </div>
               
               <div>
-                  <h3 className="text-lg font-bold mb-2">Even geduld...</h3>
+                  <h3 className="text-lg font-bold mb-2">{t('climate.patience')}</h3>
                   <p className="text-slate-500 dark:text-slate-400 mb-4">
-                      We halen de historische weergegevens op in kleine blokken om de server niet te belasten.
+                      {t('climate.fetching_desc')}
                   </p>
                   <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg inline-block">
                       <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">
@@ -814,7 +816,7 @@ export const ClimateChangeView: React.FC<ClimateChangeViewProps> = ({ onNavigate
                           <button 
                             onClick={calculateClimate}
                             disabled={loading}
-                            className="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                           >
                               <Icon name="calculate" />
                               {t('climate.calc')}

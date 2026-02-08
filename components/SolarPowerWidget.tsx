@@ -9,10 +9,25 @@ interface Props {
     settings: AppSettings;
     targetDate?: Date;
     showStats?: boolean;
+    collapsible?: boolean;
+    storageKey?: string;
 }
 
-export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targetDate, showStats = true }) => {
+export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targetDate, showStats = true, collapsible = false, storageKey }) => {
     const [isMobile, setIsMobile] = useState(false);
+    
+    // Persistence logic
+    const [isExpanded, setIsExpanded] = useState(() => {
+        if (!collapsible || !storageKey) return true;
+        const saved = localStorage.getItem(storageKey);
+        return saved !== null ? saved === 'true' : true;
+    });
+
+    useEffect(() => {
+        if (collapsible && storageKey) {
+            localStorage.setItem(storageKey, String(isExpanded));
+        }
+    }, [isExpanded, collapsible, storageKey]);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -153,13 +168,21 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
     return (
         <div className={`mb-8 p-4 rounded-xl border border-border-color shadow-sm transition-all bg-bg-card`}>
             {/* Header */}
-            <div className="flex justify-between items-start mb-4">
+            <div 
+                className={`flex justify-between items-start ${collapsible ? 'cursor-pointer' : ''}`}
+                onClick={() => collapsible && setIsExpanded(!isExpanded)}
+            >
                 <div className="flex items-center gap-2">
                     <div className={`p-2 rounded-full ${advice.bgColor} border border-border-color`}>
                          <Icon name={advice.icon} className={`${advice.color} text-xl`} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-lg text-text-main">{t('solar.title')}</h3>
+                        <h3 className="font-bold text-lg text-text-main flex items-center gap-2">
+                            {t('solar.title')}
+                            {collapsible && (
+                                <Icon name={isExpanded ? "expand_less" : "expand_more"} className="text-text-muted text-lg" />
+                            )}
+                        </h3>
                         <p className="text-xs text-text-muted">{isToday ? t('solar.check') : t('solar.forecast')}</p>
                     </div>
                 </div>
@@ -169,80 +192,84 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
                 </div>
             </div>
 
-            {/* Advice Text */}
-            <div className={`mb-4 ${advice.bgColor} p-3 rounded-xl border ${advice.borderColor}`}>
-                <p className="text-sm font-medium text-text-main">{advice.text}</p>
-                {showStats && isToday && (
-                    <div className="mt-2 flex gap-4 text-xs text-text-muted">
-                        <div>
-                            <span className="block font-bold text-text-main">{percentReceived}%</span>
-                            {t('solar.received')}
-                        </div>
-                        <div>
-                            <span className="block font-bold text-text-main">{percentRemaining}%</span>
-                            {t('solar.expected')}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Chart */}
-            <div className="h-48 w-full mt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id="solarFill" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6}/>
-                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
-                        <XAxis 
-                            dataKey="time" 
-                            tick={{fill: '#94a3b8', fontSize: 10}} 
-                            axisLine={false} 
-                            tickLine={false} 
-                            interval={isMobile ? 1 : 0} 
-                        />
-                        <YAxis 
-                            tick={{fill: '#94a3b8', fontSize: 10}} 
-                            axisLine={false} 
-                            tickLine={false}
-                            domain={useFixedScale ? [0, 600] : [0, 'auto']}
-                            ticks={useFixedScale ? fixedTicks : undefined}
-                        />
-                        <Tooltip 
-                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                            itemStyle={{ color: '#fff' }}
-                            formatter={(value: any) => [`${value} ${t('solar.unit')}`, t('solar.radiation')]}
-                            labelStyle={{ color: '#94a3b8' }}
-                        />
-                        <ReferenceLine y={50} stroke="#fb923c" strokeDasharray="3 3" strokeOpacity={0.4} label={{ value: "50", position: 'insideLeft', fill: '#fb923c', fontSize: 10 }} />
-                        <ReferenceLine y={200} stroke="#facc15" strokeDasharray="3 3" strokeOpacity={0.4} label={{ value: "200", position: 'insideLeft', fill: '#facc15', fontSize: 10 }} />
-                        <ReferenceLine y={500} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} label={{ value: "500", position: 'insideLeft', fill: '#ef4444', fontSize: 10 }} />
-                        
-                        {isToday && (
-                            <ReferenceLine 
-                                x={`${currentHour.toString().padStart(2, '0')}:00`} 
-                                stroke="#fff" 
-                                strokeDasharray="3 3" 
-                                strokeOpacity={0.8}
-                                strokeWidth={2}
-                                label={{ value: t('solar.now'), position: 'insideTop', fill: '#fff', fontSize: 10, fontWeight: 'bold' }} 
-                            />
+            {isExpanded && (
+                <>
+                    {/* Advice Text */}
+                    <div className={`mt-4 mb-4 ${advice.bgColor} p-3 rounded-xl border ${advice.borderColor} animate-in fade-in slide-in-from-top-2`}>
+                        <p className="text-sm font-medium text-text-main">{advice.text}</p>
+                        {showStats && isToday && (
+                            <div className="mt-2 flex gap-4 text-xs text-text-muted">
+                                <div>
+                                    <span className="block font-bold text-text-main">{percentReceived}%</span>
+                                    {t('solar.received')}
+                                </div>
+                                <div>
+                                    <span className="block font-bold text-text-main">{percentRemaining}%</span>
+                                    {t('solar.expected')}
+                                </div>
+                            </div>
                         )}
-                        
-                        <Area 
-                            type="monotone" 
-                            dataKey="watts" 
-                            stroke="#f59e0b" 
-                            fill="url(#solarFill)" 
-                            strokeWidth={2} 
-                            filter={settings.theme === 'dark' ? 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.5))' : ''}
-                        />
-                    </AreaChart>
-                </ResponsiveContainer>
-            </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="h-48 w-full mt-2 animate-in fade-in slide-in-from-top-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="solarFill" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.6}/>
+                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                                <XAxis 
+                                    dataKey="time" 
+                                    tick={{fill: '#94a3b8', fontSize: 10}} 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    interval={isMobile ? 1 : 0} 
+                                />
+                                <YAxis 
+                                    tick={{fill: '#94a3b8', fontSize: 10}} 
+                                    axisLine={false} 
+                                    tickLine={false}
+                                    domain={useFixedScale ? [0, 600] : [0, 'auto']}
+                                    ticks={useFixedScale ? fixedTicks : undefined}
+                                />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value: any) => [`${value} ${t('solar.unit')}`, t('solar.radiation')]}
+                                    labelStyle={{ color: '#94a3b8' }}
+                                />
+                                <ReferenceLine y={50} stroke="#fb923c" strokeDasharray="3 3" strokeOpacity={0.4} label={{ value: "50", position: 'insideLeft', fill: '#fb923c', fontSize: 10 }} />
+                                <ReferenceLine y={200} stroke="#facc15" strokeDasharray="3 3" strokeOpacity={0.4} label={{ value: "200", position: 'insideLeft', fill: '#facc15', fontSize: 10 }} />
+                                <ReferenceLine y={500} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} label={{ value: "500", position: 'insideLeft', fill: '#ef4444', fontSize: 10 }} />
+                                
+                                {isToday && (
+                                    <ReferenceLine 
+                                        x={`${currentHour.toString().padStart(2, '0')}:00`} 
+                                        stroke="#fff" 
+                                        strokeDasharray="3 3" 
+                                        strokeOpacity={0.8}
+                                        strokeWidth={2}
+                                        label={{ value: t('solar.now'), position: 'insideTop', fill: '#fff', fontSize: 10, fontWeight: 'bold' }} 
+                                    />
+                                )}
+                                
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="watts" 
+                                    stroke="#f59e0b" 
+                                    fill="url(#solarFill)" 
+                                    strokeWidth={2} 
+                                    filter={settings.theme === 'dark' ? 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.5))' : ''}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </>
+            )}
         </div>
     );
 };
