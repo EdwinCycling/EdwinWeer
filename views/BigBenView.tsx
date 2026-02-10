@@ -77,19 +77,35 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
       const elapsed = nowTime - sunrise;
       const progress = elapsed / totalDuration; // 0 to 1
   
-      // Wider Parabola for visible sun
-      // Range: -400 to 900 (Total width 1300, Center 250)
-      // Peak: (250, -200)
-      // Start (-400, 1000) -> 1200 = a(-650)^2 -> a = 0.00284
+      let startX, endX, a, peakY;
+
+      if (isMobile) {
+          // Mobile: Original Logic
+          startX = -400;
+          endX = 900;
+          a = 0.00284;
+          peakY = -200;
+      } else {
+            // PC: Adjusted for new ViewBox (-100 to 900)
+            // Taller arc to clear the higher ViewBox top (-350)
+            startX = -50;
+            endX = 850;
+            peakY = -250;
+            // Calculate 'a' for passing through start point (-50, 1000)
+            // Vertex (250, -250)
+            // 1000 = a * (-50 - 250)^2 - 250
+            // 1250 = a * (-300)^2 = a * 90000
+            // a = 1250 / 90000 ≈ 0.0138
+            a = 0.0139;
+        }
       
-      const startX = -400;
-      const endX = 900;
       const x = startX + (progress * (endX - startX));
       
-      const y = 0.00284 * Math.pow(x - 250, 2) - 200;
+      // Parabola: y = a(x - h)^2 + k
+      const y = a * Math.pow(x - 250, 2) + peakY;
   
       setSunPosition({ x, y });
-  }, [weatherData]);
+  }, [weatherData, isMobile]);
 
   // Initial Sun Update
   useEffect(() => {
@@ -712,7 +728,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
         {/* Adjusted viewBox for taller tower (including roof), remove max-h constraint on md screens to fill height */}
         <svg 
-            viewBox={isMobile ? "-125 -200 750 1200" : "-500 -250 1500 1250"} 
+            viewBox={isMobile ? "-125 -200 750 1200" : "-100 -350 1000 1150"} 
             preserveAspectRatio="xMidYMax meet"
             className="w-full h-full max-w-5xl drop-shadow-2xl z-10 relative"
         >
@@ -925,7 +941,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
             {/* Flagpole - Wind Indicator */}
             {!isMobile && weatherData && (
-                <g transform={`translate(700, 920)`}>
+                <g transform={`translate(700, 750)`}>
                      {/* Pole */}
                      <line x1="0" y1="0" x2="0" y2="-300" stroke="#333" strokeWidth="8" strokeLinecap="round" />
                      {/* Finial (Gold ball) */}

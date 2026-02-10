@@ -1027,11 +1027,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           {/* Language Selector removed as requested */}
 
           {/* Left Aligned Big Ben Button */}
-          <div className="absolute top-2 left-0 sm:left-6 flex items-center gap-1 sm:gap-3 z-50">
+          <div className="absolute top-2 left-4 sm:left-6 flex items-center gap-1 sm:gap-3 z-50">
                <Tooltip content="Big Ben" position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.BIG_BEN)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color pl-6"
+                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label="Big Ben"
                   >
                       <Icon name="schedule" className="text-xl sm:text-2xl" />
