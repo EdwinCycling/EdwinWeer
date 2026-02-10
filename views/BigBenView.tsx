@@ -40,6 +40,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
   const [showEffect, setShowEffect] = useState(false);
   const [selectedHourData, setSelectedHourData] = useState<any | null>(null);
   const [sunPosition, setSunPosition] = useState<{ x: number, y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioHalfRef = useRef<HTMLAudioElement | null>(null);
@@ -48,6 +49,16 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
   const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const t = (key: string) => getTranslation(key, settings.language);
+
+  // Mobile Check
+  useEffect(() => {
+    const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Sun Position Logic
   const updateSunPosition = useCallback((currentDate: Date) => {
@@ -561,11 +572,11 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
                         ...settings,
                         bigBen: { ...settings.bigBen, enableRadio: settings.bigBen?.enableRadio ?? false, useLocalWeather: !settings.bigBen?.useLocalWeather }
                     })}
-                    className={`hidden md:flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors mr-1 ${settings.bigBen?.useLocalWeather ? 'bg-[#E5C100]/20 text-[#E5C100] border border-[#E5C100]/30' : 'bg-white/5 text-white/50 border border-white/5 hover:bg-white/10'}`}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors mr-1 ${settings.bigBen?.useLocalWeather ? 'bg-[#E5C100]/20 text-[#E5C100] border border-[#E5C100]/30' : 'bg-white/5 text-white/50 border border-white/5 hover:bg-white/10'}`}
                     title={t('bigben.local_weather')}
                 >
                     <Icon name="my_location" className="text-sm" />
-                    <span>{settings.bigBen?.useLocalWeather ? 'GPS' : 'FIXED'}</span>
+                    <span className="hidden sm:inline">{settings.bigBen?.useLocalWeather ? 'GPS' : 'FIXED'}</span>
                 </button>
 
                 {/* Mode Selector */}
@@ -602,6 +613,26 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
                                         <Icon name="radio" /> {t('settings.bigben.mode.always')}
                                     </button>
                                 </div>
+                                
+                                {/* Mobile Volume Slider in Dropdown */}
+                                <div className="sm:hidden px-3 py-3 border-t border-white/10 bg-black/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Icon name={settings.bigBen?.radioVolume === 0 ? "volume_off" : "volume_up"} className="text-white/50 text-xs" />
+                                        <span className="text-[10px] text-white/50 uppercase font-bold">Volume</span>
+                                        <span className="text-[10px] text-[#E5C100] font-mono ml-auto">
+                                            {Math.round((settings.bigBen?.radioVolume ?? 0.5) * 100)}%
+                                        </span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="1" 
+                                        step="0.01" 
+                                        value={settings.bigBen?.radioVolume ?? 0.5}
+                                        onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                                        className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#E5C100]"
+                                    />
+                                </div>
                             </div>
                         </>
                     )}
@@ -628,7 +659,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
       {/* Main Content - SVG */}
       <div 
-        className="w-full h-full flex items-center justify-center pt-16 pb-4 relative transition-colors duration-1000"
+        className="w-full h-full flex items-end justify-center pt-16 pb-0 relative transition-colors duration-1000"
         style={{ backgroundColor: isNight ? COLORS.darkBlue : COLORS.lightBlue }}
       >
         
@@ -680,7 +711,11 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
         )}
 
         {/* Adjusted viewBox for taller tower (including roof), remove max-h constraint on md screens to fill height */}
-        <svg viewBox="-500 -250 1500 1250" className="w-full h-full max-w-5xl md:max-h-full max-h-[85vh] drop-shadow-2xl z-10 relative">
+        <svg 
+            viewBox={isMobile ? "-125 -200 750 1200" : "-500 -250 1500 1250"} 
+            preserveAspectRatio="xMidYMax meet"
+            className="w-full h-full max-w-5xl drop-shadow-2xl z-10 relative"
+        >
             <defs>
                 <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor={COLORS.stoneLight} />
@@ -889,8 +924,8 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
             </text>
 
             {/* Flagpole - Wind Indicator */}
-            {weatherData && (
-                <g transform="translate(700, 1000)">
+            {!isMobile && weatherData && (
+                <g transform={`translate(${isMobile ? 520 : 700}, 1000)`}>
                      {/* Pole */}
                      <line x1="0" y1="0" x2="0" y2="-300" stroke="#333" strokeWidth="8" strokeLinecap="round" />
                      {/* Finial (Gold ball) */}
