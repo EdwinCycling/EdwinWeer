@@ -780,8 +780,8 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
                 </style>
             </defs>
 
-            {/* SUN - Hidden on mobile */}
-            {sunPosition && (
+            {/* SUN - Hidden on mobile and at night */}
+            {sunPosition && !isNight && (
                 <g transform={`translate(${sunPosition.x}, ${sunPosition.y})`} className="hidden md:block">
                      <circle r="90" fill="url(#sunGradient)" filter="url(#sunGlow)" />
                 </g>
@@ -925,7 +925,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
             {/* Flagpole - Wind Indicator */}
             {!isMobile && weatherData && (
-                <g transform={`translate(${isMobile ? 520 : 700}, 1000)`}>
+                <g transform={`translate(700, 920)`}>
                      {/* Pole */}
                      <line x1="0" y1="0" x2="0" y2="-300" stroke="#333" strokeWidth="8" strokeLinecap="round" />
                      {/* Finial (Gold ball) */}
