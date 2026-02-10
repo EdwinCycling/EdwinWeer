@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TripOption } from '../services/tripPlannerService';
 import { GPXPoint, calculateBearing } from '../services/gpxService';
-import { AppSettings, OpenMeteoResponse } from '../types';
+import { AppSettings, OpenMeteoResponse, WindUnit } from '../types';
 import { Icon } from './Icon';
 import { LoadingSpinner } from './LoadingSpinner';
 import { getTranslation } from '../services/translations';
@@ -552,7 +552,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                              </div>
                              <div className="text-center">
                                 <div className="text-[10px] text-text-muted uppercase">{t('wind')}</div>
-                                <div className="font-bold">{routePoints.length > 0 ? convertWind(routePoints[0].windSpeed, settings.windUnit || 'kmh') : convertWind(tripOption.maxWind, settings.windUnit || 'kmh')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? convertWind(routePoints[0].windSpeed, settings.windUnit || WindUnit.KMH) : convertWind(tripOption.maxWind, settings.windUnit || WindUnit.KMH)}</div>
                              </div>
                              <div className="text-center">
                                 <div className="text-[10px] text-text-muted uppercase">{t('rain')}</div>
@@ -581,7 +581,7 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                              </div>
                              <div className="text-center">
                                 <div className="text-[10px] text-text-muted uppercase">{t('wind')}</div>
-                                <div className="font-bold">{routePoints.length > 0 ? convertWind(routePoints[routePoints.length-1].windSpeed, settings.windUnit || 'kmh') : convertWind(tripOption.maxWind, settings.windUnit || 'kmh')}</div>
+                                <div className="font-bold">{routePoints.length > 0 ? convertWind(routePoints[routePoints.length-1].windSpeed, settings.windUnit || WindUnit.KMH) : convertWind(tripOption.maxWind, settings.windUnit || WindUnit.KMH)}</div>
                              </div>
                              <div className="text-center">
                                 <div className="text-[10px] text-text-muted uppercase">{t('rain')}</div>
@@ -656,10 +656,10 @@ export const TripDetailModal: React.FC<Props> = ({ isOpen, onClose, tripOption, 
                                                             </div>
                                                         </td>
                                                         <td className="px-0.5 py-1.5 font-bold text-center">
-                                                            {convertWind(pt.windSpeed, settings.windUnit || 'kmh')}
+                                                            {convertWind(pt.windSpeed, settings.windUnit || WindUnit.KMH)}
                                                         </td>
                                                         <td className="px-0.5 py-1.5 font-bold text-text-muted text-center">
-                                                            {convertWind(pt.windGusts, settings.windUnit || 'kmh')}
+                                                            {convertWind(pt.windGusts, settings.windUnit || WindUnit.KMH)}
                                                         </td>
                                                         <td className="px-0.5 py-1.5 text-center">
                                                             {Math.round(pt.temp)}°

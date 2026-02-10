@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
-import { ViewState, AppSettings, Location } from '../types';
+import { ViewState, AppSettings, Location, TempUnit } from '../types';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -447,7 +447,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
           const avg1 = processed.slice(0, 24).reduce((acc, curr) => acc + curr.temp1, 0) / 24;
 
           const tempMax1 = data1.daily?.temperature_2m_max?.[0] ?? Math.max(...processed.slice(0, 24).map((p) => p.temp1));
-          const tMax1 = settings.tempUnit === 'fahrenheit' ? parseFloat(((tempMax1 * 9) / 5 + 32).toFixed(1)) : parseFloat(tempMax1.toFixed(1));
+          const tMax1 = settings.tempUnit === TempUnit.FAHRENHEIT ? parseFloat(((tempMax1 * 9) / 5 + 32).toFixed(1)) : parseFloat(tempMax1.toFixed(1));
 
           setStats({ diff: 0, currentAvg: tMax1, pastAvg: 0 });
 
@@ -578,7 +578,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
         // Let's assume Date 1 is the reference for "Today" and Date 2 is "Reference/Past".
         
         const formatTempDecimal = (t: number) => {
-            if (settings.tempUnit === 'fahrenheit') {
+            if (settings.tempUnit === TempUnit.FAHRENHEIT) {
                 return parseFloat(((t * 9/5) + 32).toFixed(1));
             }
             return parseFloat(t.toFixed(1));

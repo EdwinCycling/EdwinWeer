@@ -1008,7 +1008,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           maxMaxToMinDrop: maxMaxToMinDropVal > -Infinity ? { value: maxMaxToMinDropVal, day1: maxMaxToMinDropDay1, day2: maxMaxToMinDropDay2, temp1: maxMaxToMinDropTemp1, temp2: maxMaxToMinDropTemp2 } : null,
           extremes: null,
           risingStaircase: null,
-          fallingStaircase: null
+          fallingStaircase: null,
+          jojoStreak: null
       });
 
       if (recordType === 'yearly' || recordType === '12month') {

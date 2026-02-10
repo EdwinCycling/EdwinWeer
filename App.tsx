@@ -40,7 +40,10 @@ const BaroStorytellerView = React.lazy(() => import('./views/BaroStorytellerView
 const SongWriterView = React.lazy(() => import('./views/SongWriterView').then(module => ({ default: module.SongWriterView })));
 const ImmersiveForecastView = React.lazy(() => import('./views/ImmersiveForecastView').then(module => ({ default: module.ImmersiveForecastView })));
 const GlobeView = React.lazy(() => import('./views/GlobeView').then(module => ({ default: module.GlobeView })));
-const LandingPageV2 = React.lazy(() => import('./views/LandingPageV2').then(module => ({ default: module.LandingPageV2 })));
+import { BigBenView } from './views/BigBenView';
+import { RadioProvider } from './contexts/RadioContext';
+import { FloatingRadioPlayer } from './components/FloatingRadioPlayer';
+import { LandingPageV2 } from './views/LandingPageV2';
 const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').then(module => ({ default: module.BaroRitAdviesView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
@@ -399,6 +402,8 @@ const App: React.FC = () => {
         return <InfoView onNavigate={navigate} settings={settings} />;
       case ViewState.FAQ:
         return <FAQView onNavigate={navigate} settings={settings} />;
+      case ViewState.BIG_BEN:
+        return <BigBenView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       default:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }
@@ -407,6 +412,7 @@ const App: React.FC = () => {
   const closeModal = () => setModal(null);
 
   return (
+    <RadioProvider>
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
         <GlobalBanner />
         <div className="max-w-5xl mx-auto px-0 lg:px-8 pb-32 w-full">
@@ -416,6 +422,8 @@ const App: React.FC = () => {
                 </Suspense>
             </ErrorBoundary>
         </div>
+
+        <FloatingRadioPlayer visible={currentView !== ViewState.BIG_BEN} />
 
         {showLoginToast && user && (
             <LoginToast userEmail={user.email} onClose={() => setShowLoginToast(false)} />
@@ -959,6 +967,7 @@ const App: React.FC = () => {
         
         <CreditMonitor currentView={currentView} onNavigate={navigate} settings={settings} />
     </div>
+    </RadioProvider>
   );
 };
 

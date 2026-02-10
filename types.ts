@@ -20,6 +20,7 @@ export interface WeatherData {
 export interface Location {
   name: string;
   country: string;
+  admin1?: string;
   lat: number;
   lon: number;
   isCurrentLocation?: boolean;
@@ -106,6 +107,7 @@ export interface OpenMeteoResponse {
         temperature_120m: number[];
         temperature_180m: number[];
         sunshine_duration: number[];
+        is_day?: number[];
 
         // Extended Soil
         soil_temperature_0cm: number[];
@@ -135,7 +137,10 @@ export interface OpenMeteoResponse {
         wind_direction_10m_dominant: number[];
         daylight_duration: number[];
         sunshine_duration: number[];
+        shortwave_radiation_sum: number[];
         et0_fao_evapotranspiration: number[];
+        apparent_temperature_max: number[];
+        apparent_temperature_min: number[];
     }
 }
 
@@ -178,6 +183,8 @@ export interface AppUser {
     role: UserRole;
     isBanned?: boolean;
     hasSeenWelcome?: boolean;
+    delete?: () => Promise<void>;
+    getIdToken?: () => Promise<string>;
 }
 
 export interface HeatwaveSettings {
@@ -238,6 +245,16 @@ export interface AppSettings {
     currentView?: {
         monthStatsExpanded?: boolean;
     };
+    bigBen?: {
+        enableRadio: boolean;
+        alwaysPlayRadio?: boolean; // Play continuously
+        radioUrl?: string; // Default to BBC World Service or similar
+        radioVolume?: number; // 0-1
+        useLocalWeather?: boolean; // Use local weather location
+        isMuted?: boolean; // Mute chimes
+    };
+    baro_weerman?: BaroWeermanSettings;
+    activity_settings?: ActivityPlannerSettings;
 }
 
 export interface TripPlannerSettings {
@@ -340,7 +357,8 @@ export enum ViewState {
   BARO_TIME_MACHINE = 'BARO_TIME_MACHINE',
   BARO_STORYTELLER = 'BARO_STORYTELLER',
   BARO_RIT_ADVIES = 'BARO_RIT_ADVIES',
-  SONG_WRITER = 'SONG_WRITER'
+  SONG_WRITER = 'SONG_WRITER',
+  BIG_BEN = 'BIG_BEN'
 }
 
 export interface CustomEvent {

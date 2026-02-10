@@ -5,9 +5,10 @@ interface Props {
   isDay: number;
   cloudCover?: number;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export const StaticWeatherBackground: React.FC<Props> = ({ weatherCode, isDay, cloudCover, className }) => {
+export const StaticWeatherBackground: React.FC<Props> = ({ weatherCode, isDay, cloudCover, className, style }) => {
   const [loaded, setLoaded] = useState(false);
 
   // Helper to map weather code to image category
@@ -54,9 +55,12 @@ export const StaticWeatherBackground: React.FC<Props> = ({ weatherCode, isDay, c
   }, [weatherCode, isDay, cloudCover]);
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`relative overflow-hidden ${className}`} style={style}>
         {/* Placeholder / Loading State */}
-        <div className={`absolute inset-0 bg-slate-900 transition-opacity duration-700 ${loaded ? 'opacity-0' : 'opacity-100'}`} />
+        <div 
+            className={`absolute inset-0 transition-opacity duration-700 ${loaded ? 'opacity-0' : 'opacity-100'}`} 
+            style={{ backgroundColor: isDay ? '#87CEEB' : '#0f172a' }}
+        />
         
         <img 
             src={getImageUrl} 

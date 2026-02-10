@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ViewState, AppSettings, TempUnit, WindUnit, PrecipUnit, PressureUnit, Location, AppTheme, AppLanguage, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
+import { Tooltip } from '../components/Tooltip';
+import { Modal } from '../components/Modal';
 import { CountrySelector } from '../components/CountrySelector';
 import { getTranslation } from '../services/translations';
 import { searchCityByName, reverseGeocodeFull } from '../services/geoService';
@@ -34,6 +36,22 @@ const activityIcons: Record<ActivityType, string> = {
     work: 'work'
 };
 
+const RADIO_STATIONS = [
+    { name: 'Classic NL', url: 'https://stream.classic.nl/classicnl.mp3' },
+    { name: 'NPO Radio 1 (NL Nieuws)', url: 'https://icecast.omroep.nl/radio1-bb-mp3' },
+    { name: 'BBC World Service (UK News)', url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service' },
+    { name: 'Deutschlandfunk (DE News)', url: 'https://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3' },
+    { name: 'VRT Radio 1 (BE Nieuws)', url: 'http://icecast.vrtcdn.be/radio1.aac' },
+    { name: 'France Info (FR News)', url: 'http://icecast.radiofrance.fr/franceinfo-midfi.mp3' },
+    { name: 'NPR News (US News)', url: 'https://npr-ice.streamguys1.com/live.mp3' },
+    { name: 'NPO Radio 2 (Muziek)', url: 'https://icecast.omroep.nl/radio2-bb-mp3' },
+    { name: 'BNR Nieuwsradio', url: 'https://stream.bnr.nl/bnr_mp3_128_20' },
+    { name: 'Sky Radio', url: 'https://21253.live.streamtheworld.com/SKYRADIO.mp3' },
+    { name: 'Radio 538', url: 'https://21233.live.streamtheworld.com/RADIO538.mp3' },
+    { name: 'Qmusic', url: 'https://stream.qmusic.nl/qmusic/mp3' },
+    { name: 'Classic FM', url: 'https://media-ice.musicradio.com/ClassicFMMP3' },
+];
+
 export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNavigate, initialTab }) => {
     const { user } = useAuth();
     const { theme, setTheme } = useTheme();
@@ -47,6 +65,11 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
     
     // Tab State
     const [activeTab, setActiveTab] = useState<'cities' | 'activities' | 'general' | 'records'>('general');
+    
+    // Radio Test State
+    const [isPlayingTest, setIsPlayingTest] = useState(false);
+    const [showRadioInfo, setShowRadioInfo] = useState(false);
+    const testAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         if (initialTab) {
@@ -56,6 +79,11 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
 
     React.useEffect(() => {
         setUsageStats(getUsage());
+        return () => {
+            if (testAudioRef.current) {
+                testAudioRef.current.pause();
+            }
+        };
     }, []);
 
     // Sync local favorites when settings change (unless dragging)
@@ -632,6 +660,131 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     </div>
                                 </div>
 
+                                {/* Big Ben Settings */}
+                                <div className="p-4 border-t border-border-color">
+                                    <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                                        <Icon name="schedule" />
+                                        {t('settings.bigben.title')}
+                                    </h3>
+                                    
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-text-main">{t('settings.bigben.radio.title')}</span>
+                                            <span className="text-xs text-text-muted">{t('settings.bigben.radio.desc')}</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => updateSetting('bigBen', { ...settings.bigBen, enableRadio: !settings.bigBen?.enableRadio })}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 ${settings.bigBen?.enableRadio ? 'bg-accent-primary' : 'bg-bg-page'}`}
+                                        >
+                                            <span
+                                                className={`${
+                                                    settings.bigBen?.enableRadio ? 'translate-x-6 bg-white' : 'translate-x-1 bg-text-muted'
+                                                } inline-block h-4 w-4 transform rounded-full transition-transform`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {settings.bigBen?.enableRadio && (
+                                        <div className="space-y-3 pl-2 border-l-2 border-border-color ml-2">
+                                             <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <label className="text-xs font-bold text-text-muted">{t('settings.bigben.station.label')}</label>
+                                                    <button
+                                                        onClick={() => setShowRadioInfo(true)}
+                                                        className="text-text-muted hover:text-text-main transition-colors"
+                                                        aria-label="Info"
+                                                    >
+                                                        <Icon name="info" className="text-sm" />
+                                                    </button>
+                                                </div>
+                                                
+                                                <div className="flex gap-2 mb-2">
+                                                    <select 
+                                                        value={RADIO_STATIONS.find(s => s.url === settings.bigBen?.radioUrl)?.url || 'custom'}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            if (val !== 'custom') {
+                                                                updateSetting('bigBen', { ...settings.bigBen, radioUrl: val });
+                                                                // Stop playing if switching
+                                                                if (isPlayingTest && testAudioRef.current) {
+                                                                    testAudioRef.current.pause();
+                                                                    setIsPlayingTest(false);
+                                                                }
+                                                            } else {
+                                                                // If switching to custom, keep current url but allow edit below
+                                                            }
+                                                        }}
+                                                        className="flex-1 bg-bg-page text-text-main text-sm rounded-lg px-3 py-2 border-none focus:ring-1 focus:ring-accent-primary outline-none"
+                                                    >
+                                                        {RADIO_STATIONS.map((s, i) => (
+                                                            <option key={i} value={s.url}>{s.name}</option>
+                                                        ))}
+                                                        <option value="custom">{t('settings.bigben.station.custom')}</option>
+                                                    </select>
+                                                    
+                                                    {/* Test Button */}
+                                                    <button
+                                                        onClick={() => {
+                                                            if (isPlayingTest) {
+                                                                if (testAudioRef.current) {
+                                                                    testAudioRef.current.pause();
+                                                                    setIsPlayingTest(false);
+                                                                }
+                                                            } else {
+                                                                const url = settings.bigBen?.radioUrl || RADIO_STATIONS[0].url;
+                                                                testAudioRef.current = new Audio(url);
+                                                                testAudioRef.current.volume = settings.bigBen?.radioVolume ?? 0.5;
+                                                                testAudioRef.current.play().catch(e => console.error("Test play failed", e));
+                                                                setIsPlayingTest(true);
+                                                            }
+                                                        }}
+                                                        className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${isPlayingTest ? 'bg-red-500 text-white' : 'bg-bg-page text-text-main hover:bg-bg-subtle'}`}
+                                                    >
+                                                        {isPlayingTest ? <Icon name="stop" /> : <Icon name="play_arrow" />}
+                                                    </button>
+                                                </div>
+
+                                                {/* Show Custom Input if not in presets or explicitly 'custom' (logic check) */}
+                                                {(!RADIO_STATIONS.some(s => s.url === settings.bigBen?.radioUrl) || settings.bigBen?.radioUrl === '') && (
+                                                    <div className="animate-in slide-in-from-top-1 mb-3">
+                                                        <input 
+                                                            type="text" 
+                                                            value={settings.bigBen?.radioUrl || ''}
+                                                            onChange={(e) => updateSetting('bigBen', { ...settings.bigBen, radioUrl: e.target.value })}
+                                                            placeholder="https://stream.live/..."
+                                                            className="w-full bg-bg-page text-text-main text-sm rounded-lg px-3 py-2 border-none focus:ring-1 focus:ring-accent-primary outline-none"
+                                                        />
+                                                        <p className="text-[10px] text-text-muted mt-1">{t('settings.bigben.station.url_placeholder_error')}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* Volume Slider */}
+                                                <div className="flex items-center gap-3 bg-bg-page p-2 rounded-lg">
+                                                    <Icon name="volume_up" className="text-text-muted text-sm" />
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="1" 
+                                                        step="0.01"
+                                                        value={settings.bigBen?.radioVolume ?? 0.5}
+                                                        onChange={(e) => {
+                                                            const newVol = parseFloat(e.target.value);
+                                                            updateSetting('bigBen', { ...settings.bigBen, radioVolume: newVol });
+                                                            if (testAudioRef.current) {
+                                                                testAudioRef.current.volume = newVol;
+                                                            }
+                                                        }}
+                                                        className="flex-1 h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                                    />
+                                                    <span className="text-xs text-text-muted w-8 text-right">
+                                                        {Math.round((settings.bigBen?.radioVolume ?? 0.5) * 100)}%
+                                                    </span>
+                                                </div>
+                                             </div>
+                                        </div>
+                                    )}
+                                </div>
+
                              </div>
                         </section>
 
@@ -927,6 +1080,30 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
 
 
             </div>
+
+            {/* Info Modal for Radio */}
+            <Modal
+                isOpen={showRadioInfo}
+                onClose={() => setShowRadioInfo(false)}
+                title={t('nav.info')}
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-text-main leading-relaxed">
+                        {t('settings.bigben.radio.info')}
+                    </p>
+                    <p className="text-xs text-orange-500 font-bold">
+                        {t('settings.bigben.radio.data_warning')}
+                    </p>
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setShowRadioInfo(false)}
+                            className="px-4 py-2 bg-accent-primary text-text-inverse rounded-lg text-sm font-bold hover:bg-accent-secondary transition-colors"
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

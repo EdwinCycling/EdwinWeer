@@ -456,7 +456,7 @@ export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSet
             )}
 
             {showInfoModal && (
-                <Modal onClose={() => setShowInfoModal(false)} title={t('yourday.title')}>
+                <Modal isOpen={true} onClose={() => setShowInfoModal(false)} title={t('yourday.title')}>
                     <div className="space-y-4">
                         <p>{t('yourday.explanation')}</p>
                     </div>

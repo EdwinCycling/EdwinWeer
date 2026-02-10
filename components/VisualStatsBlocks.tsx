@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AppSettings } from '../types';
+import { AppSettings, TempUnit, PrecipUnit } from '../types';
 import { Icon } from './Icon';
 import { getTranslation } from '../services/translations';
 import { convertTemp, convertPrecip, getBeaufort } from '../services/weatherService';
@@ -74,7 +74,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasTempMax) return false;
                         const value = data.temperature_2m_max?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertTemp(value, settings.tempUnit) >= (settings.tempUnit === 'fahrenheit' ? 86 : 30);
+                        return convertTemp(value, settings.tempUnit) >= (settings.tempUnit === TempUnit.FAHRENHEIT ? 86 : 30);
                     }
                 },
                 { 
@@ -87,7 +87,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasTempMax) return false;
                         const value = data.temperature_2m_max?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertTemp(value, settings.tempUnit) >= (settings.tempUnit === 'fahrenheit' ? 77 : 25);
+                        return convertTemp(value, settings.tempUnit) >= (settings.tempUnit === TempUnit.FAHRENHEIT ? 77 : 25);
                     }
                 },
                 { 
@@ -100,7 +100,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasTempMax) return false;
                         const value = data.temperature_2m_max?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertTemp(value, settings.tempUnit) < (settings.tempUnit === 'fahrenheit' ? 41 : 5);
+                        return convertTemp(value, settings.tempUnit) < (settings.tempUnit === TempUnit.FAHRENHEIT ? 41 : 5);
                     }
                 },
                 { 
@@ -113,7 +113,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasTempMax) return false;
                         const value = data.temperature_2m_max?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertTemp(value, settings.tempUnit) < (settings.tempUnit === 'fahrenheit' ? 32 : 0);
+                        return convertTemp(value, settings.tempUnit) < (settings.tempUnit === TempUnit.FAHRENHEIT ? 32 : 0);
                     }
                 },
                 { 
@@ -126,7 +126,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasTempMin) return false;
                         const value = data.temperature_2m_min?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertTemp(value, settings.tempUnit) < (settings.tempUnit === 'fahrenheit' ? 32 : 0);
+                        return convertTemp(value, settings.tempUnit) < (settings.tempUnit === TempUnit.FAHRENHEIT ? 32 : 0);
                     }
                 },
                 { 
@@ -139,7 +139,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasTempMin) return false;
                         const value = data.temperature_2m_min?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertTemp(value, settings.tempUnit) >= (settings.tempUnit === 'fahrenheit' ? 64 : 18);
+                        return convertTemp(value, settings.tempUnit) >= (settings.tempUnit === TempUnit.FAHRENHEIT ? 64 : 18);
                     }
                 },
                 { 
@@ -152,7 +152,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasPrecip) return false;
                         const value = data.precipitation_sum?.[i];
                         if (value === null || value === undefined) return false;
-                        return convertPrecip(value, settings.precipUnit) >= (settings.precipUnit === 'inch' ? 0.08 : 2);
+                        return convertPrecip(value, settings.precipUnit) >= (settings.precipUnit === PrecipUnit.INCH ? 0.08 : 2);
                     }
                 },
                 { 
@@ -211,7 +211,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'thermostat', 
                     color: 'bg-red-600', 
                     textColor: 'text-red-600', 
-                    check: (d: any) => d.maxTemp !== null && d.maxTemp >= (settings.tempUnit === 'fahrenheit' ? 86 : 30) 
+                    check: (d: any) => d.maxTemp !== null && d.maxTemp >= (settings.tempUnit === TempUnit.FAHRENHEIT ? 86 : 30) 
                 },
                 { 
                     id: 'warm', 
@@ -219,7 +219,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'thermostat', 
                     color: 'bg-orange-500', 
                     textColor: 'text-orange-500', 
-                    check: (d: any) => d.maxTemp !== null && d.maxTemp >= (settings.tempUnit === 'fahrenheit' ? 77 : 25) 
+                    check: (d: any) => d.maxTemp !== null && d.maxTemp >= (settings.tempUnit === TempUnit.FAHRENHEIT ? 77 : 25) 
                 },
                 { 
                     id: 'cool', 
@@ -227,7 +227,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'ac_unit', 
                     color: 'bg-blue-300', 
                     textColor: 'text-blue-400', 
-                    check: (d: any) => d.maxTemp !== null && d.maxTemp < (settings.tempUnit === 'fahrenheit' ? 41 : 5) 
+                    check: (d: any) => d.maxTemp !== null && d.maxTemp < (settings.tempUnit === TempUnit.FAHRENHEIT ? 41 : 5) 
                 },
                 { 
                     id: 'freezing', 
@@ -235,7 +235,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'snowing', 
                     color: 'bg-purple-600', 
                     textColor: 'text-purple-600', 
-                    check: (d: any) => d.maxTemp !== null && d.maxTemp < (settings.tempUnit === 'fahrenheit' ? 32 : 0) 
+                    check: (d: any) => d.maxTemp !== null && d.maxTemp < (settings.tempUnit === TempUnit.FAHRENHEIT ? 32 : 0) 
                 },
                 { 
                     id: 'cold_night', 
@@ -243,7 +243,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'nights_stay', 
                     color: 'bg-indigo-900', 
                     textColor: 'text-indigo-900 dark:text-indigo-400', 
-                    check: (d: any) => d.minTemp !== null && d.minTemp < (settings.tempUnit === 'fahrenheit' ? 32 : 0) 
+                    check: (d: any) => d.minTemp !== null && d.minTemp < (settings.tempUnit === TempUnit.FAHRENHEIT ? 32 : 0) 
                 },
                 { 
                     id: 'warm_night', 
@@ -251,7 +251,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'bedtime', 
                     color: 'bg-pink-500', 
                     textColor: 'text-pink-500', 
-                    check: (d: any) => d.minTemp !== null && d.minTemp >= (settings.tempUnit === 'fahrenheit' ? 64 : 18) 
+                    check: (d: any) => d.minTemp !== null && d.minTemp >= (settings.tempUnit === TempUnit.FAHRENHEIT ? 64 : 18) 
                 },
                 { 
                     id: 'rainy', 
