@@ -248,47 +248,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      // Check if mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      setLoading(true);
+      await setPersistence(auth, browserLocalPersistence);
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
       
-      if (isMobile) {
-        localStorage.setItem('firebase_auth_in_progress', 'true');
-        await signInWithRedirect(auth, googleProvider);
-        // Page will redirect, so no need to handle result here immediately
-      } else {
-        const result = await signInWithPopup(auth, googleProvider);
-        if (result.user) {
-            await logAuthEvent(result.user.uid, 'login');
-            // Mark session as logged to avoid duplicate session_start log
-            sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
-        }
+      // Force popup on all devices (including mobile) to avoid iOS redirect context loss
+      console.log('AuthContext: Forcing signInWithPopup...');
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      if (result.user) {
+        localStorage.setItem('firebase_auth_in_progress', 'false');
+        await logAuthEvent(result.user.uid, 'login');
+        sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
       }
-      // Expiry will be set in onAuthStateChanged
-    } catch (error) {
-      console.error("Error signing in with Google", error);
-      throw error;
+    } catch (error: any) {
+      console.error('AuthContext: Login error:', error);
+      localStorage.setItem('firebase_auth_in_progress', 'false');
+      
+      // Handle specific popup errors
+      if (error.code === 'auth/popup-blocked') {
+        alert('De login popup is geblokkeerd door je browser. Sta popups toe voor deze site om in te loggen.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        console.log('Login geannuleerd door gebruiker');
+      } else {
+        alert(`Login fout: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const signInWithProvider = async (provider: FirebaseAuthProvider) => {
     try {
-      // Check if mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      setLoading(true);
+      await setPersistence(auth, browserLocalPersistence);
 
-      if (isMobile) {
-         // Robustness: Set a flag so we know to wait longer on reload
-         localStorage.setItem('firebase_auth_in_progress', 'true');
-         await signInWithRedirect(auth, provider);
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-            await logAuthEvent(result.user.uid, 'login');
-            sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
-        }
+      // Force popup on all devices
+      console.log('AuthContext: Forcing signInWithPopup for provider...');
+      const result = await signInWithPopup(auth, provider);
+      
+      if (result.user) {
+        localStorage.setItem('firebase_auth_in_progress', 'false');
+        await logAuthEvent(result.user.uid, 'login');
+        sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
       }
-    } catch (error) {
-      console.error("Error signing in with provider", error);
-      throw error;
+    } catch (error: any) {
+      console.error('AuthContext: Provider login error:', error);
+      localStorage.setItem('firebase_auth_in_progress', 'false');
+      
+      if (error.code === 'auth/popup-blocked') {
+        alert('De login popup is geblokkeerd. Sta popups toe om in te loggen.');
+      } else {
+        alert(`Login fout: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
