@@ -24,43 +24,40 @@ const getIpAddress = async (): Promise<string | undefined> => {
 };
 
 export const logAuthEvent = async (userId: string, action: 'login' | 'logout' | 'session_start' | 'account_delete') => {
-    if (!db) {
-        console.error("Audit Log Failed: Database not initialized");
-        return;
-    }
-
-    try {
-        const ip = await getIpAddress();
-        
-        const logEntry: AuditLog = {
-            userId,
-            action,
-            timestamp: serverTimestamp(),
-            ip,
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language
-        };
-
-        // Save to a subcollection 'audit_logs' under the user
-        const auditCollectionRef = collection(db, 'users', userId, 'audit_logs');
-        await addDoc(auditCollectionRef, logEntry);
-
-        // Cleanup: Keep only the latest 50 records
-        try {
-            const q = query(auditCollectionRef, orderBy('timestamp', 'desc'));
-            const snapshot = await getDocs(q);
-            
-            if (snapshot.size > 50) {
-                const docsToDelete = snapshot.docs.slice(50);
-                const deletePromises = docsToDelete.map(d => deleteDoc(doc(db, 'users', userId, 'audit_logs', d.id)));
-                await Promise.all(deletePromises);
-            }
-        } catch (cleanupError) {
-            console.error("Error cleaning up audit logs:", cleanupError);
+    // We don't want to block the main auth flow for logging
+    // So we don't await the entire process if it involves slow network calls
+    (async () => {
+        if (!db) {
+            console.error("Audit Log Failed: Database not initialized");
+            return;
         }
 
-    } catch (error) {
-        console.error("Error logging auth event:", error);
-    }
+        try {
+            const ip = await getIpAddress();
+            
+            const logEntry: AuditLog = {
+                userId,
+                action,
+                timestamp: serverTimestamp(),
+                ip,
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language
+            };
+
+            // Save to a subcollection 'audit_logs' under the user
+            const auditCollectionRef = collection(db, 'users', userId, 'audit_logs');
+            await addDoc(auditCollectionRef, logEntry);
+
+            // Cleanup: Keep only the latest 50 records
+            const q = query(auditCollectionRef, orderBy('timestamp', 'desc'), limit(100));
+            const snapshot = await getDocs(q);
+            if (snapshot.docs.length > 50) {
+                const deletePromises = snapshot.docs.slice(50).map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+            }
+        } catch (error) {
+            console.error("Failed to log auth event", error);
+        }
+    })();
 };

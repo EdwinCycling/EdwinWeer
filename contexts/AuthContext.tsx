@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then(async (result) => {
         if (result && result.user) {
           console.log("AuthContext: Successfully logged in via Redirect!", result.user);
-          await logAuthEvent(result.user.uid, 'login');
+          logAuthEvent(result.user.uid, 'login');
           sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
         } else {
           console.log("AuthContext: No redirect result found.");
@@ -61,11 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Combined loading state management
   useEffect(() => {
-    if (isAuthInitialized && !isRedirectChecking) {
-      console.log("AuthContext: Both auth and redirect checks finished. Setting loading to false.");
-      setLoading(false);
+    const isNowLoading = !isAuthInitialized || isRedirectChecking;
+    if (loading !== isNowLoading) {
+      console.log(`AuthContext: Loading state updated to ${isNowLoading} (AuthInit: ${isAuthInitialized}, RedirectCheck: ${isRedirectChecking})`);
+      setLoading(isNowLoading);
     }
-  }, [isAuthInitialized, isRedirectChecking]);
+  }, [isAuthInitialized, isRedirectChecking, loading]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -76,7 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       try {
         if (currentUser) {
-          setLoading(true); // Ensure loading is true while fetching data
           // Check stored expiration
           const storedExpiry = localStorage.getItem('session_expiry');
           const now = new Date();
@@ -132,9 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await checkAndResetDailyCredits(getUsage(), currentUser.uid);
 
           if (shouldLogSession) {
-              logAuthEvent(currentUser.uid, 'session_start').then(() => {
-                  sessionStorage.setItem(sessionKey, 'true');
-              });
+              logAuthEvent(currentUser.uid, 'session_start');
+              sessionStorage.setItem(sessionKey, 'true');
           }
           
           let role: UserRole = 'user';
@@ -164,11 +163,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setSessionExpiry(null);
           
-          const currentTheme = localStorage.getItem('theme');
-          localStorage.clear();
-          if (currentTheme) {
-              localStorage.setItem('theme', currentTheme);
-          }
+          // CRITICAL: Targeted cleanup instead of localStorage.clear()
+          // This prevents clearing Firebase-internal keys (starting with 'firebase:') 
+          // which are essential for redirect and persistence flows.
+          const keysToKeep = ['theme', 'weather_app_settings']; // Keep user preferences
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+              if (!keysToKeep.includes(key) && !key.startsWith('firebase:')) {
+                  localStorage.removeItem(key);
+              }
+          });
         }
       } catch (error) {
          console.error("AuthContext: Error during initialization", error);
@@ -236,15 +240,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       if (user) {
-          await logAuthEvent(user.uid, 'logout');
+          logAuthEvent(user.uid, 'logout');
           sessionStorage.removeItem(`session_logged_${user.uid}`);
       }
       await signOut(auth);
       setStorageUserId(null);
       setUsageUserId(null);
-      // Secure cleanup: Clear all local storage to remove potential sensitive data
-      // This includes usage stats, cached reports, etc.
-      localStorage.clear(); 
+      // Secure cleanup: Remove app-specific data but keep generic preferences
+      const keysToKeep = ['theme', 'weather_app_settings'];
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+          if (!keysToKeep.includes(key) && !key.startsWith('firebase:')) {
+              localStorage.removeItem(key);
+          }
+      });
       setSessionExpiry(null);
     } catch (error) {
       console.error("Error signing out", error);
@@ -254,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteAccount = async () => {
     try {
       if (user) {
-        await logAuthEvent(user.uid, 'account_delete');
+        logAuthEvent(user.uid, 'account_delete');
         await user.delete();
         setStorageUserId(null);
         setUsageUserId(null);
@@ -303,7 +312,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-bg-main">
             <div className="flex flex-col items-center gap-4">
                 <LoadingSpinner />
-                <p className="text-text-muted animate-pulse">Laden van gebruikersgegevens...</p>
+                <p className="text-text-muted animate-pulse">Baro gegevens ophalen...</p>
             </div>
         </div>
       ) : children}
