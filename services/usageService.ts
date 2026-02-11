@@ -1,6 +1,6 @@
 import { API_LIMITS, STORAGE_KEY } from './apiConfig';
 export { API_LIMITS };
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
 import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 
 export interface DailyUsage {
@@ -77,6 +77,25 @@ let currentUserEmail: string | null = null;
 export const setUsageUserId = (uid: string | null, email: string | null = null) => {
     currentUserId = uid;
     currentUserEmail = email;
+};
+
+const requestDailyCreditsTopup = async (uid: string) => {
+    if (!auth.currentUser || auth.currentUser.uid !== uid) return null;
+    const token = await auth.currentUser.getIdToken();
+    if (!token) return null;
+    const response = await fetch('/.netlify/functions/daily-credits', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-App-Source': 'BaroWeatherApp'
+        }
+    });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Daily credits request failed');
+    }
+    return response.json();
 };
 
 // Internal: Send alert email via Netlify Function
@@ -304,47 +323,21 @@ export const checkAndResetDailyCredits = async (currentStats: UsageStats, uid: s
     // If it's a new day (or first time)
     if (currentStats.dayStart !== today) {
         console.log(`[Usage] ${isFirstTimeEver ? 'First time initialization' : 'New day detected'} (Old: ${currentStats.dayStart}, New: ${today}). Checking credits...`);
-        
-        // 1. Reset counters
-        currentStats.dayCount = 0;
-        currentStats.dayStart = today;
-        currentStats.alerts.day80 = false;
-        currentStats.alerts.day100 = false;
-        
-        // 2. Check Credits Top-up
-        // Requirement: New users (first login) get 50, daily top-up is 20
-        const targetCredits = isFirstTimeEver 
-            ? (API_LIMITS.CREDITS?.NEW_USER_BONUS || 50)
-            : (API_LIMITS.CREDITS?.FREE_DAILY || 20);
-        
-        // Ensure we handle undefined or missing weatherCredits gracefully
-        if (currentStats.weatherCredits === undefined) currentStats.weatherCredits = 0;
-        const currentCredits = currentStats.weatherCredits;
-        
-        if (currentCredits < targetCredits) {
-            const topUp = targetCredits - currentCredits;
-            console.log(`[Usage] Topping up credits by ${topUp} to reach ${targetCredits}`);
-            
-            // Apply locally
-            currentStats.weatherCredits = targetCredits;
-            
-            // Apply remotely (negative consumption = addition)
-            if (db && uid) {
-                try {
-                    const userRef = doc(db, 'users', uid);
-                    await setDoc(userRef, {
-                        usage: {
-                            weatherCredits: increment(topUp)
-                        }
-                    }, { merge: true });
-                } catch (e) {
-                    console.error("Error topping up credits:", e);
+        try {
+            const result = uid ? await requestDailyCreditsTopup(uid) : null;
+            if (result?.dayStart === today) {
+                currentStats.dayStart = result.dayStart;
+                currentStats.dayCount = typeof result.dayCount === 'number' ? result.dayCount : 0;
+                currentStats.alerts.day80 = false;
+                currentStats.alerts.day100 = false;
+                if (typeof result.weatherCredits === 'number') {
+                    currentStats.weatherCredits = result.weatherCredits;
                 }
+                saveUsage(currentStats);
             }
+        } catch (e) {
+            console.error("Error syncing daily credits:", e);
         }
-        
-        // Save the new dayStart to prevent re-run
-        saveUsage(currentStats);
     }
 };
 

@@ -408,8 +408,14 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     return dt;
   };
 
-  const navigateToHistoricalSingle = (dateStr: string) => {
-    const dt = parseIsoDateLocal(dateStr);
+  const navigateToHistoricalSingle = (dateInput: string | Date) => {
+    let dt: Date | null = null;
+    if (dateInput instanceof Date) {
+        dt = dateInput;
+    } else {
+        dt = parseIsoDateLocal(dateInput);
+    }
+
     if (!dt) return;
     saveCurrentLocation(location);
     if (onUpdateSettings) {
@@ -2380,7 +2386,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 />
                                 <div className="mt-4 p-4 bg-bg-subtle rounded-xl text-xs text-text-muted flex flex-wrap gap-4 justify-center w-full">
                                     <p className="flex items-center gap-1 w-full justify-center text-center font-bold mb-1"><Icon name="info" className="text-sm"/> {t('month_stats.visual.explanation_title')}</p>
-                                    <p className="text-center opacity-80 leading-relaxed max-w-4xl">{t('month_stats.visual.explanation_legend')}</p>
+                                    <p className="text-center opacity-80 leading-relaxed max-w-4xl">{t('month_stats.visual.explanation_legend_dashboard')}</p>
                                 </div>
                                 </>
                             ) : (
@@ -2665,6 +2671,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         data={dailyData} 
                         settings={settings} 
                         sourceType="daily_data" 
+                        excludedCategories={['windy']}
                     />
                     <div className="mt-4 p-4 bg-bg-subtle rounded-xl text-xs text-text-muted flex flex-wrap gap-4 justify-center w-full">
                         <p className="flex items-center gap-1 w-full justify-center text-center font-bold mb-1"><Icon name="info" className="text-sm"/> {t('month_stats.visual.explanation_title')}</p>

@@ -53,7 +53,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                         if (!hasSun || !hasDaylight) return false;
                         const sun = data.sunshine_duration[i] || 0;
                         const daylight = data.daylight_duration ? data.daylight_duration[i] : 0;
-                        return daylight > 0 && (sun / daylight) >= 0.5;
+                        return daylight > 0 && (sun / daylight) >= 0.75;
                     }
                 },
                 { 
@@ -62,7 +62,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'cloud', 
                     color: 'bg-gray-500', 
                     textColor: 'text-gray-500', 
-                    check: (i: number) => hasCloud && (data.cloud_cover_mean?.[i] ?? 0) >= 50 
+                    check: (i: number) => hasCloud && (data.cloud_cover_mean?.[i] ?? 0) >= 75 
                 },
                 { 
                     id: 'hot', 
@@ -195,7 +195,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'wb_sunny', 
                     color: 'bg-yellow-400', 
                     textColor: 'text-yellow-500', 
-                    check: (d: any) => (d.sun ?? 0) >= 50
+                    check: (d: any) => (d.sun ?? 0) >= 75
                 },
                 { 
                     id: 'cloudy', 
@@ -203,7 +203,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'cloud', 
                     color: 'bg-gray-500', 
                     textColor: 'text-gray-500', 
-                    check: (d: any) => (d.cloudCover ?? 0) >= 50
+                    check: (d: any) => (d.cloudCover ?? 0) >= 75
                 },
                 { 
                     id: 'hot', 
@@ -296,7 +296,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
     // Grid: Grid of N columns (grid-cols-N)
 
     return (
-        <div className="flex-grow flex items-end justify-between gap-1 md:gap-4 overflow-x-auto pb-4 min-h-[200px] w-full">
+        <div className="flex-grow flex items-end justify-between gap-1 md:gap-4 pb-4 min-h-[200px] w-full">
             {visualStats.map((cat) => (
                 <div key={cat.id} className="flex flex-col items-center justify-end h-full flex-1 min-w-[60px] group">
                     {/* Blocks Container */}
@@ -340,7 +340,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     </div>
 
                     {/* Label and Icon */}
-                    <div className="flex flex-col items-center gap-1 z-10 pt-2 w-full border-t border-border-color/20">
+                    <div className="flex flex-col items-center gap-1 z-10 pt-2 w-full border-t border-border-color/20 min-h-[85px] justify-start">
                         <div className={`p-2 rounded-full bg-bg-subtle ${cat.textColor}`}>
                             <Icon name={cat.icon} className="text-xl md:text-2xl" />
                         </div>

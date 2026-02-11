@@ -60,12 +60,44 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Sun Position Logic
+  const sunArcParams = useMemo(() => {
+      if (isMobile) {
+          return {
+              startX: -400,
+              endX: 900,
+              peakY: -200,
+              centerX: 250,
+              a: 0.00284
+          };
+      }
+
+      const startX = -100;
+      const endX = 900;
+      const peakY = -250;
+      const centerX = 400;
+      const bottomY = 800;
+      const a = (bottomY - peakY) / Math.pow(startX - centerX, 2);
+
+      return { startX, endX, peakY, centerX, a };
+  }, [isMobile]);
+
+  const parseLocalTimeWithOffset = useCallback((dateTime: string, utcOffsetSeconds: number) => {
+      const [datePart, timePart] = dateTime.split('T');
+      if (!datePart || !timePart) return NaN;
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute, second] = timePart.split(':').map(Number);
+      if ([year, month, day, hour, minute].some(Number.isNaN)) return NaN;
+      const safeSecond = Number.isNaN(second) ? 0 : second;
+      const utcMs = Date.UTC(year, month - 1, day, hour, minute, safeSecond);
+      return utcMs - utcOffsetSeconds * 1000;
+  }, []);
+
   const updateSunPosition = useCallback((currentDate: Date) => {
       if (!weatherData?.daily?.sunrise?.[0] || !weatherData?.daily?.sunset?.[0]) return;
-      
-      const sunrise = new Date(weatherData.daily.sunrise[0]).getTime();
-      const sunset = new Date(weatherData.daily.sunset[0]).getTime();
+      const utcOffsetSeconds = weatherData.utc_offset_seconds || 0;
+      const sunrise = parseLocalTimeWithOffset(weatherData.daily.sunrise[0], utcOffsetSeconds);
+      const sunset = parseLocalTimeWithOffset(weatherData.daily.sunset[0], utcOffsetSeconds);
+      if (Number.isNaN(sunrise) || Number.isNaN(sunset)) return;
       const nowTime = currentDate.getTime();
   
       if (nowTime < sunrise || nowTime > sunset) {
@@ -77,41 +109,18 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
       const elapsed = nowTime - sunrise;
       const progress = elapsed / totalDuration; // 0 to 1
   
-      let startX, endX, a, peakY;
+      const { startX, endX, centerX, peakY, a } = sunArcParams;
 
-      if (isMobile) {
-          // Mobile: Original Logic
-          startX = -400;
-          endX = 900;
-          a = 0.00284;
-          peakY = -200;
-      } else {
-            // PC: Adjusted for new ViewBox (-100 to 900)
-            // Taller arc to clear the higher ViewBox top (-350)
-            startX = -50;
-            endX = 850;
-            peakY = -250;
-            // Calculate 'a' for passing through start point (-50, 1000)
-            // Vertex (250, -250)
-            // 1000 = a * (-50 - 250)^2 - 250
-            // 1250 = a * (-300)^2 = a * 90000
-            // a = 1250 / 90000 ≈ 0.0138
-            a = 0.0139;
-        }
-      
       const x = startX + (progress * (endX - startX));
-      
-      // Parabola: y = a(x - h)^2 + k
-      const y = a * Math.pow(x - 250, 2) + peakY;
+      const y = a * Math.pow(x - centerX, 2) + peakY;
   
       setSunPosition({ x, y });
-  }, [weatherData, isMobile]);
+  }, [weatherData, sunArcParams, parseLocalTimeWithOffset]);
 
   // Initial Sun Update
   useEffect(() => {
       if (weatherData) {
-          // Use current 'time' state which is already adjusted for timezone if needed
-          updateSunPosition(time);
+          updateSunPosition(new Date());
       }
   }, [weatherData, updateSunPosition]); // 'time' is omitted to avoid loop, but weatherData change triggers it.
 
@@ -275,9 +284,10 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
       const now = new Date();
       let displayTime = now;
 
+      let utcMs: number | null = null;
       if (weatherData) {
-          const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-          displayTime = new Date(utc + (weatherData.utc_offset_seconds * 1000));
+          utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+          displayTime = new Date(utcMs + (weatherData.utc_offset_seconds * 1000));
       }
 
       setTime(displayTime);
@@ -288,7 +298,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
       // Update sun position every 15 minutes (0, 15, 30, 45)
       if (minutes % 15 === 0 && seconds === 0) {
-          updateSunPosition(displayTime);
+          updateSunPosition(utcMs ? new Date(utcMs) : now);
       }
 
       // Effect logic: Top of hour (00) and Half past (30)
@@ -730,7 +740,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
         <svg 
             viewBox={isMobile ? "-125 -200 750 1200" : "-100 -350 1000 1150"} 
             preserveAspectRatio="xMidYMax meet"
-            className="w-full h-full max-w-5xl drop-shadow-2xl z-10 relative"
+            className="w-full h-full drop-shadow-2xl z-10 relative"
         >
             <defs>
                 <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -798,7 +808,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
             {/* SUN - Hidden on mobile and at night */}
             {sunPosition && !isNight && (
-                <g transform={`translate(${sunPosition.x}, ${sunPosition.y})`} className="hidden md:block">
+                <g transform={`translate(${sunPosition.x}, ${sunPosition.y})`}>
                      <circle r="90" fill="url(#sunGradient)" filter="url(#sunGlow)" />
                 </g>
             )}
@@ -842,7 +852,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
             </g>
 
             {/* Extra dark overlay for night */}
-            {isNight && <rect x="0" y="-250" width="500" height="1250" fill="#000" opacity="0.6" />}
+            {isNight && <rect x="0" y="-250" width="500" height="1250" fill={COLORS.darkBlue} opacity="0.6" />}
 
             {/* Architectural Details - Top Windows/Arches */}
             <g transform="translate(0, 0)">
@@ -1052,7 +1062,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
             <circle cx="250" cy="300" r="3" fill={COLORS.goldDark} />
 
             {/* Secondewijzer (Subtle) */}
-            <g transform={`rotate(${seconds * 6} 250 300)`}>
+            <g transform={`rotate(${seconds * 6} 250 300)`} filter="url(#handShadow)">
                 <line x1="250" y1="330" x2="250" y2="105" stroke={COLORS.goldDark} strokeWidth="1" opacity="0.9" />
                 <circle cx="250" cy="300" r="4" fill={COLORS.goldDark} />
             </g>

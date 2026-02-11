@@ -170,3 +170,35 @@ body {
 .will-change-transform {
   will-change: transform;
 }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  animation: marquee linear infinite;
+}
+
+/* Infinite Marquee V2 Global Keyframes */
+@keyframes scroll-left {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes scroll-right {
+    from { transform: translate3d(-50%, 0, 0); }
+    to { transform: translate3d(0, 0, 0); }
+}
+
+.animate-scroll-left {
+    animation-name: scroll-left;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+.animate-scroll-right {
+    animation-name: scroll-right;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}

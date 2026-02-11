@@ -45,6 +45,7 @@ import { RadioProvider } from './contexts/RadioContext';
 import { FloatingRadioPlayer } from './components/FloatingRadioPlayer';
 import { LandingPageV2 } from './views/LandingPageV2';
 const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').then(module => ({ default: module.BaroRitAdviesView })));
+const AmbientView = React.lazy(() => import('./views/AmbientView').then(module => ({ default: module.AmbientView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
 import { getTranslation } from './services/translations';
@@ -337,6 +338,8 @@ const App: React.FC = () => {
         return <HistoricalWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} initialParams={viewParams} isLimitReached={!!limitReached} />;
       case ViewState.STRAVA:
         return <StravaWeatherView onNavigate={navigate} settings={settings} />;
+      case ViewState.AMBIENT:
+        return <AmbientView onNavigate={navigate} settings={settings} />;
       case ViewState.SHARE:
         return <ShareWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.BAROMETER:
@@ -775,6 +778,16 @@ const App: React.FC = () => {
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                         <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('this_day.title')}</span>
                                         <span className="text-xs text-text-muted text-left line-clamp-1">{t('this_day.subtitle')}</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => { navigate(ViewState.AMBIENT); setExtraMenuOpen(false); }} className="w-full flex items-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-3 md:gap-4 transition-colors border border-border-color text-left group">
+                                    <div className="size-10 md:size-12 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                        <Icon name="fireplace" className="text-xl md:text-2xl" />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                        <span className="font-bold text-base md:text-lg truncate w-full text-text-main">{t('menu.extra.ambient_title')}</span>
+                                        <span className="text-xs text-text-muted text-left line-clamp-1">{t('menu.extra.ambient_desc')}</span>
                                     </div>
                                 </button>
 

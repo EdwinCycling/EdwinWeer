@@ -275,9 +275,10 @@ export const MonthStatsCard: React.FC<Props> = ({ location, settings, onNavigate
 
     // Prediction vs Average logic
     let predictionCard = null;
-    if (weatherData && weatherData.daily) {
-        const todayMax = weatherData.daily.temperature_2m_max[0];
-        const todayMin = weatherData.daily.temperature_2m_min[0];
+    const weatherDataAny = weatherData as any;
+    if (weatherDataAny && weatherDataAny.daily) {
+        const todayMax = weatherDataAny.daily.temperature_2m_max[0];
+        const todayMin = weatherDataAny.daily.temperature_2m_min[0];
         
         const diffMax = todayMax - stats.avgMax;
         const diffMin = todayMin - stats.avgMin;
