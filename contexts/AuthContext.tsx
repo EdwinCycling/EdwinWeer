@@ -40,29 +40,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Handle redirect result (for mobile logins)
   useEffect(() => {
     const initAuth = async () => {
-        console.log("AuthContext: Starting robust auth initialization...");
+        console.log("AuthContext: Starting ultimate robust auth initialization...");
+        
+        // Helper for retrying redirect result
+        const tryGetRedirectResult = async (retries = 3, delay = 1000): Promise<any> => {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const result = await getRedirectResult(auth);
+                    if (result) return result;
+                    console.log(`AuthContext: Redirect attempt ${i + 1} returned no result, waiting...`);
+                } catch (error: any) {
+                    console.error(`AuthContext: Redirect attempt ${i + 1} failed:`, error.message);
+                    // Certain errors like 'auth/redirect-cancelled-by-user' should stop retries
+                    if (error.code === 'auth/redirect-cancelled-by-user') break;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+            }
+            return null;
+        };
+
         try {
             // Force persistence
             await setPersistence(auth, browserLocalPersistence);
             
             // Check for redirect flag
             const isRedirecting = localStorage.getItem('firebase_auth_in_progress') === 'true';
-            if (isRedirecting) {
-                console.log("AuthContext: Redirect detected, holding state...");
-            }
-
-            const result = await getRedirectResult(auth);
+            
+            // If we are on mobile and just came back from a redirect, be very patient
+            const result = await tryGetRedirectResult(isRedirecting ? 4 : 1, 800);
+            
             if (result && result.user) {
                 console.log("AuthContext: Successfully logged in via Redirect!", result.user.uid);
                 logAuthEvent(result.user.uid, 'login');
                 sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
             } else {
-                console.log("AuthContext: No redirect result found or already processed.");
+                console.log("AuthContext: No redirect result found after retries.");
             }
         } catch (error: any) {
-            console.error("AuthContext: Redirect check error:", error);
-            // On some mobile browsers, we might need a retry or just wait for onAuthStateChanged
+            console.error("AuthContext: Final redirect check error:", error);
         } finally {
+            // IMPORTANT: Only remove flag if we are sure we're done or if it's been too long
             localStorage.removeItem('firebase_auth_in_progress');
             setIsRedirectChecking(false);
             console.log("AuthContext: Redirect check finished.");
@@ -78,9 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isActuallyLoading = !isAuthInitialized || isRedirectChecking;
     
     if (!isActuallyLoading) {
-        // Even if Firebase says it's done, wait a tiny bit to avoid UI flickering
-        // especially on mobile where state transitions can be multiple.
-        const delay = user ? 400 : 1000; // Wait longer if no user to be absolutely sure
+        // If we have no user and we're NOT in a redirect, we show landing
+        // But on iPhone we want to be VERY conservative.
+        const delay = user ? 300 : 2500; // Increased to 2.5s for no-user case on iPhone
         const timer = setTimeout(() => {
             setLoading(false);
             console.log(`AuthContext: Finalizing loading state (User: ${user?.uid || 'none'})`);
