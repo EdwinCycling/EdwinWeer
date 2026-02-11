@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider } from 'firebase/auth';
+import { User, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth, googleProvider, db } from '../services/firebase';
 import { setStorageUserId, loadRemoteData } from '../services/storageService';
 import { setUsageUserId, loadRemoteUsage, checkAndResetDailyCredits, getUsage, clearLocalUsage } from '../services/usageService';
@@ -39,34 +39,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Handle redirect result (for mobile logins)
   useEffect(() => {
-    console.log("AuthContext: Starting redirect check...");
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          console.log("AuthContext: Successfully logged in via Redirect!", result.user);
-          logAuthEvent(result.user.uid, 'login');
-          sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
-        } else {
-          console.log("AuthContext: No redirect result found.");
+    const initAuth = async () => {
+        console.log("AuthContext: Starting robust auth initialization...");
+        try {
+            // Force persistence
+            await setPersistence(auth, browserLocalPersistence);
+            
+            // Check for redirect flag
+            const isRedirecting = localStorage.getItem('firebase_auth_in_progress') === 'true';
+            if (isRedirecting) {
+                console.log("AuthContext: Redirect detected, holding state...");
+            }
+
+            const result = await getRedirectResult(auth);
+            if (result && result.user) {
+                console.log("AuthContext: Successfully logged in via Redirect!", result.user.uid);
+                logAuthEvent(result.user.uid, 'login');
+                sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+            } else {
+                console.log("AuthContext: No redirect result found or already processed.");
+            }
+        } catch (error: any) {
+            console.error("AuthContext: Redirect check error:", error);
+            // On some mobile browsers, we might need a retry or just wait for onAuthStateChanged
+        } finally {
+            localStorage.removeItem('firebase_auth_in_progress');
+            setIsRedirectChecking(false);
+            console.log("AuthContext: Redirect check finished.");
         }
-      })
-      .catch((error) => {
-        console.error("AuthContext: Error after redirect login:", error);
-      })
-      .finally(() => {
-        setIsRedirectChecking(false);
-        console.log("AuthContext: Redirect check finished.");
-      });
+    };
+
+    initAuth();
   }, []);
 
   // Combined loading state management
   useEffect(() => {
-    const isNowLoading = !isAuthInitialized || isRedirectChecking;
-    if (loading !== isNowLoading) {
-      console.log(`AuthContext: Loading state updated to ${isNowLoading} (AuthInit: ${isAuthInitialized}, RedirectCheck: ${isRedirectChecking})`);
-      setLoading(isNowLoading);
+    // Determine if we should be loading
+    const isActuallyLoading = !isAuthInitialized || isRedirectChecking;
+    
+    if (!isActuallyLoading) {
+        // Even if Firebase says it's done, wait a tiny bit to avoid UI flickering
+        // especially on mobile where state transitions can be multiple.
+        const delay = user ? 400 : 1000; // Wait longer if no user to be absolutely sure
+        const timer = setTimeout(() => {
+            setLoading(false);
+            console.log(`AuthContext: Finalizing loading state (User: ${user?.uid || 'none'})`);
+        }, delay);
+        return () => clearTimeout(timer);
+    } else {
+        setLoading(true);
     }
-  }, [isAuthInitialized, isRedirectChecking, loading]);
+  }, [isAuthInitialized, isRedirectChecking, user]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -163,16 +186,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setSessionExpiry(null);
           
-          // CRITICAL: Targeted cleanup instead of localStorage.clear()
-          // This prevents clearing Firebase-internal keys (starting with 'firebase:') 
-          // which are essential for redirect and persistence flows.
-          const keysToKeep = ['theme', 'weather_app_settings']; // Keep user preferences
-          const keys = Object.keys(localStorage);
-          keys.forEach(key => {
-              if (!keysToKeep.includes(key) && !key.startsWith('firebase:')) {
-                  localStorage.removeItem(key);
-              }
-          });
+          // CRITICAL: Only clear if we are NOT in a redirect check
+          if (!isRedirectChecking && localStorage.getItem('firebase_auth_in_progress') !== 'true') {
+              console.log("AuthContext: No user and no redirect in progress, performing cleanup.");
+              const keysToKeep = ['theme', 'weather_app_settings'];
+              const keys = Object.keys(localStorage);
+              keys.forEach(key => {
+                  if (!keysToKeep.includes(key) && !key.startsWith('firebase:')) {
+                      localStorage.removeItem(key);
+                  }
+              });
+          } else {
+              console.log("AuthContext: No user found but redirect is in progress, skipping cleanup.");
+          }
         }
       } catch (error) {
          console.error("AuthContext: Error during initialization", error);
@@ -200,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
       if (isMobile) {
+        localStorage.setItem('firebase_auth_in_progress', 'true');
         await signInWithRedirect(auth, googleProvider);
         // Page will redirect, so no need to handle result here immediately
       } else {
@@ -223,6 +250,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
+         // Robustness: Set a flag so we know to wait longer on reload
+         localStorage.setItem('firebase_auth_in_progress', 'true');
          await signInWithRedirect(auth, provider);
       } else {
         const result = await signInWithPopup(auth, provider);
