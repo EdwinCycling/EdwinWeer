@@ -96,9 +96,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (!isActuallyLoading) {
         // If we have no user and we're NOT in a redirect, we show landing
-        // But on iPhone we want to be VERY conservative.
-        const delay = user ? 300 : 2500; // Increased to 2.5s for no-user case on iPhone
+        // But on iPhone we want to be EXTREMELY conservative.
+        const isRedirecting = localStorage.getItem('firebase_auth_in_progress') === 'true';
+        
+        // If we suspect a redirect is happening, wait much longer (up to 10 seconds)
+        // This gives the slow mobile browser time to finish the auth background tasks.
+        const delay = user ? 300 : (isRedirecting ? 10000 : 3500); 
+        
+        console.log(`AuthContext: Planning to end loading in ${delay}ms. RedirectInProgress: ${isRedirecting}, User: ${user?.uid || 'none'}`);
+
         const timer = setTimeout(() => {
+            // Final check: if we still have no user but the flag is STILL there, 
+            // it means Firebase might have failed silently.
             setLoading(false);
             console.log(`AuthContext: Finalizing loading state (User: ${user?.uid || 'none'})`);
         }, delay);
@@ -359,6 +368,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             <div className="flex flex-col items-center gap-4">
                 <LoadingSpinner />
                 <p className="text-text-muted animate-pulse">Baro gegevens ophalen...</p>
+                {localStorage.getItem('firebase_auth_in_progress') === 'true' && (
+                  <p className="text-xs text-text-muted/60 animate-bounce mt-2">Bezig met Google authenticatie, een moment geduld...</p>
+                )}
             </div>
         </div>
       ) : children}
