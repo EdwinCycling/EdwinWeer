@@ -28,6 +28,8 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRedirectChecking, setIsRedirectChecking] = useState(true);
+  const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [sessionExpiry, setSessionExpiry] = useState<Date | null>(null);
   
   const t = (key: string) => {
@@ -37,131 +39,140 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Handle redirect result (for mobile logins)
   useEffect(() => {
+    console.log("AuthContext: Starting redirect check...");
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
           console.log("AuthContext: Successfully logged in via Redirect!", result.user);
           await logAuthEvent(result.user.uid, 'login');
           sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+        } else {
+          console.log("AuthContext: No redirect result found.");
         }
       })
       .catch((error) => {
         console.error("AuthContext: Error after redirect login:", error);
+      })
+      .finally(() => {
+        setIsRedirectChecking(false);
+        console.log("AuthContext: Redirect check finished.");
       });
   }, []);
 
+  // Combined loading state management
+  useEffect(() => {
+    if (isAuthInitialized && !isRedirectChecking) {
+      console.log("AuthContext: Both auth and redirect checks finished. Setting loading to false.");
+      setLoading(false);
+    }
+  }, [isAuthInitialized, isRedirectChecking]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setLoading(true); // Ensure loading is true when we start processing a user
-        
-        // Check stored expiration
-        const storedExpiry = localStorage.getItem('session_expiry');
-        const now = new Date();
+      console.log("AuthContext: Auth state changed:", currentUser?.uid || 'null');
+      
+      // Mark as not initialized while we process the new auth state
+      setIsAuthInitialized(false);
+      
+      try {
+        if (currentUser) {
+          setLoading(true); // Ensure loading is true while fetching data
+          // Check stored expiration
+          const storedExpiry = localStorage.getItem('session_expiry');
+          const now = new Date();
 
-        if (storedExpiry) {
-            const expiryDate = new Date(storedExpiry);
-            if (expiryDate < now) {
-                // Session expired
-                console.log("AuthContext: Session expired");
-                await signOut(auth);
-                setStorageUserId(null);
-                setUsageUserId(null);
-                setUser(null);
-                setSessionExpiry(null);
-                localStorage.removeItem('session_expiry');
-                setLoading(false);
-                return;
-            }
+          if (storedExpiry) {
+              const expiryDate = new Date(storedExpiry);
+              if (expiryDate < now) {
+                  console.log("AuthContext: Session expired");
+                  await signOut(auth);
+                  setStorageUserId(null);
+                  setUsageUserId(null);
+                  setUser(null);
+                  setSessionExpiry(null);
+                  localStorage.removeItem('session_expiry');
+                  return;
+              }
+          }
+
+          // Extension and data loading logic...
+          const newExpiry = new Date();
+          newExpiry.setDate(newExpiry.getDate() + SESSION_DURATION_DAYS);
+          localStorage.setItem('session_expiry', newExpiry.toISOString());
+          setSessionExpiry(newExpiry);
+
+          setStorageUserId(currentUser.uid);
+          setUsageUserId(currentUser.uid, currentUser.email);
+
+          const sessionKey = `session_logged_${currentUser.uid}`;
+          const shouldLogSession = !sessionStorage.getItem(sessionKey);
+
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          const baseData: any = {
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+              lastLogin: new Date()
+          };
+          
+          if (!userSnap.exists() || !userSnap.data()?.role) {
+              baseData.role = 'user';
+          }
+
+          await setDoc(userRef, baseData, { merge: true });
+
+          const remoteDataResults = await Promise.allSettled([
+              getDoc(doc(db, 'users', currentUser.uid)),
+              loadRemoteData(currentUser.uid),
+              loadRemoteUsage(currentUser.uid)
+          ]);
+
+          await checkAndResetDailyCredits(getUsage(), currentUser.uid);
+
+          if (shouldLogSession) {
+              logAuthEvent(currentUser.uid, 'session_start').then(() => {
+                  sessionStorage.setItem(sessionKey, 'true');
+              });
+          }
+          
+          let role: UserRole = 'user';
+          let isBanned = false;
+          let hasSeenWelcome = false;
+          
+          const docSnapResult = remoteDataResults[0];
+          if (docSnapResult.status === 'fulfilled' && docSnapResult.value && docSnapResult.value.exists()) {
+              const userData = docSnapResult.value.data();
+              if (userData.role) role = userData.role as UserRole;
+              if (userData.isBanned) isBanned = true;
+              if (userData.hasSeenWelcome) hasSeenWelcome = true;
+          }
+
+          setUser({
+              uid: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+              role: role,
+              isBanned: isBanned,
+              hasSeenWelcome: hasSeenWelcome
+          });
+        } else {
+          setStorageUserId(null);
+          setUsageUserId(null);
+          setUser(null);
+          setSessionExpiry(null);
+          
+          const currentTheme = localStorage.getItem('theme');
+          localStorage.clear();
+          if (currentTheme) {
+              localStorage.setItem('theme', currentTheme);
+          }
         }
-
-        // If we are here, session is valid or new.
-        // We extend the session by X days from NOW (sliding window)
-        const newExpiry = new Date();
-        newExpiry.setDate(newExpiry.getDate() + SESSION_DURATION_DAYS);
-        
-        localStorage.setItem('session_expiry', newExpiry.toISOString());
-        setSessionExpiry(newExpiry);
-
-        // Sync IDs immediately
-        setStorageUserId(currentUser.uid);
-        setUsageUserId(currentUser.uid, currentUser.email);
-
-        try {
-            // Parallelize everything that doesn't strictly depend on each other
-            const sessionKey = `session_logged_${currentUser.uid}`;
-            const shouldLogSession = !sessionStorage.getItem(sessionKey);
-
-            // 1. Sync basic user info
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        
-        const baseData: any = {
-            email: currentUser.email,
-            displayName: currentUser.displayName,
-            photoURL: currentUser.photoURL,
-            lastLogin: new Date()
-        };
-        
-        // Ensure role exists (default to 'user' if missing)
-        // This fixes issues where legacy users or incomplete sign-ups miss a role, causing permission errors
-        if (!userSnap.exists() || !userSnap.data()?.role) {
-            baseData.role = 'user';
-        }
-
-        await setDoc(userRef, baseData, { merge: true });
-
-            // 2. Load remote data & usage (Wait for this to ensure local usage is synced)
-            const remoteDataResults = await Promise.allSettled([
-                getDoc(doc(db, 'users', currentUser.uid)),
-                loadRemoteData(currentUser.uid),
-                loadRemoteUsage(currentUser.uid)
-            ]);
-
-            // 3. Daily Credit Check (Now safe to run as local usage reflects remote state or defaults)
-            // This handles the "New User" case (defaults with empty dayStart -> top up to 10)
-            // And the "Daily Reset" case (existing user with old dayStart -> top up to 10)
-            // And ensures "Max 1x per day" (if dayStart matches today, no top up)
-            await checkAndResetDailyCredits(getUsage(), currentUser.uid);
-
-            // 4. Audit Log (Don't let this block the UI transition if it's slow)
-            if (shouldLogSession) {
-                logAuthEvent(currentUser.uid, 'session_start').then(() => {
-                    sessionStorage.setItem(sessionKey, 'true');
-                });
-            }
-            
-            // Extract role, banned status, and welcome status
-            let role: UserRole = 'user';
-            let isBanned = false;
-            let hasSeenWelcome = false;
-            
-            const docSnapResult = remoteDataResults[0];
-            if (docSnapResult.status === 'fulfilled' && docSnapResult.value && docSnapResult.value.exists()) {
-                const userData = docSnapResult.value.data();
-                if (userData.role) {
-                    role = userData.role as UserRole;
-                }
-                if (userData.isBanned) {
-                    isBanned = true;
-                }
-                if (userData.hasSeenWelcome) {
-                    hasSeenWelcome = true;
-                }
-            }
-
-            setUser({
-                uid: currentUser.uid,
-                email: currentUser.email,
-                displayName: currentUser.displayName,
-                photoURL: currentUser.photoURL,
-                role: role,
-                isBanned: isBanned,
-                hasSeenWelcome: hasSeenWelcome
-            });
-        } catch (error) {
-            console.error("AuthContext: Error during initialization", error);
-            // Still set the user even if some remote data failed to load
+      } catch (error) {
+         console.error("AuthContext: Error during initialization", error);
+         if (currentUser) {
             setUser({
                 uid: currentUser.uid,
                 email: currentUser.email,
@@ -171,23 +182,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 isBanned: false,
                 hasSeenWelcome: false
             });
-        }
-      } else {
-        setStorageUserId(null);
-        setUsageUserId(null);
-        setUser(null);
-        setSessionExpiry(null);
-        
-        // CRITICAL FIX: When no user is detected (logout or switch), we MUST clear local storage
-        // to prevent the next user from inheriting the previous user's settings if they have no remote data.
-        // We preserve 'theme' as it is often device-specific.
-        const currentTheme = localStorage.getItem('theme');
-        localStorage.clear();
-        if (currentTheme) {
-            localStorage.setItem('theme', currentTheme);
-        }
+         }
+       } finally {
+        setIsAuthInitialized(true);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
