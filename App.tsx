@@ -66,9 +66,50 @@ import packageJson from './package.json';
 
 const App: React.FC = () => {
   const { isBlocked, loading: geoLoading } = useGeoBlock();
-  const { user, loading, sessionExpiry } = useAuth();
+  const { user, loading, sessionExpiry, finishEmailSignIn } = useAuth();
   const { theme, setTheme } = useTheme();
   const appVersion = packageJson.version;
+
+  const [isFinishingEmailSignIn, setIsFinishingEmailSignIn] = useState(false);
+
+  // Handle Email Magic Link Finish
+  useEffect(() => {
+    const handleFinishEmailSignIn = async () => {
+      // Gebruik de Firebase helper om te checken of dit een login link is
+      const { isSignInWithEmailLink } = await import('firebase/auth');
+      const { auth } = await import('./services/firebase');
+      
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        setIsFinishingEmailSignIn(true);
+        try {
+          // 1. Haal e-mail op uit storage
+          let email = window.localStorage.getItem('emailForSignIn');
+          
+          // 2. Als leeg (ander apparaat), vraag de gebruiker
+          if (!email) {
+            email = window.prompt('Voer ter bevestiging je e-mailadres opnieuw in:');
+          }
+          
+          if (email) {
+            // 3. Voer de login uit
+            await finishEmailSignIn(email, window.location.href);
+            
+            // 4. Na succes: URL opschonen en "redirect" naar home/dashboard
+            // (De AuthContext update zorgt dat de app de ingelogde weergave toont)
+            window.history.replaceState({}, document.title, '/');
+          }
+        } catch (error: any) {
+          console.error("Fout bij afronden email login:", error);
+          alert(`Inloggen mislukt: ${error.message}`);
+          window.history.replaceState({}, document.title, '/');
+        } finally {
+          setIsFinishingEmailSignIn(false);
+        }
+      }
+    };
+
+    handleFinishEmailSignIn();
+  }, []);
 
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       // Check for persisted view from session (to handle first-load jumps)
@@ -284,12 +325,17 @@ const App: React.FC = () => {
       }
   }, [user]);
 
-  if (loading || geoLoading) {
+  if (loading || geoLoading || isFinishingEmailSignIn) {
     return (
       <>
         <GlobalBanner />
         <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            {isFinishingEmailSignIn && (
+              <p className="text-text-muted animate-pulse">Bezig met inloggen via e-mail link...</p>
+            )}
+          </div>
         </div>
       </>
     );
@@ -339,7 +385,7 @@ const App: React.FC = () => {
       case ViewState.STRAVA:
         return <StravaWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.AMBIENT:
-        return <AmbientView onNavigate={navigate} settings={settings} />;
+        return <AmbientView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.SHARE:
         return <ShareWeatherView onNavigate={navigate} settings={settings} />;
       case ViewState.BAROMETER:

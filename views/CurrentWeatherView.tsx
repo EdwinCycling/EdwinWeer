@@ -117,17 +117,23 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const getLocationTime = () => {
     if (!weatherData) return new Date();
     const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    return new Date(utc + (weatherData.utc_offset_seconds * 1000));
+    // Shift current UTC time by the city's offset. 
+    // When we display this date, we must treat it as UTC to see the city's local time.
+    return new Date(now.getTime() + (weatherData.utc_offset_seconds * 1000));
   };
 
   useEffect(() => {
     if (!weatherData) return;
     const updateLocalClock = () => {
         const destTime = getLocationTime();
-        setLocalTime(destTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }));
+        setLocalTime(destTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: settings.timeFormat === '12h',
+            timeZone: 'UTC'
+        }));
         const now = new Date();
-        const diffHours = (weatherData.utc_offset_seconds / 3600) - (-now.getTimezoneOffset() / 60);
+        const diffHours = (weatherData.utc_offset_seconds / 3600) - (new Date().getTimezoneOffset() * -1 / 60);
         const sign = diffHours >= 0 ? '+' : '';
         setTimeDiff(diffHours === 0 ? '' : `${sign}${diffHours}h`);
     };
@@ -666,12 +672,12 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <div className="flex items-center gap-3 text-xs font-medium text-text-main animate-in fade-in slide-in-from-top-1">
                             <span className="flex items-center gap-1">
                                 <Icon name="wb_twilight" className="text-orange-400 text-[10px]" />
-                                {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                {new Date(new Date(weatherData.daily.sunrise[0] + 'Z').getTime() - weatherData.utc_offset_seconds * 1000 + weatherData.utc_offset_seconds * 1000).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'})}
                             </span>
                             <span className="text-text-muted">•</span>
                             <span className="flex items-center gap-1">
                                 <Icon name="wb_twilight" className="text-indigo-400 text-[10px]" />
-                                {new Date(weatherData.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                {new Date(new Date(weatherData.daily.sunset[0] + 'Z').getTime() - weatherData.utc_offset_seconds * 1000 + weatherData.utc_offset_seconds * 1000).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'})}
                             </span>
                         </div>
                     )}
@@ -705,10 +711,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
 
                     <div className="absolute bottom-12 left-4 text-[10px] font-bold text-text-muted">
-                        {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
+                        {new Date(weatherData.daily.sunrise[0] + 'Z').toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h', timeZone: 'UTC'})}
                     </div>
                     <div className="absolute bottom-12 right-4 text-[10px] font-bold text-text-muted">
-                        {new Date(weatherData.daily.sunset[0]).toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
+                        {new Date(weatherData.daily.sunset[0] + 'Z').toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour:'2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h', timeZone: 'UTC'})}
                     </div>
 
                     <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-4 text-[10px] text-text-muted">

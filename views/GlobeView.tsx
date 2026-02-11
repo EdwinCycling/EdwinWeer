@@ -698,13 +698,13 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-xs text-text-muted flex items-center gap-1"><Icon name="wb_twilight" className="text-xs"/> Opkomst</span>
                                                     <span className="font-bold text-text-main">
-                                                        {new Date(weatherData.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        {new Date(weatherData.daily.sunrise[0] + 'Z').toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'})}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-xs text-text-muted flex items-center gap-1"><Icon name="wb_twilight" className="text-xs rotate-180"/> Ondergang</span>
                                                     <span className="font-bold text-text-main">
-                                                        {new Date(weatherData.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        {new Date(weatherData.daily.sunset[0] + 'Z').toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'})}
                                                     </span>
                                                 </div>
                                             </div>

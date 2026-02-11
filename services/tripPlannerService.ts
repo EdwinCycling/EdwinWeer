@@ -148,14 +148,14 @@ export const calculateTripOptions = (
             const dailyIdx = forecast.daily.time.findIndex(t => t === targetDateStr);
             
             if (dailyIdx !== -1) {
-                const sunrise = new Date(forecast.daily.sunrise[dailyIdx]);
-                const sunset = new Date(forecast.daily.sunset[dailyIdx]);
+                const sunrise = new Date(forecast.daily.sunrise[dailyIdx] + 'Z');
+                const sunset = new Date(forecast.daily.sunset[dailyIdx] + 'Z');
                 
-                sunriseTime = sunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                sunsetTime = sunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                sunriseTime = sunrise.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+                sunsetTime = sunset.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 
                 // Calculate trip start and end Date objects
-                const tripStart = new Date(hourly.time[startIndex]);
+                const tripStart = new Date(hourly.time[startIndex] + 'Z');
                 const tripEnd = new Date(tripStart.getTime() + duration * 60 * 60 * 1000);
 
                 const TWILIGHT_MS = 30 * 60 * 1000; // 30 mins
@@ -241,7 +241,7 @@ export const calculateTripOptions = (
         const startTimeStr = hourly.time[startIndex].split('T')[1].substring(0, 5);
         
         // Calculate end time properly supporting float duration
-        const startDate = new Date(hourly.time[startIndex]);
+        const startDate = new Date(hourly.time[startIndex] + 'Z');
         const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
         const endTimeStr = endDate.toISOString().split('T')[1].substring(0, 5);
 

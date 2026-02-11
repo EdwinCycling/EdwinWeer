@@ -68,10 +68,10 @@ export const ImmersiveForecast: React.FC<Props> = ({ data, settings, location })
                 let moonProgress = 0;
 
                 if (dayIndex !== -1) {
-                    const sr = new Date(data.daily.sunrise[dayIndex]);
-                    const ss = new Date(data.daily.sunset[dayIndex]);
-                    sunriseStr = sr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
-                    sunsetStr = ss.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' });
+                    const sr = new Date(data.daily.sunrise[dayIndex] + 'Z');
+                    const ss = new Date(data.daily.sunset[dayIndex] + 'Z');
+                    sunriseStr = sr.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h', timeZone: 'UTC' });
+                    sunsetStr = ss.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h', timeZone: 'UTC' });
                     
                     // Calculate Sun Progress
                     const totalSunTime = ss.getTime() - sr.getTime();

@@ -11,6 +11,18 @@ import { getUsage, UsageStats, getLimit } from '../services/usageService';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 
+const TIMEZONES = [
+    "Europe/Amsterdam", "Europe/Brussels", "Europe/London", "Europe/Paris", "Europe/Berlin", 
+    "Europe/Madrid", "Europe/Rome", "Europe/Vienna", "Europe/Zurich", "Europe/Copenhagen",
+    "Europe/Stockholm", "Europe/Oslo", "Europe/Helsinki", "Europe/Warsaw", "Europe/Prague",
+    "Europe/Budapest", "Europe/Athens", "Europe/Istanbul", "Europe/Moscow", "Europe/Kiev",
+    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Phoenix",
+    "America/Toronto", "America/Vancouver", "America/Mexico_City", "America/Sao_Paulo", "America/Buenos_Aires",
+    "Asia/Tokyo", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Asia/Seoul", "Asia/Bangkok",
+    "Asia/Dubai", "Asia/Kolkata", "Australia/Sydney", "Australia/Melbourne", "Australia/Perth",
+    "Pacific/Auckland", "Pacific/Honolulu", "Africa/Cairo", "Africa/Johannesburg", "UTC"
+].sort();
+
 interface Props {
     settings: AppSettings;
     onUpdateSettings: (newSettings: AppSettings) => void;
@@ -558,14 +570,9 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         onChange={(e) => updateSetting('timezone', e.target.value)}
                                         className="bg-bg-page text-text-main text-sm rounded-lg px-3 py-1.5 border-none focus:ring-1 focus:ring-accent-primary outline-none cursor-pointer"
                                     >
-                                        <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
-                                        <option value="Europe/Brussels">Brussels</option>
-                                        <option value="Europe/London">London (GMT/BST)</option>
-                                        <option value="Europe/Paris">Paris</option>
-                                        <option value="Europe/Berlin">Berlin</option>
-                                        <option value="Europe/Madrid">Madrid</option>
-                                        <option value="America/New_York">New York (EST/EDT)</option>
-                                        <option value="UTC">UTC</option>
+                                        {TIMEZONES.map(tz => (
+                                            <option key={tz} value={tz}>{tz.replace('_', ' ')}</option>
+                                        ))}
                                     </select>
                                 </div>
 

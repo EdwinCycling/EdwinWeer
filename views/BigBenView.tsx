@@ -286,15 +286,15 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
 
       let utcMs: number | null = null;
       if (weatherData) {
-          utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
-          displayTime = new Date(utcMs + (weatherData.utc_offset_seconds * 1000));
+          utcMs = now.getTime() + (weatherData.utc_offset_seconds * 1000);
+          displayTime = new Date(utcMs);
       }
 
       setTime(displayTime);
 
-      const minutes = displayTime.getMinutes();
-      const seconds = displayTime.getSeconds();
-      const hour = displayTime.getHours();
+      const minutes = displayTime.getUTCMinutes();
+      const seconds = displayTime.getUTCSeconds();
+      const hour = displayTime.getUTCHours();
 
       // Update sun position every 15 minutes (0, 15, 30, 45)
       if (minutes % 15 === 0 && seconds === 0) {
@@ -356,9 +356,9 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
   // Calculate rotation
   // Uurwijzer: (uren % 12 + minuten / 60) * 30
   // Minuutwijzer: minuten * 6
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
+  const hours = time.getUTCHours();
+  const minutes = time.getUTCMinutes();
+  const seconds = time.getUTCSeconds();
   
   const hourRotation = ((hours % 12) + minutes / 60) * 30;
   const minuteRotation = (minutes + seconds / 60) * 6; // Adding seconds for smoother movement if desired, spec says "minuten * 6" but "Seconden kunnen genegeerd worden of optioneel toegevoegd". I'll add for smoothness if refreshing every sec.
@@ -1114,7 +1114,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
                              {selectedHourData.status === 'future' && t('bigben.popup.forecast')}
                          </span>
                          <h2 className="text-3xl font-serif text-[#E5C100]" style={{ fontFamily: 'Cinzel' }}>
-                             {new Date(weatherData.hourly.time[selectedHourData.index]).toLocaleTimeString(settings.language, {hour: '2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h'})}
+                             {new Date(weatherData.hourly.time[selectedHourData.index] + 'Z').toLocaleTimeString(settings.language==='nl'?'nl-NL':'en-GB', {hour: '2-digit', minute:'2-digit', hour12: settings.timeFormat === '12h', timeZone: 'UTC'})}
                          </h2>
                      </div>
 

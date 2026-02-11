@@ -47,21 +47,20 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
     // 1. Data Preparation
     // Calculate "now" based on location timezone if available
     const utcOffset = weatherData.utc_offset_seconds !== undefined ? weatherData.utc_offset_seconds : 0;
-    const browserOffset = new Date().getTimezoneOffset() * -60; // in seconds
-    const diff = utcOffset - browserOffset;
     
     // Adjusted "now" representing the time at the location
-    const now = new Date(new Date().getTime() + diff * 1000);
+    // We shift the UTC time by the offset and then use getUTC methods
+    const now = new Date(new Date().getTime() + utcOffset * 1000);
 
     // Use targetDate if provided, otherwise use now. 
     // If targetDate is provided, we treat it as "current" for data selection purposes, 
     // but we only show "current time" line if it's actually today (at location).
     const displayDate = targetDate || now;
-    const isToday = displayDate.getDate() === now.getDate() && 
-                    displayDate.getMonth() === now.getMonth() && 
-                    displayDate.getFullYear() === now.getFullYear();
+    const isToday = displayDate.getUTCDate() === now.getUTCDate() && 
+                    displayDate.getUTCMonth() === now.getUTCMonth() && 
+                    displayDate.getUTCFullYear() === now.getUTCFullYear();
 
-    const currentHour = now.getHours(); // Use adjusted hour for "NU" line
+    const currentHour = now.getUTCHours(); // Use adjusted hour for "NU" line
     
     // Find index for displayDate 06:00
     const timeArray = weatherData.hourly.time;
@@ -77,8 +76,8 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
     if (isToday) {
         // Find current index
         const currentIndex = timeArray.findIndex((t: string) => {
-            const d = new Date(t);
-            return d.getDate() === now.getDate() && d.getHours() === currentHour;
+            const d = new Date(t + 'Z'); // Treat Open-Meteo local time as UTC for comparison
+            return d.getUTCDate() === now.getUTCDate() && d.getUTCHours() === currentHour;
         });
         if (currentIndex !== -1) adviceWatts = radArray[currentIndex];
     } else {
@@ -213,7 +212,7 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
 
                     {/* Chart */}
                     <div className="h-48 w-full mt-2 animate-in fade-in slide-in-from-top-2">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={0} minWidth={0}>
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="solarFill" x1="0" y1="0" x2="0" y2="1">

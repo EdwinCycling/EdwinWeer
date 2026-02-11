@@ -441,7 +441,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                 const hourIndex = targetDate.getHours();
 
                 // Fetch comprehensive weather data
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${startLocation.lat}&longitude=${startLocation.lng}&hourly=temperature_2m,apparent_temperature,precipitation_probability,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,cloud_cover&daily=sunrise,sunset&start_date=${isoDate}&end_date=${isoDate}`;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${startLocation.lat}&longitude=${startLocation.lng}&hourly=temperature_2m,apparent_temperature,precipitation_probability,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,cloud_cover&daily=sunrise,sunset&start_date=${isoDate}&end_date=${isoDate}&timezone=auto`;
                 
                 // Use throttledFetch to track usage (Standard weather credits)
                 const data = await throttledFetch(url);
@@ -466,7 +466,8 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                         weatherCode: data.hourly.weather_code[hourIndex],
                         cloudCover: data.hourly.cloud_cover[hourIndex],
                         sunrise: data.daily?.sunrise?.[0],
-                        sunset: data.daily?.sunset?.[0]
+                        sunset: data.daily?.sunset?.[0],
+                        utcOffset: data.utc_offset_seconds
                     });
                 }
             } catch (e) {
@@ -1108,13 +1109,14 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
         const durationHours = (routeData.features[0].properties.summary.distance / 1000) / averageSpeed;
         const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
 
-        const sunrise = new Date(forecastData.sunrise);
-        const sunset = new Date(forecastData.sunset);
+        // Convert browser local times to "shifted UTC" for comparison with API local times
+        const browserOffset = start.getTimezoneOffset() * -60;
+        const startShifted = new Date(start.getTime() - browserOffset * 1000 + (forecastData.utcOffset || 0) * 1000);
+        const endShifted = new Date(end.getTime() - browserOffset * 1000 + (forecastData.utcOffset || 0) * 1000);
 
-        // Reset dates to match start/end (ignore date part of sunrise/sunset if different day, though API returns specific date)
-        // Since we fetch daily for specific date, date parts should match roughly.
-        // Actually, forecastData.sunrise is ISO string for that day.
-        
+        const sunrise = new Date(forecastData.sunrise + 'Z');
+        const sunset = new Date(forecastData.sunset + 'Z');
+
         // Define Twilight Duration (e.g. 30 mins before sunrise / after sunset)
         const TWILIGHT_MS = 30 * 60 * 1000;
 
@@ -1122,26 +1124,26 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
         let scorePenalty = 0;
         let isCritical = false;
 
-        // 1. Start Check
-        if (start < new Date(sunrise.getTime() - TWILIGHT_MS)) {
+        // 1. Start Check (Compare shifted times using UTC methods)
+        if (startShifted.getTime() < sunrise.getTime() - TWILIGHT_MS) {
             // Started way before sunrise (Dark)
             warning = "Let op: Je start in het donker (voor zonsopkomst).";
             scorePenalty += 2;
             isCritical = true;
-        } else if (start < sunrise) {
+        } else if (startShifted.getTime() < sunrise.getTime()) {
             // Started in twilight (between twilight start and sunrise)
             warning = "Tip: Je start tijdens de schemering (vlak voor zonsopkomst).";
             scorePenalty += 1;
         }
 
         // 2. End Check
-        if (end > new Date(sunset.getTime() + TWILIGHT_MS)) {
+        if (endShifted.getTime() > sunset.getTime() + TWILIGHT_MS) {
              // Finished way after sunset (Dark)
             const msg = "Let op: Je finisht in het donker (na zonsondergang).";
             warning = warning ? `${warning} En je finisht in het donker.` : msg;
             scorePenalty += 2;
             isCritical = true;
-        } else if (end > sunset) {
+        } else if (endShifted.getTime() > sunset.getTime()) {
              // Finished in twilight
              const msg = "Tip: Je finisht tijdens de schemering (vlak na zonsondergang).";
              warning = warning ? `${warning} En je finisht in de schemering.` : msg;

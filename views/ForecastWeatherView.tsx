@@ -505,8 +505,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
           const d = graphData[i];
           // weatherData.daily.time[i] is available.
           if (weatherData && weatherData.daily && weatherData.daily.time[i]) {
-              const dt = new Date(weatherData.daily.time[i]);
-              const day = dt.getDay(); // 0 = Sunday, 6 = Saturday
+              const dt = new Date(weatherData.daily.time[i] + 'Z');
+              const day = dt.getUTCDay(); // 0 = Sunday, 6 = Saturday
               if (day === 0 || day === 6) {
                   areas.push(
                       <ReferenceArea 

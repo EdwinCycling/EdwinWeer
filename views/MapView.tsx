@@ -189,7 +189,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
                     const lons = chunk.map(c => c.lon).join(',');
 
                     try {
-                        const data = await throttledFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m`);
+                        const data = await throttledFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m&timezone=auto`);
 
                         if (!data || data.error) continue;
 

@@ -16,41 +16,52 @@ export function DynamicWeatherEffect() {
   // Thunder flash effect
   useEffect(() => {
     if (weatherType === 4) {
-      const flashInterval = setInterval(() => {
+      const triggerFlash = () => {
         setFlash(true);
-        setTimeout(() => setFlash(false), 150);
-        setTimeout(() => {
-          setFlash(true);
-          setTimeout(() => setFlash(false), 100);
-        }, 300);
-      }, 3000 + Math.random() * 2000);
+        setTimeout(() => setFlash(false), 50 + Math.random() * 100);
+        
+        // Potential second strike
+        if (Math.random() > 0.5) {
+          setTimeout(() => {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 30 + Math.random() * 70);
+          }, 150 + Math.random() * 200);
+        }
+      };
+
+      const flashInterval = setInterval(() => {
+        triggerFlash();
+      }, 2000 + Math.random() * 4000);
       
       return () => clearInterval(flashInterval);
     }
   }, [weatherType]);
 
   // Rain drops
-  const raindrops = Array.from({ length: 50 }, (_, i) => ({
+  const raindrops = Array.from({ length: 120 }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
     delay: Math.random() * 2,
-    duration: 1 + Math.random() * 1,
+    duration: 0.7 + Math.random() * 0.4,
   }));
 
   // Snowflakes
-  const snowflakes = Array.from({ length: 40 }, (_, i) => ({
+  const snowflakes = Array.from({ length: 80 }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
-    delay: Math.random() * 3,
-    duration: 3 + Math.random() * 2,
+    delay: Math.random() * 5,
+    duration: 5 + Math.random() * 5,
+    size: 4 + Math.random() * 8,
+    opacity: 0.2 + Math.random() * 0.5,
   }));
 
   // Wind lines
-  const windLines = Array.from({ length: 30 }, (_, i) => ({
+  const windLines = Array.from({ length: 40 }, (_, i) => ({
     id: i,
     top: `${Math.random() * 100}%`,
-    delay: Math.random() * 1.5,
-    duration: 0.8 + Math.random() * 0.5,
+    delay: Math.random() * 2,
+    duration: 0.6 + Math.random() * 0.6,
+    width: 50 + Math.random() * 150,
   }));
 
   // Sun rays
@@ -62,19 +73,22 @@ export function DynamicWeatherEffect() {
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {/* Rain */}
-      {weatherType === 0 && raindrops.map((drop) => (
+      {/* Rain (Type 0, 2, 4) */}
+      {(weatherType === 0 || weatherType === 2 || weatherType === 4) && raindrops.map((drop) => (
         <motion.div
           key={`rain-${drop.id}`}
-          className="absolute w-0.5 h-12 bg-gradient-to-b from-blue-400/50 to-transparent"
-          style={{ left: drop.left }}
+          className={`absolute w-[1px] bg-blue-400/30 ${weatherType === 4 ? 'h-24 bg-blue-300/40' : 'h-16'}`}
+          style={{ 
+            left: drop.left,
+            transform: (weatherType === 2 || weatherType === 4) ? 'rotate(15deg)' : 'none'
+          }}
           initial={{ top: "-10%", opacity: 0 }}
           animate={{
             top: "110%",
-            opacity: [0, 1, 0],
+            opacity: [0, 0.4, 0],
           }}
           transition={{
-            duration: drop.duration,
+            duration: weatherType === 4 ? drop.duration * 0.7 : drop.duration,
             delay: drop.delay,
             repeat: Infinity,
             ease: "linear",
@@ -82,51 +96,66 @@ export function DynamicWeatherEffect() {
         />
       ))}
 
-      {/* Snow */}
+      {/* Snow (Type 1) */}
       {weatherType === 1 && snowflakes.map((flake) => (
         <motion.div
           key={`snow-${flake.id}`}
-          className="absolute text-white text-2xl"
-          style={{ left: flake.left }}
+          className="absolute bg-white rounded-full pointer-events-none"
+          style={{ 
+            left: flake.left,
+            width: flake.size,
+            height: flake.size,
+            filter: 'blur(2px)',
+            opacity: flake.opacity
+          }}
+          initial={{ top: "-10%", opacity: 0 }}
           animate={{
             top: "110%",
-            opacity: [0, 1, 1, 0],
-            rotate: 360,
-            x: [0, 30, -30, 0],  // Zigzag motion
+            opacity: [0, flake.opacity, flake.opacity, 0],
+            x: [0, 40, -40, 0],
           }}
           transition={{
             duration: flake.duration,
             delay: flake.delay,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: "linear",
           }}
-        >
-          ❄
-        </motion.div>
+        />
       ))}
 
-      {/* Storm/Wind */}
-      {weatherType === 2 && windLines.map((line) => (
+      {/* Wind (Type 2, 4) */}
+      {(weatherType === 2 || weatherType === 4) && windLines.map((line) => (
         <motion.div
           key={`wind-${line.id}`}
-          className="absolute h-0.5 w-24 bg-gradient-to-r from-transparent via-gray-400/40 to-transparent"
+          className="absolute h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"
           style={{ 
             top: line.top,
-            transform: 'rotate(-25deg)'
+            width: line.width,
+            transform: 'rotate(-10deg)'
           }}
-          initial={{ right: "-30%", opacity: 0 }}
+          initial={{ right: "-50%", opacity: 0 }}
           animate={{
-            right: "130%",
-            opacity: [0, 1, 0],
+            right: "150%",
+            opacity: [0, 0.3, 0],
           }}
           transition={{
-            duration: line.duration,
+            duration: weatherType === 4 ? line.duration * 0.5 : line.duration,
             delay: line.delay,
             repeat: Infinity,
             ease: "linear",
           }}
         />
       ))}
+
+      {/* Thunder Flash (Type 4) */}
+      {weatherType === 4 && flash && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 0.1 }}
+          className="fixed inset-0 bg-white/20 z-10"
+        />
+      )}
 
       {/* Sunny */}
       {weatherType === 3 && (

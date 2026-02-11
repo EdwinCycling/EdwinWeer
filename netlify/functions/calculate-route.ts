@@ -727,7 +727,7 @@ export const handler: Handler = async (event) => {
 };
 
 async function getWindData(lat: number, lon: number, dateTime?: { date: string, time: string }) {
-    let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m`;
+    let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&timezone=auto`;
     
     if (dateTime) {
         try {
@@ -742,7 +742,7 @@ async function getWindData(lat: number, lon: number, dateTime?: { date: string, 
             const hourIndex = targetDate.getHours();
 
             // Fetch hourly instead
-            url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m&start_date=${isoDate}&end_date=${isoDate}`;
+            url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m&start_date=${isoDate}&end_date=${isoDate}&timezone=auto`;
             
             const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to fetch wind data');
@@ -760,7 +760,7 @@ async function getWindData(lat: number, lon: number, dateTime?: { date: string, 
     }
 
     // Fallback to current
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m`);
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&timezone=auto`);
     if (!res.ok) throw new Error('Failed to fetch wind data');
     const data = await res.json();
     return data.current;

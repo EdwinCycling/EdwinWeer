@@ -255,6 +255,13 @@ export interface AppSettings {
     };
     baro_weerman?: BaroWeermanSettings;
     activity_settings?: ActivityPlannerSettings;
+    ambientMode?: 'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'random';
+    ambientSettings?: {
+        showPopup: boolean;
+        showClock: boolean;
+        showBottomBar: boolean;
+        modeType?: 'video' | 'photo';
+    };
 }
 
 export interface TripPlannerSettings {

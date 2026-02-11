@@ -39,7 +39,7 @@ const getWeatherText = (code: number, lang: 'en' | 'nl' = 'nl') => {
 
 const getPartDayData = (hourly: any, startHour: number, endHour: number) => {
     const indices = hourly.time.map((t: string, i: number) => {
-        const hour = new Date(t).getHours();
+        const hour = new Date(t + 'Z').getUTCHours();
         return (hour >= startHour && hour < endHour) ? i : -1;
     }).filter((i: number) => i !== -1);
 

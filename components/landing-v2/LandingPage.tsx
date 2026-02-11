@@ -80,10 +80,12 @@ const FeatureSection = ({ icon: Icon, title, desc, image, reversed, onLogin }: {
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
   // Navbar State
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, sendEmailLink } = useAuth();
   const [lang, setLang] = useState<AppLanguage>('en');
   const [langOpen, setLangOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSendingLink, setIsSendingLink] = useState(false);
 
   // Load settings
   useEffect(() => {
@@ -165,6 +167,24 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      alert(t('landing.login_email_invalid'));
+      return;
+    }
+
+    try {
+      setIsSendingLink(true);
+      await sendEmailLink(email);
+      alert(t('landing.login_email_success'));
+    } catch (error) {
+      console.error("Email login failed", error);
+    } finally {
+      setIsSendingLink(false);
+    }
+  };
+
   const languages: { code: AppLanguage; label: string }[] = [
       { code: 'nl', label: 'NL' },
       { code: 'en', label: 'EN' },
@@ -218,11 +238,13 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 font-sans text-white">
+    <div className="min-h-screen relative overflow-hidden bg-[#020617] font-sans text-white">
       {/* Background Effects Layer */}
-      <AnimatedGradientOrb position={{ x: "-10%", y: "-10%" }} colors={["#6366f1", "#8b5cf6", "#3b82f6"]} size="700px" />
-      <AnimatedGradientOrb delay={2} position={{ x: "70%", y: "40%" }} colors={["#3b82f6", "#06b6d4", "#8b5cf6"]} size="600px" />
-      <AnimatedGradientOrb delay={4} position={{ x: "30%", y: "80%" }} colors={["#ec4899", "#f97316", "#6366f1"]} size="550px" />
+      <div className="fixed inset-0 pointer-events-none">
+        <AnimatedGradientOrb position={{ x: "-10%", y: "-10%" }} colors={["#1e3a8a", "#1e40af", "#1e3a8a"]} size="800px" />
+        <AnimatedGradientOrb delay={2} position={{ x: "80%", y: "20%" }} colors={["#1e3a8a", "#312e81", "#1e3a8a"]} size="700px" />
+        <AnimatedGradientOrb delay={4} position={{ x: "20%", y: "80%" }} colors={["#312e81", "#1e3a8a", "#1e40af"]} size="600px" />
+      </div>
       
       <FloatingWeatherIcons />
       <DynamicWeatherEffect />
@@ -297,13 +319,13 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-4xl sm:text-6xl md:text-8xl font-extrabold tracking-tight mb-8 leading-tight"
+                    className="text-5xl sm:text-7xl md:text-9xl font-black tracking-tight mb-8 leading-[1.1]"
                 >
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-blue-500">
                         {t('landing.hero_title_1')}
                     </span>
                     <br />
-                    <span className="text-text-main">
+                    <span className="text-white drop-shadow-2xl">
                         {t('landing.hero_title_2')}
                     </span>
                 </motion.h1>
@@ -311,7 +333,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-xl md:text-2xl text-text-muted max-w-3xl mx-auto mb-12 leading-relaxed"
+                    className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto mb-12 leading-relaxed font-medium"
                 >
                     {t('landing.hero_subtitle')}
                 </motion.p>
@@ -319,26 +341,84 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.4 }}
-                    className="flex flex-col sm:flex-row gap-4 justify-center"
+                    className="flex flex-col items-center max-w-xl mx-auto"
                 >
-                    <button 
-                        onClick={handleLogin}
-                        className="group relative px-8 py-4 bg-bg-card hover:bg-bg-subtle text-text-main rounded-2xl font-bold text-lg shadow-xl shadow-bg-card/10 transition-all transform hover:scale-105 hover:-translate-y-1 active:translate-y-0 overflow-hidden border border-border-color h-14 flex items-center justify-center"
-                    >
-                        <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-text-muted/10 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
-                        <span className="flex items-center gap-2 relative z-10">
-                            <Icon name="rocket_launch" className="text-accent-primary" />
-                            {t('landing.start_now')}
-                        </span>
-                    </button>
-                    <Button 
-                        size="lg" 
-                        variant="outline" 
-                        className="border-border-color/20 text-text-main hover:bg-bg-subtle text-lg h-14 px-8 rounded-full bg-transparent"
-                        onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                    >
-                        {t('landing.discover_features')}
-                    </Button>
+                    <div className="w-full bg-white/10 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/20 shadow-2xl space-y-8">
+                        {/* Header within Login Box */}
+                        <div className="text-center space-y-2">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
+                                {t('landing.login_title') || 'Start met Baro'}
+                            </h2>
+                            <p className="text-white/70 text-base">
+                                {t('landing.login_subtitle') || 'Kies je favoriete methode'}
+                            </p>
+                        </div>
+
+                        {/* Google Button */}
+                        <button 
+                            onClick={handleLogin}
+                            className="w-full flex items-center justify-center gap-4 bg-white text-slate-950 py-4.5 px-6 rounded-2xl font-bold text-lg hover:bg-slate-100 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-white/10 border border-white/20"
+                        >
+                            <img src="/icons/google.svg" alt="Google" className="w-6 h-6" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                            <span className="text-slate-900">{t('landing.login_google')}</span>
+                        </button>
+
+                        {/* Divider */}
+                        <div className="relative flex items-center gap-4">
+                            <div className="flex-1 h-px bg-white/10"></div>
+                            <span className="text-white/30 text-xs font-medium uppercase tracking-widest">
+                                {t('landing.or') || 'OF'}
+                            </span>
+                            <div className="flex-1 h-px bg-white/10"></div>
+                        </div>
+
+                        {/* Email Form */}
+                        <div className="space-y-4">
+                            <div className="text-center">
+                                <p className="text-base font-bold text-white">
+                                    {t('landing.login_email_title')}
+                                </p>
+                                <p className="text-sm text-white/50 mt-1">
+                                    {t('landing.login_email_subtitle')}
+                                </p>
+                            </div>
+                            
+                            <form onSubmit={handleEmailLogin} className="space-y-3">
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder={t('landing.login_email_placeholder')}
+                                    className="w-full px-5 py-4.5 bg-white/5 border border-white/20 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all text-lg"
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={isSendingLink}
+                                    className="w-full py-4.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-blue-600/30 border border-blue-400/20"
+                                >
+                                    {isSendingLink ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <span>{t('landing.login_email_button')}</span>
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* Secondary Actions */}
+                    <div className="mt-8 flex gap-6">
+                        <button 
+                            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="text-white/40 hover:text-white text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                            {t('landing.discover_features')}
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </motion.div>
             </div>
         </section>

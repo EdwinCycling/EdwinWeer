@@ -102,13 +102,13 @@ export const FavoritesList: React.FC<Props> = ({
                 
                 // Calculate local time based on UTC offset
                 const now = new Date();
-                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const localDate = new Date(utc + (item.utc_offset_seconds * 1000));
+                const localDate = new Date(now.getTime() + (item.utc_offset_seconds * 1000));
                 
                 const timeStr = localDate.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {
                     hour: '2-digit', 
                     minute: '2-digit', 
-                    hour12: settings.timeFormat === '12h'
+                    hour12: settings.timeFormat === '12h',
+                    timeZone: 'UTC'
                 });
 
                 newWeather[`${loc.lat},${loc.lon}`] = {

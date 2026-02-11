@@ -18,7 +18,7 @@ let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 250; // 250ms delay between requests
 let requestQueue = Promise.resolve();
 
-export const throttledFetch = async (url: string) => {
+export const throttledFetch = async (url: string, retries = 2) => {
     const fetchAction = async () => {
         checkLimit();
         trackCall();
@@ -32,13 +32,18 @@ export const throttledFetch = async (url: string) => {
         
         lastRequestTime = Date.now();
         const response = await fetch(url);
+        
         if (!response.ok) {
-            // If 429, we might want to throw specific error or wait and retry?
-            // For now just throw, but the queue helps avoid it.
-            if (response.status === 429) {
-                 console.warn("Hit 429 in throttledFetch, slowing down...");
-                 // Penalize next request
-                 lastRequestTime = Date.now() + 2000; 
+            if (response.status === 429 && retries > 0) {
+                 console.warn(`Hit 429 in throttledFetch, retrying in 2s... (${retries} left)`);
+                 lastRequestTime = Date.now() + 2000; // Penalize next request
+                 await new Promise(resolve => setTimeout(resolve, 2000));
+                 // Recursive call with decremented retries, bypassing queue for retry to keep logic simple
+                 // actually we should just return a new fetch here
+                 return fetch(url).then(r => {
+                    if (!r.ok) throw new Error(`Fetch failed after retry: ${r.status}`);
+                    return r.json();
+                 });
             }
             throw new Error(`Fetch failed: ${response.status}`);
         }

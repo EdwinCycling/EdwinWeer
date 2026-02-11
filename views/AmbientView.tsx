@@ -4,33 +4,35 @@ import { throttledFetch, mapWmoCodeToIcon, mapWmoCodeToText, getTempLabel, conve
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { loadCurrentLocation } from '../services/storageService';
+import { MAJOR_CITIES } from '../services/cityData';
+import { AnalogueClock } from '../components/AnalogueClock';
+import { CreditFloatingButton } from '../components/CreditFloatingButton';
 
 interface AmbientViewProps {
   onNavigate: (view: ViewState) => void;
   settings: AppSettings;
+  onUpdateSettings: (settings: AppSettings) => void;
 }
 
-const WORLD_CITIES: Location[] = [
+// Fallback if import fails or is empty, though we use the imported one
+const FALLBACK_CITIES: Location[] = [
     { name: 'Tokyo', country: 'JP', lat: 35.6895, lon: 139.6917 },
     { name: 'New York', country: 'US', lat: 40.7128, lon: -74.0060 },
     { name: 'London', country: 'GB', lat: 51.5074, lon: -0.1278 },
-    { name: 'Paris', country: 'FR', lat: 48.8566, lon: 2.3522 },
-    { name: 'Sydney', country: 'AU', lat: -33.8688, lon: 151.2093 },
-    { name: 'Dubai', country: 'AE', lat: 25.2048, lon: 55.2708 },
-    { name: 'Singapore', country: 'SG', lat: 1.3521, lon: 103.8198 },
-    { name: 'Hong Kong', country: 'HK', lat: 22.3193, lon: 114.1694 },
-    { name: 'Los Angeles', country: 'US', lat: 34.0522, lon: -118.2437 },
-    { name: 'Rio de Janeiro', country: 'BR', lat: -22.9068, lon: -43.1729 },
-    { name: 'Cape Town', country: 'ZA', lat: -33.9249, lon: 18.4241 },
-    { name: 'Moscow', country: 'RU', lat: 55.7558, lon: 37.6173 },
-    { name: 'Mumbai', country: 'IN', lat: 19.0760, lon: 72.8777 },
-    { name: 'Beijing', country: 'CN', lat: 39.9042, lon: 116.4074 },
-    { name: 'Cairo', country: 'EG', lat: 30.0444, lon: 31.2357 },
-    { name: 'Istanbul', country: 'TR', lat: 41.0082, lon: 28.9784 },
-    { name: 'Bangkok', country: 'TH', lat: 13.7563, lon: 100.5018 },
-    { name: 'Seoul', country: 'KR', lat: 37.5665, lon: 126.9780 },
-    { name: 'Mexico City', country: 'MX', lat: 19.4326, lon: -99.1332 },
-    { name: 'Toronto', country: 'CA', lat: 43.65107, lon: -79.347015 },
+];
+
+const WEATHER_PHOTOS = [
+    'bewolking 0.jpg',
+    'bewolking 10.jpg',
+    'bewolking 20.jpg',
+    'bewolking 40.jpg',
+    'bewolking 70.jpg',
+    'bewolking 90.jpg',
+    'fog.jpg',
+    'rain heavy.jpg',
+    'rain middle.jpg',
+    'rain.jpg',
+    'thunder.jpg'
 ];
 
 declare global {
@@ -52,18 +54,86 @@ interface LocalWeather {
     feelsLike?: number;
 }
 
-export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }) => {
+export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, onUpdateSettings }) => {
     const [worldWeather, setWorldWeather] = useState<string[]>([]);
     const [favoritesWeather, setFavoritesWeather] = useState<string[]>([]);
+    const [news, setNews] = useState<string[]>([]);
     const [localWeatherStr, setLocalWeatherStr] = useState<string | null>(null);
     const [localWeatherData, setLocalWeatherData] = useState<LocalWeather | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [castAvailable, setCastAvailable] = useState(false);
+    const [showControls, setShowControls] = useState(false);
+    
+    const currentMode = settings.ambientMode || 'fireplace';
+    const [randomVideoMode, setRandomVideoMode] = useState<'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain'>('fireplace');
+    const modeType = settings.ambientSettings?.modeType || 'video';
+    const [currentPhoto, setCurrentPhoto] = useState<string>(WEATHER_PHOTOS[0]);
+
+    useEffect(() => {
+        if (modeType === 'photo') {
+            const pickRandomPhoto = () => {
+                const random = WEATHER_PHOTOS[Math.floor(Math.random() * WEATHER_PHOTOS.length)];
+                setCurrentPhoto(random);
+            };
+            
+            pickRandomPhoto(); // Initial
+            const interval = setInterval(pickRandomPhoto, 30000); // 30 seconds
+            return () => clearInterval(interval);
+        } else if (currentMode === 'random') {
+            const modes = ['fireplace', 'aquarium', 'clouds', 'clouds2', 'rain'] as const;
+            
+            const pickRandom = () => {
+                // Pick a random mode
+                const next = modes[Math.floor(Math.random() * modes.length)];
+                setRandomVideoMode(next);
+            };
+            
+            pickRandom(); // Initial pick
+            const interval = setInterval(pickRandom, 60000); // Every 60 seconds
+            return () => clearInterval(interval);
+        }
+    }, [currentMode, modeType]);
+
+    const effectiveMode = currentMode === 'random' ? randomVideoMode : currentMode;
+
+    const [fadeOpacity, setFadeOpacity] = useState(1);
+    
+    // Soft Transition Effect
+    useEffect(() => {
+        setFadeOpacity(0); // Fade out
+        const timeout = setTimeout(() => {
+            setFadeOpacity(1); // Fade in (after source changed)
+        }, 500); // 500ms fade duration
+        return () => clearTimeout(timeout);
+    }, [effectiveMode, currentPhoto, modeType]);
+
+    const setMode = (mode: 'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'random') => {
+        onUpdateSettings({ ...settings, ambientMode: mode });
+    };
+
+    const updateAmbientSetting = (key: 'showPopup' | 'showClock' | 'showBottomBar' | 'modeType', value: boolean | string) => {
+        onUpdateSettings({
+            ...settings,
+            ambientSettings: {
+                ...settings.ambientSettings,
+                showPopup: settings.ambientSettings?.showPopup ?? true, // defaults
+                showClock: settings.ambientSettings?.showClock ?? true,
+                showBottomBar: settings.ambientSettings?.showBottomBar ?? true,
+                modeType: settings.ambientSettings?.modeType || 'video',
+                [key]: value
+            }
+        });
+    };
+
+    const showPopup = settings.ambientSettings?.showPopup ?? true;
+    const showClock = settings.ambientSettings?.showClock ?? true;
+    const showBottomBar = settings.ambientSettings?.showBottomBar ?? true;
     
     // Audio State
     const [isMuted, setIsMuted] = useState(false);
     const [volume, setVolume] = useState(0.5);
     const audioRef = useRef<HTMLAudioElement>(null);
+    const [showCredits, setShowCredits] = useState(false);
     
     // Popup State
     const [popupPos, setPopupPos] = useState({ top: '20%', left: '20%' });
@@ -93,6 +163,17 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
 
     // Audio Control
     useEffect(() => {
+        // Only play audio if explicitly in fireplace mode and video type
+        // User request: "in random modus en je toont fireplace, dan geluid niet aanzetten"
+        const shouldPlay = currentMode === 'fireplace' && modeType === 'video';
+
+        if (!shouldPlay) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            return;
+        }
+
         if (audioRef.current) {
             audioRef.current.volume = volume;
             audioRef.current.muted = isMuted;
@@ -102,7 +183,17 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
                 audioRef.current.play().catch(e => console.error("Audio play error:", e));
             }
         }
-    }, [volume, isMuted]);
+    }, [volume, isMuted, currentMode, modeType]);
+
+    // Cleanup audio on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        };
+    }, []);
 
     // Wake Lock
     useEffect(() => {
@@ -187,6 +278,55 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
 
     const lastFetchRef = useRef<number>(0);
 
+    // News Fetching
+    useEffect(() => {
+        const fetchNewsItems = async () => {
+            try {
+                const lang = (settings.language || 'nl').toLowerCase();
+                // Ensure country is uppercase for Google News (e.g. NL, BE, US)
+                const country = (settings.countryCode || (lang === 'nl' ? 'NL' : 'US')).toUpperCase();
+                
+                // Construct specific locale string for Google News (e.g. nl-NL, nl-BE, en-US)
+                // For NL: hl=nl&gl=NL&ceid=NL:nl
+                // For BE (Dutch): hl=nl&gl=BE&ceid=BE:nl
+                const ceid = `${country}:${lang}`;
+                
+                // Fetch Local News
+                const localRss = `https://news.google.com/rss?hl=${lang}&gl=${country}&ceid=${ceid}`;
+                const localUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(localRss)}`;
+                
+                // Fetch International News (always English/US for global reach)
+                const intRss = `https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en`;
+                const intUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(intRss)}`;
+                
+                const [localRes, intRes] = await Promise.all([
+                    fetch(localUrl).then(r => r.json()).catch(e => ({ status: 'error', items: [] })),
+                    fetch(intUrl).then(r => r.json()).catch(e => ({ status: 'error', items: [] }))
+                ]);
+                
+                let allNews: string[] = [];
+                
+                // Prioritize Local News
+                if (localRes.status === 'ok' && localRes.items) {
+                    allNews = [...allNews, ...localRes.items.slice(0, 10).map((i: any) => i.title)];
+                }
+                
+                // Append International News
+                if (intRes.status === 'ok' && intRes.items) {
+                    allNews = [...allNews, ...intRes.items.slice(0, 10).map((i: any) => i.title)];
+                }
+                
+                setNews(allNews);
+            } catch (e) {
+                console.error("Failed to fetch news", e);
+            }
+        };
+
+        fetchNewsItems();
+        const interval = setInterval(fetchNewsItems, 60 * 60 * 1000); // 60 mins for breaking news
+        return () => clearInterval(interval);
+    }, [settings.language, settings.countryCode]);
+
     // Data Fetching
     useEffect(() => {
         const fetchAllWeather = async () => {
@@ -197,44 +337,71 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
 
             const fetchWorldWeather = async () => {
             try {
-                const lats = WORLD_CITIES.map(c => c.lat).join(',');
-                const lons = WORLD_CITIES.map(c => c.lon).join(',');
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day`;
+                // Use MAJOR_CITIES or fallback
+                let cities = MAJOR_CITIES.length > 0 ? [...MAJOR_CITIES] : [...FALLBACK_CITIES];
                 
-                const response = await throttledFetch(url);
-                const results = Array.isArray(response) ? response : [response];
-                
-                const items: string[] = results.map((data: any, index: number) => {
-                    const city = WORLD_CITIES[index];
-                    const temp = convertTemp(data.current.temperature_2m, settings.tempUnit);
-                    
-                    let emoji = '☀️';
-                    const code = data.current.weather_code;
-                    const isNight = data.current.is_day === 0;
-                    
-                    if (isNight) emoji = '🌙';
-                    else if ([0, 1].includes(code)) emoji = '☀️';
-                    else if ([2, 3].includes(code)) emoji = '☁️';
-                    else if ([45, 48].includes(code)) emoji = '🌫️';
-                    else if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) emoji = '🌧️';
-                    else if ([71, 73, 75, 77, 85, 86].includes(code)) emoji = '❄️';
-                    else if ([95, 96, 99].includes(code)) emoji = '⛈️';
-                    
-                    // Lokale tijd berekenen op basis van UTC offset van de API
-                    const utcOffset = data.utc_offset_seconds || 0;
-                    const cityTime = new Date(Date.now() + utcOffset * 1000);
-                    const timeStr = cityTime.getUTCHours().toString().padStart(2, '0') + ':' + 
-                                   cityTime.getUTCMinutes().toString().padStart(2, '0');
-                    
-                    // Uurverschil met huidige lokale tijd
-                    const localOffset = new Date().getTimezoneOffset() * -60; // in seconden
-                    const diffHours = Math.round((utcOffset - localOffset) / 3600);
-                    const diffStr = diffHours >= 0 ? `+${diffHours}u` : `${diffHours}u`;
+                // Shuffle cities randomly using Fisher-Yates
+                for (let i = cities.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cities[i], cities[j]] = [cities[j], cities[i]];
+                }
 
-                    return `<strong>${city.name.toUpperCase()}</strong> ${emoji} ${Math.round(temp)}${getTempLabel(settings.tempUnit)} <span class="text-white/50 text-[1.2rem]">(${timeStr}, ${diffStr})</span>`;
-                });
+                // Limit to 40 cities to prevent 429 errors (Too Many Requests)
+                // This fits in exactly 1 chunk request usually
+                cities = cities.slice(0, 40);
                 
-                setWorldWeather(items);
+                setWorldWeather([]); // Clear previous data
+
+                // Chunking for energy efficiency (and API limits)
+                const chunkSize = 40;
+                
+                for (let i = 0; i < cities.length; i += chunkSize) {
+                    const chunk = cities.slice(i, i + chunkSize);
+                    const lats = chunk.map(c => c.lat).join(',');
+                    const lons = chunk.map(c => c.lon).join(',');
+                    
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+                    
+                    // throttledFetch already handles the delay/queueing to be energy efficient
+                    const response = await throttledFetch(url);
+                    const results = Array.isArray(response) ? response : [response];
+                    
+                    const chunkItems: string[] = results.map((data: any, index: number) => {
+                        const city = chunk[index];
+                        const temp = convertTemp(data.current.temperature_2m, settings.tempUnit);
+                        
+                        let emoji = '☀️';
+                        const code = data.current.weather_code;
+                        const isNight = data.current.is_day === 0;
+                        
+                        if (isNight) emoji = '🌙';
+                        else if ([0, 1].includes(code)) emoji = '☀️';
+                        else if ([2, 3].includes(code)) emoji = '☁️';
+                        else if ([45, 48].includes(code)) emoji = '🌫️';
+                        else if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) emoji = '🌧️';
+                        else if ([71, 73, 75, 77, 85, 86].includes(code)) emoji = '❄️';
+                        else if ([95, 96, 99].includes(code)) emoji = '⛈️';
+                        
+                        // Lokale tijd berekenen op basis van UTC offset van de API
+                        const utcOffset = data.utc_offset_seconds || 0;
+                        const cityTime = new Date(Date.now() + utcOffset * 1000);
+                        const timeStr = cityTime.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'UTC'
+                        });
+                        
+                        // Uurverschil met huidige lokale tijd
+                        const localOffset = new Date().getTimezoneOffset() * -60; // in seconden
+                        const diffHours = Math.round((utcOffset - localOffset) / 3600);
+                        const diffStr = diffHours >= 0 ? `+${diffHours}u` : `${diffHours}u`;
+
+                        return `<strong>${city.name.toUpperCase()}</strong>${city.country ? ` (${city.country})` : ''} ${emoji} ${Math.round(temp)}${getTempLabel(settings.tempUnit)} <span class="text-white/50 text-[1.2rem]">(${timeStr}, ${diffStr})</span>`;
+                    });
+                    
+                    // Update state incrementally so user sees data appearing
+                    setWorldWeather(prev => [...prev, ...chunkItems]);
+                }
             } catch (e) {
                 console.error("Failed to fetch world weather", e);
             }
@@ -247,7 +414,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
                 const lats = settings.favorites.map(c => c.lat).join(',');
                 const lons = settings.favorites.map(c => c.lon).join(',');
                 
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day&hourly=precipitation_probability,weather_code&forecast_days=1`;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day&hourly=precipitation_probability,weather_code&forecast_days=1&timezone=auto`;
                 
                 const response = await throttledFetch(url);
                 const results = Array.isArray(response) ? response : [response];
@@ -270,8 +437,10 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
                     else if ([71, 73, 75, 77, 85, 86].includes(code)) emoji = '❄️';
                     else if ([95, 96, 99].includes(code)) emoji = '⛈️';
 
-                    const currentHour = new Date().getHours();
-                    const next3Hours = data.hourly.precipitation_probability.slice(currentHour, currentHour + 3);
+                    const locOffset = data.utc_offset_seconds || 0;
+                    const cityTime = new Date(Date.now() + locOffset * 1000);
+                    const cityHour = cityTime.getUTCHours();
+                    const next3Hours = data.hourly.precipitation_probability.slice(cityHour, cityHour + 3);
                     const maxRainProb = Math.max(...next3Hours);
                     let warning = '';
                     if (maxRainProb > 30) warning = ' • ☂️ Pas op voor buien!';
@@ -294,7 +463,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
             if (!loc) return;
 
             try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day`;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day&timezone=auto`;
                 const response = await throttledFetch(url);
                 
                 const temp = convertTemp(response.current.temperature_2m, settings.tempUnit);
@@ -351,25 +520,59 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
 
     return (
         <div className="fixed inset-0 z-[2000] overflow-hidden bg-black text-white font-sans">
-            {/* Audio Player */}
-            <audio ref={audioRef} src="/fireplace.mp3" loop autoPlay crossOrigin="anonymous" />
-
-            {/* Video Background */}
-            <video 
-                src="/fireplace.mp4" 
-                autoPlay 
+            {/* Audio Player - Only for fireplace */}
+            <audio 
+                ref={audioRef} 
+                src="/fireplace.mp3" 
                 loop 
-                muted 
-                playsInline 
-                className="absolute inset-0 w-full h-full object-cover z-0"
+                autoPlay={currentMode === 'fireplace' && modeType === 'video'} 
+                crossOrigin="anonymous" 
             />
+
+            {/* Background Content (Video or Photo) */}
+            <div className="absolute inset-0 w-full h-full bg-black z-0">
+                {modeType === 'photo' ? (
+                    <div 
+                        key={currentPhoto}
+                        className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-500 ease-in-out"
+                        style={{ 
+                            backgroundImage: `url('/weerfoto/${currentPhoto}')`,
+                            opacity: fadeOpacity 
+                        }}
+                    />
+                ) : (
+                    <video 
+                        key={effectiveMode} // Force reload on change
+                        src={
+                            effectiveMode === 'fireplace' ? "/fireplace.mp4" : 
+                            effectiveMode === 'aquarium' ? "/aquarium.mp4" : 
+                            effectiveMode === 'clouds' ? "/clouds1.mp4" :
+                            effectiveMode === 'clouds2' ? "/clouds2.mp4" :
+                            "/rain1.mp4"
+                        } 
+                        autoPlay 
+                        loop 
+                        muted 
+                        playsInline 
+                        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+                        style={{ opacity: fadeOpacity }}
+                    />
+                )}
+            </div>
             {/* Dark Overlay */}
             <div className="absolute inset-0 bg-black/30 z-10" />
             
-            {/* Floating Info Popup */}
-            {localWeatherData && (
+            {/* Analogue Clock - Left Side, Centered, Responsive */}
+            {showClock && (
+                <div className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 z-20 w-[20vw] max-w-[250px] aspect-square opacity-80 hover:opacity-100 transition-opacity duration-500">
+                    <AnalogueClock timezone={settings.timezone} />
+                </div>
+            )}
+
+            {/* Floating Info Popup - Hidden on mobile */}
+            {localWeatherData && showPopup && (
                 <div 
-                    className="absolute z-30 transition-all duration-1000 ease-in-out"
+                    className="absolute z-30 transition-all duration-1000 ease-in-out hidden md:block"
                     style={{ top: popupPos.top, left: popupPos.left }}
                 >
                     <div className="bg-black/60 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-2xl flex flex-col items-center min-w-[200px] animate-in fade-in zoom-in duration-500">
@@ -394,8 +597,9 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
                 </div>
             )}
 
-            {/* Top Ticker - World Weather */}
-            <div className="absolute top-0 left-0 right-0 z-20">
+            {/* Top Tickers Container */}
+            <div className="absolute top-0 left-0 right-0 z-20 flex flex-col">
+                {/* World Weather Ticker */}
                 <div className="bg-blue-900/60 backdrop-blur-sm border-b border-white/10 py-3 text-white/90 font-medium drop-shadow-md overflow-hidden">
                     <marquee scrollamount="10" className="flex items-center text-[1.8rem]">
                         {worldWeather.map((item, i) => (
@@ -403,12 +607,27 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
                         ))}
                     </marquee>
                 </div>
+                
+                {/* News Ticker */}
+                {news.length > 0 && (
+                    <div className="bg-emerald-900/60 backdrop-blur-sm border-b border-white/10 py-2 text-white/80 font-medium drop-shadow-sm overflow-hidden">
+                        <marquee scrollamount="8" className="flex items-center text-[1.4rem]">
+                            {news.map((item, i) => (
+                                <span key={i} className="mx-8 inline-block">
+                                    <span className="text-accent-primary mr-2">•</span>
+                                    {item}
+                                </span>
+                            ))}
+                        </marquee>
+                    </div>
+                )}
             </div>
 
             {/* Bottom Bar Container */}
-             <div className="absolute bottom-0 left-0 right-0 z-20 bg-gray-900/80 backdrop-blur-md border-t border-white/10 flex items-stretch h-28 overflow-hidden">
-                 {/* Date/Time & Local Weather (Static) */}
-                 <div className="flex-none px-8 flex flex-col justify-center border-r border-white/10 bg-black/40 min-w-[250px] z-30">
+            {showBottomBar && (
+             <div className="absolute bottom-0 left-0 right-0 z-20 bg-gray-900/80 backdrop-blur-md border-t border-white/10 flex items-stretch h-16 md:h-28 overflow-hidden transition-all duration-300">
+                 {/* Date/Time & Local Weather (Static) - Hidden on mobile if needed, but logic says never show if hidden */}
+                 <div className="hidden md:flex flex-none px-8 flex-col justify-center border-r border-white/10 bg-black/40 min-w-[250px] z-30">
                      <div className="text-3xl font-bold text-white leading-tight">
                          {currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
                      </div>
@@ -424,71 +643,226 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings }
 
                  {/* Favorites Ticker (Scrolling) */}
                  <div className="flex-1 flex items-center bg-red-900/30 relative overflow-hidden">
-                     <marquee scrollamount="7" className="w-full text-white font-bold flex items-center text-[2.2rem]">
+                     <marquee scrollamount="5" className="w-full text-white font-bold flex items-center text-[1.5rem] md:text-[2.2rem]">
                          {favoritesWeather.map((item, i) => (
                              <span key={i} className="mx-8 inline-block" dangerouslySetInnerHTML={{ __html: item }} />
                          ))}
                      </marquee>
                  </div>
             </div>
+            )}
 
-            {/* Controls - Always visible */}
-            <div className="absolute top-24 right-8 z-50 flex flex-col gap-4 transition-opacity duration-500">
-                {/* Audio Controls */}
-                <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
-                    <div className="flex items-center gap-2 mb-1">
-                        <button 
-                            onClick={() => setIsMuted(!isMuted)}
-                            className="flex items-center justify-center p-2 rounded-full hover:bg-white/10 transition-colors"
-                            title={isMuted ? "Unmute" : "Mute"}
-                        >
-                            <Icon name={isMuted ? "volume_off" : "volume_up"} className="text-2xl" />
-                        </button>
-                        <span className="text-xs font-bold w-8 text-center">{Math.round(volume * 100)}%</span>
-                    </div>
-                    <div className="h-32 flex items-center justify-center py-2">
-                        <input 
-                            type="range" 
-                            min="0" 
-                            max="1" 
-                            step="0.01" 
-                            value={volume}
-                            onInput={(e) => {
-                                const newVol = parseFloat((e.target as HTMLInputElement).value);
-                                setVolume(newVol);
-                                if (audioRef.current) {
-                                    audioRef.current.volume = newVol;
-                                    if (newVol > 0 && isMuted) setIsMuted(false);
-                                }
-                            }}
-                            className="w-32 h-2 appearance-none bg-white/20 rounded-full outline-none cursor-pointer accent-accent-primary -rotate-90"
-                            style={{ 
-                                WebkitAppearance: 'none',
-                                MozAppearance: 'none'
-                            }} 
-                        />
-                    </div>
+            {/* Fallback Full Width Ticker if Bottom Bar is hidden */}
+            {!showBottomBar && (
+                <div className="absolute bottom-0 left-0 right-0 z-20 bg-red-900/30 backdrop-blur-md border-t border-white/10 h-16 flex items-center overflow-hidden">
+                     <marquee scrollamount="5" className="w-full text-white font-bold flex items-center text-[1.5rem] md:text-[1.8rem]">
+                         {favoritesWeather.map((item, i) => (
+                             <span key={i} className="mx-8 inline-block" dangerouslySetInnerHTML={{ __html: item }} />
+                         ))}
+                     </marquee>
                 </div>
+            )}
 
-                {/* Chromecast */}
-                <button 
-                    onClick={handleCast}
-                    className={`p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all text-white border border-white/20 shadow-xl ${!castAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title="Cast naar TV"
-                    disabled={!castAvailable}
-                >
-                    <Icon name="cast" className="text-3xl" />
-                </button>
+            {/* Floating Credit Button */}
+            <CreditFloatingButton 
+                onNavigate={onNavigate} 
+                settings={settings} 
+                className={`fixed right-4 z-50 transition-all duration-300 ${showBottomBar ? 'bottom-20 md:bottom-32' : 'bottom-20'}`}
+            />
+
+            {/* Controls - Toggleable */}
+            <div 
+                className="absolute top-36 right-8 z-50 flex flex-col items-end gap-4"
+                onMouseLeave={() => setShowControls(false)}
+            >
+                {!showControls ? (
+                    <button 
+                        onClick={() => setShowControls(true)}
+                        className="p-4 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-105 group"
+                        title="Instellingen"
+                    >
+                        <Icon name="volume_up" className="text-xl text-white/80 group-hover:text-white" />
+                        <Icon name="cast" className="text-xl text-white/80 group-hover:text-white" />
+                    </button>
+                ) : (
+                    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                        
+                        {/* Type Switcher (Video vs Photo) */}
+                        <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
+                            <div className="flex bg-black/40 rounded-lg p-1 w-full">
+                                <button
+                                    onClick={() => updateAmbientSetting('modeType', 'video')}
+                                    className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${modeType === 'video' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
+                                >
+                                    Video
+                                </button>
+                                <button
+                                    onClick={() => updateAmbientSetting('modeType', 'photo')}
+                                    className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${modeType === 'photo' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
+                                >
+                                    Foto's
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Mode Switcher (Only visible in Video mode) */}
+                        {modeType === 'video' && (
+                            <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
+                                 <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setMode('fireplace')}
+                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'fireplace' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                        title="Open Haard"
+                                    >
+                                        <Icon name="local_fire_department" className="text-2xl" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setMode('aquarium')}
+                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'aquarium' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                        title="Aquarium"
+                                    >
+                                        <Icon name="water" className="text-2xl" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setMode('clouds')}
+                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'clouds' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                        title="Wolken"
+                                    >
+                                        <Icon name="cloud" className="text-2xl" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setMode('clouds2')}
+                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'clouds2' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                        title="Wolken 2"
+                                    >
+                                        <Icon name="cloud_queue" className="text-2xl" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setMode('rain')}
+                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'rain' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                        title="Regen"
+                                    >
+                                        <Icon name="rainy" className="text-2xl" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setMode('random')}
+                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'random' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                        title="Willekeurig (elke minuut)"
+                                    >
+                                        <Icon name="shuffle" className="text-2xl" />
+                                    </button>
+                                 </div>
+                            </div>
+                        )}
+
+                        {/* Audio Controls - Only for Fireplace (Video Mode) */}
+                        {(modeType === 'video' && effectiveMode === 'fireplace') && (
+                            <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <button 
+                                        onClick={() => setIsMuted(!isMuted)}
+                                        className="flex items-center justify-center p-2 rounded-full hover:bg-white/10 transition-colors"
+                                        title={isMuted ? "Unmute" : "Mute"}
+                                    >
+                                        <Icon name={isMuted ? "volume_off" : "volume_up"} className="text-2xl" />
+                                    </button>
+                                    <span className="text-xs font-bold w-8 text-center">{Math.round(volume * 100)}%</span>
+                                </div>
+                                <div className="h-32 flex items-center justify-center py-2">
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="1" 
+                                        step="0.01" 
+                                        value={volume}
+                                        onInput={(e) => {
+                                            const newVol = parseFloat((e.target as HTMLInputElement).value);
+                                            setVolume(newVol);
+                                            if (audioRef.current) {
+                                                audioRef.current.volume = newVol;
+                                                if (newVol > 0 && isMuted) setIsMuted(false);
+                                            }
+                                        }}
+                                        className="w-32 h-2 appearance-none bg-white/20 rounded-full outline-none cursor-pointer accent-accent-primary -rotate-90"
+                                        style={{ 
+                                            WebkitAppearance: 'none',
+                                            MozAppearance: 'none'
+                                        }} 
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Display Settings */}
+                        <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 w-full min-w-[200px]">
+                            <h3 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-1 text-center">Weergave</h3>
+                            
+                            <button 
+                                onClick={() => updateAmbientSetting('showPopup', !showPopup)}
+                                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                title="Toon weer popup (verborgen op mobiel)"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Icon name="widgets" className="text-xl" />
+                                    <span className="text-sm">Weer Popup</span>
+                                </div>
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showPopup ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showPopup ? 'left-6' : 'left-1'}`} />
+                                </div>
+                            </button>
+
+                            <button 
+                                onClick={() => updateAmbientSetting('showClock', !showClock)}
+                                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                title="Toon analoge klok (verborgen op mobiel)"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Icon name="schedule" className="text-xl" />
+                                    <span className="text-sm">Klok</span>
+                                </div>
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showClock ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showClock ? 'left-6' : 'left-1'}`} />
+                                </div>
+                            </button>
+
+                            <button 
+                                onClick={() => updateAmbientSetting('showBottomBar', !showBottomBar)}
+                                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                title="Toon tijd & weer balk (verborgen op mobiel)"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Icon name="dock" className="text-xl" />
+                                    <span className="text-sm">Onderbalk</span>
+                                </div>
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showBottomBar ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showBottomBar ? 'left-6' : 'left-1'}`} />
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Chromecast Button */}
+                        <button 
+                            onClick={handleCast}
+                            className={`p-4 rounded-full bg-black/60 hover:bg-white/10 backdrop-blur-md transition-all text-white border border-white/20 shadow-xl flex items-center justify-center ${!castAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="Cast naar TV"
+                            disabled={!castAvailable}
+                        >
+                            <Icon name="cast" className="text-3xl" />
+                        </button>
+                    </div>
+                )}
             </div>
             
             {/* Floating Back Button (Always visible and prominent) */}
             <button 
                 onClick={() => onNavigate(ViewState.CURRENT)}
-                className="absolute top-24 left-8 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 shadow-xl flex items-center gap-2 transition-all hover:scale-105"
+                className="absolute top-36 left-8 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 shadow-xl flex items-center gap-2 transition-all hover:scale-105"
             >
                 <Icon name="arrow_back" className="text-2xl" />
                 <span className="font-bold">Terug</span>
             </button>
+
+            {/* Credit Icon removed (duplicate) */}
         </div>
     );
 };

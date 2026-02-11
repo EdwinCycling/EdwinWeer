@@ -7,9 +7,10 @@ import { getTranslation } from '../services/translations';
 interface Props {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
+    className?: string; // Allow custom positioning
 }
 
-export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings }) => {
+export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, className }) => {
     const [stats, setStats] = useState<UsageStats | null>(null);
     const [showPopup, setShowPopup] = useState(false);
     
@@ -42,7 +43,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings }) 
         <>
             <button
                 onClick={() => setShowPopup(!showPopup)}
-                className="fixed bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"
+                className={className || "fixed bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"}
             >
                 {hasCredits ? (
                     <>

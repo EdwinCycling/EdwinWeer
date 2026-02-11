@@ -1,5 +1,18 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, AuthProvider as FirebaseAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { 
+  User, 
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  signOut, 
+  onAuthStateChanged, 
+  AuthProvider as FirebaseAuthProvider, 
+  setPersistence, 
+  browserLocalPersistence,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink
+} from 'firebase/auth';
 import { auth, googleProvider, db } from '../services/firebase';
 import { setStorageUserId, loadRemoteData } from '../services/storageService';
 import { setUsageUserId, loadRemoteUsage, checkAndResetDailyCredits, getUsage, clearLocalUsage } from '../services/usageService';
@@ -19,6 +32,8 @@ interface AuthContextType {
   sessionExpiry: Date | null;
   signInWithGoogle: () => Promise<void>;
   signInWithProvider: (provider: FirebaseAuthProvider) => Promise<void>;
+  sendEmailLink: (email: string) => Promise<void>;
+  finishEmailSignIn: (email: string, href: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -306,6 +321,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const sendEmailLink = async (email: string) => {
+     try {
+       setLoading(true);
+       const actionCodeSettings = {
+         // Dit is de URL waar de gebruiker terechtkomt na het klikken op de link in de mail.
+         // Zorg dat deze route '/finish-login' bestaat in de router!
+         url: 'https://askbaro.com/finish-login',
+         
+         // Dit zorgt ervoor dat de link op mobiel direct de app/PWA probeert te openen
+         handleCodeInApp: true,
+       };
+ 
+       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+       
+       // Save the email locally so you don't need to ask the user for it again
+       // if they open the link on the same device.
+       window.localStorage.setItem('emailForSignIn', email);
+       
+       alert('Check je mail! Klik op de link om in te loggen.');
+     } catch (error: any) {
+      console.error('AuthContext: sendEmailLink error:', error);
+      alert(`Fout bij verzenden link: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finishEmailSignIn = async (email: string, href: string) => {
+    try {
+      setLoading(true);
+      if (isSignInWithEmailLink(auth, href)) {
+        const result = await signInWithEmailLink(auth, email, href);
+        if (result.user) {
+          window.localStorage.removeItem('emailForSignIn');
+          await logAuthEvent(result.user.uid, 'login');
+          sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
+        }
+      }
+    } catch (error: any) {
+      console.error('AuthContext: finishEmailSignIn error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       if (user) {
@@ -346,7 +407,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, sessionExpiry, signInWithGoogle, signInWithProvider, logout, deleteAccount }}>
+    <AuthContext.Provider value={{ user, loading, sessionExpiry, signInWithGoogle, signInWithProvider, sendEmailLink, finishEmailSignIn, logout, deleteAccount }}>
       {user?.isBanned ? (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-bg-page/80 backdrop-blur-xl animate-in fade-in">
           <div className="bg-bg-card text-text-main w-full max-w-md rounded-3xl overflow-hidden relative flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 border border-red-500/30">

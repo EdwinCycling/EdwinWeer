@@ -43,11 +43,10 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
             const forecast: OpenMeteoResponse = await fetchForecast(location.lat, location.lon, undefined, mode === 'history' ? 2 : 0);
             
             const now = new Date();
-            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const destTime = new Date(utc + (forecast.utc_offset_seconds * 1000));
+            const destTime = new Date(now.getTime() + (forecast.utc_offset_seconds * 1000));
             
             const pad = (n: number) => n.toString().padStart(2, '0');
-            const nowIso = `${destTime.getFullYear()}-${pad(destTime.getMonth()+1)}-${pad(destTime.getDate())}T${pad(destTime.getHours())}`;
+            const nowIso = `${destTime.getUTCFullYear()}-${pad(destTime.getUTCMonth()+1)}-${pad(destTime.getUTCDate())}T${pad(destTime.getUTCHours())}`;
             
             let startIndex = forecast.hourly.time.findIndex(timeStr => timeStr.startsWith(nowIso));
             let endIndex = 0;
@@ -71,13 +70,18 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
             
             const processed = slicedTime.map((timeStr, i) => {
                 const idx = startIndex + i;
-                const date = new Date(timeStr);
+                const date = new Date(timeStr + 'Z');
                 const windSpeed = forecast.hourly.wind_speed_10m[idx];
                 const sunDuration = forecast.hourly.sunshine_duration ? forecast.hourly.sunshine_duration[idx] : 0;
                 const windDir = forecast.hourly.wind_direction_10m[idx] || 0;
                 
                 return {
-                    time: date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: settings.timeFormat === '12h' }),
+                    time: date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        hour12: settings.timeFormat === '12h',
+                        timeZone: 'UTC'
+                    }),
                     timestamp: date.getTime(), // Use timestamp for unique XAxis key
                     fullDate: date, // Keep full date for day detection
                     weatherCode: forecast.hourly.weather_code[idx], // Added for Compact Chart
