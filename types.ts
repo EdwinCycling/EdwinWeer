@@ -373,7 +373,7 @@ export enum ViewState {
 
 export interface GameRound {
     id: string;
-    status: 'open' | 'locked' | 'completed';
+    status: 'open' | 'locked' | 'completed' | 'scheduled';
     city: Location;
     targetDate: string; // ISO date of Sunday
     baroPrediction?: {

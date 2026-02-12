@@ -331,12 +331,23 @@ export const de: Dictionary = {
     'storyteller.action.pdf': 'Als PDF speichern',
 
     // Gamification
+    'game.title': 'Schlage Baro',
+    'game.subtitle': 'Gib deine Vorhersage ab',
+    'game.predict_for': 'Vorhersage für',
     'game.participants': 'Teilnehmer',
     'game.avg_max': 'Ø Max',
     'game.avg_min': 'Ø Min',
     'game.no_running_round': 'Keine laufende Runde.',
-    'game.tab.my_results': 'Meine Ergebnisse',
+    // Tabs
+    'game.tab.play': 'Spielen',
+    'game.tab.running': 'Laufende Runde',
+    'game.tab.schedule': 'Zeitplan',
+    'game.tab.results': 'Ergebnisse',
+    'game.tab.round_ranking': 'Runden-Rangliste',
     'game.tab.leaderboard': 'Rangliste',
+    'game.tab.my_results': 'Meine Ergebnisse',
+    'game.tab.how_it_works': 'Wie funktioniert es?',
+    
     'game.result': 'Ergebnis',
     'game.deviation_you': 'Deine Abweichung',
     'game.deviation_baro': 'Baro Abweichung',
@@ -359,6 +370,11 @@ export const de: Dictionary = {
     'game.username.saved': 'Name gespeichert!',
     'game.error.max_equals_baro': 'Du darfst nicht genau die gleiche Höchsttemperatur wie Baro wählen!',
     'game.username.error.taken': 'Dieser Name ist nicht erlaubt oder bereits vergeben.',
+    'game.max_temp': 'Höchsttemperatur',
+    'game.min_temp': 'Tiefsttemperatur',
+    'game.predict_title': 'Vorhersage der Höchst- und Tiefsttemperatur',
+    'game.closing': 'Schließung:',
+    'game.result_date_label': 'Ergebnisdatum:',
 
     'storyteller.action.share': 'Teilen',
     'storyteller.action.copy': 'Kopieren',
@@ -2199,6 +2215,22 @@ export const de: Dictionary = {
     'ambient.settings.bar': 'Leiste',
     'ambient.chromecast.title': 'Auf TV übertragen',
     'common.back': 'Zurück',
+
+    'game.rules': 'Regeln',
+    'game.rules_text': 'Jede Woche wählt Baro eine Stadt. Sage die Max/Min-Temperatur für nächsten Sonntag voraus. Schlage Baro, um Punkte zu gewinnen!',
+
+    'game.schedule_title': 'Zeitplan',
+    'game.schedule_text': 'Jeden Montag beginnt eine neue Runde. Sie können bis Montag 09:00 Uhr wetten, und dann beginnt sofort eine neue Runde, jede Woche! Die Ergebnisse folgen am Montagmorgen.',
+
+    'game.cost_title': 'Kosten',
+    'game.cost_text': 'Die Teilnahme ist völlig kostenlos! Sie setzen keine Credits, Sie können nur gewinnen.',
+
+    'game.prizes_title': 'Preise',
+    'game.prizes_text': 'Verdienen Sie ewigen Ruhm, indem Sie Baro jede Woche schlagen. Eine weltweite Top-Platzierung bringt zusätzliche Bonus-Credits und Anerkennung als DER Wetterfrosch!',
+
+    'game.explanation_title': 'Wie funktioniert es?',
+    'game.explanation_text': 'Jede Woche wählen wir einen interessanten Ort irgendwo auf der Welt. Das Ziel ist einfach: Sagen Sie die Höchst- und Tiefsttemperatur für den Sonntag besser voraus als Baro und besser als alle AskBaro-Nutzer, stellen Sie sicher, dass Sie in die Top 10 kommen!',
+    'game.how_it_works.intro': 'Baro nutzt fortschrittliche Wettermodelle und historische Daten für seine Vorhersage. Können Sie ihn schlagen?',
 
     // Username
     'game.username.title': 'Dein Spielername',

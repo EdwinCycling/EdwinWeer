@@ -221,6 +221,14 @@ const handler: Handler = async (event, context) => {
                     ...leaderboardEntry,
                     score: admin.firestore.FieldValue.increment(points)
                 }, { merge: true });
+
+                // 4. Month
+                const month = (roundDate.getMonth() + 1).toString().padStart(2, '0');
+                const monthRef = db.collection('leaderboards').doc(`${year}_${month}`).collection('entries').doc(player.userId);
+                batch.set(monthRef, {
+                    ...leaderboardEntry,
+                    score: admin.firestore.FieldValue.increment(points)
+                }, { merge: true });
             }
 
             await batch.commit();

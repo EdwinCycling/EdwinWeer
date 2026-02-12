@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+import { db } from './services/firebase';
 import { CurrentWeatherView } from './views/CurrentWeatherView';
 import { FAQView } from './views/FAQView';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -73,6 +75,31 @@ const App: React.FC = () => {
   const appVersion = packageJson.version;
 
   const [isFinishingEmailSignIn, setIsFinishingEmailSignIn] = useState(false);
+
+  // Gamification Button Logic
+  const [openRoundId, setOpenRoundId] = useState<string | null>(null);
+  const [hasBetOnOpenRound, setHasBetOnOpenRound] = useState(false);
+
+  useEffect(() => {
+      const q = query(collection(db, 'game_rounds'), where('status', '==', 'open'));
+      return onSnapshot(q, (snapshot) => {
+          if (!snapshot.empty) {
+              setOpenRoundId(snapshot.docs[0].id);
+          } else {
+              setOpenRoundId(null);
+          }
+      });
+  }, []);
+
+  useEffect(() => {
+      if (!user || !openRoundId) {
+          setHasBetOnOpenRound(false);
+          return;
+      }
+      return onSnapshot(doc(db, 'game_rounds', openRoundId, 'bets', user.uid), (snap) => {
+          setHasBetOnOpenRound(snap.exists());
+      });
+  }, [user, openRoundId]);
 
   // Handle Email Magic Link Finish
   useEffect(() => {
@@ -507,14 +534,23 @@ const App: React.FC = () => {
             ViewState.ACTIVITY_PLANNER,
             ViewState.CYCLING,
             ViewState.BARO_RIT_ADVIES,
-            ViewState.WEATHER_FINDER
+            ViewState.WEATHER_FINDER,
+            ViewState.LANDING,
+            ViewState.LANDING_V2
         ].includes(currentView) && (
             <button
                 onClick={() => navigate(ViewState.GAME_DASHBOARD)}
-                className="fixed bottom-[130px] md:bottom-40 right-4 z-[100] size-12 md:size-14 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform border border-white/20"
+                className={`fixed bottom-[130px] md:bottom-40 right-4 z-[100] h-12 md:h-14 w-12 md:w-auto md:px-6 rounded-full shadow-lg flex items-center justify-center gap-3 hover:scale-110 transition-transform border border-white/20 group overflow-hidden ${
+                    openRoundId && !hasBetOnOpenRound 
+                        ? 'bg-purple-600 text-white' 
+                        : (openRoundId && hasBetOnOpenRound 
+                            ? 'bg-white text-purple-600' 
+                            : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white')
+                }`}
                 aria-label="Play Beat Baro"
             >
-                <span className="text-2xl">🥊</span>
+                <span className="text-2xl transition-transform group-hover:rotate-12">🥊</span>
+                <span className="hidden md:inline font-bold whitespace-nowrap tracking-wide">Beat Baro</span>
             </button>
         )}
 

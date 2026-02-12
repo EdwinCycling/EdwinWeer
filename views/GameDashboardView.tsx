@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ViewState, AppSettings, GameRound, GameBet } from '../types';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../hooks/useAuth';
@@ -34,15 +34,27 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     const [betMin, setBetMin] = useState<string>('');
     const [submitting, setSubmitting] = useState(false);
     const [showBaroDetails, setShowBaroDetails] = useState(false);
+    const [showFutureDetails, setShowFutureDetails] = useState<GameRound | null>(null);
     const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number} | null>(null);
 
     // History state
     const [userHistory, setUserHistory] = useState<{ bet: GameBet, round?: GameRound }[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
-    const [resultTab, setResultTab] = useState<'my_results' | 'leaderboard'>('my_results');
-    const [leaderboardTimeframe, setLeaderboardTimeframe] = useState<'all_time' | 'year' | 'quarter'>('all_time');
+    const [resultTab, setResultTab] = useState<'my_results' | 'round_ranking' | 'leaderboard'>('my_results');
+    
+    // Leaderboard Filter State
+    const [leaderboardType, setLeaderboardType] = useState<'all_time' | 'year' | 'quarter' | 'month'>('year');
+    const [leaderboardYear, setLeaderboardYear] = useState<number>(new Date().getFullYear());
+    const [leaderboardMonth, setLeaderboardMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
+    const [leaderboardQuarter, setLeaderboardQuarter] = useState<number>(Math.floor((new Date().getMonth() + 3) / 3)); // 1-4
+    
     const [leaderboardData, setLeaderboardData] = useState<{name: string, score: number, userId: string}[]>([]);
     const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+    // Round Ranking State
+    const [selectedRoundId, setSelectedRoundId] = useState<string>('');
+    const [roundRankingBets, setRoundRankingBets] = useState<(GameBet & { deviation?: { devMax: number, devMin: number, total: number }, rank?: number })[]>([]);
+    const [roundRankingLoading, setRoundRankingLoading] = useState(false);
 
     // Username state
     const [username, setUsername] = useState('');
@@ -182,18 +194,20 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
         if (activeTab !== 'results' || resultTab !== 'leaderboard') return;
 
         setLeaderboardLoading(true);
-        const today = new Date();
-        const year = today.getFullYear().toString();
-        const quarter = `Q${Math.floor((today.getMonth() + 3) / 3)}`;
 
         let docId = 'all_time';
-        if (leaderboardTimeframe === 'year') docId = year;
-        if (leaderboardTimeframe === 'quarter') docId = `${year}_${quarter}`;
+        if (leaderboardType === 'year') {
+            docId = leaderboardYear.toString();
+        } else if (leaderboardType === 'quarter') {
+            docId = `${leaderboardYear}_Q${leaderboardQuarter}`;
+        } else if (leaderboardType === 'month') {
+            docId = `${leaderboardYear}_${leaderboardMonth.toString().padStart(2, '0')}`;
+        }
 
         const q = query(
             collection(db, 'leaderboards', docId, 'entries'),
             orderBy('score', 'desc'),
-            limit(10)
+            limit(25) // Increased limit a bit
         );
 
         const unsub = onSnapshot(q, (snapshot) => {
@@ -205,11 +219,69 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
             setLeaderboardLoading(false);
         }, (error) => {
             console.error("Error fetching leaderboard:", error);
+            // Don't show error to user, just empty list (could be doc doesn't exist yet)
+            setLeaderboardData([]);
             setLeaderboardLoading(false);
         });
 
         return () => unsub();
-    }, [activeTab, resultTab, leaderboardTimeframe]);
+    }, [activeTab, resultTab, leaderboardType, leaderboardYear, leaderboardMonth, leaderboardQuarter]);
+
+    // Fetch Round Ranking
+    useEffect(() => {
+        if (activeTab !== 'results' || resultTab !== 'round_ranking' || !selectedRoundId) return;
+
+        setRoundRankingLoading(true);
+        const round = rounds.find(r => r.id === selectedRoundId);
+        
+        if (!round || !round.actualResult) {
+             setRoundRankingBets([]);
+             setRoundRankingLoading(false);
+             return;
+        }
+
+        const q = query(collection(db, `game_rounds/${selectedRoundId}/bets`));
+        getDocs(q).then(snapshot => {
+            const bets = snapshot.docs.map(d => {
+                const b = d.data() as GameBet;
+                // Calculate deviation locally
+                const dev = calculateDeviation(b.prediction, round.actualResult!);
+                return { ...b, deviation: dev };
+            });
+
+            // Sort logic: 
+            // 1. Lowest Max Deviation
+            // 2. Lowest Min Deviation
+            bets.sort((a, b) => {
+                if (a.deviation!.devMax !== b.deviation!.devMax) {
+                    return a.deviation!.devMax - b.deviation!.devMax;
+                }
+                return a.deviation!.devMin - b.deviation!.devMin;
+            });
+
+            // Assign ranks (handling ties?)
+            // Simple ranking for now
+            const rankedBets = bets.map((b, i) => ({ ...b, rank: i + 1 }));
+
+            setRoundRankingBets(rankedBets);
+            setRoundRankingLoading(false);
+        }).catch(err => {
+            console.error("Error fetching round bets:", err);
+            setRoundRankingLoading(false);
+        });
+
+    }, [activeTab, resultTab, selectedRoundId, rounds]);
+
+    // Set default selected round for ranking
+    useEffect(() => {
+        if (activeTab === 'results' && resultTab === 'round_ranking' && !selectedRoundId) {
+            const completedRounds = rounds.filter(r => r.status === 'completed');
+            if (completedRounds.length > 0) {
+                setSelectedRoundId(completedRounds[0].id);
+            }
+        }
+    }, [activeTab, resultTab, rounds, selectedRoundId]);
+
 
     // Fetch user history
     useEffect(() => {
@@ -275,9 +347,11 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     }, []);
 
     // Find open round (soonest)
-    const openRound = rounds
-         .filter(r => r.status === 'open')
-         .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())[0];
+    const openRound = useMemo(() => {
+        return rounds
+            .filter(r => r.status === 'open')
+            .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())[0];
+    }, [rounds]);
 
     // Helper to manually trigger schedule fill (for Admin)
 
@@ -305,19 +379,14 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     // Countdown logic
     useEffect(() => {
         const timer = setInterval(() => {
-            // Find the most relevant open round (soonest deadline)
-            const activeOpenRound = rounds
-                .filter(r => r.status === 'open')
-                .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())[0];
-
-            if (!activeOpenRound) {
+            if (!openRound) {
                 setTimeLeft(null);
                 return;
             }
 
             // Deadline is Monday 09:00 CET BEFORE the target Sunday
             // targetDate is Sunday
-            const deadline = new Date(activeOpenRound.targetDate);
+            const deadline = new Date(openRound.targetDate);
             deadline.setDate(deadline.getDate() - 6); // Move to previous Monday
             deadline.setHours(9, 0, 0, 0);
 
@@ -335,64 +404,65 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [rounds]);
+    }, [openRound]);
     
     // Fetch running round data
     useEffect(() => {
         // If there is an OPEN round, we use that as the primary interaction
         // If there is a LOCKED round, we show that (game in progress)
         // Logic: 
-        // 1. If 'running' (locked) round exists, show it? No, 'running' usually implies betting is closed, game is on.
-        // 2. If 'open' round exists, show it for betting.
+    // 1. If 'running' (locked) round exists, show it? No, 'running' usually implies betting is closed, game is on.
+    // 2. If 'open' round exists, show it for betting.
+    
+    const now = new Date();
+    const runningRound = rounds.find(r => {
+        if (r.status !== 'locked') return false;
         
-        // Let's refine:
-        // runningRound state is used for the "Spelen" tab.
-        // If there is a locked round, show it (as "Game is Running").
-        // If NO locked round, show the OPEN round (as "Place your bets").
+        // Target date is Sunday
+        const targetDate = new Date(r.targetDate);
         
-        const lockedRound = rounds.find(r => r.status === 'locked');
+        // Betting closed: Monday before target (Target - 6 days) at 09:00
+        const closeDate = new Date(targetDate);
+        closeDate.setDate(closeDate.getDate() - 6);
+        closeDate.setHours(9, 0, 0, 0);
         
-        // Find open round (soonest)
-        const activeOpenRound = rounds
-             .filter(r => r.status === 'open')
-             .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())[0];
+        // Round ends: Monday after target (Target + 1 day) at 09:00
+        const endDate = new Date(targetDate);
+        endDate.setDate(endDate.getDate() + 1);
+        endDate.setHours(9, 0, 0, 0);
+        
+        return now >= closeDate && now < endDate;
+    });
+    
+    // Set running round specifically
+    setRunningRound(runningRound);
 
-        // Priority: Locked > Open > null
-        // Actually, if a round is open, users want to BET.
-        // If a round is locked, users want to SEE STATS.
-        // Can we show both? Maybe tab switching?
-        // For now, if activeTab is 'running', let's show the relevant one.
-        
-        const targetRound = lockedRound || activeOpenRound;
-        setRunningRound(targetRound);
-
-        if (targetRound) {
-            // Fetch bets for this round
-             getDocs(query(collection(db, `game_rounds/${targetRound.id}/bets`))).then(snapshot => {
-                 const bets = snapshot.docs.map(d => d.data() as GameBet);
-                 
-                 if (user) {
-                    const myBet = bets.find(b => b.userId === user.uid) || null;
-                    setRunningUserBet(myBet);
-                 }
-                 
-                 if (bets.length > 0) {
-                     const totalMax = bets.reduce((sum, b) => sum + b.prediction.max, 0);
-                     const totalMin = bets.reduce((sum, b) => sum + b.prediction.min, 0);
-                     setRunningStats({
-                         count: bets.length,
-                         avgMax: totalMax / bets.length,
-                         avgMin: totalMin / bets.length
-                     });
-                 } else {
-                     setRunningStats({ count: 0, avgMax: 0, avgMin: 0 });
-                 }
-             });
-        } else {
-            setRunningRound(undefined);
-            setRunningUserBet(null);
-            setRunningStats(null);
-        }
+    // Load stats for running round if exists
+    if (runningRound) {
+            getDocs(query(collection(db, `game_rounds/${runningRound.id}/bets`))).then(snapshot => {
+                const bets = snapshot.docs.map(d => d.data() as GameBet);
+                
+                if (user) {
+                const myBet = bets.find(b => b.userId === user.uid) || null;
+                setRunningUserBet(myBet);
+                }
+                
+                if (bets.length > 0) {
+                    const totalMax = bets.reduce((sum, b) => sum + b.prediction.max, 0);
+                    const totalMin = bets.reduce((sum, b) => sum + b.prediction.min, 0);
+                    setRunningStats({
+                        count: bets.length,
+                        avgMax: totalMax / bets.length,
+                        avgMin: totalMin / bets.length
+                    });
+                } else {
+                    setRunningStats({ count: 0, avgMax: 0, avgMin: 0 });
+                }
+            });
+    } else {
+        setRunningUserBet(null);
+        setRunningStats(null);
+    }
     }, [rounds, user]);
     
     // Fetch user bet for open round
@@ -440,13 +510,21 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
         }
     };
 
-    // Sync userBet to local state
+    // Sync userBet to local state OR pre-fill with Baro's prediction if available
     useEffect(() => {
         if (userBet) {
             setBetMax(userBet.prediction.max.toString());
             setBetMin(userBet.prediction.min.toString());
+        } else if (openRound?.baroPrediction && !userBet) {
+            // Only pre-fill if fields are empty and user hasn't bet yet
+            // We check this only when openRound or userBet changes to prevent overwriting when user clears fields
+            if (betMax === '' && betMin === '') {
+                setBetMax(openRound.baroPrediction.max.toString());
+                setBetMin(openRound.baroPrediction.min.toString());
+            }
         }
-    }, [userBet]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userBet, openRound]);
 
     if (loading) return <LoadingSpinner />;
 
@@ -461,7 +539,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-border-color bg-bg-card overflow-x-auto no-scrollbar">
+            <div className="flex border-b border-border-color bg-bg-card overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 <button 
                     className={`flex-1 min-w-[100px] p-4 font-bold border-b-2 transition-colors ${activeTab === 'play' ? 'border-accent-primary text-accent-primary' : 'border-transparent text-text-muted hover:text-text-main'}`}
                     onClick={() => setActiveTab('play')}
@@ -555,6 +633,45 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                 </div>
             )}
 
+            {/* Future Round Details Modal */}
+            {showFutureDetails && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-bg-card w-full max-w-md rounded-3xl border border-border-color shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-text-main">{showFutureDetails.city.name}</h3>
+                                <button onClick={() => setShowFutureDetails(null)} className="p-2 hover:bg-bg-page rounded-full text-text-muted">
+                                    <Icon name="close" />
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                 <p className="text-text-muted">
+                                    {t('game.predict_for')} {new Date(showFutureDetails.targetDate).toLocaleDateString(settings.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                 </p>
+                                 
+                                 <div className="bg-bg-page p-4 rounded-xl border border-border-color">
+                                    <h4 className="font-bold mb-2">{t('game.rules')}</h4>
+                                    <p className="text-sm text-text-muted">{t('game.rules_text')}</p>
+                                 </div>
+
+                                 <button 
+                                    onClick={() => {
+                                        saveCurrentLocation(showFutureDetails.city);
+                                        onNavigate(ViewState.CURRENT);
+                                        setShowFutureDetails(null);
+                                    }}
+                                    className="w-full bg-accent-primary hover:bg-accent-hover text-white font-bold py-3 rounded-xl shadow-lg shadow-accent-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="location_on" />
+                                    {t('game.view_city', { city: showFutureDetails.city.name })}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="p-4 max-w-2xl mx-auto">
                 {activeTab === 'play' && (
                     <div>
@@ -584,11 +701,11 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                         <div className="bg-yellow-400 text-blue-900 px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-2 animate-pulse">
                                                             <Icon name="timer" className="text-lg" />
                                                             <span>
-                                                                {timeLeft.days > 0 ? `${timeLeft.days}${t('game.days').charAt(0)} ` : ''}{timeLeft.hours}{t('game.hours').charAt(0)} {timeLeft.minutes}{t('game.minutes').charAt(0)}
+                                                                {t('game.closing')} {timeLeft.days > 0 ? `${timeLeft.days}${t('game.days').charAt(0)} ` : ''}{timeLeft.hours}{t('game.hours').charAt(0)} {timeLeft.minutes}{t('game.minutes').charAt(0)}
                                                             </span>
                                                         </div>
                                                         <div className="text-white/80 text-xs font-medium text-right">
-                                                            <span className="block opacity-60 text-[10px] uppercase tracking-wider">{t('game.deadline.closing')}</span>
+                                                            <span className="block opacity-60 text-[10px] uppercase tracking-wider">{t('game.result_date_label')}</span>
                                                             {(() => {
                                                                 const deadline = new Date(openRound.targetDate);
                                                                 deadline.setDate(deadline.getDate() + 1); // Monday
@@ -620,7 +737,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 </div>
 
                                 {/* Baro's Prediction */}
-                                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm">
+                                <div className="bg-green-500/10 rounded-2xl p-6 border border-green-500/20 shadow-sm">
                                     <h3 className="text-text-muted font-bold uppercase text-xs tracking-wider mb-4 flex items-center justify-between">
                                         <span>{t('game.baro_predicts')}</span>
                                         {(openRound.baroPrediction?.timestamp || openRound.createdAt) && (
@@ -631,12 +748,12 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     </h3>
                                     <div className="flex items-center justify-between">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-text-muted text-sm">{t('game.max')}</span>
+                                            <span className="text-text-muted text-sm">{t('game.max_temp')}</span>
                                             <span className="text-3xl font-bold text-red-500">{(openRound.baroPrediction?.max || 0).toFixed(1)}°</span>
                                         </div>
                                         <div className="w-px h-12 bg-border-color mx-4"></div>
                                         <div className="flex flex-col items-center">
-                                            <span className="text-text-muted text-sm">{t('game.min')}</span>
+                                            <span className="text-text-muted text-sm">{t('game.min_temp')}</span>
                                             <span className="text-3xl font-bold text-blue-500">{(openRound.baroPrediction?.min || 0).toFixed(1)}°</span>
                                         </div>
                                     </div>
@@ -644,7 +761,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     <div className="mt-6 flex gap-3">
                                         <button 
                                             onClick={() => setShowBaroDetails(true)}
-                                            className="flex-1 bg-bg-page hover:bg-bg-page/80 text-text-main py-2 rounded-xl text-sm font-bold transition-colors border border-border-color"
+                                            className="flex-1 bg-accent-primary hover:bg-accent-hover text-white py-2 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-accent-primary/20"
                                         >
                                             {t('game.baro_details')}
                                         </button>
@@ -653,7 +770,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                 saveCurrentLocation(openRound.city);
                                                 onNavigate(ViewState.CURRENT);
                                             }}
-                                            className="flex-1 bg-bg-page hover:bg-bg-page/80 text-text-main py-2 rounded-xl text-sm font-bold transition-colors border border-border-color"
+                                            className="flex-1 bg-accent-primary hover:bg-accent-hover text-white py-2 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-accent-primary/20"
                                         >
                                             {t('game.view_city', { city: openRound.city.name })}
                                         </button>
@@ -661,14 +778,28 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 </div>
 
                                 {/* Betting Form */}
-                                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm">
-                                    <h3 className="text-lg font-bold mb-4 text-text-main">
-                                        {userBet ? t('game.locked_msg') : t('game.subtitle')}
-                                    </h3>
+                                <div className={`bg-bg-card rounded-2xl p-6 border shadow-sm transition-colors ${
+                                    userBet ? 'bg-green-500/10 border-green-500/20' : 'border-border-color'
+                                }`}>
+                                    {userBet ? (
+                                        <h3 className="text-lg font-bold mb-4 text-text-main flex items-center gap-2">
+                                            <Icon name="check_circle" className="text-green-500" />
+                                            {t('game.locked_msg')}
+                                        </h3>
+                                    ) : (
+                                        <div className="mb-4">
+                                            <h3 className="text-lg font-bold text-text-main">
+                                                {t('game.predict_title')}
+                                            </h3>
+                                            <p className="text-sm text-text-muted">
+                                                {openRound.city.name} - {new Date(openRound.targetDate).toLocaleDateString(settings.language, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    )}
                                     
                                     <div className="flex gap-4 mb-2">
                                         <div className="flex-1">
-                                            <label className="block text-xs font-bold uppercase text-text-muted mb-2">{t('game.max')}</label>
+                                            <label className="block text-xs font-bold uppercase text-text-muted mb-2">{t('game.max_temp')}</label>
                                             <input 
                                                 type="number" 
                                                 step="0.1"
@@ -680,7 +811,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="block text-xs font-bold uppercase text-text-muted mb-2">{t('game.min')} *</label>
+                                            <label className="block text-xs font-bold uppercase text-text-muted mb-2">{t('game.min_temp')} *</label>
                                             <input  
                                                 type="number" 
                                                 step="0.1"
@@ -720,7 +851,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                         )}
 
                         {/* Username Section */}
-                        <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm mt-6">
+                        <div className={`bg-bg-card rounded-2xl p-6 border shadow-sm mt-6 transition-colors ${username ? 'bg-green-500/10 border-green-500/20' : 'border-border-color'}`}>
                             <h3 className="text-lg font-bold mb-2 text-text-main">{t('game.username.title')}</h3>
                             <p className="text-sm text-text-muted mb-4">{t('game.username.desc')}</p>
                             
@@ -858,16 +989,18 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                             const openDate = new Date(targetDate);
                             openDate.setDate(openDate.getDate() - 13); // 2 weeks before
 
-                            const isFuture = round.status === 'scheduled' || (round.status === 'open' && new Date() < openDate); // Logic check
+                            const isFuture = round.status === 'open' && new Date() < openDate; // Logic check
 
                             return (
                             <div 
                                 key={round.id} 
                                 className={`bg-bg-card p-4 rounded-xl border border-border-color transition-colors ${
-                                    round.status === 'open' ? 'cursor-pointer hover:border-accent-primary' : ''
+                                    round.status === 'open' || round.status === 'locked' ? 'cursor-pointer hover:border-accent-primary' : ''
                                 }`}
                                 onClick={() => {
                                     if (round.status === 'open') {
+                                        setActiveTab('play');
+                                    } else if (round.status === 'locked') {
                                         setActiveTab('running');
                                     }
                                 }}
@@ -893,24 +1026,22 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase">Inschrijving</span>
                                         </div>
                                         <p className="text-sm text-text-muted mb-3">
-                                            {openDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })} - {closeDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {openDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })} - {closeDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </p>
                                         
                                         {/* Small Detail Window - Click to View City */}
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation(); // Prevent parent click
-                                                saveCurrentLocation(round.city);
-                                                onNavigate(ViewState.CURRENT);
+                                                setShowFutureDetails(round);
                                             }}
                                             className="w-full bg-bg-card hover:bg-white dark:hover:bg-gray-800 border border-border-color rounded-lg p-2 flex items-center gap-3 transition-all group"
                                         >
                                             <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md group-hover:scale-110 transition-transform">
-                                                <Icon name="location_city" className="text-blue-600 dark:text-blue-400" />
+                                                <Icon name="info" className="text-blue-600 dark:text-blue-400" />
                                             </div>
                                             <div className="text-left">
-                                                <span className="text-xs text-text-muted block">{t('game.view_city', { city: '' })}</span>
-                                                <span className="font-bold text-sm text-text-main">{round.city.name}, {round.city.country}</span>
+                                                <span className="font-bold text-sm text-text-main">Details</span>
                                             </div>
                                             <Icon name="chevron_right" className="ml-auto text-text-muted group-hover:translate-x-1 transition-transform" />
                                         </button>
@@ -937,6 +1068,16 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 }`}
                             >
                                 {t('game.tab.my_results')}
+                            </button>
+                            <button 
+                                onClick={() => setResultTab('round_ranking')}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                                    resultTab === 'round_ranking' 
+                                        ? 'bg-accent-primary text-white shadow-md' 
+                                        : 'text-text-muted hover:text-text-main hover:bg-bg-page'
+                                }`}
+                            >
+                                {t('game.tab.round_ranking')}
                             </button>
                             <button 
                                 onClick={() => setResultTab('leaderboard')}
@@ -1034,33 +1175,219 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                             </div>
                         )}
 
+                        {resultTab === 'round_ranking' && (
+                             <div className="space-y-4">
+                                {/* Round Selection */}
+                                <div className="bg-bg-card p-4 rounded-xl border border-border-color">
+                                    <label className="text-xs font-bold uppercase text-text-muted block mb-2">{t('game.select_round')}</label>
+                                    <select 
+                                        value={selectedRoundId} 
+                                        onChange={(e) => setSelectedRoundId(e.target.value)}
+                                        className="w-full bg-bg-page border border-border-color rounded-lg p-3 text-text-main outline-none focus:ring-2 focus:ring-accent-primary"
+                                    >
+                                        <option value="">{t('game.select_round_placeholder')}</option>
+                                        {rounds
+                                            .filter(r => r.status === 'completed')
+                                            .slice(0, 10) // Limit to last 10
+                                            .map(r => (
+                                                <option key={r.id} value={r.id}>
+                                                    {r.city.name} - {new Date(r.targetDate).toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })}
+                                                </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {roundRankingLoading ? (
+                                    <div className="text-center py-8"><LoadingSpinner /></div>
+                                ) : selectedRoundId && rounds.find(r => r.id === selectedRoundId) ? (
+                                    <div className="space-y-4">
+                                        {/* Round Summary Card */}
+                                        {(() => {
+                                            const r = rounds.find(r => r.id === selectedRoundId)!;
+                                            return (
+                                                <div className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 rounded-xl p-4 border border-blue-500/20">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div>
+                                                            <h3 className="font-bold text-lg text-text-main">{r.city.name}, {r.city.country}</h3>
+                                                            <p className="text-sm text-text-muted">
+                                                                {new Date(r.targetDate).toLocaleDateString(settings.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                                            </p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => {
+                                                                saveCurrentLocation(r.city);
+                                                                onNavigate(ViewState.CURRENT);
+                                                            }}
+                                                            className="p-2 bg-bg-card hover:bg-bg-page rounded-lg text-text-main shadow-sm border border-border-color transition-colors"
+                                                            title={t('game.view_city', { city: r.city.name })}
+                                                        >
+                                                            <Icon name="visibility" />
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="bg-bg-card p-3 rounded-lg border border-border-color">
+                                                            <span className="text-xs text-text-muted uppercase block mb-1">{t('game.result')}</span>
+                                                            <div className="flex items-center gap-3">
+                                                                <div>
+                                                                    <span className="text-xs text-red-500 font-bold block">MAX</span>
+                                                                    <span className="font-bold text-lg text-text-main">{r.actualResult?.max.toFixed(1)}°</span>
+                                                                </div>
+                                                                <div className="w-px h-8 bg-border-color"></div>
+                                                                <div>
+                                                                    <span className="text-xs text-blue-500 font-bold block">MIN</span>
+                                                                    <span className="font-bold text-lg text-text-main">{r.actualResult?.min.toFixed(1)}°</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="bg-bg-card p-3 rounded-lg border border-border-color">
+                                                            <span className="text-xs text-text-muted uppercase block mb-1">{t('game.baro_predicts')}</span>
+                                                            <div className="flex items-center gap-3">
+                                                                <div>
+                                                                    <span className="text-xs text-red-500 font-bold block">MAX</span>
+                                                                    <span className="font-bold text-lg text-text-main">{r.baroPrediction?.max.toFixed(1)}°</span>
+                                                                </div>
+                                                                <div className="w-px h-8 bg-border-color"></div>
+                                                                <div>
+                                                                    <span className="text-xs text-blue-500 font-bold block">MIN</span>
+                                                                    <span className="font-bold text-lg text-text-main">{r.baroPrediction?.min.toFixed(1)}°</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
+                                        <div className="bg-bg-card rounded-xl border border-border-color overflow-hidden">
+                                            <div className="divide-y divide-border-color">
+                                                {roundRankingBets.length > 0 ? (
+                                                    roundRankingBets.map((bet, index) => {
+                                                        const rank = bet.rank || index + 1;
+                                                        const isMe = bet.userId === user?.uid;
+                                                        
+                                                        return (
+                                                            <div key={bet.userId} className={`p-4 flex items-center gap-4 ${isMe ? 'bg-accent-primary/10' : ''}`}>
+                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0 ${
+                                                                    rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
+                                                                    rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' :
+                                                                    rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-700 text-white' : 'bg-bg-page text-text-muted border border-border-color'
+                                                                }`}>
+                                                                    {rank <= 3 ? (
+                                                                        <Icon name="military_tech" className="text-lg" />
+                                                                    ) : rank}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={`font-bold truncate ${isMe ? 'text-accent-primary' : 'text-text-main'}`}>
+                                                                        {bet.userName} {isMe && t('game.you')}
+                                                                    </p>
+                                                                    <div className="flex items-center gap-2 text-xs text-text-muted">
+                                                                        <span>Max Δ {bet.deviation?.devMax.toFixed(1)}°</span>
+                                                                        {bet.deviation && bet.deviation.devMin > 0 && (
+                                                                            <span className="opacity-50">Min Δ {bet.deviation.devMin.toFixed(1)}°</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="font-bold text-accent-primary flex flex-col items-end shrink-0">
+                                                                    {rank <= 10 && (
+                                                                        <span className="text-lg flex items-center gap-1">
+                                                                            {11 - rank} <span className="text-[10px] uppercase font-normal text-text-muted">pts</span>
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="text-xs text-text-muted">
+                                                                        Total Δ {bet.deviation?.total.toFixed(1)}°
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div className="text-center py-12 text-text-muted">
+                                                        <p>{t('game.no_bets_yet')}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 text-text-muted">
+                                        <p>{t('game.select_round_placeholder')}</p>
+                                    </div>
+                                )}
+                             </div>
+                        )}
+
                         {resultTab === 'leaderboard' && (
                             <div className="space-y-4">
-                                <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                                    <button 
-                                        onClick={() => setLeaderboardTimeframe('all_time')}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                                            leaderboardTimeframe === 'all_time' ? 'bg-text-main text-bg-page' : 'bg-bg-page text-text-muted border border-border-color'
-                                        }`}
-                                    >
-                                        {t('game.leaderboard.all_time')}
-                                    </button>
-                                    <button 
-                                        onClick={() => setLeaderboardTimeframe('year')}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                                            leaderboardTimeframe === 'year' ? 'bg-text-main text-bg-page' : 'bg-bg-page text-text-muted border border-border-color'
-                                        }`}
-                                    >
-                                        {t('game.leaderboard.year', { year: new Date().getFullYear() })}
-                                    </button>
-                                    <button 
-                                        onClick={() => setLeaderboardTimeframe('quarter')}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                                            leaderboardTimeframe === 'quarter' ? 'bg-text-main text-bg-page' : 'bg-bg-page text-text-muted border border-border-color'
-                                        }`}
-                                    >
-                                        {t('game.leaderboard.quarter', { quarter: `Q${Math.floor((new Date().getMonth() + 3) / 3)}` })}
-                                    </button>
+                                {/* Filters */}
+                                <div className="bg-bg-card p-4 rounded-xl border border-border-color space-y-4">
+                                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                        {['all_time', 'year', 'quarter', 'month'].map((type) => (
+                                            <button
+                                                key={type}
+                                                onClick={() => setLeaderboardType(type as any)}
+                                                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${
+                                                    leaderboardType === type 
+                                                    ? 'bg-text-main text-bg-page border-text-main' 
+                                                    : 'bg-bg-page text-text-muted border-border-color hover:border-text-muted'
+                                                }`}
+                                            >
+                                                {t(`game.filter.${type}`)}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {leaderboardType !== 'all_time' && (
+                                        <div className="flex flex-wrap gap-3 animate-in fade-in slide-in-from-top-2">
+                                            {/* Year Selector */}
+                                            <select 
+                                                value={leaderboardYear} 
+                                                onChange={(e) => setLeaderboardYear(parseInt(e.target.value))}
+                                                className="bg-bg-page border border-border-color rounded-lg px-3 py-2 text-sm text-text-main outline-none focus:ring-2 focus:ring-accent-primary"
+                                            >
+                                                {Array.from({ length: new Date().getFullYear() - 2026 + 1 }, (_, i) => 2026 + i).map(year => (
+                                                    <option key={year} value={year}>{year}</option>
+                                                ))}
+                                            </select>
+
+                                            {/* Quarter Selector */}
+                                            {leaderboardType === 'quarter' && (
+                                                <select 
+                                                    value={leaderboardQuarter} 
+                                                    onChange={(e) => setLeaderboardQuarter(parseInt(e.target.value))}
+                                                    className="bg-bg-page border border-border-color rounded-lg px-3 py-2 text-sm text-text-main outline-none focus:ring-2 focus:ring-accent-primary"
+                                                >
+                                                    {[1, 2, 3, 4].map(q => (
+                                                        <option key={q} value={q}>Q{q}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+
+                                            {/* Month Selector */}
+                                            {leaderboardType === 'month' && (
+                                                <select 
+                                                    value={leaderboardMonth} 
+                                                    onChange={(e) => setLeaderboardMonth(parseInt(e.target.value))}
+                                                    className="bg-bg-page border border-border-color rounded-lg px-3 py-2 text-sm text-text-main outline-none focus:ring-2 focus:ring-accent-primary"
+                                                >
+                                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                                        <option key={m} value={m}>{new Date(2000, m - 1).toLocaleString(settings.language, { month: 'long' })}</option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Dynamic Title */}
+                                <div className="text-center mb-2">
+                                    <h3 className="text-lg font-bold text-text-main">
+                                        {leaderboardType === 'all_time' && t('game.leaderboard.all_time')}
+                                        {leaderboardType === 'year' && `${t('game.filter.year')} ${leaderboardYear}`}
+                                        {leaderboardType === 'quarter' && `${t('game.filter.year')} ${leaderboardYear} - Q${leaderboardQuarter}`}
+                                        {leaderboardType === 'month' && `${t('game.filter.year')} ${leaderboardYear} - ${new Date(2000, leaderboardMonth - 1).toLocaleString(settings.language, { month: 'long' })}`}
+                                    </h3>
                                 </div>
 
                                 <div className="bg-bg-card rounded-xl border border-border-color overflow-hidden">
@@ -1096,13 +1423,13 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         <div className="p-8 text-center text-text-muted italic">
                                             <Icon name="leaderboard" className="text-4xl mb-2 block mx-auto opacity-50" />
                                             <p>{t('game.leaderboard.empty')}</p>
-                                            <p className="text-xs mt-2">{t('game.leaderboard.footer')}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
                     </div>
+
                 )}
 
                 {activeTab === 'how_it_works' && (

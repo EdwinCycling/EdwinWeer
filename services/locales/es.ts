@@ -330,12 +330,23 @@ export const es: Dictionary = {
     'storyteller.action.pdf': 'Guardar como pdf',
 
     // Gamification
+    'game.title': 'Vencer a Baro',
+    'game.subtitle': 'Haz tu predicción',
+    'game.predict_for': 'Predicción para',
     'game.participants': 'Participantes',
     'game.avg_max': 'Promedio Max',
     'game.avg_min': 'Promedio Min',
     'game.no_running_round': 'No hay ronda en curso.',
-    'game.tab.my_results': 'Mis Resultados',
+    // Tabs
+    'game.tab.play': 'Jugar',
+    'game.tab.running': 'Ronda en curso',
+    'game.tab.schedule': 'Horario',
+    'game.tab.results': 'Resultados',
+    'game.tab.round_ranking': 'Ranking de ronda',
     'game.tab.leaderboard': 'Clasificación',
+    'game.tab.my_results': 'Mis Resultados',
+    'game.tab.how_it_works': '¿Cómo funciona?',
+
     'game.result': 'Resultado',
     'game.deviation_you': 'Tu Desviación',
     'game.deviation_baro': 'Desviación Baro',
@@ -358,6 +369,11 @@ export const es: Dictionary = {
     'game.username.saved': '¡Nombre guardado!',
     'game.error.max_equals_baro': '¡No puedes elegir exactamente la misma temperatura máxima que Baro!',
     'game.username.error.taken': 'Este nombre no está permitido o ya está en uso.',
+    'game.max_temp': 'Temperatura máxima',
+    'game.min_temp': 'Temperatura mínima',
+    'game.predict_title': 'Predice la temperatura máxima y mínima',
+    'game.closing': 'Cierre:',
+    'game.result_date_label': 'Fecha del resultado:',
 
     'storyteller.action.share': 'Compartir',
     'storyteller.action.copy': 'Copiar',
@@ -2057,6 +2073,31 @@ export const es: Dictionary = {
     'aurora_clouds_heavy': 'Demasiado nublado (80%+).',
     'aurora_clouds_moderate': 'La nubosidad reduce la probabilidad.',
     'aurora_clear_sky': 'Cielo despejado.',
+
+    'game.rules': 'Reglas',
+    'game.rules_text': 'Cada semana Baro selecciona una ciudad. Predice la temperatura máx/mín para el próximo domingo. ¡Gana a Baro para conseguir puntos!',
+
+    'game.schedule_title': 'Horario',
+    'game.schedule_text': 'Cada lunes comienza una nueva ronda. Puedes apostar hasta el lunes a las 09:00, y entonces comienza una nueva ronda inmediatamente, ¡cada semana! Los resultados siguen el lunes por la mañana.',
+
+    'game.cost_title': 'Costos',
+    'game.cost_text': '¡La participación es completamente gratuita! No apuestas créditos, solo puedes ganarlos.',
+
+    'game.tab.round_ranking': 'Ranking Ronda',
+    'game.select_round': 'Seleccionar Ronda',
+    'game.select_round_placeholder': 'Elige una ronda...',
+    'game.points_earned': 'Puntos',
+    'game.filter.all_time': 'Total',
+    'game.filter.year': 'Año',
+    'game.filter.quarter': 'Trimestre',
+    'game.filter.month': 'Mes',
+
+    'game.prizes_title': 'Premios',
+    'game.prizes_text': 'Gana fama eterna venciendo a Baro cada semana. ¡Una clasificación mundial superior otorga créditos de bonificación adicionales y reconocimiento como EL pronosticador del tiempo!',
+
+    'game.explanation_title': '¿Cómo funciona?',
+    'game.explanation_text': 'Cada semana seleccionamos un lugar interesante en algún lugar del mundo. El objetivo es simple: predice la temperatura máxima y mínima para el domingo mejor que Baro y mejor que todos los usuarios de AskBaro, ¡asegúrate de llegar al top 10!',
+    'game.how_it_works.intro': 'Baro utiliza modelos meteorológicos avanzados y datos históricos para su predicción. ¿Puedes vencerlo?',
 
     // Username
     'game.username.title': 'Tu nombre de jugador',
