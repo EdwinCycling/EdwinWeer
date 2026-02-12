@@ -618,9 +618,9 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             {/* Dark Overlay */}
             <div className="absolute inset-0 bg-black/30 z-10" />
             
-            {/* Analogue Clock - Left Side, Centered, Responsive */}
+            {/* Analogue Clock - Responsive positioning */}
             {showClock && (
-                <div className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 z-20 w-[20vw] max-w-[250px] aspect-square opacity-80 hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute left-1/2 md:left-8 top-1/2 -translate-y-1/2 -translate-x-1/2 md:translate-x-0 z-20 w-[60vw] md:w-[20vw] max-w-[250px] aspect-square opacity-80 hover:opacity-100 transition-opacity duration-500">
                     <AnalogueClock timezone={settings.timezone} />
                 </div>
             )}

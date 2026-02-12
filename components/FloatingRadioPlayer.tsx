@@ -12,7 +12,7 @@ export const FloatingRadioPlayer: React.FC<Props> = ({ visible }) => {
     if (!visible || !isPlaying) return null;
 
     return (
-        <div className="fixed bottom-[120px] md:bottom-40 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-[128px] md:bottom-40 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
             <div className="bg-black/80 backdrop-blur-md border border-[#E5C100]/30 rounded-full shadow-lg p-2 flex items-center gap-2">
                 {/* Pulsing Icon */}
                 <div className="relative">

@@ -1247,7 +1247,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
 
       {/* Toast Notification */}
         {toast && (
-            <div className="fixed bottom-[68px] md:bottom-24 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="fixed bottom-[76px] md:bottom-24 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="bg-bg-card/90 backdrop-blur-md text-text-main px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-border-color">
                 <Icon name="check_circle" className="text-green-400" />
                 <span className="font-bold text-sm">{toast}</span>

@@ -43,7 +43,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, cl
         <>
             <button
                 onClick={() => setShowPopup(!showPopup)}
-                className={className || "fixed bottom-[68px] md:bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"}
+                className={className || "fixed bottom-[76px] md:bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"}
             >
                 {hasCredits ? (
                     <>
@@ -67,7 +67,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, cl
                         className="fixed inset-0 z-40 bg-transparent" 
                         onClick={() => setShowPopup(false)}
                     />
-                    <div className="fixed bottom-[120px] md:bottom-36 right-4 z-50 bg-bg-card p-4 rounded-xl shadow-xl border border-border-color w-64 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                    <div className="fixed bottom-[128px] md:bottom-36 right-4 z-50 bg-bg-card p-4 rounded-xl shadow-xl border border-border-color w-64 animate-in fade-in slide-in-from-bottom-4 duration-200">
                         <div className="flex justify-between items-start mb-3">
                              <h4 className="font-bold text-sm text-text-main">
                                 {hasCredits ? t('credits.title') : t('credits.popup.title_upgrade')}
