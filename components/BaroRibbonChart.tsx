@@ -167,6 +167,7 @@ export const BaroRibbonChart: React.FC<Props> = ({ data, settings, onPointClick 
                                 if (p && p.date) onPointClick(p.date);
                             }}
                             cursor="pointer"
+                            // @ts-ignore
                             size={250}
                         />
                         <Scatter 
@@ -181,6 +182,7 @@ export const BaroRibbonChart: React.FC<Props> = ({ data, settings, onPointClick 
                                 if (p && p.date) onPointClick(p.date);
                             }}
                             cursor="pointer"
+                            // @ts-ignore
                             size={250}
                         />
                     </ComposedChart>

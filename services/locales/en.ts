@@ -1947,9 +1947,6 @@ export const en: Dictionary = {
     'premium.view_pricing': 'View pricing',
 
     // Landing Page V2
-    'landing.hero_title_1': 'The weather,',
-    'landing.hero_title_2': 'Reimagined.',
-    'landing.hero_subtitle': 'Experience weather forecasts like never before. with stunning visualizations, smart ai insights, and a design that comes alive.',
     'landing.start_now': 'Start now',
     'landing.discover_features': 'Discover features',
     'landing.core_features_title': 'Core features',
@@ -1988,7 +1985,7 @@ export const en: Dictionary = {
     'landing.cta_button': 'Start now free',
     'landing.faq_title': 'Questions?',
     'landing.faq_desc': 'Do you have questions about Baro? check our extensive faq page.',
-    'landing.login_google': 'Login with google',
+
 
     // Solar Widget
     'solar.title': 'Solar power',

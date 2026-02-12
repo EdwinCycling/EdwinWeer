@@ -1908,6 +1908,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
       {showNewspaper && newspaperData && (
         <VintageNewspaper
+            lang={settings.language}
             data={newspaperData}
             weatherData={{
                 maxTemp: detail.tempMax1,

@@ -462,9 +462,6 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                         atmosphereColor="lightskyblue"
                         atmosphereAltitude={0.15}
                         onGlobeClick={handleGlobeClick}
-                        onPointerClick={(point) => {
-                            if (point) handleGlobeClick(point);
-                        }}
                         backgroundColor="rgba(0,0,0,0)"
                         htmlElementsData={selectedPoint ? [selectedPoint] : []}
                         htmlElement={(d: any) => {

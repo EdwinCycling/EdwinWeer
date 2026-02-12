@@ -15,7 +15,7 @@ import { useThemeColors } from '../hooks/useThemeColors';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
 interface ThisDayViewProps {
-  onNavigate: (view: any) => void;
+  onNavigate: (view: any, params?: any) => void;
   settings: AppSettings;
   onUpdateSettings: (settings: AppSettings) => void;
 }

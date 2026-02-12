@@ -4,8 +4,7 @@ import { Icon } from '../components/Icon';
 import { saveCustomEvents, loadCustomEvents } from '../services/storageService';
 import { searchCityByName } from '../services/geoService';
 import { getTranslation } from '../services/translations';
-import { useAuth } from '../hooks/useAuth';
-import { getUsage, UsageStats } from '../services/usageService';
+import { getUsage } from '../services/usageService';
 import { Modal } from '../components/Modal';
 
 interface Props {
@@ -17,25 +16,13 @@ interface Props {
 const MAX_EVENTS = 10;
 
 const DateSelector = ({ value, onChange, label, optional = false, t }: { value: string, onChange: (val: string) => void, label: string, optional?: boolean, t: (key: string) => string }) => {
-    const [month, setMonth] = useState('');
-    const [day, setDay] = useState('');
+    const [month, day] = value ? value.split('-') : ['', ''];
 
     const months = [
         t('month.jan'), t('month.feb'), t('month.mar'), t('month.apr'), 
         t('month.may'), t('month.jun'), t('month.jul'), t('month.aug'), 
         t('month.sep'), t('month.oct'), t('month.nov'), t('month.dec')
     ];
-
-    useEffect(() => {
-        if (value) {
-            const [m, d] = value.split('-');
-            setMonth(m);
-            setDay(d);
-        } else {
-            setMonth('');
-            setDay('');
-        }
-    }, [value]);
 
     const handleUpdate = (m: string, d: string) => {
         if (m && d) {
@@ -52,7 +39,6 @@ const DateSelector = ({ value, onChange, label, optional = false, t }: { value: 
                 <select 
                     value={month} 
                     onChange={(e) => {
-                        setMonth(e.target.value);
                         handleUpdate(e.target.value, day);
                     }}
                     className="flex-1 bg-bg-input rounded-xl px-4 py-3 text-text-main"
@@ -60,13 +46,12 @@ const DateSelector = ({ value, onChange, label, optional = false, t }: { value: 
                     <option value="" disabled={!optional}>{t('date.month')}</option>
                     {optional && <option value="">- {t('none')} -</option>}
                     {months.map((m, i) => (
-                        <option key={m} value={String(i + 1).padStart(2, '0')}>{m}</option>
+                        <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{m}</option>
                     ))}
                 </select>
                 <select 
                     value={day} 
                     onChange={(e) => {
-                        setDay(e.target.value);
                         handleUpdate(month, e.target.value);
                     }}
                     className="w-24 bg-bg-input rounded-xl px-4 py-3 text-text-main"
@@ -82,7 +67,7 @@ const DateSelector = ({ value, onChange, label, optional = false, t }: { value: 
     );
 };
 
-export const YourDayView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const YourDayView: React.FC<Props> = ({ onNavigate, settings }) => {
     const t = (key: string) => getTranslation(key, settings.language);
     
     const [events, setEvents] = useState<CustomEvent[]>([]);

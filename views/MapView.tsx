@@ -149,6 +149,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
                         // Create a virtual point
                         newVirtualPoints.push({
                             name: '', // Empty name signals a coordinate-only point
+                            country: '',
                             lat: parseFloat(cellCenterLat.toFixed(4)),
                             lon: parseFloat(cellCenterLon.toFixed(4))
                         });
@@ -239,7 +240,7 @@ export const MapView: React.FC<Props> = ({ onNavigate, settings, onUpdateSetting
     const debouncedMapMove = useMemo(() => 
         debounce((...args) => {
             if (fetchMapDataRef.current) {
-                fetchMapDataRef.current(...args);
+                fetchMapDataRef.current(...(args as [L.Map, boolean?]));
             }
         }, 500), 
     []);

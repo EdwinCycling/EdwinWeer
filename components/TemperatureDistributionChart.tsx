@@ -81,12 +81,13 @@ export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }
                         verticalAlign="bottom" 
                         align="center"
                         wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                        // @ts-ignore
                         payload={chartData.map(item => ({
                             value: item.label,
                             type: 'rect',
                             id: item.label,
                             color: item.color
-                        }))}
+                        })) as any}
                     />
                 </PieChart>
             </ResponsiveContainer>

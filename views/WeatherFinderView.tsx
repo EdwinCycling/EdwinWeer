@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewState, AppSettings, Location, TempUnit, WindUnit, PrecipUnit } from '../types';
-import { throttledFetch } from '../services/weatherService';
 import { Icon } from '../components/Icon';
-import { Modal } from '../components/Modal';
 import { searchCityByName } from '../services/geoService';
 import { loadCurrentLocation } from '../services/storageService';
 import { getUsage } from '../services/usageService';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -113,7 +111,7 @@ const getUnitLabel = (param: Parameter, settings: AppSettings): string => {
   return '';
 };
 
-export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => {
   // State
   const [location, setLocation] = useState<Location | null>(null);
   const [scenarios, setScenarios] = useState<Scenario[]>([
@@ -227,10 +225,10 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
     const oneDay = 1000 * 60 * 60 * 24;
     const currentDOY = Math.floor(diff / oneDay);
 
-    let candidates: { date: Date, prob: number }[] = [];
+    const candidates: { date: Date, prob: number }[] = [];
 
     for (let i = 1; i <= 365; i++) {
-        let targetDOY = (currentDOY + i);
+        const targetDOY = (currentDOY + i);
         let lookupDOY = targetDOY % 366;
         if (lookupDOY === 0) lookupDOY = 366;
 
@@ -1248,8 +1246,8 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings, onUpd
       </div>
 
       {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4 fade-in duration-300">
+        {toast && (
+            <div className="fixed bottom-[68px] md:bottom-24 left-1/2 transform -translate-x-1/2 z-[60] animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="bg-bg-card/90 backdrop-blur-md text-text-main px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-border-color">
                 <Icon name="check_circle" className="text-green-400" />
                 <span className="font-bold text-sm">{toast}</span>

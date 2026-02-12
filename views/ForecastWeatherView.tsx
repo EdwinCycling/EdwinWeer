@@ -335,7 +335,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               dayParts,
               holiday,
               solar,
-              mjValue
+              mjValue,
+              precipProb: weatherData.daily.precipitation_probability_max?.[i] || 0
           };
       });
   };

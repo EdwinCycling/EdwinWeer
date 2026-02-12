@@ -1307,7 +1307,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         />
       )}
         {/* Floating Credits Button */}
-        <CreditFloatingButton />
+        <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
     </div>
   );
 };

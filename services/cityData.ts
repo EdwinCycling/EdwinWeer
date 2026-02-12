@@ -1,6 +1,8 @@
 
 import { Location } from '../types';
 
+export type City = Location;
+
 export const MAJOR_CITIES: Location[] = [
     // --- Europe ---
     // Netherlands

@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ViewState, AppSettings } from '../types';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
 import { useAuth } from '../hooks/useAuth';
-import { getUsage, UsageStats, getLimit, resetDailyUsage } from '../services/usageService';
+import { getUsage, UsageStats, getLimit } from '../services/usageService';
 import { API_LIMITS } from '../services/apiConfig';
 import { getTranslation } from '../services/translations';
 
@@ -17,7 +17,7 @@ interface Props {
 
 export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, installPWA, canInstallPWA, showInstallInstructions }) => {
   const { user, sessionExpiry, logout, deleteAccount } = useAuth();
-  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+  const [usageStats] = useState<UsageStats | null>(() => getUsage());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const t = (key: string) => getTranslation(key, settings.language);
@@ -32,10 +32,6 @@ export const UserAccountView: React.FC<Props> = ({ onNavigate, settings, install
       alert(t('error'));
     }
   };
-
-  useEffect(() => {
-    setUsageStats(getUsage());
-  }, []);
 
   return (
     <div className="relative min-h-screen flex flex-col pb-24 overflow-y-auto text-text-main bg-bg-page transition-colors duration-300">

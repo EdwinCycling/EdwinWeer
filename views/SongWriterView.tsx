@@ -414,7 +414,7 @@ export const SongWriterView: React.FC<SongWriterViewProps> = ({ onNavigate, sett
                 </div>
 
                 {/* Sticky Action Bar (Mobile Only for PDF/Share) */}
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-bg-card/90 backdrop-blur-xl border border-border-color shadow-2xl rounded-full p-2 flex gap-2 z-50 lg:hidden">
+                <div className="fixed bottom-[68px] md:bottom-24 left-1/2 -translate-x-1/2 bg-bg-card/90 backdrop-blur-xl border border-border-color shadow-2xl rounded-full p-2 flex gap-2 z-50 lg:hidden">
                     <button 
                         onClick={handleDownloadPDF}
                         className="p-3 hover:bg-bg-page rounded-full transition-colors text-text-main"

@@ -8,12 +8,13 @@ import { useAuth } from '../hooks/useAuth';
 interface LimitReachedModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onNavigate: (view: ViewState) => void;
-    limit: number;
-    scope: string; // 'day', 'month', etc.
+    onNavigate?: (view: ViewState) => void;
+    limit?: number;
+    scope?: string; // 'day', 'month', etc.
+    message?: string;
 }
 
-export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, onClose, onNavigate, limit, scope }) => {
+export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, onClose, onNavigate, limit, scope, message }) => {
     const { user } = useAuth();
 
     return (
@@ -24,15 +25,20 @@ export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, on
                 </div>
                 
                 <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
-                    WeatherCredits Limit Reached
+                    {message ? 'Limit Reached' : 'WeatherCredits Limit Reached'}
                 </h3>
                 
                 <p className="text-slate-600 dark:text-slate-300 mb-6">
-                    You have reached your daily limit of <strong>{limit}</strong> WeatherCredits. 
-                    Your credits will reset tomorrow.
+                    {message || (
+                        <>
+                        You have reached your daily limit of <strong>{limit}</strong> WeatherCredits. 
+                        Your credits will reset tomorrow.
+                        </>
+                    )}
                 </p>
 
                 <div className="w-full space-y-3">
+                    {onNavigate && (
                     <button 
                         onClick={() => {
                             onClose();
@@ -43,6 +49,7 @@ export const LimitReachedModal: React.FC<LimitReachedModalProps> = ({ isOpen, on
                         <Icon name="upgrade" />
                         Upgrade Plan
                     </button>
+                    )}
                     
                     <button 
                         onClick={onClose}

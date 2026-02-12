@@ -30,7 +30,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     };
 
     const [plannerSettings, setPlannerSettings] = useState<TripPlannerSettings>(() => {
-        const saved = settings.trip_planner || {};
+        const saved: Partial<TripPlannerSettings> = settings.trip_planner || {};
         return {
             ...defaultPlannerSettings,
             ...saved,
@@ -87,8 +87,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                         name: t('trip_planner.gpx_start_name'),
                         country: t('trip_planner.gpx_import_country'),
                         lat: points[0].lat,
-                        lon: points[0].lon,
-                        timezone: 'Europe/Amsterdam'
+                        lon: points[0].lon
                     });
 
                      // Set Date/Time if passed
@@ -164,8 +163,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                         name: file.name.replace('.gpx', ''),
                         country: t('trip_planner.gpx_start_country'),
                         lat: points[0].lat,
-                        lon: points[0].lon,
-                        timezone: 'Europe/Amsterdam' // Default or fetch?
+                        lon: points[0].lon
                     });
                     // Reset results to force reload
                     setResults([]);
@@ -498,7 +496,7 @@ export const TripPlannerView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     </div>
 
                     <button 
-                        onClick={loadData}
+                        onClick={() => loadData()}
                         className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
                     >
                         {loading ? <Icon name="refresh" className="animate-spin" /> : <Icon name="bolt" />}

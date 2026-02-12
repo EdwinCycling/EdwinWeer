@@ -32,7 +32,7 @@ export const LoginToast: React.FC<Props> = ({ userEmail, onClose }) => {
     const aiRemaining = Math.max(0, aiLimit - aiUsed);
 
     return (
-        <div className="fixed bottom-24 right-6 left-6 md:left-auto md:w-80 z-[100] animate-in slide-in-from-bottom-4 duration-500">
+        <div className="fixed bottom-[68px] md:bottom-24 right-6 left-6 md:left-auto md:w-80 z-[100] animate-in slide-in-from-bottom-4 duration-500">
             <div className="bg-bg-card backdrop-blur-xl border border-border-color rounded-3xl p-4 shadow-2xl flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-primary to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
                     <Icon name="person" className="text-2xl" />

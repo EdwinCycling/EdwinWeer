@@ -1035,7 +1035,8 @@ export const HolidayReportView: React.FC<Props> = ({ onNavigate, settings }) => 
                             zoom={9}
                             zoomControl={false}
                             style={{ height: '100%', width: '100%' }}
-                            whenReady={(e) => {
+                            // @ts-ignore
+                            whenReady={(e: any) => {
                                 setTimeout(() => e.target.invalidateSize(), 150);
                             }}
                         >

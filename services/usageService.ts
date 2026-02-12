@@ -206,6 +206,7 @@ export const loadRemoteUsage = async (uid: string) => {
 
                 if (typeof window !== "undefined") {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedUsage));
+                    window.dispatchEvent(new CustomEvent('usage:updated'));
                 }
         }
     } catch (e) {

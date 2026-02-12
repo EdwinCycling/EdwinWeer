@@ -428,7 +428,8 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                                 fill="#ef4444"
                                 stroke="#fff"
                                 strokeWidth={2}
-                                isFront={true}
+                                // @ts-ignore
+                                isFront={true as any}
                                 label={({ x, y }: any) => {
                                     if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) return null;
                                     return (
@@ -452,7 +453,8 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                                 fill="#3b82f6"
                                 stroke="#fff"
                                 strokeWidth={2}
-                                isFront={true}
+                                // @ts-ignore
+                                isFront={true as any}
                                 label={({ x, y }: any) => {
                                     if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) return null;
                                     return (

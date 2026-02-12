@@ -37,6 +37,7 @@ interface Props {
     myLocation?: Location | null;
     onSelectLocation: (loc: Location) => void;
     settings: AppSettings;
+    onOpenGlobe?: () => void;
 }
 
 export const FavoritesList: React.FC<Props> = ({ 

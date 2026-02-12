@@ -111,7 +111,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
         onUpdateSettings({ ...settings, ambientMode: mode });
     };
 
-    const updateAmbientSetting = (key: 'showPopup' | 'showClock' | 'showBottomBar' | 'modeType', value: boolean | string) => {
+    const updateAmbientSetting = (key: 'showPopup' | 'showClock' | 'showBottomBar' | 'modeType' | 'showNews', value: boolean | string) => {
         onUpdateSettings({
             ...settings,
             ambientSettings: {
@@ -119,6 +119,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                 showPopup: settings.ambientSettings?.showPopup ?? true, // defaults
                 showClock: settings.ambientSettings?.showClock ?? true,
                 showBottomBar: settings.ambientSettings?.showBottomBar ?? true,
+                showNews: settings.ambientSettings?.showNews ?? true,
                 modeType: settings.ambientSettings?.modeType || 'video',
                 [key]: value
             }
@@ -128,6 +129,18 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
     const showPopup = settings.ambientSettings?.showPopup ?? true;
     const showClock = settings.ambientSettings?.showClock ?? true;
     const showBottomBar = settings.ambientSettings?.showBottomBar ?? true;
+    const showNews = settings.ambientSettings?.showNews ?? true;
+    
+    // Mobile Detection & Scroll Speed
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const scrollSpeedMultiplier = isMobile ? 0.6 : 1;
     
     // Audio State
     const [isMuted, setIsMuted] = useState(false);
@@ -137,6 +150,8 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
     
     // Popup State
     const [popupPos, setPopupPos] = useState({ top: '20%', left: '20%' });
+    const [showCastModal, setShowCastModal] = useState(false);
+    const [currentCastState, setCurrentCastState] = useState<string>('NO_DEVICES_AVAILABLE');
     
     const wakeLockRef = useRef<any>(null);
     const t = (key: string) => getTranslation(key, settings.language);
@@ -231,16 +246,28 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
     // Chromecast
     useEffect(() => {
+        let attempts = 0;
         const initCast = () => {
-            if (window.chrome && window.chrome.cast && window.chrome.cast.isAvailable) {
+            const hasFramework = !!window.cast?.framework?.CastContext?.getInstance;
+            const hasEventTypes = !!window.cast?.framework?.CastContextEventType;
+            const hasSessionRequest = !!window.chrome?.cast?.SessionRequest;
+            const isAvailable = window.chrome?.cast?.isAvailable === true;
+
+            if (isAvailable && hasFramework && hasEventTypes && hasSessionRequest) {
                 setCastAvailable(true);
                 try {
                     const context = window.cast.framework.CastContext.getInstance();
+                    const receiverAppId = window.chrome?.cast?.media?.DEFAULT_MEDIA_RECEIVER_APP_ID || 'CC1AD845';
+                    const autoJoinPolicy = window.chrome?.cast?.AutoJoinPolicy?.ORIGIN_SCOPED || 'origin_scoped';
+
                     context.setOptions({
-                        receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-                        autoJoinPolicy: window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+                        receiverApplicationId: receiverAppId,
+                        autoJoinPolicy: autoJoinPolicy
                     });
                     
+                    // Initial state
+                    setCurrentCastState(context.getCastState());
+
                     // Listen for session changes
                     context.addEventListener(
                         window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
@@ -248,12 +275,26 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             console.log("Cast session state:", event.sessionState);
                         }
                     );
+
+                    // Listen for cast state changes (to know if devices are available)
+                    context.addEventListener(
+                        window.cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+                        (event: any) => {
+                            console.log("Cast state:", event.castState);
+                            setCurrentCastState(event.castState);
+                        }
+                    );
                 } catch (e) {
                     console.error("Cast init error", e);
                 }
+            } else if (attempts < 20) {
+                // Retry for ~20 seconds (20 * 1000ms) to allow script to load on mobile
+                attempts++;
+                setTimeout(initCast, 1000);
             }
         };
 
+        // Standard Google Cast API check
         if (window['__onGCastApiAvailable']) {
             const original = window['__onGCastApiAvailable'];
             window['__onGCastApiAvailable'] = (isAvailable: boolean) => {
@@ -268,11 +309,26 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
         
         // Also check immediately
         initCast();
+
+        // Add a global trigger for re-init
+        (window as any).reInitCast = initCast;
     }, []);
 
     const handleCast = () => {
-        if (window.cast && window.cast.framework) {
-             window.cast.framework.CastContext.getInstance().requestSession();
+        setShowCastModal(true);
+    };
+
+    const triggerNativeCast = () => {
+        const hasFramework = !!window.cast?.framework?.CastContext?.getInstance;
+        const hasSessionRequest = !!window.chrome?.cast?.SessionRequest;
+        if (hasFramework && hasSessionRequest) {
+            window.cast.framework.CastContext.getInstance().requestSession();
+        }
+    };
+
+    const reInitCast = () => {
+        if ((window as any).reInitCast) {
+            (window as any).reInitCast();
         }
     };
 
@@ -599,25 +655,29 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
             {/* Top Tickers Container */}
             <div className="absolute top-0 left-0 right-0 z-20 flex flex-col">
-                {/* World Weather Ticker */}
-                <div className="bg-blue-900/60 backdrop-blur-sm border-b border-white/10 py-3 text-white/90 font-medium drop-shadow-md overflow-hidden">
-                    <marquee scrollamount="10" className="flex items-center text-[1.8rem]">
+                {/* World Weather Ticker - Adjusted for Mobile Camera Notch */}
+                <div className="bg-blue-900/60 backdrop-blur-sm border-b border-white/10 text-white/90 font-medium drop-shadow-md overflow-hidden md:py-3 pt-12 pb-2 min-h-[90px] md:min-h-0 flex flex-col justify-end">
+                    {/* @ts-ignore */}
+                    <marquee scrollamount={Math.round(10 * scrollSpeedMultiplier)} className="flex items-center text-[1.8rem]">
                         {worldWeather.map((item, i) => (
                             <span key={i} className="mx-8 inline-block" dangerouslySetInnerHTML={{ __html: item }} />
                         ))}
+                    {/* @ts-ignore */}
                     </marquee>
                 </div>
                 
                 {/* News Ticker */}
-                {news.length > 0 && (
+                {showNews && news.length > 0 && (
                     <div className="bg-emerald-900/60 backdrop-blur-sm border-b border-white/10 py-2 text-white/80 font-medium drop-shadow-sm overflow-hidden">
-                        <marquee scrollamount="8" className="flex items-center text-[1.4rem]">
+                        {/* @ts-ignore */}
+                        <marquee scrollamount={Math.round(8 * scrollSpeedMultiplier)} className="flex items-center text-[1.4rem]">
                             {news.map((item, i) => (
                                 <span key={i} className="mx-8 inline-block">
                                     <span className="text-accent-primary mr-2">•</span>
                                     {item}
                                 </span>
                             ))}
+                        {/* @ts-ignore */}
                         </marquee>
                     </div>
                 )}
@@ -643,10 +703,12 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
                  {/* Favorites Ticker (Scrolling) */}
                  <div className="flex-1 flex items-center bg-red-900/30 relative overflow-hidden">
-                     <marquee scrollamount="5" className="w-full text-white font-bold flex items-center text-[1.5rem] md:text-[2.2rem]">
+                     {/* @ts-ignore */}
+                     <marquee scrollamount={Math.round(5 * scrollSpeedMultiplier)} className="w-full text-white font-bold flex items-center text-[1.5rem] md:text-[2.2rem]">
                          {favoritesWeather.map((item, i) => (
                              <span key={i} className="mx-8 inline-block" dangerouslySetInnerHTML={{ __html: item }} />
                          ))}
+                     {/* @ts-ignore */}
                      </marquee>
                  </div>
             </div>
@@ -655,10 +717,12 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             {/* Fallback Full Width Ticker if Bottom Bar is hidden */}
             {!showBottomBar && (
                 <div className="absolute bottom-0 left-0 right-0 z-20 bg-red-900/30 backdrop-blur-md border-t border-white/10 h-16 flex items-center overflow-hidden">
-                     <marquee scrollamount="5" className="w-full text-white font-bold flex items-center text-[1.5rem] md:text-[1.8rem]">
+                     {/* @ts-ignore */}
+                     <marquee scrollamount={Math.round(5 * scrollSpeedMultiplier)} className="w-full text-white font-bold flex items-center text-[1.5rem] md:text-[1.8rem]">
                          {favoritesWeather.map((item, i) => (
                              <span key={i} className="mx-8 inline-block" dangerouslySetInnerHTML={{ __html: item }} />
                          ))}
+                     {/* @ts-ignore */}
                      </marquee>
                 </div>
             )}
@@ -685,20 +749,20 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                         <Icon name="cast" className="text-xl text-white/80 group-hover:text-white" />
                     </button>
                 ) : (
-                    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex flex-col md:gap-4 gap-2 animate-in fade-in slide-in-from-right-4 duration-300 max-h-[80vh] overflow-y-auto pr-2">
                         
                         {/* Type Switcher (Video vs Photo) */}
-                        <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
+                        <div className="md:p-4 p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col md:gap-3 gap-2 items-center">
                             <div className="flex bg-black/40 rounded-lg p-1 w-full">
                                 <button
                                     onClick={() => updateAmbientSetting('modeType', 'video')}
-                                    className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${modeType === 'video' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
+                                    className={`flex-1 md:py-2 py-1.5 rounded-md text-xs md:text-sm font-bold transition-all ${modeType === 'video' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
                                 >
                                     Video
                                 </button>
                                 <button
                                     onClick={() => updateAmbientSetting('modeType', 'photo')}
-                                    className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${modeType === 'photo' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
+                                    className={`flex-1 md:py-2 py-1.5 rounded-md text-xs md:text-sm font-bold transition-all ${modeType === 'photo' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
                                 >
                                     Foto's
                                 </button>
@@ -707,68 +771,42 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
                         {/* Mode Switcher (Only visible in Video mode) */}
                         {modeType === 'video' && (
-                            <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
-                                 <div className="flex gap-2">
-                                    <button 
-                                        onClick={() => setMode('fireplace')}
-                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'fireplace' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                        title="Open Haard"
-                                    >
-                                        <Icon name="local_fire_department" className="text-2xl" />
-                                    </button>
-                                    <button 
-                                        onClick={() => setMode('aquarium')}
-                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'aquarium' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                        title="Aquarium"
-                                    >
-                                        <Icon name="water" className="text-2xl" />
-                                    </button>
-                                    <button 
-                                        onClick={() => setMode('clouds')}
-                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'clouds' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                        title="Wolken"
-                                    >
-                                        <Icon name="cloud" className="text-2xl" />
-                                    </button>
-                                    <button 
-                                        onClick={() => setMode('clouds2')}
-                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'clouds2' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                        title="Wolken 2"
-                                    >
-                                        <Icon name="cloud_queue" className="text-2xl" />
-                                    </button>
-                                    <button 
-                                        onClick={() => setMode('rain')}
-                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'rain' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                        title="Regen"
-                                    >
-                                        <Icon name="rainy" className="text-2xl" />
-                                    </button>
-                                    <button 
-                                        onClick={() => setMode('random')}
-                                        className={`p-2 rounded-lg transition-all border ${currentMode === 'random' ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                        title="Willekeurig (elke minuut)"
-                                    >
-                                        <Icon name="shuffle" className="text-2xl" />
-                                    </button>
+                            <div className="md:p-4 p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col md:gap-3 gap-2 items-center">
+                                 <div className="flex md:gap-2 gap-1 flex-wrap justify-center max-w-[200px] md:max-w-none">
+                                    {['fireplace', 'aquarium', 'clouds', 'clouds2', 'rain', 'random'].map(mode => (
+                                        <button 
+                                            key={mode}
+                                            onClick={() => setMode(mode as any)}
+                                            className={`p-1.5 md:p-2 rounded-lg transition-all border ${currentMode === mode ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
+                                            title={mode}
+                                        >
+                                            <Icon name={
+                                                mode === 'fireplace' ? "local_fire_department" :
+                                                mode === 'aquarium' ? "water" :
+                                                mode === 'clouds' ? "cloud" :
+                                                mode === 'clouds2' ? "cloud_queue" :
+                                                mode === 'rain' ? "rainy" : "shuffle"
+                                            } className="text-xl md:text-2xl" />
+                                        </button>
+                                    ))}
                                  </div>
                             </div>
                         )}
 
                         {/* Audio Controls - Only for Fireplace (Video Mode) */}
                         {(modeType === 'video' && effectiveMode === 'fireplace') && (
-                            <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 items-center">
+                            <div className="md:p-4 p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col md:gap-3 gap-2 items-center">
                                 <div className="flex items-center gap-2 mb-1">
                                     <button 
                                         onClick={() => setIsMuted(!isMuted)}
                                         className="flex items-center justify-center p-2 rounded-full hover:bg-white/10 transition-colors"
                                         title={isMuted ? "Unmute" : "Mute"}
                                     >
-                                        <Icon name={isMuted ? "volume_off" : "volume_up"} className="text-2xl" />
+                                        <Icon name={isMuted ? "volume_off" : "volume_up"} className="text-xl md:text-2xl" />
                                     </button>
                                     <span className="text-xs font-bold w-8 text-center">{Math.round(volume * 100)}%</span>
                                 </div>
-                                <div className="h-32 flex items-center justify-center py-2">
+                                <div className="h-24 md:h-32 flex items-center justify-center py-2">
                                     <input 
                                         type="range" 
                                         min="0" 
@@ -783,7 +821,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                                                 if (newVol > 0 && isMuted) setIsMuted(false);
                                             }
                                         }}
-                                        className="w-32 h-2 appearance-none bg-white/20 rounded-full outline-none cursor-pointer accent-accent-primary -rotate-90"
+                                        className="w-24 md:w-32 h-2 appearance-none bg-white/20 rounded-full outline-none cursor-pointer accent-accent-primary -rotate-90"
                                         style={{ 
                                             WebkitAppearance: 'none',
                                             MozAppearance: 'none'
@@ -794,48 +832,61 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                         )}
 
                         {/* Display Settings */}
-                        <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-3 w-full min-w-[200px]">
-                            <h3 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-1 text-center">Weergave</h3>
+                        <div className="md:p-4 p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col md:gap-3 gap-1 w-full min-w-[160px] md:min-w-[200px]">
+                            <h3 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wider mb-1 text-center">Weergave</h3>
                             
                             <button 
+                                onClick={() => updateAmbientSetting('showNews', !showNews)}
+                                className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Icon name="newspaper" className="text-lg md:text-xl" />
+                                    <span className="text-xs md:text-sm">Nieuws</span>
+                                </div>
+                                <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showNews ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showNews ? 'left-4 md:left-6' : 'left-1'}`} />
+                                </div>
+                            </button>
+
+                            <button 
                                 onClick={() => updateAmbientSetting('showPopup', !showPopup)}
-                                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
                                 title="Toon weer popup (verborgen op mobiel)"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Icon name="widgets" className="text-xl" />
-                                    <span className="text-sm">Weer Popup</span>
+                                    <Icon name="widgets" className="text-lg md:text-xl" />
+                                    <span className="text-xs md:text-sm">Popup</span>
                                 </div>
-                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showPopup ? 'bg-accent-primary' : 'bg-white/20'}`}>
-                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showPopup ? 'left-6' : 'left-1'}`} />
+                                <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showPopup ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showPopup ? 'left-4 md:left-6' : 'left-1'}`} />
                                 </div>
                             </button>
 
                             <button 
                                 onClick={() => updateAmbientSetting('showClock', !showClock)}
-                                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
                                 title="Toon analoge klok (verborgen op mobiel)"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Icon name="schedule" className="text-xl" />
-                                    <span className="text-sm">Klok</span>
+                                    <Icon name="schedule" className="text-lg md:text-xl" />
+                                    <span className="text-xs md:text-sm">Klok</span>
                                 </div>
-                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showClock ? 'bg-accent-primary' : 'bg-white/20'}`}>
-                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showClock ? 'left-6' : 'left-1'}`} />
+                                <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showClock ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showClock ? 'left-4 md:left-6' : 'left-1'}`} />
                                 </div>
                             </button>
 
                             <button 
                                 onClick={() => updateAmbientSetting('showBottomBar', !showBottomBar)}
-                                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
                                 title="Toon tijd & weer balk (verborgen op mobiel)"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Icon name="dock" className="text-xl" />
-                                    <span className="text-sm">Onderbalk</span>
+                                    <Icon name="dock" className="text-lg md:text-xl" />
+                                    <span className="text-xs md:text-sm">Balk</span>
                                 </div>
-                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showBottomBar ? 'bg-accent-primary' : 'bg-white/20'}`}>
-                                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showBottomBar ? 'left-6' : 'left-1'}`} />
+                                <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showBottomBar ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                    <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showBottomBar ? 'left-4 md:left-6' : 'left-1'}`} />
                                 </div>
                             </button>
                         </div>
@@ -843,15 +894,77 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                         {/* Chromecast Button */}
                         <button 
                             onClick={handleCast}
-                            className={`p-4 rounded-full bg-black/60 hover:bg-white/10 backdrop-blur-md transition-all text-white border border-white/20 shadow-xl flex items-center justify-center ${!castAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="md:p-4 p-3 rounded-full bg-black/60 hover:bg-white/10 backdrop-blur-md transition-all text-white border border-white/20 shadow-xl flex items-center justify-center"
                             title="Cast naar TV"
-                            disabled={!castAvailable}
                         >
-                            <Icon name="cast" className="text-3xl" />
+                            <Icon name="cast" className="text-2xl md:text-3xl" />
                         </button>
                     </div>
                 )}
             </div>
+            
+            {/* Chromecast Modal */}
+            {showCastModal && (
+                <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-slate-900 border border-white/20 rounded-3xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center gap-6">
+                        <div className="w-20 h-20 rounded-full bg-accent-primary/20 flex items-center justify-center">
+                            <Icon name="cast" className="text-4xl text-accent-primary" />
+                        </div>
+                        
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold mb-2">Chromecast</h2>
+                            <p className="text-white/60 text-sm">Scan naar beschikbare apparaten in je netwerk.</p>
+                        </div>
+
+                        <div className="w-full space-y-4">
+                            <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-white/40 uppercase tracking-wider">Status</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${currentCastState === 'NO_DEVICES_AVAILABLE' ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
+                                        <span className="text-sm font-medium">
+                                            {currentCastState === 'NO_DEVICES_AVAILABLE' ? 'Geen apparaten gevonden' : 
+                                             currentCastState === 'NOT_CONNECTED' ? 'Apparaten beschikbaar' : 
+                                             currentCastState === 'CONNECTING' ? 'Verbinden...' : 
+                                             currentCastState === 'CONNECTED' ? 'Verbonden' : 'Zoeken...'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-white/40 leading-relaxed">
+                                    {currentCastState === 'NO_DEVICES_AVAILABLE' 
+                                        ? 'Zorg dat je Chromecast aan staat en op hetzelfde Wi-Fi netwerk zit.' 
+                                        : 'Klik op "Verbinden" om een apparaat te selecteren.'}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={reInitCast}
+                                    className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 transition-all font-bold flex items-center justify-center gap-2 border border-white/10"
+                                >
+                                    <Icon name="refresh" className="text-xl" />
+                                    <span>Vernieuwen</span>
+                                </button>
+                                
+                                <button 
+                                    onClick={triggerNativeCast}
+                                    className="flex-[2] py-3 px-4 rounded-xl bg-accent-primary hover:bg-accent-primary/80 transition-all font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-accent-primary/20"
+                                >
+                                    <Icon name="search" className="text-xl" />
+                                    <span>Verbinden</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => setShowCastModal(false)}
+                            className="text-white/40 hover:text-white transition-colors text-sm font-medium"
+                        >
+                            Sluiten
+                        </button>
+                    </div>
+                </div>
+            )}
             
             {/* Floating Back Button (Always visible and prominent) */}
             <button 

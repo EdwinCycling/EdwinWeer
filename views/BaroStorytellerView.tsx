@@ -321,7 +321,7 @@ export const BaroStorytellerView: React.FC<BaroStorytellerViewProps> = ({ onNavi
                 </div>
 
                 {/* Sticky Action Bar */}
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-bg-card/90 backdrop-blur-xl border border-border-color shadow-2xl rounded-full p-2 flex gap-2 z-50">
+                <div className="fixed bottom-[68px] md:bottom-24 left-1/2 -translate-x-1/2 bg-bg-card/90 backdrop-blur-xl border border-border-color shadow-2xl rounded-full p-2 flex gap-2 z-50">
                     <button 
                         onClick={handleDownloadPDF}
                         className="p-3 hover:bg-bg-subtle rounded-full transition-colors text-text-main flex items-center gap-2 pr-4"

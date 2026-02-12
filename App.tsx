@@ -58,7 +58,7 @@ import ReloadPrompt from './components/ReloadPrompt';
 import { useScrollLock } from './hooks/useScrollLock';
 import { LoginToast } from './components/LoginToast';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { checkLimit, getUsage, API_LIMITS } from './services/usageService';
+import { checkLimit, getUsage, API_LIMITS, loadRemoteUsage, checkAndResetDailyCredits } from './services/usageService';
 import { GlobalBanner } from './components/GlobalBanner';
 import { useGeoBlock } from './hooks/useGeoBlock';
 import { AccessDenied } from './components/AccessDenied';
@@ -181,10 +181,22 @@ const App: React.FC = () => {
 
   useScrollLock(menuOpen || extraMenuOpen || baroMenuOpen || modal !== null);
 
-  const verifyLimit = () => {
+  const [isRefreshingLimit, setIsRefreshingLimit] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const verifyLimit = async (forceRefresh: boolean = false) => {
+      setIsRefreshingLimit(true);
       try {
+          if (user) {
+              await loadRemoteUsage(user.uid);
+              await checkAndResetDailyCredits(getUsage(), user.uid);
+          }
           checkLimit();
           setLimitReached(null);
+          
+          if (forceRefresh) {
+              setRefreshKey(prev => prev + 1);
+          }
       } catch (e) {
           // Event listener will handle setting limitReached
           // But we can also set it manually here if needed
@@ -194,6 +206,8 @@ const App: React.FC = () => {
           if (stats.dayStart === new Date().toISOString().split('T')[0] && stats.dayCount >= limits.DAY) {
                setLimitReached({ scope: 'day', limit: limits.DAY });
           }
+      } finally {
+          setIsRefreshingLimit(false);
       }
   };
 
@@ -464,7 +478,7 @@ const App: React.FC = () => {
     <RadioProvider>
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
         <GlobalBanner />
-        <div className="max-w-5xl mx-auto px-0 lg:px-8 pb-32 w-full">
+        <div className="max-w-5xl mx-auto px-0 lg:px-8 pb-32 w-full" key={refreshKey}>
             <ErrorBoundary settings={settings} onNavigate={navigate}>
                 <Suspense fallback={<LoadingSpinner />}>
                     {renderView()}
@@ -499,10 +513,11 @@ const App: React.FC = () => {
                         {t('nav.pricing')}
                     </button>
                     <button
-                        onClick={() => verifyLimit()}
-                        className="text-xs bg-bg-card/40 hover:bg-bg-card/60 rounded px-2 py-1 font-bold transition-colors ml-2 border border-border-color/20"
+                        onClick={() => verifyLimit(true)}
+                        disabled={isRefreshingLimit}
+                        className={`text-xs bg-bg-card/40 hover:bg-bg-card/60 rounded px-2 py-1 font-bold transition-colors ml-2 border border-border-color/20 ${isRefreshingLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        <Icon name="refresh" className="text-sm" />
+                        <Icon name="refresh" className={`text-sm ${isRefreshingLimit ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
             </div>

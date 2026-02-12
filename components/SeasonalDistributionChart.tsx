@@ -117,12 +117,13 @@ export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat
                         />
                         <Legend 
                             wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }} 
+                            // @ts-ignore
                             payload={RANGES.map(range => ({
                                 value: range.label,
                                 type: 'rect',
                                 id: range.key,
                                 color: range.color
-                            }))}
+                            })) as any}
                         />
                         
                         {RANGES.map((range) => (

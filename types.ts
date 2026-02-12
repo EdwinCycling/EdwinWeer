@@ -260,6 +260,7 @@ export interface AppSettings {
         showPopup: boolean;
         showClock: boolean;
         showBottomBar: boolean;
+        showNews?: boolean;
         modeType?: 'video' | 'photo';
     };
 }
