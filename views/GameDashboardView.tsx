@@ -274,7 +274,13 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
         return () => unsub();
     }, []);
 
+    // Find open round (soonest)
+    const openRound = rounds
+         .filter(r => r.status === 'open')
+         .sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime())[0];
+
     // Helper to manually trigger schedule fill (for Admin)
+
     const handleFillSchedule = async () => {
         if (!user || !user.email?.includes('edwin')) return; // Simple safety check
         setIsSavingUsername(true); // Re-use loading state
