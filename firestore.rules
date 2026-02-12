@@ -20,7 +20,7 @@ service cloud.firestore {
 
     // Gebruikers collectie
     match /users/{userId} {
-      // Lezen mag als het je eigen profiel is of als je admin bent
+      // Lezen mag alleen als het je eigen profiel is (PRIVACY: e-mailadressen afschermen)
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       
       // Belangrijk: Gebruiker mag NIET zijn eigen rol of credits aanpassen!
@@ -31,16 +31,21 @@ service cloud.firestore {
           // 1. Rol mag niet wijzigen
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) &&
           
-          // 2. Credits mogen NIET wijzigen (tenzij omlaag, maar dat blokkeren we hier ook voor de zekerheid - laat backend dit doen)
-          // We checken of de nieuwe waarde KLEINER OF GELIJK is aan de oude waarde voor gevoelige velden.
-          // Dit staat toe dat de client credits 'consumeert' (verlaagt), maar niet ophoogt.
+          // 2. Credits mogen NIET wijzigen (tenzij omlaag via backend)
           (
-            (request.resource.data.usage.get('weatherCredits', 0) <= resource.data.usage.get('weatherCredits', 0)) &&
-            (request.resource.data.usage.get('baroCredits', 0) <= resource.data.usage.get('baroCredits', 0))
+            (request.resource.data.get('usage', {}).get('weatherCredits', 0) <= resource.data.get('usage', {}).get('weatherCredits', 0)) &&
+            (request.resource.data.get('usage', {}).get('baroCredits', 0) <= resource.data.get('usage', {}).get('baroCredits', 0))
           ) &&
           
-          // 3. Andere gevoelige velden
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isBanned', 'subscription'])
+          // 3. Andere gevoelige velden (waaronder game-statistieken)
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isBanned', 'subscription', 'gameStats']) &&
+
+          // 4. Username validation if changed
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['username']) || 
+            (request.resource.data.username.size() >= 5 && 
+             request.resource.data.username.size() <= 25 && 
+             request.resource.data.username.matches('^[a-zA-Z0-9 ]+$'))
+          )
         ))
       );
       
@@ -50,6 +55,36 @@ service cloud.firestore {
         allow create: if isSignedIn() && request.auth.uid == userId;
         allow delete: if isOwner(userId) || isAdmin(); // Sta verwijderen toe voor opschoning
         allow update: if false;
+      }
+    }
+
+    // --- Usernames Collectie (Voor uniekheidscheck zonder privacy-lek) ---
+    match /usernames/{username} {
+      // Iedereen mag checken of een naam bestaat
+      allow read: if isSignedIn();
+      // Je mag een naam claimen als je je eigen UID erin zet
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      // Je mag je naam vrijgeven (verwijderen) als hij van jou is
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // --- Versla Baro Gamificatie --- 
+ 
+    // Game Rounds: Iedereen die ingelogd is kan rondes bekijken 
+    match /game_rounds/{roundId} { 
+      allow read: if isSignedIn(); 
+      allow write: if isAdmin(); // Alleen admin/backend kan rondes maken/sluiten 
+
+      // Game Bets: Gebruikers kunnen hun eigen inzetten beheren binnen een ronde
+      match /bets/{userId} {
+        // Je mag alleen je eigen bets zien (check op doc ID of userId veld voor collectionGroup queries)
+        allow read: if isSignedIn() && (request.auth.uid == userId || resource.data.userId == request.auth.uid);
+        // Je mag een bet aanmaken en bijwerken als het voor jezelf is (pad én data moeten matchen)
+        allow create, update: if isSignedIn() && 
+                               request.auth.uid == userId && 
+                               request.resource.data.userId == request.auth.uid;
+        // Deletes blokkeren we
+        allow delete: if false;
       }
     }
 
@@ -72,6 +107,17 @@ service cloud.firestore {
       allow write: if false; // Alleen via backend/Stripe, nooit via de app
     }
     
+    // Leaderboards (Openbaar voor ingelogde gebruikers, alleen lezen)
+    match /leaderboards/{boardId}/entries/{entryId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Alleen via backend (Game Master)
+    }
+
+    // Specifieke regel voor collectionGroup queries op 'bets'
+    match /{path=**}/bets/{betId} {
+      allow read: if isSignedIn() && (request.auth.uid == betId || resource.data.userId == request.auth.uid);
+    }
+
     // Fallback: ontzeg alle andere toegang
     match /{document=**} {
       allow read, write: if false;

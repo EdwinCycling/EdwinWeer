@@ -366,8 +366,44 @@ export enum ViewState {
   BARO_TIME_MACHINE = 'BARO_TIME_MACHINE',
   BARO_STORYTELLER = 'BARO_STORYTELLER',
   BARO_RIT_ADVIES = 'BARO_RIT_ADVIES',
-  SONG_WRITER = 'SONG_WRITER',
-  BIG_BEN = 'BIG_BEN'
+    SONG_WRITER = 'SONG_WRITER',
+    BIG_BEN = 'BIG_BEN',
+    GAME_DASHBOARD = 'GAME_DASHBOARD'
+}
+
+export interface GameRound {
+    id: string;
+    status: 'open' | 'locked' | 'completed';
+    city: Location;
+    targetDate: string; // ISO date of Sunday
+    baroPrediction?: {
+        max: number;
+        min: number;
+        timestamp?: number; // When Baro made the prediction
+    };
+    createdAt?: any; // Firestore Timestamp
+    actualResult?: {
+        max: number;
+        min: number;
+    };
+    resultsProcessed: boolean;
+}
+
+export interface GameBet {
+    userId: string;
+    userName: string;
+    prediction: {
+        max: number;
+        min: number;
+    };
+    timestamp: number;
+    score?: number;
+}
+
+export interface GameStats {
+    wins: number;
+    top10: number;
+    totalPoints: number;
 }
 
 export interface CustomEvent {

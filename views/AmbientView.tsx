@@ -758,13 +758,13 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                                     onClick={() => updateAmbientSetting('modeType', 'video')}
                                     className={`flex-1 md:py-2 py-1.5 rounded-md text-xs md:text-sm font-bold transition-all ${modeType === 'video' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
                                 >
-                                    Video
+                                    {getTranslation('ambient.settings.video', settings.language)}
                                 </button>
                                 <button
                                     onClick={() => updateAmbientSetting('modeType', 'photo')}
                                     className={`flex-1 md:py-2 py-1.5 rounded-md text-xs md:text-sm font-bold transition-all ${modeType === 'photo' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white'}`}
                                 >
-                                    Foto's
+                                    {getTranslation('ambient.settings.photos', settings.language)}
                                 </button>
                             </div>
                         </div>
@@ -833,7 +833,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
                         {/* Display Settings */}
                         <div className="md:p-4 p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col md:gap-3 gap-1 w-full min-w-[160px] md:min-w-[200px]">
-                            <h3 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wider mb-1 text-center">Weergave</h3>
+                            <h3 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wider mb-1 text-center">{getTranslation('ambient.settings.display', settings.language)}</h3>
                             
                             <button 
                                 onClick={() => updateAmbientSetting('showNews', !showNews)}
@@ -841,7 +841,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="newspaper" className="text-lg md:text-xl" />
-                                    <span className="text-xs md:text-sm">Nieuws</span>
+                                    <span className="text-xs md:text-sm">{getTranslation('ambient.settings.news', settings.language)}</span>
                                 </div>
                                 <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showNews ? 'bg-accent-primary' : 'bg-white/20'}`}>
                                     <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showNews ? 'left-4 md:left-6' : 'left-1'}`} />
@@ -855,7 +855,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="widgets" className="text-lg md:text-xl" />
-                                    <span className="text-xs md:text-sm">Popup</span>
+                                    <span className="text-xs md:text-sm">{getTranslation('ambient.settings.popup', settings.language)}</span>
                                 </div>
                                 <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showPopup ? 'bg-accent-primary' : 'bg-white/20'}`}>
                                     <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showPopup ? 'left-4 md:left-6' : 'left-1'}`} />
@@ -869,7 +869,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="schedule" className="text-lg md:text-xl" />
-                                    <span className="text-xs md:text-sm">Klok</span>
+                                    <span className="text-xs md:text-sm">{getTranslation('ambient.settings.clock', settings.language)}</span>
                                 </div>
                                 <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showClock ? 'bg-accent-primary' : 'bg-white/20'}`}>
                                     <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showClock ? 'left-4 md:left-6' : 'left-1'}`} />
@@ -883,7 +883,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="dock" className="text-lg md:text-xl" />
-                                    <span className="text-xs md:text-sm">Balk</span>
+                                    <span className="text-xs md:text-sm">{getTranslation('ambient.settings.bar', settings.language)}</span>
                                 </div>
                                 <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showBottomBar ? 'bg-accent-primary' : 'bg-white/20'}`}>
                                     <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showBottomBar ? 'left-4 md:left-6' : 'left-1'}`} />
@@ -895,7 +895,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                         <button 
                             onClick={handleCast}
                             className="md:p-4 p-3 rounded-full bg-black/60 hover:bg-white/10 backdrop-blur-md transition-all text-white border border-white/20 shadow-xl flex items-center justify-center"
-                            title="Cast naar TV"
+                            title={getTranslation('ambient.chromecast.title', settings.language)}
                         >
                             <Icon name="cast" className="text-2xl md:text-3xl" />
                         </button>
@@ -911,29 +911,38 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             <Icon name="cast" className="text-4xl text-accent-primary" />
                         </div>
                         
-                        <div className="text-center">
-                            <h2 className="text-2xl font-bold mb-2">Chromecast</h2>
-                            <p className="text-white/60 text-sm">Scan naar beschikbare apparaten in je netwerk.</p>
+                        <div className="text-center w-full">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <h2 className="text-2xl font-bold">Chromecast</h2>
+                                <div className="group relative">
+                                    <Icon name="info" className="text-white/40 hover:text-white cursor-help transition-colors" />
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-64 p-3 bg-slate-800 border border-white/20 rounded-xl shadow-2xl text-xs text-white opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[4000] text-center">
+                                        {getTranslation('ambient.chromecast.ios_warning', settings.language)}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800" />
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-white/60 text-sm">{getTranslation('ambient.chromecast.scan_text', settings.language)}</p>
                         </div>
 
                         <div className="w-full space-y-4">
                             <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-bold text-white/40 uppercase tracking-wider">Status</span>
+                                    <span className="text-xs font-bold text-white/40 uppercase tracking-wider">{getTranslation('ambient.chromecast.status', settings.language)}</span>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${currentCastState === 'NO_DEVICES_AVAILABLE' ? 'bg-red-500' : 'bg-green-500'} animate-pulse`} />
                                         <span className="text-sm font-medium">
-                                            {currentCastState === 'NO_DEVICES_AVAILABLE' ? 'Geen apparaten gevonden' : 
-                                             currentCastState === 'NOT_CONNECTED' ? 'Apparaten beschikbaar' : 
-                                             currentCastState === 'CONNECTING' ? 'Verbinden...' : 
-                                             currentCastState === 'CONNECTED' ? 'Verbonden' : 'Zoeken...'}
+                                            {currentCastState === 'NO_DEVICES_AVAILABLE' ? getTranslation('ambient.chromecast.no_devices', settings.language) : 
+                                             currentCastState === 'NOT_CONNECTED' ? getTranslation('ambient.chromecast.devices_available', settings.language) : 
+                                             currentCastState === 'CONNECTING' ? getTranslation('ambient.chromecast.connecting', settings.language) : 
+                                             currentCastState === 'CONNECTED' ? getTranslation('ambient.chromecast.connected', settings.language) : getTranslation('ambient.chromecast.searching', settings.language)}
                                         </span>
                                     </div>
                                 </div>
                                 <p className="text-xs text-white/40 leading-relaxed">
                                     {currentCastState === 'NO_DEVICES_AVAILABLE' 
-                                        ? 'Zorg dat je Chromecast aan staat en op hetzelfde Wi-Fi netwerk zit.' 
-                                        : 'Klik op "Verbinden" om een apparaat te selecteren.'}
+                                        ? getTranslation('ambient.chromecast.no_devices_hint', settings.language) 
+                                        : getTranslation('ambient.chromecast.connect_hint', settings.language)}
                                 </p>
                             </div>
 
@@ -943,7 +952,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                                     className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 transition-all font-bold flex items-center justify-center gap-2 border border-white/10"
                                 >
                                     <Icon name="refresh" className="text-xl" />
-                                    <span>Vernieuwen</span>
+                                    <span>{getTranslation('ambient.chromecast.refresh', settings.language)}</span>
                                 </button>
                                 
                                 <button 
@@ -951,7 +960,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                                     className="flex-[2] py-3 px-4 rounded-xl bg-accent-primary hover:bg-accent-primary/80 transition-all font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-accent-primary/20"
                                 >
                                     <Icon name="search" className="text-xl" />
-                                    <span>Verbinden</span>
+                                    <span>{getTranslation('ambient.chromecast.connect', settings.language)}</span>
                                 </button>
                             </div>
                         </div>
@@ -960,7 +969,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             onClick={() => setShowCastModal(false)}
                             className="text-white/40 hover:text-white transition-colors text-sm font-medium"
                         >
-                            Sluiten
+                            {getTranslation('ambient.chromecast.close', settings.language)}
                         </button>
                     </div>
                 </div>
@@ -972,7 +981,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                 className="absolute top-36 left-8 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 shadow-xl flex items-center gap-2 transition-all hover:scale-105"
             >
                 <Icon name="arrow_back" className="text-2xl" />
-                <span className="font-bold">Terug</span>
+                <span className="font-bold">{getTranslation('common.back', settings.language)}</span>
             </button>
 
             {/* Credit Icon removed (duplicate) */}

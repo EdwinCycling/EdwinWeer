@@ -43,8 +43,10 @@ const GlobeView = React.lazy(() => import('./views/GlobeView').then(module => ({
 import { BigBenView } from './views/BigBenView';
 import { RadioProvider } from './contexts/RadioContext';
 import { FloatingRadioPlayer } from './components/FloatingRadioPlayer';
+import { WinnerConfetti } from './components/WinnerConfetti';
 import { LandingPageV2 } from './views/LandingPageV2';
 const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').then(module => ({ default: module.BaroRitAdviesView })));
+const GameDashboardView = React.lazy(() => import('./views/GameDashboardView').then(module => ({ default: module.GameDashboardView })));
 const AmbientView = React.lazy(() => import('./views/AmbientView').then(module => ({ default: module.AmbientView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
@@ -467,6 +469,8 @@ const App: React.FC = () => {
         return <FAQView onNavigate={navigate} settings={settings} />;
       case ViewState.BIG_BEN:
         return <BigBenView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.GAME_DASHBOARD:
+        return <GameDashboardView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       default:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }
@@ -485,6 +489,36 @@ const App: React.FC = () => {
                 </Suspense>
             </ErrorBoundary>
         </div>
+
+        {/* Game FAB */}
+        {[
+            ViewState.CURRENT, 
+            ViewState.FORECAST, 
+            ViewState.MAP, 
+            ViewState.ENSEMBLE, 
+            ViewState.RECORDS, 
+            ViewState.HISTORICAL, 
+            ViewState.HOURLY_DETAIL, 
+            ViewState.THIS_DAY, 
+            ViewState.YOUR_DAY,
+            ViewState.IMMERSIVE_FORECAST,
+            ViewState.BARO_WEERMAN,
+            ViewState.BARO_STORYTELLER,
+            ViewState.ACTIVITY_PLANNER,
+            ViewState.CYCLING,
+            ViewState.BARO_RIT_ADVIES,
+            ViewState.WEATHER_FINDER
+        ].includes(currentView) && (
+            <button
+                onClick={() => navigate(ViewState.GAME_DASHBOARD)}
+                className="fixed bottom-[130px] md:bottom-40 right-4 z-[100] size-12 md:size-14 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform border border-white/20"
+                aria-label="Play Beat Baro"
+            >
+                <span className="text-2xl">🥊</span>
+            </button>
+        )}
+
+        <WinnerConfetti settings={settings} />
 
         <FloatingRadioPlayer visible={currentView !== ViewState.BIG_BEN} />
 

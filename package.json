@@ -1,7 +1,7 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.260212.2",
+  "version": "0.260212.3",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
@@ -37,6 +37,7 @@
     "openmeteo": "^1.2.3",
     "react": "^19.2.1",
     "react-chartjs-2": "^5.3.1",
+    "react-confetti": "^6.4.0",
     "react-dom": "^19.2.1",
     "react-globe.gl": "^2.37.0",
     "react-leaflet": "^5.0.0",
