@@ -68,7 +68,7 @@ export const handler = async (event, context) => {
                 </body>
             </html>
         `;
-        sendSmtpEmail.sender = { "name": "Baro", "email": "no-reply@askbaro.com" };
+        sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "no-reply@askbaro.com" };
         sendSmtpEmail.to = [{ "email": email, "name": name || "Baro User" }];
 
         await apiInstance.sendTransacEmail(sendSmtpEmail);

@@ -252,7 +252,7 @@ export const handler = async (event, context) => {
 
                 // --- PROCEED TO SEND ---
                 
-                // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+                // RATE LIMITING: Enforce max 5 calls per minute to AI (12s interval)
                 const delay = 12000; 
                 await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -330,7 +330,7 @@ export const handler = async (event, context) => {
                     const sendSmtpEmail = new Brevo.SendSmtpEmail();
                     sendSmtpEmail.subject = `TEST PUSH: ${pushContent.title}`;
                     sendSmtpEmail.htmlContent = `<html><body>${pushContent.body.replace(/\n/g, '<br>')}</body></html>`;
-                    sendSmtpEmail.sender = { "name": "Baro Test", "email": "no-reply@askbaro.com" };
+                    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "no-reply@askbaro.com" };
                     sendSmtpEmail.to = [{ "email": event.testEmail }];
                     await apiInstance.sendTransacEmail(sendSmtpEmail);
                     console.log(`Sent Test Push Email to ${event.testEmail}`);
@@ -396,5 +396,5 @@ export const handler = async (event, context) => {
 
 // Schedule: Run every hour (configured in netlify.toml)
 export const config = {
-    schedule: "@hourly"
+    schedule: "10 * * * *"
 };

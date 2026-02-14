@@ -262,7 +262,7 @@ export const handler: Handler = async (event) => {
         };
 
     } catch (error: any) {
-        console.error("Gemini Error:", error);
+        console.error("AI Error:", error);
         const statusCode = error.status || 500;
         return {
             statusCode,

@@ -22,7 +22,10 @@ if (brevoApi.setApiKey) {
     brevoApi.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
 }
 
-// Helper: Send Telegram
+// Schedule: Run daily at 07:40
+export const config = {
+    schedule: "40 7 * * *"
+};
 async function sendTelegramNotification(chatId: string, text: string) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) return;
@@ -143,7 +146,7 @@ async function getWeather(lat: number, lon: number) {
     }
 }
 
-// Helper: Generate Text with Gemini
+// Helper: Generate Text with AI
 async function generateWeatherText(raceName: string, location: string, weatherData: any, additionalInfo: any = {}, language: string = 'nl') {
     try {
         const langMap: Record<string, string> = {
@@ -180,8 +183,8 @@ async function generateWeatherText(raceName: string, location: string, weatherDa
     }
 }
 
-// Helper: Get Location from Gemini for long races
-async function getRaceLocationFromGemini(raceName: string, date: string, info: string = "", country: string = "") {
+// Helper: Get Location from AI for long races
+async function getRaceLocationFromAI(raceName: string, date: string, info: string = "", country: string = "") {
     try {
         const prompt = `
             Je bent een wielerexpert. Baseer je op:
@@ -199,7 +202,7 @@ async function getRaceLocationFromGemini(raceName: string, date: string, info: s
         const cleanText = text.trim().replace(/[*_#]/g, ''); // Remove formatting
         return cleanText.toLowerCase().includes("unknown") ? null : cleanText;
     } catch (e) {
-        console.error("Error getting location from Gemini:", e);
+        console.error("Error getting location from AI:", e);
         return null;
     }
 }
@@ -315,7 +318,7 @@ export const handler = async (event: any, context: any) => {
         // 3. Prepare Race Data (Generic)
         const raceReports = [];
         for (const race of races) {
-            // Rate limit between races to prevent Gemini overload
+            // Rate limit between races to prevent AI overload
             await new Promise(resolve => setTimeout(resolve, 5000));
 
             const props = (race as any).properties;
@@ -352,7 +355,7 @@ export const handler = async (event: any, context: any) => {
 
             // Fallback: Als locatie niet in het weer-veld staat, of als het een lange rittenkoers is, gebruik AI
             if (!locationName || durationDays > 7) {
-                const aiLoc = await getRaceLocationFromGemini(nameTitle, today, info, country);
+                const aiLoc = await getRaceLocationFromAI(nameTitle, today, info, country);
                 if (aiLoc) locationName = aiLoc;
             }
             

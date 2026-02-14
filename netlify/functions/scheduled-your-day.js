@@ -121,7 +121,7 @@ async function sendEmail(toEmail, toName, subject, htmlContent, creditsInfo, lan
     if (!process.env.BREVO_API_KEY) return false;
 
     const title = language === 'nl' ? 'Weerbericht Jouw Dag' : 'Weather Your Day';
-    const footer = language === 'nl' ? 'Verzonden door Baro' : 'Sent by Baro';
+    const footer = language === 'nl' ? 'Verzonden door Baro Weerman' : 'Sent by Baro Weerman';
 
     const sendSmtpEmail = new Brevo.SendSmtpEmail();
     sendSmtpEmail.subject = subject;
@@ -140,7 +140,7 @@ async function sendEmail(toEmail, toName, subject, htmlContent, creditsInfo, lan
             </body>
         </html>
     `;
-    sendSmtpEmail.sender = { "name": "Baro", "email": "no-reply@askbaro.com" };
+    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "no-reply@askbaro.com" };
     sendSmtpEmail.to = [{ "email": toEmail, "name": toName }];
 
     try {
@@ -260,7 +260,7 @@ export const handler = async (event, context) => {
                     continue;
                 }
 
-                // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+                // RATE LIMITING: Enforce max 5 calls per minute to AI (12s interval)
                 const delay = 12000;
                 await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -351,4 +351,9 @@ export const handler = async (event, context) => {
         console.error(e);
         return { statusCode: 500, body: e.message };
     }
+};
+
+// Schedule: Run hourly at minute 30
+export const config = {
+    schedule: "30 * * * *"
 };

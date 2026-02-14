@@ -374,7 +374,7 @@ export const handler = async (event) => {
       body: JSON.stringify({ text })
     };
   } catch (error) {
-    console.error('Gemini Error:', error);
+    console.error('AI Error:', error);
     const statusCode = error.status || 500;
     const errorMessage = error.message || 'Failed to generate report';
     

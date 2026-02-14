@@ -163,7 +163,7 @@ async function sendEmail(toEmail, toName, subject, htmlContent) {
             </body>
         </html>
     `;
-    sendSmtpEmail.sender = { "name": "Baro", "email": "no-reply@askbaro.com" }; // Should be a verified sender in Brevo
+    sendSmtpEmail.sender = { "name": "Baro Weerman", "email": "no-reply@askbaro.com" }; // Should be a verified sender in Brevo
     sendSmtpEmail.to = [{ "email": toEmail, "name": toName }];
 
     try {
@@ -343,7 +343,7 @@ export const handler = async (event, context) => {
 
                 // --- PROCEED TO SEND ---
                 
-                // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+                // RATE LIMITING: Enforce max 5 calls per minute to AI (12s interval)
                 const delay = 12000; 
                 await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -599,5 +599,5 @@ ${activityScores.map(s => `- ${s.activity}: ${s.score}/10 (${s.reason})`).join('
 
 // Schedule: Run every hour
 export const config = {
-    schedule: "0 7,12,17 * * *"
+    schedule: "5 * * * *"
 };

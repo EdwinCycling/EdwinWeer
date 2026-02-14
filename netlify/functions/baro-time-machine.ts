@@ -394,7 +394,7 @@ export const handler = async (event: any, context: any) => {
             body: JSON.stringify(json)
         };
     } catch (error: any) {
-        console.error("Gemini/AI Error:", error);
+        console.error("AI Error:", error);
         
         // Log stack trace for debugging
         if (error.stack) {

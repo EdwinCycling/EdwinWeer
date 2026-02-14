@@ -381,5 +381,5 @@ export const handler = async (event, context) => {
 };
 
 export const config = {
-    schedule: "@hourly"
+    schedule: "50 * * * *"
 };

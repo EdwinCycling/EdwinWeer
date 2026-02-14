@@ -54,10 +54,10 @@ export const handler = async (event: any, context: any) => {
     try {
         const databaseId = process.env.NOTION_DATABASE_ID;
         const apiKey = process.env.NOTION_API_KEY;
-        const geminiKey = process.env.GEMINI_API_KEY;
+        const cerebrasKey = process.env.CEREBRAS_API_KEY;
 
         if (!databaseId || !apiKey) throw new Error("Missing Notion Environment Variables");
-        if (!geminiKey) log("WARNING: Missing GEMINI_API_KEY, AI report will be skipped");
+        if (!cerebrasKey) log("WARNING: Missing AI API KEY (Cerebras), AI report will be skipped");
 
         const today = new Date().toISOString().split('T')[0];
         log(`Querying for date: ${today}`);
@@ -139,7 +139,7 @@ export const handler = async (event: any, context: any) => {
 
             log(`Processing: ${cleanTitle} in ${location} (${country})`);
 
-            // 5. Gemini AI aanroep
+            // 5. AI aanroep
             let aiReport = "Baro Rapportage overgeslagen (geen sleutel of fout)";
             try {
                 const prompt = `

@@ -615,7 +615,7 @@ export const handler = async (event, context) => {
                 continue;
             }
 
-            // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
+            // RATE LIMITING: Enforce max 5 calls per minute to AI (12s interval)
             await new Promise(resolve => setTimeout(resolve, 12000));
 
             // Generate Content
@@ -755,5 +755,5 @@ ${safeAiText}
 };
 
 export const config = {
-    schedule: "@hourly"
+    schedule: "20 * * * *"
 };

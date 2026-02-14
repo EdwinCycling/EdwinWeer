@@ -214,6 +214,17 @@ export const convertPressure = (pressureHpa: number | null | undefined, unit: Pr
 
 export const getTempLabel = (unit: TempUnit) => unit === TempUnit.FAHRENHEIT ? '°F' : '°C';
 
+export const getWindUnitLabel = (unit: WindUnit) => {
+    switch (unit) {
+        case WindUnit.BFT: return 'Bft';
+        case WindUnit.MS: return 'm/s';
+        case WindUnit.MPH: return 'mph';
+        case WindUnit.KNOTS: return 'kn';
+        case WindUnit.KMH:
+        default: return 'km/h';
+    }
+};
+
 // --- EXISTING MAPPERS ---
 
 export const mapWmoCodeToIcon = (code: number | null | undefined, isNight = false): string => {
