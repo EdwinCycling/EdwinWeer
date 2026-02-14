@@ -535,7 +535,6 @@ const App: React.FC = () => {
             ViewState.CYCLING,
             ViewState.BARO_RIT_ADVIES,
             ViewState.WEATHER_FINDER,
-            ViewState.LANDING,
             ViewState.LANDING_V2
         ].includes(currentView) && (
             <button

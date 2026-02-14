@@ -7,6 +7,8 @@ import { loadCurrentLocation } from '../services/storageService';
 import { MAJOR_CITIES } from '../services/cityData';
 import { AnalogueClock } from '../components/AnalogueClock';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
+import { WeatherStationClock } from '../components/WeatherStationClock';
+import { DigitalRoundClock } from '../components/DigitalRoundClock';
 
 interface AmbientViewProps {
   onNavigate: (view: ViewState) => void;
@@ -49,9 +51,17 @@ interface LocalWeather {
     windSpeed: number;
     windDir: string;
     windUnit: string;
+    windAngle?: number;
+    pressure?: number;
     weatherCode: number;
     isNight: boolean;
     feelsLike?: number;
+    daily?: {
+        date: string;
+        code: number;
+        min: number;
+        max: number;
+    }[];
 }
 
 export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, onUpdateSettings }) => {
@@ -65,7 +75,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
     const [showControls, setShowControls] = useState(false);
     
     const currentMode = settings.ambientMode || 'fireplace';
-    const [randomVideoMode, setRandomVideoMode] = useState<'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain'>('fireplace');
+    const [randomVideoMode, setRandomVideoMode] = useState<'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'sunset1' | 'sunset2'>('fireplace');
     const modeType = settings.ambientSettings?.modeType || 'video';
     const [currentPhoto, setCurrentPhoto] = useState<string>(WEATHER_PHOTOS[0]);
 
@@ -80,7 +90,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             const interval = setInterval(pickRandomPhoto, 30000); // 30 seconds
             return () => clearInterval(interval);
         } else if (currentMode === 'random') {
-            const modes = ['fireplace', 'aquarium', 'clouds', 'clouds2', 'rain'] as const;
+            const modes = ['fireplace', 'aquarium', 'clouds', 'clouds2', 'rain', 'sunset1', 'sunset2'] as const;
             
             const pickRandom = () => {
                 // Pick a random mode
@@ -107,11 +117,11 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
         return () => clearTimeout(timeout);
     }, [effectiveMode, currentPhoto, modeType]);
 
-    const setMode = (mode: 'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'random') => {
+    const setMode = (mode: 'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'sunset1' | 'sunset2' | 'random') => {
         onUpdateSettings({ ...settings, ambientMode: mode });
     };
 
-    const updateAmbientSetting = (key: 'showPopup' | 'showClock' | 'showBottomBar' | 'modeType' | 'showNews', value: boolean | string) => {
+    const updateAmbientSetting = (key: 'showPopup' | 'showClock' | 'showBottomBar' | 'modeType' | 'showNews' | 'clockType', value: boolean | string) => {
         onUpdateSettings({
             ...settings,
             ambientSettings: {
@@ -121,6 +131,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                 showBottomBar: settings.ambientSettings?.showBottomBar ?? true,
                 showNews: settings.ambientSettings?.showNews ?? true,
                 modeType: settings.ambientSettings?.modeType || 'video',
+                clockType: settings.ambientSettings?.clockType || 'analogue',
                 [key]: value
             }
         });
@@ -128,6 +139,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
     const showPopup = settings.ambientSettings?.showPopup ?? true;
     const showClock = settings.ambientSettings?.showClock ?? true;
+    const clockType = settings.ambientSettings?.clockType || 'analogue';
     const showBottomBar = settings.ambientSettings?.showBottomBar ?? true;
     const showNews = settings.ambientSettings?.showNews ?? true;
     
@@ -519,7 +531,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             if (!loc) return;
 
             try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,is_day&timezone=auto`;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=4&timezone=auto`;
                 const response = await throttledFetch(url);
                 
                 const temp = convertTemp(response.current.temperature_2m, settings.tempUnit);
@@ -527,6 +539,8 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                 const windSpeed = convertWind(response.current.wind_speed_10m, settings.windUnit);
                 const windUnit = settings.windUnit === WindUnit.BFT ? 'Bft' : settings.windUnit;
                 const windDir = getWindDirection(response.current.wind_direction_10m);
+                const windAngle = response.current.wind_direction_10m;
+                const pressure = Math.round(response.current.surface_pressure);
                 
                 let emoji = '☀️';
                 const code = response.current.weather_code;
@@ -542,15 +556,25 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
 
                 setLocalWeatherStr(`📍 ${loc.name}: ${emoji} ${Math.round(temp)}${getTempLabel(settings.tempUnit)} • ${windDir} ${Math.round(windSpeed)} ${windUnit}`);
                 
+                const daily = response.daily.time.slice(1).map((t: string, i: number) => ({
+                    date: t,
+                    code: response.daily.weather_code[i + 1],
+                    min: convertTemp(response.daily.temperature_2m_min[i + 1], settings.tempUnit),
+                    max: convertTemp(response.daily.temperature_2m_max[i + 1], settings.tempUnit)
+                }));
+
                 setLocalWeatherData({
                     name: loc.name,
                     temp,
                     windSpeed,
                     windDir,
                     windUnit,
+                    windAngle,
+                    pressure,
                     weatherCode: code,
                     isNight,
-                    feelsLike
+                    feelsLike,
+                    daily
                 });
 
             } catch (e) {
@@ -604,6 +628,8 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                             effectiveMode === 'aquarium' ? "/aquarium.mp4" : 
                             effectiveMode === 'clouds' ? "/clouds1.mp4" :
                             effectiveMode === 'clouds2' ? "/clouds2.mp4" :
+                            effectiveMode === 'sunset1' ? "/sunset1.mp4" :
+                            effectiveMode === 'sunset2' ? "/sunset2.mp4" :
                             "/rain1.mp4"
                         } 
                         autoPlay 
@@ -618,10 +644,29 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             {/* Dark Overlay */}
             <div className="absolute inset-0 bg-black/30 z-10" />
             
-            {/* Analogue Clock - Responsive positioning */}
+            {/* Clock - Centered & Configurable */}
             {showClock && (
-                <div className="absolute left-1/2 md:left-8 top-1/2 -translate-y-1/2 -translate-x-1/2 md:translate-x-0 z-20 w-[60vw] md:w-[20vw] max-w-[250px] aspect-square opacity-80 hover:opacity-100 transition-opacity duration-500">
-                    <AnalogueClock timezone={settings.timezone} />
+                <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 transition-opacity duration-500 hover:opacity-100 opacity-80">
+                    {clockType === 'analogue' && (
+                        <div className="w-[60vw] md:w-[20vw] max-w-[250px] aspect-square">
+                            <AnalogueClock timezone={settings.timezone} />
+                        </div>
+                    )}
+                    {clockType === 'weather_station' && (
+                        <WeatherStationClock 
+                            weatherData={localWeatherData} 
+                            currentTime={currentTime} 
+                            settings={settings} 
+                        />
+                    )}
+                    {clockType === 'digital_round' && (
+                        <div className="scale-75 md:scale-100">
+                            <DigitalRoundClock 
+                                currentTime={currentTime} 
+                                settings={settings} 
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -743,7 +788,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                     <button 
                         onClick={() => setShowControls(true)}
                         className="p-4 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex items-center gap-3 hover:bg-white/10 transition-all hover:scale-105 group"
-                        title="Instellingen"
+                        title={t('ambient.settings.title')}
                     >
                         <Icon name="volume_up" className="text-xl text-white/80 group-hover:text-white" />
                         <Icon name="cast" className="text-xl text-white/80 group-hover:text-white" />
@@ -773,19 +818,21 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                         {modeType === 'video' && (
                             <div className="md:p-4 p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl flex flex-col md:gap-3 gap-2 items-center">
                                  <div className="flex md:gap-2 gap-1 flex-wrap justify-center max-w-[200px] md:max-w-none">
-                                    {['fireplace', 'aquarium', 'clouds', 'clouds2', 'rain', 'random'].map(mode => (
+                                    {['fireplace', 'aquarium', 'clouds', 'clouds2', 'rain', 'sunset1', 'sunset2', 'random'].map(mode => (
                                         <button 
                                             key={mode}
                                             onClick={() => setMode(mode as any)}
                                             className={`p-1.5 md:p-2 rounded-lg transition-all border ${currentMode === mode ? 'bg-white/20 border-accent-primary text-white' : 'bg-transparent border-transparent text-white/50 hover:text-white'}`}
-                                            title={mode}
+                                            title={t('ambient.modes.' + mode)}
                                         >
                                             <Icon name={
                                                 mode === 'fireplace' ? "local_fire_department" :
                                                 mode === 'aquarium' ? "water" :
                                                 mode === 'clouds' ? "cloud" :
                                                 mode === 'clouds2' ? "cloud_queue" :
-                                                mode === 'rain' ? "rainy" : "shuffle"
+                                                mode === 'rain' ? "rainy" : 
+                                                mode === 'sunset1' ? "wb_twilight" :
+                                                mode === 'sunset2' ? "sunny" : "shuffle"
                                             } className="text-xl md:text-2xl" />
                                         </button>
                                     ))}
@@ -800,7 +847,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                                     <button 
                                         onClick={() => setIsMuted(!isMuted)}
                                         className="flex items-center justify-center p-2 rounded-full hover:bg-white/10 transition-colors"
-                                        title={isMuted ? "Unmute" : "Mute"}
+                                        title={isMuted ? t('ambient.settings.unmute') : t('ambient.settings.mute')}
                                     >
                                         <Icon name={isMuted ? "volume_off" : "volume_up"} className="text-xl md:text-2xl" />
                                     </button>
@@ -862,24 +909,44 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                                 </div>
                             </button>
 
-                            <button 
-                                onClick={() => updateAmbientSetting('showClock', !showClock)}
-                                className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
-                                title="Toon analoge klok (verborgen op mobiel)"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Icon name="schedule" className="text-lg md:text-xl" />
-                                    <span className="text-xs md:text-sm">{getTranslation('ambient.settings.clock', settings.language)}</span>
-                                </div>
-                                <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showClock ? 'bg-accent-primary' : 'bg-white/20'}`}>
-                                    <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showClock ? 'left-4 md:left-6' : 'left-1'}`} />
-                                </div>
-                            </button>
+                            <div className="flex flex-col gap-1 w-full">
+                                <button 
+                                    onClick={() => updateAmbientSetting('showClock', !showClock)}
+                                    className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                    title="Toon klok (verborgen op mobiel)"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="schedule" className="text-lg md:text-xl" />
+                                        <span className="text-xs md:text-sm">{getTranslation('ambient.settings.clock', settings.language)}</span>
+                                    </div>
+                                    <div className={`w-8 md:w-10 h-4 md:h-5 rounded-full relative transition-colors ${showClock ? 'bg-accent-primary' : 'bg-white/20'}`}>
+                                        <div className={`absolute top-0.5 md:top-1 w-3 h-3 rounded-full bg-white transition-all duration-200 ${showClock ? 'left-4 md:left-6' : 'left-1'}`} />
+                                    </div>
+                                </button>
+                                {showClock && (
+                                    <div className="flex gap-1 pl-8 w-full overflow-x-auto pb-1">
+                                        {[
+                                            { id: 'analogue', icon: 'schedule', label: 'Analoog' },
+                                            { id: 'weather_station', icon: 'nest_remote_comfort_sensor', label: 'Station' },
+                                            { id: 'digital_round', icon: 'watch', label: 'Digitaal' }
+                                        ].map(opt => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => updateAmbientSetting('clockType', opt.id)}
+                                                className={`flex-1 min-w-[60px] py-1 px-2 rounded-md text-[10px] font-bold border transition-all flex flex-col items-center gap-1 ${clockType === opt.id ? 'bg-white/20 border-accent-primary text-white' : 'border-white/10 text-white/50 hover:bg-white/10'}`}
+                                            >
+                                                <Icon name={opt.icon} className="text-sm" />
+                                                <span>{opt.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             <button 
                                 onClick={() => updateAmbientSetting('showBottomBar', !showBottomBar)}
                                 className="flex items-center justify-between w-full p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors"
-                                title="Toon tijd & weer balk (verborgen op mobiel)"
+                                title={t('ambient.settings.bar_hint')}
                             >
                                 <div className="flex items-center gap-2">
                                     <Icon name="dock" className="text-lg md:text-xl" />
@@ -913,7 +980,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                         
                         <div className="text-center w-full">
                             <div className="flex items-center justify-center gap-2 mb-2">
-                                <h2 className="text-2xl font-bold">Chromecast</h2>
+                                <h2 className="text-2xl font-bold">{t('ambient.chromecast.title')}</h2>
                                 <div className="group relative">
                                     <Icon name="info" className="text-white/40 hover:text-white cursor-help transition-colors" />
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-64 p-3 bg-slate-800 border border-white/20 rounded-xl shadow-2xl text-xs text-white opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-[4000] text-center">
@@ -989,8 +1056,17 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
     );
 };
 
-function getWindDirection(degree: number): string {
-    const sectors = ['N', 'NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW'];
+function getWindDirection(degree: number, language: string = 'nl'): string {
+    const sectors = [
+        getTranslation('ambient.wind.n', language),
+        getTranslation('ambient.wind.ne', language),
+        getTranslation('ambient.wind.e', language),
+        getTranslation('ambient.wind.se', language),
+        getTranslation('ambient.wind.s', language),
+        getTranslation('ambient.wind.sw', language),
+        getTranslation('ambient.wind.w', language),
+        getTranslation('ambient.wind.nw', language)
+    ];
     degree += 22.5;
     if (degree < 0) degree = 360 - Math.abs(degree) % 360;
     else degree = degree % 360;

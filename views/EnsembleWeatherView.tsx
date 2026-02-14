@@ -936,20 +936,20 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
       
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
-        <div className="flex flex-col pt-8 pb-4">
+        <div className="flex flex-col pt-16 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
-                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />
                 </button>
 
-                <div className="flex flex-col items-center bg-bg-card/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color/20 shadow-lg">
+                <div className="flex flex-col items-center bg-bg-card/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color shadow-lg">
                     <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-text-main">
                         <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
                         <span className="hidden md:inline">{location.name}, {location.country}</span>
                     </h2>
                 </div>
 
-                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
+                <button onClick={() => cycleFavorite('next')} className="absolute right-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_right" className="text-3xl" />
                 </button>
             </div>
@@ -1031,7 +1031,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         {currentWeather && (
             <div key={location.name} className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 text-text-main">
                 <div className="flex items-center gap-4">
-                    <div className="bg-bg-card/40 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color/20 shadow-lg">
+                    <div className="bg-bg-card/80 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10">
                         <h1 className="text-[80px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
                             {currentTemp}°
                         </h1>
@@ -1061,7 +1061,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                         />
                     )}
                 </div>
-                <div className="bg-bg-card/40 backdrop-blur-md px-6 py-4 rounded-3xl border border-border-color/20 shadow-lg mt-4 flex flex-col items-center">
+                <div className="bg-bg-card/80 backdrop-blur-md px-6 py-4 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10 mt-4 flex flex-col items-center">
                     <p className="text-xl font-medium tracking-wide drop-shadow-md flex items-center gap-2 text-text-main">
                             <Icon name={mapWmoCodeToIcon(currentWeather.current.weather_code, currentWeather.current.is_day === 0)} className="text-2xl" />
                         {mapWmoCodeToText(currentWeather.current.weather_code, settings.language)}

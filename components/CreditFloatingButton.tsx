@@ -67,7 +67,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, cl
                         className="fixed inset-0 z-40 bg-transparent" 
                         onClick={() => setShowPopup(false)}
                     />
-                    <div className="fixed bottom-[128px] md:bottom-36 right-4 z-50 bg-bg-card p-4 rounded-xl shadow-xl border border-border-color w-64 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                    <div className="fixed bottom-[128px] md:bottom-36 right-4 z-[105] bg-bg-card p-4 rounded-xl shadow-xl border border-border-color w-64 animate-in fade-in slide-in-from-bottom-4 duration-200">
                         <div className="flex justify-between items-start mb-3">
                              <h4 className="font-bold text-sm text-text-main">
                                 {hasCredits ? t('credits.title') : t('credits.popup.title_upgrade')}

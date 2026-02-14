@@ -8,6 +8,17 @@ import { db } from '../services/firebase';
 import { getTranslation } from '../services/translations';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { saveCurrentLocation } from '../services/storageService';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+const customIcon = L.divIcon({
+  html: '<span class="material-symbols-outlined" style="font-size: 40px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">location_on</span>',
+  className: 'custom-map-icon bg-transparent border-none',
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
 
 interface Props {
     onNavigate: (view: ViewState) => void;
@@ -61,6 +72,9 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     const [usernameError, setUsernameError] = useState('');
     const [isSavingUsername, setIsSavingUsername] = useState(false);
     const [usernameSaved, setUsernameSaved] = useState(false);
+    
+    // Map Modal State
+    const [showMapModal, setShowMapModal] = useState(false);
 
     // Helper for anonymized name
     const getAnonymizedName = (name: string, email?: string) => {
@@ -687,6 +701,16 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             <div className="flex items-center gap-2">
                                                 <span className="text-2xl">{openRound.city.country}</span>
                                                 <h2 className="text-3xl font-bold">{openRound.city.name}</h2>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setShowMapModal(true);
+                                                    }}
+                                                    className="ml-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white hover:scale-110 active:scale-95 flex items-center justify-center shadow-sm backdrop-blur-sm"
+                                                    title={t('game.view_on_map', { defaultValue: 'View on map' })}
+                                                >
+                                                    <Icon name="public" className="text-xl" />
+                                                </button>
                                             </div>
                                         </div>
                                         
@@ -1474,6 +1498,74 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                     </div>
                 )}
             </div>
+
+            {/* Map Modal */}
+            {showMapModal && openRound && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-all duration-300"
+                        onClick={() => setShowMapModal(false)}
+                    />
+                    
+                    {/* Modal Content */}
+                    <div className="relative bg-bg-card w-full max-w-5xl h-[85vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 animate-in fade-in zoom-in-95 duration-200 border border-border-color">
+                        
+                        {/* Header */}
+                        <div className="p-4 px-6 border-b border-border-color flex justify-between items-center bg-bg-page/50 backdrop-blur-sm">
+                            <div>
+                                <h3 className="font-bold text-xl flex items-center gap-2 text-text-main">
+                                    <Icon name="location_on" className="text-accent-primary" />
+                                    {openRound.city.name}, {openRound.city.country}
+                                </h3>
+                                <p className="text-xs text-text-muted mt-0.5">
+                                    {openRound.city.lat.toFixed(4)}, {openRound.city.lon.toFixed(4)}
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => setShowMapModal(false)}
+                                className="p-2 hover:bg-bg-card rounded-full transition-colors text-text-muted hover:text-text-main"
+                            >
+                                <Icon name="close" className="text-2xl" />
+                            </button>
+                        </div>
+
+                        {/* Map */}
+                        <div className="flex-1 relative z-0 bg-slate-100 dark:bg-slate-900">
+                             <MapContainer 
+                                center={[openRound.city.lat, openRound.city.lon]} 
+                                zoom={12} 
+                                style={{ height: '100%', width: '100%' }}
+                                className="z-0"
+                            >
+                                <TileLayer
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                />
+                                <Marker 
+                                    position={[openRound.city.lat, openRound.city.lon]}
+                                    icon={customIcon}
+                                >
+                                     <Popup className="font-display">
+                                        <div className="text-center">
+                                            <strong className="block text-lg mb-1">{openRound.city.name}</strong>
+                                            <span className="text-sm text-gray-500">{openRound.city.country}</span>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            </MapContainer>
+                            
+                            {/* Overlay Controls Hint */}
+                            <div className="absolute bottom-6 left-6 z-[400] bg-bg-card/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-border-color text-xs font-medium text-text-muted pointer-events-none">
+                                <span className="flex items-center gap-2">
+                                    <Icon name="pinch" className="text-base" />
+                                    {t('game.map_controls_hint', { defaultValue: 'Use pinch to zoom / drag to move' })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

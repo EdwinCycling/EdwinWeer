@@ -2090,7 +2090,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col h-full w-full">
-        <div className="flex flex-col pt-8 pb-4">
+        <div className="flex flex-col pt-16 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
                 <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/20 backdrop-blur-md text-text-main hover:bg-bg-card/40 transition-all shadow-sm disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />

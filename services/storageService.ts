@@ -152,6 +152,13 @@ const syncFavoritesViewToRemote = async () => {
     }
 };
 
+const getStorageKey = (baseKey: string) => {
+    if (currentUserId) {
+        return `${baseKey}_${currentUserId}`;
+    }
+    return baseKey;
+};
+
 export const loadRemoteData = async (uid: string) => {
     if (!db) return;
     try {
@@ -166,7 +173,7 @@ export const loadRemoteData = async (uid: string) => {
                     // Merge with existing local settings to preserve local-only fields like 'theme'
                     let currentLocal: any = {};
                     try {
-                        currentLocal = JSON.parse(localStorage.getItem(KEY_APP_SETTINGS) || '{}');
+                        currentLocal = JSON.parse(localStorage.getItem(getStorageKey(KEY_APP_SETTINGS)) || '{}');
                     } catch (e) {
                         console.error("Error parsing local settings:", e);
                     }
@@ -177,27 +184,27 @@ export const loadRemoteData = async (uid: string) => {
                         merged.theme = currentLocal.theme;
                     }
                     
-                    localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(merged));
+                    localStorage.setItem(getStorageKey(KEY_APP_SETTINGS), JSON.stringify(merged));
                 }
             }
             if (data.ensemble) {
-                if (data.ensemble.ensembleModel && typeof window !== "undefined") localStorage.setItem(KEY_ENSEMBLE_MODEL, data.ensemble.ensembleModel);
-                if (data.ensemble.ensembleViewMode && typeof window !== "undefined") localStorage.setItem(KEY_ENSEMBLE_VIEW_MODE, data.ensemble.ensembleViewMode);
-                if (data.ensemble.ensembleTimeStep && typeof window !== "undefined") localStorage.setItem(KEY_ENSEMBLE_TIME_STEP, data.ensemble.ensembleTimeStep);
-                if (data.ensemble.ensembleProMode !== undefined && typeof window !== "undefined") localStorage.setItem(KEY_ENSEMBLE_PRO_MODE, String(data.ensemble.ensembleProMode));
+                if (data.ensemble.ensembleModel && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_ENSEMBLE_MODEL), data.ensemble.ensembleModel);
+                if (data.ensemble.ensembleViewMode && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_ENSEMBLE_VIEW_MODE), data.ensemble.ensembleViewMode);
+                if (data.ensemble.ensembleTimeStep && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_ENSEMBLE_TIME_STEP), data.ensemble.ensembleTimeStep);
+                if (data.ensemble.ensembleProMode !== undefined && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_ENSEMBLE_PRO_MODE), String(data.ensemble.ensembleProMode));
             }
             if (data.forecastView) {
-                if (data.forecastView.activitiesMode && typeof window !== "undefined") localStorage.setItem(KEY_FORECAST_ACTIVITIES_MODE, data.forecastView.activitiesMode);
-                if (data.forecastView.viewMode && typeof window !== "undefined") localStorage.setItem(KEY_FORECAST_VIEW_MODE, data.forecastView.viewMode);
-                if (data.forecastView.trendArrows !== undefined && typeof window !== "undefined") localStorage.setItem(KEY_FORECAST_TREND_ARROWS_MODE, String(data.forecastView.trendArrows));
+                if (data.forecastView.activitiesMode && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_FORECAST_ACTIVITIES_MODE), data.forecastView.activitiesMode);
+                if (data.forecastView.viewMode && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_FORECAST_VIEW_MODE), data.forecastView.viewMode);
+                if (data.forecastView.trendArrows !== undefined && typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_FORECAST_TREND_ARROWS_MODE), String(data.forecastView.trendArrows));
             }
             if (data.favoritesView) {
                 if (data.favoritesView.compactMode !== undefined && typeof window !== "undefined") {
-                    localStorage.setItem(KEY_FAVORITES_COMPACT_MODE, String(data.favoritesView.compactMode));
+                    localStorage.setItem(getStorageKey(KEY_FAVORITES_COMPACT_MODE), String(data.favoritesView.compactMode));
                 }
             }
             if (data.customEvents) {
-                if (typeof window !== "undefined") localStorage.setItem(KEY_CUSTOM_EVENTS, JSON.stringify(data.customEvents));
+                if (typeof window !== "undefined") localStorage.setItem(getStorageKey(KEY_CUSTOM_EVENTS), JSON.stringify(data.customEvents));
             }
         }
     } catch (e) {
@@ -207,25 +214,25 @@ export const loadRemoteData = async (uid: string) => {
 
 export const saveFavoritesCompactMode = (enabled: boolean) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_FAVORITES_COMPACT_MODE, String(enabled));
+        localStorage.setItem(getStorageKey(KEY_FAVORITES_COMPACT_MODE), String(enabled));
     }
     syncFavoritesViewToRemote();
 };
 
 export const loadFavoritesCompactMode = (): boolean => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem(KEY_FAVORITES_COMPACT_MODE) === 'true';
+    return localStorage.getItem(getStorageKey(KEY_FAVORITES_COMPACT_MODE)) === 'true';
 };
 
 export const saveLastKnownMyLocation = (location: Location) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_LAST_KNOWN_MY_LOCATION, JSON.stringify(location));
+        localStorage.setItem(getStorageKey(KEY_LAST_KNOWN_MY_LOCATION), JSON.stringify(location));
     }
 };
 
 export const loadLastKnownMyLocation = (): Location | null => {
     if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(KEY_LAST_KNOWN_MY_LOCATION);
+    const stored = localStorage.getItem(getStorageKey(KEY_LAST_KNOWN_MY_LOCATION));
     if (!stored) return null;
     try {
         return JSON.parse(stored);
@@ -236,13 +243,13 @@ export const loadLastKnownMyLocation = (): Location | null => {
 
 export const saveCurrentLocation = (location: Location) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_CURRENT_LOC, JSON.stringify(location));
+        localStorage.setItem(getStorageKey(KEY_CURRENT_LOC), JSON.stringify(location));
     }
 };
 
 export const loadCurrentLocation = (): Location => {
     if (typeof window === "undefined") return DEFAULT_LOCATION;
-    const stored = localStorage.getItem(KEY_CURRENT_LOC);
+    const stored = localStorage.getItem(getStorageKey(KEY_CURRENT_LOC));
     if (!stored) return DEFAULT_LOCATION;
     try {
         return JSON.parse(stored);
@@ -253,13 +260,13 @@ export const loadCurrentLocation = (): Location => {
 
 export const saveHistoricalLocation = (location: Location) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_HISTORICAL_LOC, JSON.stringify(location));
+        localStorage.setItem(getStorageKey(KEY_HISTORICAL_LOC), JSON.stringify(location));
     }
 };
 
 export const loadHistoricalLocation = (): Location => {
     if (typeof window === "undefined") return DEFAULT_LOCATION;
-    const stored = localStorage.getItem(KEY_HISTORICAL_LOC);
+    const stored = localStorage.getItem(getStorageKey(KEY_HISTORICAL_LOC));
     if (!stored) return DEFAULT_LOCATION;
     try {
         return JSON.parse(stored);
@@ -270,13 +277,13 @@ export const loadHistoricalLocation = (): Location => {
 
 export const saveComparisonType = (type: ComparisonType) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_COMPARISON_TYPE, type);
+        localStorage.setItem(getStorageKey(KEY_COMPARISON_TYPE), type);
     }
 };
 
 export const loadComparisonType = (): ComparisonType => {
     if (typeof window === "undefined") return ComparisonType.YESTERDAY;
-    return (localStorage.getItem(KEY_COMPARISON_TYPE) as ComparisonType) || ComparisonType.YESTERDAY;
+    return (localStorage.getItem(getStorageKey(KEY_COMPARISON_TYPE)) as ComparisonType) || ComparisonType.YESTERDAY;
 };
 
 const KEY_BARO_PROFILE = "weather_app_baro_profile";
@@ -298,7 +305,7 @@ export const loadBaroProfile = (): any | null => {
 
 export const saveSettings = (settings: AppSettings) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_APP_SETTINGS, JSON.stringify(settings));
+        localStorage.setItem(getStorageKey(KEY_APP_SETTINGS), JSON.stringify(settings));
     }
     // Sync to firestore if logged in
     syncSettingsToRemote(settings);
@@ -308,7 +315,7 @@ export const loadSettings = (): AppSettings => {
     if (typeof window === "undefined") {
         return DEFAULT_SETTINGS;
     }
-    const stored = localStorage.getItem(KEY_APP_SETTINGS);
+    const stored = localStorage.getItem(getStorageKey(KEY_APP_SETTINGS));
     if (!stored) {
         return DEFAULT_SETTINGS;
     }
@@ -361,14 +368,14 @@ export const loadSettings = (): AppSettings => {
 
 export const saveEnsembleModel = (model: EnsembleModel) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_ENSEMBLE_MODEL, model);
+        localStorage.setItem(getStorageKey(KEY_ENSEMBLE_MODEL), model);
     }
     syncEnsembleToRemote();
 };
 
 export const loadEnsembleModel = (): EnsembleModel => {
     if (typeof window === "undefined") return 'best_match';
-    const stored = localStorage.getItem(KEY_ENSEMBLE_MODEL);
+    const stored = localStorage.getItem(getStorageKey(KEY_ENSEMBLE_MODEL));
     // Fallback for deprecated models
     if (stored === 'icon_ch2_eps') return 'best_match';
     return (stored as EnsembleModel) || 'best_match';
@@ -376,68 +383,69 @@ export const loadEnsembleModel = (): EnsembleModel => {
 
 export const saveEnsembleViewMode = (mode: string) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_ENSEMBLE_VIEW_MODE, mode);
+        localStorage.setItem(getStorageKey(KEY_ENSEMBLE_VIEW_MODE), mode);
     }
     syncEnsembleToRemote();
 };
 
 export const loadEnsembleViewMode = (): string => {
     if (typeof window === "undefined") return 'all';
-    return localStorage.getItem(KEY_ENSEMBLE_VIEW_MODE) || 'all';
+    return localStorage.getItem(getStorageKey(KEY_ENSEMBLE_VIEW_MODE)) || 'all';
 };
 
 export const saveEnsembleTimeStep = (step: 'hourly' | 'daily') => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_ENSEMBLE_TIME_STEP, step);
+        localStorage.setItem(getStorageKey(KEY_ENSEMBLE_TIME_STEP), step);
     }
     syncEnsembleToRemote();
 };
 
 export const loadEnsembleTimeStep = (): 'hourly' | 'daily' => {
     if (typeof window === "undefined") return 'hourly';
-    return (localStorage.getItem(KEY_ENSEMBLE_TIME_STEP) as 'hourly' | 'daily') || 'hourly';
+    const stored = localStorage.getItem(getStorageKey(KEY_ENSEMBLE_TIME_STEP));
+    return (stored === 'daily' ? 'daily' : 'hourly');
 };
 
 export const saveEnsembleProMode = (enabled: boolean) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_ENSEMBLE_PRO_MODE, String(enabled));
+        localStorage.setItem(getStorageKey(KEY_ENSEMBLE_PRO_MODE), String(enabled));
     }
     syncEnsembleToRemote();
 };
 
 export const loadEnsembleProMode = (): boolean => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem(KEY_ENSEMBLE_PRO_MODE) === 'true';
+    return localStorage.getItem(getStorageKey(KEY_ENSEMBLE_PRO_MODE)) === 'true';
 };
 
 export const saveForecastActivitiesMode = (mode: 'none' | 'positive' | 'all') => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_FORECAST_ACTIVITIES_MODE, mode);
+        localStorage.setItem(getStorageKey(KEY_FORECAST_ACTIVITIES_MODE), mode);
     }
     syncForecastToRemote();
 };
 
 export const loadForecastActivitiesMode = (): 'none' | 'positive' | 'all' => {
     if (typeof window === "undefined") return 'all';
-    return (localStorage.getItem(KEY_FORECAST_ACTIVITIES_MODE) as 'none' | 'positive' | 'all') || 'all';
+    return (localStorage.getItem(getStorageKey(KEY_FORECAST_ACTIVITIES_MODE)) as 'none' | 'positive' | 'all') || 'all';
 };
 
 export type ForecastViewMode = 'compact' | 'expanded' | 'graph' | 'table' | 'graph2' | 'table2' | 'expanded2';
 
 export const saveForecastViewMode = (mode: ForecastViewMode) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_FORECAST_VIEW_MODE, mode);
+        localStorage.setItem(getStorageKey(KEY_FORECAST_VIEW_MODE), mode);
     }
     syncForecastToRemote();
 };
 
 export const loadForecastViewMode = (): ForecastViewMode => {
     if (typeof window === "undefined") return 'compact';
-    const stored = localStorage.getItem(KEY_FORECAST_VIEW_MODE);
+    const stored = localStorage.getItem(getStorageKey(KEY_FORECAST_VIEW_MODE));
     if (stored) return stored as ForecastViewMode;
     
     // Fallback to legacy expanded mode if exists
-    const legacyExpanded = localStorage.getItem("weather_app_forecast_expanded_mode");
+    const legacyExpanded = localStorage.getItem(getStorageKey("weather_app_forecast_expanded_mode"));
     if (legacyExpanded === 'true') return 'expanded';
     
     return 'compact';
@@ -445,14 +453,14 @@ export const loadForecastViewMode = (): ForecastViewMode => {
 
 export const saveForecastTrendArrowsMode = (enabled: boolean) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_FORECAST_TREND_ARROWS_MODE, String(enabled));
+        localStorage.setItem(getStorageKey(KEY_FORECAST_TREND_ARROWS_MODE), String(enabled));
     }
     syncForecastToRemote();
 };
 
 export const loadForecastTrendArrowsMode = (): boolean => {
     if (typeof window === "undefined") return true;
-    const stored = localStorage.getItem(KEY_FORECAST_TREND_ARROWS_MODE);
+    const stored = localStorage.getItem(getStorageKey(KEY_FORECAST_TREND_ARROWS_MODE));
     return stored === null ? true : stored === 'true';
 };
 
@@ -461,7 +469,7 @@ const KEY_CLIMATE_CACHE = "weather_app_climate_cache";
 export const saveClimateData = (locationKey: string, data: any) => {
     if (typeof window !== "undefined") {
         try {
-            const cache = JSON.parse(localStorage.getItem(KEY_CLIMATE_CACHE) || '{}');
+            const cache = JSON.parse(localStorage.getItem(getStorageKey(KEY_CLIMATE_CACHE)) || '{}');
             const today = new Date().toISOString().split('T')[0];
             // Clear old keys to save space (keep only today's)
             const newCache: Record<string, { date: string, data: any }> = {};
@@ -479,7 +487,7 @@ export const saveClimateData = (locationKey: string, data: any) => {
                 data: data
             };
             
-            localStorage.setItem(KEY_CLIMATE_CACHE, JSON.stringify(newCache));
+            localStorage.setItem(getStorageKey(KEY_CLIMATE_CACHE), JSON.stringify(newCache));
         } catch (e) {
             console.error("Failed to save climate cache", e);
         }
@@ -489,7 +497,7 @@ export const saveClimateData = (locationKey: string, data: any) => {
 export const loadClimateData = (locationKey: string): any | null => {
     if (typeof window === "undefined") return null;
     try {
-        const cache = JSON.parse(localStorage.getItem(KEY_CLIMATE_CACHE) || '{}');
+        const cache = JSON.parse(localStorage.getItem(getStorageKey(KEY_CLIMATE_CACHE)) || '{}');
         const entry = cache[locationKey];
         const today = new Date().toISOString().split('T')[0];
         
@@ -507,7 +515,7 @@ const KEY_HOLIDAY_REPORT_CACHE = "weather_app_holiday_report_cache";
 export const saveHolidayReport = (key: string, data: any) => {
     if (typeof window !== "undefined") {
         try {
-            const cache = JSON.parse(localStorage.getItem(KEY_HOLIDAY_REPORT_CACHE) || '{}');
+            const cache = JSON.parse(localStorage.getItem(getStorageKey(KEY_HOLIDAY_REPORT_CACHE)) || '{}');
             const today = new Date().toISOString().split('T')[0];
             
             // Clean up old cache (only keep today's)
@@ -523,7 +531,7 @@ export const saveHolidayReport = (key: string, data: any) => {
                 data: data
             };
             
-            localStorage.setItem(KEY_HOLIDAY_REPORT_CACHE, JSON.stringify(newCache));
+            localStorage.setItem(getStorageKey(KEY_HOLIDAY_REPORT_CACHE), JSON.stringify(newCache));
         } catch (e) {
             console.error("Failed to save holiday report cache", e);
         }
@@ -533,7 +541,7 @@ export const saveHolidayReport = (key: string, data: any) => {
 export const loadHolidayReport = (key: string): any | null => {
     if (typeof window === "undefined") return null;
     try {
-        const cache = JSON.parse(localStorage.getItem(KEY_HOLIDAY_REPORT_CACHE) || '{}');
+        const cache = JSON.parse(localStorage.getItem(getStorageKey(KEY_HOLIDAY_REPORT_CACHE)) || '{}');
         const entry = cache[key];
         const today = new Date().toISOString().split('T')[0];
         
@@ -552,14 +560,14 @@ const KEY_CUSTOM_EVENTS = "weather_app_custom_events";
 
 export const saveCustomEvents = (events: any[]) => {
     if (typeof window !== "undefined") {
-        localStorage.setItem(KEY_CUSTOM_EVENTS, JSON.stringify(events));
+        localStorage.setItem(getStorageKey(KEY_CUSTOM_EVENTS), JSON.stringify(events));
     }
     syncCustomEventsToRemote(events);
 };
 
 export const loadCustomEvents = (): any[] => {
     if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem(KEY_CUSTOM_EVENTS);
+    const stored = localStorage.getItem(getStorageKey(KEY_CUSTOM_EVENTS));
     if (!stored) return [];
     try {
         return JSON.parse(stored);

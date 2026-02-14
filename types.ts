@@ -255,13 +255,14 @@ export interface AppSettings {
     };
     baro_weerman?: BaroWeermanSettings;
     activity_settings?: ActivityPlannerSettings;
-    ambientMode?: 'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'random';
+    ambientMode?: 'fireplace' | 'aquarium' | 'clouds' | 'clouds2' | 'rain' | 'random' | 'sunset1' | 'sunset2';
     ambientSettings?: {
         showPopup: boolean;
         showClock: boolean;
         showBottomBar: boolean;
         showNews?: boolean;
         modeType?: 'video' | 'photo';
+        clockType?: 'analogue' | 'weather_station' | 'digital_round';
     };
 }
 

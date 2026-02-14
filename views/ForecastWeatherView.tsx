@@ -566,7 +566,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
       
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
-        <div className="flex flex-col pt-8 pb-4">
+        <div className="flex flex-col pt-16 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
                 <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />

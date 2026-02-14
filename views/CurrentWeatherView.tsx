@@ -74,6 +74,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  
+  // Defer rendering of heavy components below the fold
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+     // Delay slightly to prioritize LCP
+     const t = setTimeout(() => setIsReady(true), 150);
+     return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -457,17 +465,22 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         const lon = currentLocation?.lon || 5.2;
         
         const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
+        
+        // Defer heavy components (charts etc)
+        const [isReady, setIsReady] = useState(false);
+        useEffect(() => {
+            const t = setTimeout(() => setIsReady(true), 100);
+            return () => clearTimeout(t);
+        }, []);
 
         return (
-            <div className={`bg-bg-card border border-border-color rounded-2xl p-4 relative overflow-hidden transition-colors ${isExpanded ? 'min-h-[180px] md:h-[180px]' : ''}`}>
+            <div className={`bg-bg-card border border-border-color rounded-2xl p-4 relative overflow-hidden transition-colors ${isExpanded ? 'min-h-[180px] md:min-h-[180px]' : ''}`}>
                 <div className="flex items-center justify-between mb-1 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
                     <div className="flex items-center gap-2">
                         <Icon name="dark_mode" className="text-accent-primary" />
                         <p className="text-text-muted text-xs font-bold uppercase">{t('moon_phase')}</p>
                         <Icon name={isExpanded ? "expand_less" : "expand_more"} className="text-text-muted text-xs" />
                     </div>
-                    {/* Weather Info Text ID */}
-                    <div className="hidden md:block text-[10px] text-text-muted/60">{t('weather_info')}</div>
                     
                     {isExpanded && (
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -1045,7 +1058,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               </Tooltip>
           </div>
 
-          <div className="absolute top-2 right-4 sm:right-6 flex items-center gap-1 sm:gap-3 flex-row-reverse z-50">
+          <div className="absolute top-14 right-4 sm:right-6 flex items-center gap-1 sm:gap-3 flex-row-reverse z-50">
               {/* Refresh Button */}
               <Tooltip content={t('refresh')} position="bottom">
                   <button 
@@ -1453,7 +1466,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
                     
                     {/* Rain Graph */}
-                    {rainGraph && rainGraph.totalRain > 0 && (
+                    {isReady && rainGraph && rainGraph.totalRain > 0 && (
                         <div className="mb-8 p-4 bg-bg-card rounded-2xl border border-border-color shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-1 sm:gap-4">
                                 <h3 className="text-blue-600 dark:text-blue-200 text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center gap-2">
@@ -1484,6 +1497,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     )}
 
                     {/* New Month Stats Card - Moved here */}
+                    {/* Defer rendering of month stats and sun graph to improve initial TTI */}
                     <MonthStatsCard location={location} settings={settings} onNavigate={onNavigate} onUpdateSettings={onUpdateSettings} weatherData={weatherData as any} />
 
                     {/* New Sun Graph Widget */}
@@ -1503,7 +1517,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     )}
 
                     {/* Solar Power Widget - only show when sun graph is shown (is_day) */}
-                    {weatherData.current.is_day === 1 && (
+                    {isReady && weatherData.current.is_day === 1 && (
                         <SolarPowerWidget 
                             weatherData={weatherData} 
                             settings={settings} 
@@ -1563,7 +1577,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         <h3 className="text-lg font-bold mb-4">{t('detail_title')}</h3>
                         
                         {/* Activities Section */}
-                        {currentActivityScores.length > 0 && (
+                        {isReady && currentActivityScores.length > 0 && (
                             <div className="mb-4 border border-border-color rounded-xl bg-bg-card overflow-hidden">
                                 <div 
                                     className="p-3 flex items-center justify-between bg-bg-card border-b border-border-color cursor-pointer"
@@ -1664,11 +1678,13 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                         )}
                         
                         <div className="h-8 md:h-10" />
-                        <h3 className="text-lg font-bold mb-4">{t('weather_info') || "Weer Info"}</h3>
+                        {isReady && (
+                            <>
+                                <h3 className="text-lg font-bold mb-4">{t('trip_planner.details') || "Details"}</h3>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {/* Thermodynamics */}
-                            <div onClick={() => setShowFeelsLikeModal(true)} className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm relative group cursor-pointer hover:bg-bg-card transition-colors">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    {/* Thermodynamics */}
+                                    <div onClick={() => setShowFeelsLikeModal(true)} className="bg-bg-card rounded-xl p-3 flex items-center gap-3 border border-border-color shadow-sm relative group cursor-pointer hover:bg-bg-card transition-colors">
                                 <div className="bg-bg-page p-2 rounded-lg"><Icon name="thermostat" /></div>
                                 <div>
                                     <p className="text-[10px] font-bold uppercase text-text-muted">{t('feels_like')}</p>
@@ -1887,6 +1903,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 </div>
                             </div>
                         </div>
+                        </>
+                        )}
                     </div>
 
                     <div className="mt-8 pt-8 border-t border-border-color">

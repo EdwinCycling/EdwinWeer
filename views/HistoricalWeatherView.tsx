@@ -13,6 +13,7 @@ import { HistoricalDashboard } from './HistoricalDashboard';
 import { VintageNewspaper } from '../components/VintageNewspaper';
 import { generateVintageNewspaper } from '../services/geminiService';
 import { getUsage, deductBaroCredit } from '../services/usageService';
+import { CreditFloatingButton } from '../components/CreditFloatingButton';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
@@ -1987,6 +1988,7 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
               </div>
           </div>
       )}
+      <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
     </div>
   );
 };
