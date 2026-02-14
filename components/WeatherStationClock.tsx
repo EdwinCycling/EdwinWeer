@@ -1,8 +1,9 @@
 import React from 'react';
 import { Icon } from './Icon';
 import { mapWmoCodeToIcon } from '../services/weatherService';
-import { TempUnit } from '../types';
+import { TempUnit, AppSettings } from '../types';
 import { getTranslation } from '../services/translations';
+import { convertWind, getWindUnitLabel } from '../services/weatherService';
 
 interface Props {
     weatherData: {
@@ -27,10 +28,7 @@ interface Props {
         }[];
     } | null;
     currentTime: Date;
-    settings: {
-        tempUnit: TempUnit;
-        language: string;
-    };
+    settings: AppSettings;
 }
 
 export const WeatherStationClock: React.FC<Props> = ({ weatherData, currentTime, settings }) => {
@@ -48,10 +46,14 @@ export const WeatherStationClock: React.FC<Props> = ({ weatherData, currentTime,
     const humidity = weatherData?.humidity || 45;
     const icon = weatherData ? mapWmoCodeToIcon(weatherData.weatherCode, !weatherData.isNight) : 'wb_sunny';
     const feelsLike = weatherData?.feelsLike ? Math.round(weatherData.feelsLike) : temp;
-    const windSpeed = weatherData?.windSpeed ? Math.round(weatherData.windSpeed) : 0;
+    
+    // Wind calculation based on settings
+    const rawWindSpeed = weatherData?.windSpeed || 0;
+    const windSpeed = Math.round(convertWind(rawWindSpeed, settings.windUnit));
+    const windUnit = getWindUnitLabel(settings.windUnit);
+    
     const windDir = weatherData?.windDir || 'N';
     const windAngle = weatherData?.windAngle || 0;
-    const windUnit = weatherData?.windUnit || 'km/h';
     const pressure = weatherData?.pressure || '--';
 
     const t = (key: string) => getTranslation(key, settings.language);
@@ -157,7 +159,7 @@ export const WeatherStationClock: React.FC<Props> = ({ weatherData, currentTime,
                     </div>
 
                     {/* WIND ROSE */}
-                    <div className="flex-1 bg-slate-900/50 rounded-2xl p-2 border-t-4 border-amber-500/50 flex flex-col items-center justify-between border border-white/5 relative overflow-hidden">
+                    <div className="flex-1 bg-slate-900/50 rounded-2xl p-3 border-l-4 border-amber-500/50 flex flex-col items-center justify-between border border-white/5 relative overflow-hidden">
                         <div className="absolute top-1 left-2 text-[8px] text-amber-400 font-bold uppercase">{t('ambient.wind')}</div>
                         
                         <div className="relative w-20 h-20 mt-1">
