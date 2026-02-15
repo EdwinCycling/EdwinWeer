@@ -2201,4 +2201,8 @@ export const fr: Dictionary = {
     'game.username.error.profanity': 'Veuillez choisir un autre nom.',
     'game.username.error.baro': 'Le nom ne peut pas contenir "Baro".',
     'game.deadline.closing': 'Fermeture',
+    'game.start': 'Début',
+    'game.deadline': 'Date limite',
+    'game.day': 'Jour',
+    'game.final_day': 'Dernier jour !',
 };

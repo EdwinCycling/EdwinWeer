@@ -746,13 +746,47 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                     </div>
                                                     
                                                     {/* Progress Slider */}
-                                                    <div className="relative h-2 bg-black/20 rounded-full overflow-hidden">
-                                                        <div 
-                                                            className="absolute top-0 left-0 h-full bg-yellow-400 rounded-full transition-all duration-1000"
-                                                            style={{ 
-                                                                width: `${Math.max(0, Math.min(100, (timeLeft.days * 24 + timeLeft.hours) / (7 * 24) * 100))}%` 
-                                                            }}
-                                                        />
+                                                    <div className="mt-6">
+                                                        <div className="flex justify-between text-xs text-blue-100 font-medium mb-1 uppercase tracking-wider">
+                                                            <span>{t('game.start')}</span>
+                                                            <span>{t('game.deadline')}</span>
+                                                        </div>
+                                                        <div className="relative h-4 bg-black/30 rounded-full overflow-hidden shadow-inner backdrop-blur-sm">
+                                                            {/* Day markers */}
+                                                            <div className="absolute inset-0 flex justify-between px-[1px]">
+                                                                {[...Array(7)].map((_, i) => (
+                                                                    <div key={i} className="h-full w-px bg-white/10" style={{ left: `${(i + 1) * (100 / 7)}%` }} />
+                                                                ))}
+                                                            </div>
+                                                            
+                                                            {/* Progress Bar (Fills as time passes) */}
+                                                            <div 
+                                                                className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.3)] ${
+                                                                    timeLeft.days >= 1 ? 'bg-gradient-to-r from-green-400 to-green-500' : 
+                                                                    timeLeft.hours >= 4 ? 'bg-gradient-to-r from-orange-400 to-orange-500' : 'bg-gradient-to-r from-red-500 to-red-600 animate-pulse'
+                                                                }`}
+                                                                style={{ 
+                                                                    width: `${100 - Math.max(0, Math.min(100, (timeLeft.days * 24 + timeLeft.hours + timeLeft.minutes / 60) / (7 * 24) * 100))}%` 
+                                                                }}
+                                                            />
+                                                            
+                                                            {/* Text overlay on bar */}
+                                                            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-md">
+                                                                {timeLeft.days > 0 
+                                                                    ? `${t('game.day')} ${7 - timeLeft.days} / 7` 
+                                                                    : t('game.final_day')}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex justify-between text-[10px] text-blue-200 mt-1 font-medium">
+                                                            <span>-7d</span>
+                                                            <span>-6d</span>
+                                                            <span>-5d</span>
+                                                            <span>-4d</span>
+                                                            <span>-3d</span>
+                                                            <span>-2d</span>
+                                                            <span>-1d</span>
+                                                            <span>0</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

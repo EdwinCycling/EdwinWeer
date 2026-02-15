@@ -385,7 +385,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
     return (
         <div ref={containerRef} className="flex flex-col h-[100dvh] w-full relative bg-bg-page/50 overflow-hidden">
             {/* Back Button */}
-            <div className="absolute top-6 left-6 z-[100]">
+            <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] left-6 z-[100]">
                  <button 
                     onClick={() => onNavigate(ViewState.CURRENT)} 
                     className="p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-main hover:bg-bg-card transition-colors border border-border-color shadow-lg ring-1 ring-border-color/10"
@@ -395,7 +395,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             </div>
 
             {/* Skins Selection Menu */}
-            <div className="absolute top-6 left-24 z-[100] flex gap-2">
+            <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] left-24 z-[100] flex gap-2">
                 {[
                     { id: 'satellite', icon: 'satellite', label: 'Satelliet' },
                     { id: 'night', icon: 'nights_stay', label: 'Nacht' },
@@ -418,7 +418,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             </div>
 
             {/* Controls */}
-            <div className="absolute top-6 right-6 z-[100] flex flex-col gap-2 scale-75 md:scale-100 origin-top-right">
+            <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] right-6 z-[100] flex flex-col gap-2 scale-75 md:scale-100 origin-top-right">
                 <div className="flex flex-col bg-bg-card/80 backdrop-blur-md rounded-xl border border-border-color overflow-hidden shadow-lg ring-1 ring-border-color/10">
                     <button onClick={() => handleControl('zoomIn')} className="p-1.5 sm:p-3 hover:bg-bg-page/50 text-text-main active:bg-bg-page transition-colors"><Icon name="add" /></button>
                     <button onClick={() => handleControl('zoomOut')} className="p-1.5 sm:p-3 hover:bg-bg-page/50 text-text-main active:bg-bg-page transition-colors border-t border-border-color"><Icon name="remove" /></button>

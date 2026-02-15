@@ -701,7 +701,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             {/* Top Tickers Container */}
             <div className="absolute top-0 left-0 right-0 z-20 flex flex-col">
                 {/* World Weather Ticker - Adjusted for Mobile Camera Notch */}
-                <div className="bg-blue-900/60 backdrop-blur-sm border-b border-white/10 text-white/90 font-medium drop-shadow-md overflow-hidden md:py-3 pt-12 pb-2 min-h-[90px] md:min-h-0 flex flex-col justify-end">
+                <div className="bg-blue-900/60 backdrop-blur-sm border-b border-white/10 text-white/90 font-medium drop-shadow-md overflow-hidden md:py-3 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-2 min-h-[90px] md:min-h-0 flex flex-col justify-end">
                     {/* @ts-ignore */}
                     <marquee scrollamount={Math.round(10 * scrollSpeedMultiplier)} className="flex items-center text-[1.8rem]">
                         {worldWeather.map((item, i) => (

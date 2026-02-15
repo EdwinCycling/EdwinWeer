@@ -2197,4 +2197,8 @@ export const es: Dictionary = {
     'records.sun_percent': 'Sol %',
 
     'common.back': 'Volver',
+    'game.start': 'Inicio',
+    'game.deadline': 'Fecha límite',
+    'game.day': 'Día',
+    'game.final_day': '¡Último día!',
 };

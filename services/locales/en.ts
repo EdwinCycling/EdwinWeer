@@ -2327,4 +2327,8 @@ export const en: Dictionary = {
     'game.deadline.closing': 'Closing',
     'game.view_on_map': 'View on map',
     'game.map_controls_hint': 'Use pinch to zoom / drag to move',
+    'game.start': 'Start',
+    'game.deadline': 'Deadline',
+    'game.day': 'Day',
+    'game.final_day': 'Last day!',
 };

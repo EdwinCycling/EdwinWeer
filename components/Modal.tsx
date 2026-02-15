@@ -41,7 +41,7 @@ export const Modal: React.FC<ModalProps> = ({
             >
                 {/* Header */}
                 {!hideHeader && (title || onClose) && (
-                    <div className={`p-4 border-b border-border-color flex justify-between items-center bg-bg-page/50 ${fullScreen ? 'absolute top-0 left-0 right-0 z-[2001] bg-bg-card/80 backdrop-blur-md' : ''}`}>
+                    <div className={`p-4 border-b border-border-color flex justify-between items-center bg-bg-page/50 ${fullScreen ? 'absolute top-0 left-0 right-0 z-[2001] bg-bg-card/80 backdrop-blur-md pt-[calc(1rem+env(safe-area-inset-top))]' : ''}`}>
                         {title && (
                             <h3 className="font-bold text-lg text-text-main">
                                 {title}

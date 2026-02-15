@@ -124,7 +124,7 @@ export const GlobalBanner: React.FC = () => {
     if (isClosed) return null;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-bg-subtle text-text-main px-4 py-3 shadow-md border-b border-border-color flex items-center justify-between transition-transform duration-300">
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-bg-subtle text-text-main px-4 py-3 shadow-md border-b border-border-color flex items-center justify-between transition-transform duration-300 pt-[calc(0.75rem+env(safe-area-inset-top))]">
             <div className="flex items-center gap-3 flex-1 justify-center">
                 <Icon name="info" className="text-xl text-accent-primary shrink-0" />
                 <span className="font-medium text-center">{config?.maintenance_message}</span>

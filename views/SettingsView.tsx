@@ -103,7 +103,8 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
         if (draggedItemIndex === null) {
             setLocalFavorites(settings.favorites);
         }
-    }, [settings.favorites, draggedItemIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [settings.favorites]);
 
     const t = (key: string) => getTranslation(key, settings.language);
 
@@ -278,7 +279,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
         e.preventDefault();
         if (draggedItemIndex === null || draggedItemIndex === index) return;
 
-        const newFavs = [...settings.favorites];
+        const newFavs = [...localFavorites];
         const draggedItem = newFavs[draggedItemIndex];
         
         // Remove item from old position
@@ -286,7 +287,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
         // Insert at new position
         newFavs.splice(index, 0, draggedItem);
 
-        updateSetting('favorites', newFavs);
+        setLocalFavorites(newFavs);
         setDraggedItemIndex(index);
     };
 
@@ -395,7 +396,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 ) : (
                                     localFavorites.map((fav, index) => (
                                         <div 
-                                            key={`${fav.name}-${index}`}
+                                            key={`${fav.lat}-${fav.lon}`}
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, index)}
                                             onDragOver={(e) => handleDragOver(e, index)}

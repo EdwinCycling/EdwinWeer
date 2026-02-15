@@ -2312,4 +2312,8 @@ export const nl: Dictionary = {
     'game.deadline.closing': 'Sluiting',
     'game.view_on_map': 'Bekijk op kaart',
     'game.map_controls_hint': 'Pinch om te zoomen / sleep om te bewegen',
+    'game.start': 'Start',
+    'game.deadline': 'Deadline',
+    'game.day': 'Dag',
+    'game.final_day': 'Laatste dag!',
 };

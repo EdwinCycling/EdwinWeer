@@ -509,7 +509,7 @@ const App: React.FC = () => {
     <RadioProvider>
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark">
         <GlobalBanner />
-        <div className="max-w-5xl mx-auto px-0 lg:px-8 pb-32 w-full" key={refreshKey}>
+        <div className="max-w-5xl mx-auto px-0 lg:px-8 pb-32 w-full pt-[env(safe-area-inset-top)]" key={refreshKey}>
             <ErrorBoundary settings={settings} onNavigate={navigate}>
                 <Suspense fallback={<LoadingSpinner />}>
                     {renderView()}
@@ -562,7 +562,7 @@ const App: React.FC = () => {
         )}
 
         {limitReached && currentView !== ViewState.PRICING && (
-            <div className="fixed top-4 inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">
+            <div className="fixed top-[calc(1rem+env(safe-area-inset-top))] inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">
                 <div className="max-w-xl w-full bg-amber-500 text-white border border-amber-600 rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 pointer-events-auto">
                     <div className="mt-0.5">
                         <Icon name="block" className="text-lg text-white" />
@@ -593,7 +593,7 @@ const App: React.FC = () => {
         )}
 
         {usageWarning && !limitReached && (
-            <div className="fixed top-4 inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">
+            <div className="fixed top-[calc(1rem+env(safe-area-inset-top))] inset-x-0 flex justify-center z-[3000] px-4 pointer-events-none">
                 <div className="max-w-xl w-full bg-yellow-50 dark:bg-yellow-900/40 border border-yellow-200 dark:border-yellow-700 text-yellow-900 dark:text-yellow-100 rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 pointer-events-auto">
                     <div className="mt-0.5">
                         <Icon name="warning" className="text-lg text-yellow-500 dark:text-yellow-300" />
@@ -625,7 +625,7 @@ const App: React.FC = () => {
         )}
 
         {showPWABanner && deferredPrompt && (
-            <div className={`fixed inset-x-0 flex justify-center z-[2900] px-4 pointer-events-none transition-all duration-300 ${usageWarning ? 'top-32' : 'top-4'}`}>
+            <div className={`fixed inset-x-0 flex justify-center z-[2900] px-4 pointer-events-none transition-all duration-300 ${usageWarning ? 'top-32' : 'top-[calc(1rem+env(safe-area-inset-top))]'}`}>
                 <div className="max-w-xl w-full bg-accent-primary text-text-inverse rounded-2xl shadow-xl px-4 py-3 flex items-center justify-between gap-3 pointer-events-auto">
                     <div className="flex items-center gap-3">
                         <div className="bg-bg-card/20 p-2 rounded-lg">

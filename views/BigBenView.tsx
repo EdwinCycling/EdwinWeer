@@ -579,7 +579,7 @@ export const BigBenView: React.FC<Props> = ({ onNavigate, settings, onUpdateSett
     <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden font-sans">
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4 flex justify-center bg-black/40 backdrop-blur-md border-b border-white/10">
+      <div className="absolute top-0 left-0 right-0 z-50 p-4 flex justify-center bg-black/40 backdrop-blur-md border-b border-white/10 pt-[calc(1rem+env(safe-area-inset-top))]">
         <div className="w-full max-w-5xl flex items-center justify-between">
             <button 
                 onClick={() => onNavigate(ViewState.CURRENT)}

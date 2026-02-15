@@ -1301,8 +1301,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <>
                 <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main">
                     <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
-                        <div className="bg-bg-card/80 backdrop-blur-md px-6 py-2 rounded-3xl border border-border-color shadow-lg ring-1 ring-border-color/10">
-                            <h1 className="text-[80px] md:text-[110px] font-bold leading-none tracking-tighter drop-shadow-2xl font-display text-text-main">
+                        <div className="bg-bg-card backdrop-blur-md px-4 rounded-xl border border-border-color shadow-sm flex items-center justify-center h-[85px] md:h-[100px] min-w-[140px]">
+                            <h1 className="text-[50px] md:text-[70px] font-bold leading-none tracking-tighter drop-shadow-xl font-display text-text-main">
                                 {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
                             </h1>
                         </div>

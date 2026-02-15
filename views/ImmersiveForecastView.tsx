@@ -55,7 +55,7 @@ export const ImmersiveForecastView: React.FC<Props> = ({ onNavigate, settings })
   return (
     <div className="fixed inset-0 z-[100] bg-black flex flex-col h-[100dvh]">
        {/* Sticky Header */}
-       <header className="absolute top-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
+       <header className="absolute top-0 left-0 right-0 z-50 pointer-events-none flex justify-center pt-[env(safe-area-inset-top)]">
           <div className="w-full max-w-5xl mx-auto flex items-center justify-between p-4 pointer-events-auto bg-black/30 backdrop-blur-md text-white border-b border-white/10 shadow-lg">
              <button 
                onClick={() => onNavigate(ViewState.CURRENT)} 
