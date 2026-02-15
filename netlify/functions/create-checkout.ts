@@ -38,7 +38,7 @@ export const handler = async (event) => {
     }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'ideal', 'bancontact'], // Common in NL/EU
+      automatic_tax: { enabled: true },
       line_items: [
         {
           price: priceId,

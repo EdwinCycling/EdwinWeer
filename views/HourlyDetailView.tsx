@@ -187,7 +187,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-page pb-24 overflow-y-auto text-text-main transition-colors">
-      <div className="flex items-center p-4 pt-8 fixed top-0 left-0 right-0 bg-bg-card/95 backdrop-blur z-50 border-b border-border-color">
+      <div className="flex items-center p-4 pt-14 md:pt-8 fixed top-0 left-0 right-0 bg-bg-card/95 backdrop-blur z-50 border-b border-border-color">
         <button onClick={() => onNavigate(ViewState.CURRENT)} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-page mr-2">
             <Icon name="arrow_back_ios_new" />
         </button>
@@ -225,12 +225,12 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
       </div>
 
       {loading ? (
-           <div className="flex-grow flex items-center justify-center pt-28">
+           <div className="flex-grow flex items-center justify-center pt-36 md:pt-28">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
            </div>
       ) : (
         viewMode === 'compact' ? (
-            <div className="pt-28 pb-4 px-4">
+            <div className="pt-36 md:pt-28 pb-4 px-4">
                  <div className="bg-bg-card rounded-xl p-4 border border-border-color overflow-x-auto shadow-sm">
                     <div className="min-w-[800px] md:min-w-full">
                         <CompactHourlyChart data={data} settings={settings} />
@@ -238,7 +238,7 @@ export const HourlyDetailView: React.FC<Props> = ({ onNavigate, settings, initia
                  </div>
             </div>
         ) : (
-        <div className="flex flex-col gap-8 p-4 pt-28">
+        <div className="flex flex-col gap-8 p-4 pt-36 md:pt-28">
             
             <div className="w-full overflow-x-auto pb-4">
                 <div className="min-w-[600px] md:min-w-full flex flex-col gap-8 pr-4">

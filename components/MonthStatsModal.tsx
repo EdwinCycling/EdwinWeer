@@ -107,11 +107,11 @@ export const MonthStatsModal: React.FC<Props> = ({ isOpen, onClose, data, settin
     };
 
     const modalContent = (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="w-full max-w-7xl max-h-[90vh] bg-bg-page rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-border-color">
-                <div className="flex items-center justify-between p-4 border-b border-border-color shrink-0">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pt-16 md:p-4">
+            <div className="w-full max-w-7xl max-h-[85vh] md:max-h-[90vh] bg-bg-page rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-border-color">
+                <div className="flex flex-col md:flex-row md:items-center justify-between p-4 gap-4 md:gap-0 border-b border-border-color shrink-0">
                     <div className="flex items-center gap-3">
-                        <button onClick={onClose} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-subtle transition-colors">
+                        <button onClick={onClose} className="size-10 flex items-center justify-center rounded-full hover:bg-bg-subtle transition-colors flex-shrink-0">
                             <Icon name="arrow_back_ios_new" />
                         </button>
                         <div>
@@ -119,14 +119,14 @@ export const MonthStatsModal: React.FC<Props> = ({ isOpen, onClose, data, settin
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-text-muted font-bold uppercase">{currentMonthName}</span>
                                 <span className="text-xs text-text-muted opacity-50">•</span>
-                                <div className="flex items-center gap-1 text-xs opacity-50">
+                                <div className="flex items-center gap-1 text-xs opacity-50 truncate max-w-[150px]">
                                     <Icon name="location_on" className="text-xs" /> {location.name}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex bg-bg-subtle rounded-lg p-1 border border-border-color">
+                    <div className="flex bg-bg-subtle rounded-lg p-1 border border-border-color w-full md:w-auto justify-center md:justify-start">
                         <button
                             onClick={() => handleViewModeChange('graph')}
                             className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${
