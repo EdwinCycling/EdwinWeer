@@ -43,7 +43,7 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, cl
         <>
             <button
                 onClick={() => setShowPopup(!showPopup)}
-                className={className || "fixed bottom-[76px] md:bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"}
+                className={className || "fixed bottom-[100px] md:bottom-24 right-4 z-40 bg-bg-card text-text-main p-2 rounded-full shadow-lg border border-border-color flex items-center gap-2 hover:scale-105 transition-transform"}
             >
                 {hasCredits ? (
                     <>

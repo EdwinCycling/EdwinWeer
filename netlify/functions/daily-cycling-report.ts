@@ -354,21 +354,47 @@ export const handler = async (event: any, context: any) => {
             locationName = extractLocationName(weatherField);
 
             // Fallback: Als locatie niet in het weer-veld staat, of als het een lange rittenkoers is, gebruik AI
-            if (!locationName || durationDays > 7) {
+            // CHANGE: Verbeterde logica. Als het een rittenkoers is (> 1 dag), verandert de locatie dagelijks.
+            // Dus we moeten ALTIJD AI vragen waar de rit vandaag finisht, tenzij de HTML widget heel specifiek is (wat zelden zo is voor hele tour).
+            // Ook als geocoding faalt, proberen we AI.
+            let useAI = !locationName || durationDays > 1;
+            
+            // Check eerst of we de locatie kunnen geocoden als we die hebben
+            let geo = null;
+            if (locationName && !useAI) {
+                geo = await geocodeLocation(locationName, country);
+                if (!geo) {
+                    console.log(`Geocoding failed for '${locationName}', trying AI fallback...`);
+                    useAI = true;
+                }
+            }
+
+            if (useAI) {
                 const aiLoc = await getRaceLocationFromAI(nameTitle, today, info, country);
-                if (aiLoc) locationName = aiLoc;
+                if (aiLoc) {
+                    console.log(`AI suggest location for ${nameTitle}: ${aiLoc}`);
+                    locationName = aiLoc;
+                    // Opnieuw geocoden met nieuwe naam
+                    geo = await geocodeLocation(locationName, country);
+                }
             }
             
             let weatherTexts: Record<string, string> = {};
             let locationDisplay = locationName || "Onbekend";
 
-            if (locationDisplay !== "Onbekend") {
-                const geo = await geocodeLocation(locationDisplay, country);
-                if (geo) {
-                    locationDisplay = `${geo.name}, ${geo.country}`;
-                    const weather = await getWeather(geo.lat, geo.lon);
-                    if (weather) {
-                        const hourly = (weather as any).hourly;
+            if (geo) {
+                locationDisplay = `${geo.name}, ${geo.country}`;
+                // Retry mechanisme voor weer
+                let weather = await getWeather(geo.lat, geo.lon);
+                if (!weather) {
+                    console.log("Retrying weather fetch...");
+                    await new Promise(r => setTimeout(r, 2000));
+                    weather = await getWeather(geo.lat, geo.lon);
+                }
+
+                if (weather) {
+                    const hourly = (weather as any).hourly;
+                    // ... rest of logic
                         const indices = hourly.time.map((t: string, i: number) => {
                             const h = parseInt(t.split('T')[1].split(':')[0]);
                             return (h >= 13 && h <= 17) ? i : -1;

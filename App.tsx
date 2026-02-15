@@ -539,7 +539,7 @@ const App: React.FC = () => {
         ].includes(currentView) && (
             <button
                 onClick={() => navigate(ViewState.GAME_DASHBOARD)}
-                className={`fixed bottom-[130px] md:bottom-40 right-4 z-[100] h-12 md:h-14 w-12 md:w-auto md:px-6 rounded-full shadow-lg flex items-center justify-center gap-3 hover:scale-110 transition-transform border border-white/20 group overflow-hidden ${
+                className={`fixed bottom-[154px] md:bottom-40 right-4 z-[100] h-12 md:h-14 w-12 md:w-auto md:px-6 rounded-full shadow-lg flex items-center justify-center gap-3 hover:scale-110 transition-transform border border-white/20 group overflow-hidden ${
                     openRoundId && !hasBetOnOpenRound 
                         ? 'bg-purple-600 text-white' 
                         : (openRoundId && hasBetOnOpenRound 
