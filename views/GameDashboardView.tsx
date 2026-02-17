@@ -44,10 +44,10 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     const [showDetailedStats, setShowDetailedStats] = useState(false);
     
     // Betting form
-    const [betMax, setBetMax] = useState<string>('');
     const [betMin, setBetMin] = useState<string>('');
     const [submitting, setSubmitting] = useState(false);
     const [showBaroDetails, setShowBaroDetails] = useState(false);
+    const [errorModalMessage, setErrorModalMessage] = useState<string | null>(null);
     const [showFutureDetails, setShowFutureDetails] = useState<GameRound | null>(null);
     const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number} | null>(null);
 
@@ -385,7 +385,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
             // Better: Just show a message that it will be done automatically next Monday, 
             // OR provide a minimal client-side implementation.
             
-            alert("Schedule fill is now configured in the cloud function. It will run automatically next Monday at 09:00. To run immediately, please trigger the 'game-master' function via Netlify console.");
+            setErrorModalMessage("Schedule fill is now configured in the cloud function. It will run automatically next Monday at 09:00. To run immediately, please trigger the 'game-master' function via Netlify console.");
         } catch (e) {
             console.error(e);
         } finally {
@@ -513,7 +513,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
         
         // Validate max temp against Baro
         if (openRound.baroPrediction && parseFloat(betMax) === openRound.baroPrediction.max) {
-            alert(t('game.error.max_equals_baro'));
+            setErrorModalMessage(t('game.error.max_equals_baro'));
             return;
         }
 
@@ -544,7 +544,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
             // Optionally show toast
         } catch (e) {
             console.error(e);
-            alert('Error placing bet');
+            setErrorModalMessage('Error placing bet');
         } finally {
             setSubmitting(false);
         }
@@ -611,6 +611,28 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                     {t('game.tab.how_it_works')}
                 </button>
             </div>
+
+            {/* Error Modal */}
+            {errorModalMessage && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-bg-card w-full max-w-md rounded-3xl border border-red-500/20 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 text-center">
+                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Icon name="warning" className="text-3xl text-red-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-text-main mb-2">Let op</h3>
+                            <p className="text-text-muted mb-6">{errorModalMessage}</p>
+                            
+                            <button 
+                                onClick={() => setErrorModalMessage(null)}
+                                className="w-full bg-bg-page hover:bg-bg-card border border-border-color text-text-main font-bold py-3 rounded-xl transition-all active:scale-95"
+                            >
+                                {t('common.close', { defaultValue: 'Sluiten' })}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Baro Details Modal */}
             {showBaroDetails && openRound && (
