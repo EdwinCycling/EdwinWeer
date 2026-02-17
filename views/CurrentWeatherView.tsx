@@ -1013,7 +1013,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     const pastWindDirText = getWindDirection(pastWindDir, settings.language);
 
   return (
-    <div className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300">
+    <div 
+        className="relative min-h-screen flex flex-col pb-20 overflow-y-auto overflow-x-hidden text-text-main bg-bg-page transition-colors duration-300"
+        style={{ marginTop: 'calc(-1 * env(safe-area-inset-top))' }}
+    >
       
       {error && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white px-6 py-3 rounded-full shadow-lg backdrop-blur-md animate-bounce">
@@ -1025,7 +1028,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       )}
 
       {weatherData && (
-        <div className="absolute top-0 left-0 right-0 h-[90vh] md:h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
+        <div className="absolute top-0 left-0 right-0 h-[95vh] md:h-[80vh] z-0 overflow-hidden rounded-b-[3rem]">
              <StaticWeatherBackground 
                 weatherCode={weatherData.current.weather_code} 
                 isDay={weatherData.current.is_day} 
@@ -1135,7 +1138,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
       <div className="relative z-10 flex flex-col h-full w-full">
         {/* Header */}
-        <div className="flex flex-col pt-32 pb-4">
+        <div className="flex flex-col pt-48 md:pt-32 pb-4">
             <div className="flex items-center justify-center relative px-4 mb-2">
                 <button onClick={() => cycleFavorite('prev')} className="absolute left-4 p-2 rounded-full bg-bg-card/80 backdrop-blur-md text-text-muted hover:text-text-main hover:bg-bg-card transition-all shadow-sm ring-1 ring-border-color disabled:opacity-0" disabled={settings.favorites.length === 0}>
                     <Icon name="chevron_left" className="text-3xl" />

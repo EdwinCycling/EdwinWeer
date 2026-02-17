@@ -11,6 +11,7 @@ import { saveCurrentLocation } from '../services/storageService';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import GameStatsCharts from '../components/GameStatsCharts';
 
 const customIcon = L.divIcon({
   html: '<span class="material-symbols-outlined" style="font-size: 40px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">location_on</span>',
@@ -39,6 +40,8 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     const [runningRound, setRunningRound] = useState<GameRound | undefined>(undefined);
     const [runningUserBet, setRunningUserBet] = useState<GameBet | null>(null);
     const [runningStats, setRunningStats] = useState<{ count: number, avgMax: number, avgMin: number } | null>(null);
+    const [runningBets, setRunningBets] = useState<GameBet[]>([]);
+    const [showDetailedStats, setShowDetailedStats] = useState(false);
     
     // Betting form
     const [betMax, setBetMax] = useState<string>('');
@@ -74,7 +77,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     const [usernameSaved, setUsernameSaved] = useState(false);
     
     // Map Modal State
-    const [showMapModal, setShowMapModal] = useState(false);
+    const [mapModalRound, setMapModalRound] = useState<GameRound | null>(null);
 
     // Helper for anonymized name
     const getAnonymizedName = (name: string, email?: string) => {
@@ -299,7 +302,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
 
     // Fetch user history
     useEffect(() => {
-        if (!user || activeTab !== 'results') return;
+        if (!user || (activeTab !== 'results' && activeTab !== 'schedule')) return;
         
         setHistoryLoading(true);
         // We use collectionGroup to find all bets by this user
@@ -420,64 +423,76 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
         return () => clearInterval(timer);
     }, [openRound]);
     
-    // Fetch running round data
+    // Determine running round
     useEffect(() => {
-        // If there is an OPEN round, we use that as the primary interaction
-        // If there is a LOCKED round, we show that (game in progress)
-        // Logic: 
-    // 1. If 'running' (locked) round exists, show it? No, 'running' usually implies betting is closed, game is on.
-    // 2. If 'open' round exists, show it for betting.
-    
-    const now = new Date();
-    const runningRound = rounds.find(r => {
-        if (r.status !== 'locked') return false;
+        // Priority 1: Find a round that is explicitly LOCKED (Game in progress)
+        let running = rounds.find(r => r.status === 'locked');
         
-        // Target date is Sunday
-        const targetDate = new Date(r.targetDate);
-        
-        // Betting closed: Monday before target (Target - 6 days) at 09:00
-        const closeDate = new Date(targetDate);
-        closeDate.setDate(closeDate.getDate() - 6);
-        closeDate.setHours(9, 0, 0, 0);
-        
-        // Round ends: Monday after target (Target + 1 day) at 09:00
-        const endDate = new Date(targetDate);
-        endDate.setDate(endDate.getDate() + 1);
-        endDate.setHours(9, 0, 0, 0);
-        
-        return now >= closeDate && now < endDate;
-    });
-    
-    // Set running round specifically
-    setRunningRound(runningRound);
-
-    // Load stats for running round if exists
-    if (runningRound) {
-            getDocs(query(collection(db, `game_rounds/${runningRound.id}/bets`))).then(snapshot => {
-                const bets = snapshot.docs.map(d => d.data() as GameBet);
+        // Priority 2: If no locked round, check dates
+        if (!running) {
+            const now = new Date();
+             running = rounds.find(r => {
+                const targetDate = new Date(r.targetDate);
+                const closeDate = new Date(targetDate);
+                closeDate.setDate(closeDate.getDate() - 6);
+                closeDate.setHours(9, 0, 0, 0);
                 
-                if (user) {
-                const myBet = bets.find(b => b.userId === user.uid) || null;
-                setRunningUserBet(myBet);
-                }
+                const endDate = new Date(targetDate);
+                endDate.setDate(endDate.getDate() + 1);
+                endDate.setHours(9, 0, 0, 0);
                 
-                if (bets.length > 0) {
-                    const totalMax = bets.reduce((sum, b) => sum + b.prediction.max, 0);
-                    const totalMin = bets.reduce((sum, b) => sum + b.prediction.min, 0);
-                    setRunningStats({
-                        count: bets.length,
-                        avgMax: totalMax / bets.length,
-                        avgMin: totalMin / bets.length
-                    });
-                } else {
-                    setRunningStats({ count: 0, avgMax: 0, avgMin: 0 });
-                }
+                return now >= closeDate && now < endDate;
             });
-    } else {
-        setRunningUserBet(null);
-        setRunningStats(null);
-    }
-    }, [rounds, user]);
+        }
+        setRunningRound(running);
+    }, [rounds]);
+
+    // Fetch running round stats
+    useEffect(() => {
+        if (!runningRound) {
+            setRunningStats(null);
+            setRunningBets([]);
+            return;
+        }
+
+        getDocs(query(collection(db, `game_rounds/${runningRound.id}/bets`))).then(snapshot => {
+            const bets = snapshot.docs.map(d => d.data() as GameBet);
+            setRunningBets(bets);
+            if (bets.length > 0) {
+                const totalMax = bets.reduce((sum, b) => sum + b.prediction.max, 0);
+                const totalMin = bets.reduce((sum, b) => sum + b.prediction.min, 0);
+                setRunningStats({
+                    count: bets.length,
+                    avgMax: totalMax / bets.length,
+                    avgMin: totalMin / bets.length
+                });
+            } else {
+                setRunningStats({ count: 0, avgMax: 0, avgMin: 0 });
+            }
+        }).catch(error => {
+            console.error("Error fetching running round bets:", error);
+            setRunningStats({ count: 0, avgMax: 0, avgMin: 0 });
+            setRunningBets([]);
+        });
+    }, [runningRound]);
+
+    // Fetch user bet for running round (Real-time)
+    useEffect(() => {
+        if (!runningRound || !user) {
+            setRunningUserBet(null);
+            return;
+        }
+
+        const betRef = doc(db, `game_rounds/${runningRound.id}/bets/${user.uid}`);
+        const unsub = onSnapshot(betRef, (snap) => {
+            if (snap.exists()) {
+                setRunningUserBet(snap.data() as GameBet);
+            } else {
+                setRunningUserBet(null);
+            }
+        });
+        return () => unsub();
+    }, [runningRound, user]);
     
     // Fetch user bet for open round
     useEffect(() => {
@@ -504,9 +519,20 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
 
         setSubmitting(true);
         try {
+            // Determine the name to use (prefer saved username, fallback to anonymized default)
+            let nameToUse = username;
+            if (!nameToUse || nameToUse.trim() === '') {
+                 nameToUse = getAnonymizedName(user.displayName || 'Unknown', user.email || undefined);
+            }
+            
+            // Double check to ensure no email leaks
+            if (nameToUse.includes('@')) {
+                nameToUse = getAnonymizedName(nameToUse, nameToUse);
+            }
+
             const bet: GameBet = {
                 userId: user.uid,
-                userName: user.displayName || 'Anonymous',
+                userName: nameToUse,
                 prediction: {
                     max: parseFloat(betMax),
                     min: parseFloat(betMin)
@@ -704,7 +730,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setShowMapModal(true);
+                                                        setMapModalRound(openRound);
                                                     }}
                                                     className="ml-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white hover:scale-110 active:scale-95 flex items-center justify-center shadow-sm backdrop-blur-sm"
                                                     title={t('game.view_on_map', { defaultValue: 'View on map' })}
@@ -728,19 +754,23 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                                 {t('game.closing')} {timeLeft.days > 0 ? `${timeLeft.days}${t('game.days').charAt(0)} ` : ''}{timeLeft.hours}{t('game.hours').charAt(0)} {timeLeft.minutes}{t('game.minutes').charAt(0)}
                                                             </span>
                                                         </div>
-                                                        <div className="text-white/80 text-xs font-medium text-right">
+                                                    <div className="text-white/80 text-xs font-medium text-right">
                                                             <span className="block opacity-60 text-[10px] uppercase tracking-wider">{t('game.result_date_label')}</span>
                                                             {(() => {
                                                                 const deadline = new Date(openRound.targetDate);
                                                                 deadline.setDate(deadline.getDate() + 1); // Monday
                                                                 deadline.setUTCHours(8, 0, 0, 0); // ~09:00 CET
                                                                 
-                                                                return deadline.toLocaleString(settings.language, { 
-                                                                    weekday: 'short', 
+                                                                const timeOptions: Intl.DateTimeFormatOptions = {
+                                                                    weekday: 'long', 
                                                                     day: 'numeric', 
+                                                                    month: 'long',
                                                                     hour: '2-digit', 
-                                                                    minute: '2-digit' 
-                                                                });
+                                                                    minute: '2-digit',
+                                                                    hour12: settings.timeFormat === '12h'
+                                                                };
+                                                                
+                                                                return deadline.toLocaleString(settings.language, timeOptions);
                                                             })()}
                                                         </div>
                                                     </div>
@@ -886,6 +916,11 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         * {t('game.min_explanation')}
                                     </p>
 
+                                    <div className="flex items-center justify-center gap-2 mb-4 text-sm text-text-muted">
+                                        <span>{t('game.betting_as')}</span>
+                                        <span className="font-bold text-text-main">{username || getAnonymizedName(user.displayName || 'Unknown', user.email || undefined)}</span>
+                                    </div>
+
                                     <button 
                                         onClick={handleBet}
                                         disabled={submitting || !betMax || !betMin}
@@ -955,7 +990,16 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                         {runningRound ? (
                             <div className="space-y-6">
                                 <div className="text-center">
-                                    <h2 className="text-2xl font-bold text-text-main">{runningRound.city.name}</h2>
+                                    <h2 className="text-2xl font-bold text-text-main flex items-center justify-center gap-2">
+                                        {runningRound.city.name}
+                                        <button
+                                            onClick={() => setMapModalRound(runningRound)}
+                                            className="p-1.5 rounded-full bg-bg-card hover:bg-bg-page border border-border-color transition-all text-text-muted hover:text-text-main shadow-sm"
+                                            title={t('game.view_on_map', { defaultValue: 'View on map' })}
+                                        >
+                                            <Icon name="public" className="text-xl" />
+                                        </button>
+                                    </h2>
                                     <p className="text-text-muted">
                                         {t('game.predict_for')} {new Date(runningRound.targetDate).toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </p>
@@ -978,7 +1022,9 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                 </div>
 
                                 {/* User's Prediction */}
-                                <div className="bg-bg-card rounded-2xl p-6 border border-border-color shadow-sm">
+                                <div className={`bg-bg-card rounded-2xl p-6 border shadow-sm transition-colors ${
+                                    runningUserBet ? 'bg-green-500/10 border-green-500/20' : 'border-border-color'
+                                }`}>
                                     <h3 className="text-text-muted font-bold uppercase text-xs tracking-wider mb-4">{t('game.your_prediction')}</h3>
                                     {runningUserBet ? (
                                         <div className="flex items-center justify-between">
@@ -1015,8 +1061,69 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                 <div className="text-xs text-text-muted uppercase">{t('game.avg_min')}</div>
                                             </div>
                                         </div>
+                                        
+                                        <button 
+                                            onClick={() => setShowDetailedStats(!showDetailedStats)}
+                                            className="w-full mt-4 flex items-center justify-center gap-2 py-2 text-sm font-bold text-accent-primary hover:text-accent-hover transition-colors border-t border-border-color pt-4"
+                                        >
+                                            <Icon name={showDetailedStats ? "expand_less" : "expand_more"} />
+                                            {showDetailedStats ? (settings.language === 'nl' ? 'Verberg details' : 'Hide details') : (settings.language === 'nl' ? 'Toon details' : 'Show details')}
+                                        </button>
+                                        
+                                        {showDetailedStats && (
+                                            <div className="mt-6 border-t border-border-color pt-6">
+                                                <GameStatsCharts 
+                                                    bets={runningBets} 
+                                                    baroPrediction={runningRound.baroPrediction}
+                                                    settings={settings}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
+
+                                {/* Game Info */}
+                                <div className="bg-bg-card p-4 rounded-xl border border-border-color">
+                                    <h4 className="font-bold mb-4 text-text-main">{t('game.info', { defaultValue: 'Game Info' })}</h4>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="flex justify-between items-center border-b border-border-color pb-2">
+                                            <span className="text-text-muted">{t('game.prediction_for', { defaultValue: 'Prediction for' })}</span>
+                                            <span className="font-medium text-text-main">
+                                                {new Date(runningRound.targetDate).toLocaleDateString(settings.language, { weekday: 'long', day: 'numeric', month: 'long' })}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-b border-border-color pb-2">
+                                            <span className="text-text-muted">{t('game.betting_period_label', { defaultValue: 'Betting period' })}</span>
+                                            <span className="font-medium text-text-main text-right">
+                                                {(() => {
+                                                    const target = new Date(runningRound.targetDate);
+                                                    const close = new Date(target);
+                                                    close.setDate(close.getDate() - 6);
+                                                    const open = new Date(target);
+                                                    open.setDate(open.getDate() - 13);
+                                                    return `${open.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })} - ${close.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })}`;
+                                                })()}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-text-muted">{t('game.total_participants', { defaultValue: 'Total participants' })}</span>
+                                            <span className="font-medium text-text-main">
+                                                {runningStats ? runningStats.count : 0}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center border-t border-border-color pt-2 mt-2">
+                                            <span className="text-text-muted">{t('game.results_known', { defaultValue: 'Results known on' })}</span>
+                                            <span className="font-medium text-text-main">
+                                                {(() => {
+                                                    const d = new Date(runningRound.targetDate);
+                                                    d.setDate(d.getDate() + 1);
+                                                    d.setHours(10, 0, 0, 0); // Assuming results are processed around 10 AM
+                                                    return `${d.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })} ${d.toLocaleTimeString(settings.language, { hour: '2-digit', minute: '2-digit' })}`;
+                                                })()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 {/* View City Button */}
                                 <button 
@@ -1039,77 +1146,145 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                 {activeTab === 'schedule' && (
                     <div className="space-y-4">
-                        {rounds.filter(r => r.status !== 'completed').map(round => {
-                            // Calculate dates
-                            const targetDate = new Date(round.targetDate);
-                            const closeDate = new Date(targetDate);
-                            closeDate.setDate(closeDate.getDate() - 6); // Monday before
-                            const openDate = new Date(targetDate);
-                            openDate.setDate(openDate.getDate() - 13); // 2 weeks before
+                        {(() => {
+                            // Filter rounds: not completed AND target date is today or in the future
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
 
-                            const isFuture = round.status === 'open' && new Date() < openDate; // Logic check
+                            const activeRounds = rounds.filter(r => {
+                                if (r.status === 'completed') return false;
+                                const targetDate = new Date(r.targetDate);
+                                return targetDate >= today;
+                            });
+                            
+                            // Sort by targetDate ASC (upcoming first)
+                            activeRounds.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime());
 
-                            return (
-                            <div 
-                                key={round.id} 
-                                className={`bg-bg-card p-4 rounded-xl border border-border-color transition-colors ${
-                                    round.status === 'open' || round.status === 'locked' ? 'cursor-pointer hover:border-accent-primary' : ''
-                                }`}
-                                onClick={() => {
-                                    if (round.status === 'open') {
-                                        setActiveTab('play');
-                                    } else if (round.status === 'locked') {
-                                        setActiveTab('running');
-                                    }
-                                }}
-                            >
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
-                                        <h3 className="font-bold text-lg text-text-main">{round.city.name}</h3>
-                                        <p className="text-text-muted text-sm">{targetDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                    </div>
-                                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                        round.status === 'open' ? 'bg-green-500/10 text-green-600' : 
-                                        round.status === 'scheduled' ? 'bg-purple-500/10 text-purple-600' :
-                                        'bg-orange-500/10 text-orange-600'
-                                    }`}>
-                                        {round.status === 'scheduled' ? 'Toekomstig' : t(`game.${round.status}`)}
-                                    </div>
-                                </div>
+                            // Find first future round (scheduled)
+                            const firstFutureRoundId = activeRounds.find(r => r.status === 'scheduled')?.id;
 
-                                {round.status === 'scheduled' && (
-                                    <div className="bg-bg-page rounded-lg p-3 border border-border-color mt-2">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Icon name="event" className="text-purple-500" />
-                                            <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase">Inschrijving</span>
+                            if (activeRounds.length === 0) {
+                                return <div className="text-center py-8 text-text-muted">{t('game.no_rounds')}</div>;
+                            }
+
+                            return activeRounds.map(round => {
+                                // Calculate dates
+                                const targetDate = new Date(round.targetDate);
+                                const closeDate = new Date(targetDate);
+                                closeDate.setDate(closeDate.getDate() - 6); // Monday before
+                                const openDate = new Date(targetDate);
+                                openDate.setDate(openDate.getDate() - 13); // 2 weeks before
+
+                                const isAlmostOpen = round.id === firstFutureRoundId;
+                                const daysUntilOpen = Math.ceil((openDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+                                return (
+                                <div 
+                                    key={round.id} 
+                                    className={`p-4 rounded-xl border border-border-color transition-colors ${
+                                        round.status === 'open' ? 'bg-green-500/10 border-green-500/20 cursor-pointer hover:border-accent-primary' :
+                                        round.status === 'locked' ? 'bg-bg-card cursor-pointer hover:border-accent-primary' : 
+                                        'bg-bg-card'
+                                    }`}
+                                    onClick={() => {
+                                        if (round.status === 'open') {
+                                            setActiveTab('play');
+                                        } else if (round.status === 'locked') {
+                                            setActiveTab('running');
+                                        }
+                                    }}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h3 className="font-bold text-lg text-text-main">{round.city.name}</h3>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMapModalRound(round);
+                                                    }}
+                                                    className="p-1 rounded-full bg-bg-page hover:bg-bg-card border border-border-color transition-all text-text-muted hover:text-text-main shadow-sm"
+                                                    title={t('game.view_on_map', { defaultValue: 'View on map' })}
+                                                >
+                                                    <Icon name="public" className="text-lg" />
+                                                </button>
+                                                <span className="text-sm text-text-muted font-normal">{round.city.country}</span>
+                                            </div>
+                                            <p className="text-text-muted text-sm mt-1">
+                                                {t('game.prediction_target', { date: targetDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' }) })}
+                                            </p>
                                         </div>
-                                        <p className="text-sm text-text-muted mb-3">
-                                            {openDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })} - {closeDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </p>
-                                        
-                                        {/* Small Detail Window - Click to View City */}
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation(); // Prevent parent click
-                                                setShowFutureDetails(round);
-                                            }}
-                                            className="w-full bg-bg-card hover:bg-white dark:hover:bg-gray-800 border border-border-color rounded-lg p-2 flex items-center gap-3 transition-all group"
-                                        >
-                                            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md group-hover:scale-110 transition-transform">
-                                                <Icon name="info" className="text-blue-600 dark:text-blue-400" />
-                                            </div>
-                                            <div className="text-left">
-                                                <span className="font-bold text-sm text-text-main">Details</span>
-                                            </div>
-                                            <Icon name="chevron_right" className="ml-auto text-text-muted group-hover:translate-x-1 transition-transform" />
-                                        </button>
+                                        <div className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ml-2 ${
+                                            round.status === 'open' ? 'bg-green-500/10 text-green-600' : 
+                                            round.status === 'scheduled' ? 'bg-purple-500/10 text-purple-600' :
+                                            'bg-orange-500/10 text-orange-600'
+                                        }`}>
+                                            {isAlmostOpen ? t('game.almost_open') : (round.status === 'scheduled' ? 'Toekomstig' : t(`game.${round.status}`))}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        )})}
-                         {rounds.filter(r => r.status !== 'completed').length === 0 && (
-                            <div className="text-center py-8 text-text-muted">{t('game.no_rounds')}</div>
-                        )}
+
+                                    {round.status === 'locked' && (
+                                        <div className="bg-bg-page rounded-lg p-3 border border-border-color mt-2">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Icon name="timer" className="text-orange-500" />
+                                                <span className="text-xs font-bold text-orange-700 dark:text-orange-400 uppercase">
+                                                    {t('game.game_in_progress', { defaultValue: 'Game in progress' })}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-text-muted mb-2">
+                                                {t('game.result_available_on', { defaultValue: 'Result available on', date: (() => {
+                                                    const d = new Date(round.targetDate);
+                                                    d.setDate(d.getDate() + 1);
+                                                    return d.toLocaleDateString(settings.language, { weekday: 'long', day: 'numeric', month: 'long' });
+                                                })() })}
+                                            </p>
+                                            <div className={`flex items-center gap-2 text-sm font-medium ${userHistory.some(h => h.round?.id === round.id) ? 'text-green-600' : 'text-text-muted'}`}>
+                                                <Icon name={userHistory.some(h => h.round?.id === round.id) ? "check_circle" : "radio_button_unchecked"} />
+                                                {userHistory.some(h => h.round?.id === round.id) 
+                                                    ? t('game.you_participated', { defaultValue: 'You participated' }) 
+                                                    : t('game.did_not_participate', { defaultValue: 'You did not participate' })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {round.status === 'scheduled' && (
+                                        <div className="bg-bg-page rounded-lg p-3 border border-border-color mt-2">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Icon name="event" className="text-purple-500" />
+                                                <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase">
+                                                    {daysUntilOpen <= 0 ? t('game.opens_today') : 
+                                                     daysUntilOpen === 1 ? t('game.opens_tomorrow') : 
+                                                     t('game.opens_in_days', { count: daysUntilOpen })}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-text-muted mb-3">
+                                                {t('game.betting_period', { 
+                                                    start: openDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' }),
+                                                    end: closeDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })
+                                                })}
+                                            </p>
+                                            
+                                            {/* Small Detail Window - Click to View City */}
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Prevent parent click
+                                                    setShowFutureDetails(round);
+                                                }}
+                                                className="w-full bg-bg-card hover:bg-white dark:hover:bg-gray-800 border border-border-color rounded-lg p-2 flex items-center gap-3 transition-all group"
+                                            >
+                                                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-md group-hover:scale-110 transition-transform">
+                                                    <Icon name="info" className="text-blue-600 dark:text-blue-400" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <span className="font-bold text-sm text-text-main">Details</span>
+                                                </div>
+                                                <Icon name="chevron_right" className="ml-auto text-text-muted group-hover:translate-x-1 transition-transform" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            );})
+                        })()}
                     </div>
                 )}
 
@@ -1171,7 +1346,19 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                             <div key={index} className="bg-bg-card p-4 rounded-xl border border-border-color">
                                                 <div className="flex justify-between items-start mb-4 border-b border-border-color pb-3">
                                                     <div>
-                                                        <h3 className="font-bold text-lg text-text-main">{round.city.name}</h3>
+                                                        <h3 className="font-bold text-lg text-text-main flex items-center gap-2">
+                                                            {round.city.name}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setMapModalRound(round);
+                                                                }}
+                                                                className="p-1 rounded-full bg-bg-page hover:bg-bg-card border border-border-color transition-all text-text-muted hover:text-text-main shadow-sm"
+                                                                title={t('game.view_on_map', { defaultValue: 'View on map' })}
+                                                            >
+                                                                <Icon name="public" className="text-lg" />
+                                                            </button>
+                                                        </h3>
                                                         <p className="text-text-muted text-sm">{new Date(round.targetDate).toLocaleDateString(settings.language, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                                                     </div>
                                                     <div className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -1266,7 +1453,16 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                 <div className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 rounded-xl p-4 border border-blue-500/20">
                                                     <div className="flex justify-between items-start mb-4">
                                                         <div>
-                                                            <h3 className="font-bold text-lg text-text-main">{r.city.name}, {r.city.country}</h3>
+                                                            <h3 className="font-bold text-lg text-text-main flex items-center gap-2">
+                                                                {r.city.name}, {r.city.country}
+                                                                <button
+                                                                    onClick={() => setMapModalRound(r)}
+                                                                    className="p-1 rounded-full bg-bg-card hover:bg-bg-page border border-border-color transition-all text-text-muted hover:text-text-main shadow-sm"
+                                                                    title={t('game.view_on_map', { defaultValue: 'View on map' })}
+                                                                >
+                                                                    <Icon name="public" className="text-lg" />
+                                                                </button>
+                                                            </h3>
                                                             <p className="text-sm text-text-muted">
                                                                 {new Date(r.targetDate).toLocaleDateString(settings.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                                                             </p>
@@ -1338,7 +1534,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <p className={`font-bold truncate ${isMe ? 'text-accent-primary' : 'text-text-main'}`}>
-                                                                        {bet.userName} {isMe && t('game.you')}
+                                                                        {getAnonymizedName(bet.userName, bet.userName.includes('@') ? bet.userName : undefined)} {isMe && t('game.you')}
                                                                     </p>
                                                                     <div className="flex items-center gap-2 text-xs text-text-muted">
                                                                         <span>Max Δ {bet.deviation?.devMax.toFixed(1)}°</span>
@@ -1466,7 +1662,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                         </div>
                                                         <div className="flex-1">
                                                             <p className={`font-bold ${entry.userId === user?.uid ? 'text-accent-primary' : 'text-text-main'}`}>
-                                                                {entry.name} {entry.userId === user?.uid && t('game.you')}
+                                                                {getAnonymizedName(entry.name, entry.name.includes('@') ? entry.name : undefined)} {entry.userId === user?.uid && t('game.you')}
                                                             </p>
                                                         </div>
                                                         <div className="font-bold text-accent-primary flex flex-col items-end">
@@ -1534,12 +1730,12 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
             </div>
 
             {/* Map Modal */}
-            {showMapModal && openRound && (
+            {mapModalRound && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     {/* Backdrop */}
                     <div 
                         className="absolute inset-0 bg-black/60 backdrop-blur-md transition-all duration-300"
-                        onClick={() => setShowMapModal(false)}
+                        onClick={() => setMapModalRound(null)}
                     />
                     
                     {/* Modal Content */}
@@ -1550,14 +1746,14 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                             <div>
                                 <h3 className="font-bold text-xl flex items-center gap-2 text-text-main">
                                     <Icon name="location_on" className="text-accent-primary" />
-                                    {openRound.city.name}, {openRound.city.country}
+                                    {mapModalRound.city.name}, {mapModalRound.city.country}
                                 </h3>
                                 <p className="text-xs text-text-muted mt-0.5">
-                                    {openRound.city.lat.toFixed(4)}, {openRound.city.lon.toFixed(4)}
+                                    {mapModalRound.city.lat.toFixed(4)}, {mapModalRound.city.lon.toFixed(4)}
                                 </p>
                             </div>
                             <button 
-                                onClick={() => setShowMapModal(false)}
+                                onClick={() => setMapModalRound(null)}
                                 className="p-2 hover:bg-bg-card rounded-full transition-colors text-text-muted hover:text-text-main"
                             >
                                 <Icon name="close" className="text-2xl" />
@@ -1567,8 +1763,8 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                         {/* Map */}
                         <div className="flex-1 relative z-0 bg-slate-100 dark:bg-slate-900">
                              <MapContainer 
-                                center={[openRound.city.lat, openRound.city.lon]} 
-                                zoom={12} 
+                                center={[mapModalRound.city.lat, mapModalRound.city.lon]} 
+                                zoom={3} 
                                 style={{ height: '100%', width: '100%' }}
                                 className="z-0"
                             >
@@ -1577,13 +1773,13 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                 />
                                 <Marker 
-                                    position={[openRound.city.lat, openRound.city.lon]}
+                                    position={[mapModalRound.city.lat, mapModalRound.city.lon]}
                                     icon={customIcon}
                                 >
                                      <Popup className="font-display">
                                         <div className="text-center">
-                                            <strong className="block text-lg mb-1">{openRound.city.name}</strong>
-                                            <span className="text-sm text-gray-500">{openRound.city.country}</span>
+                                            <strong className="block text-lg mb-1">{mapModalRound.city.name}</strong>
+                                            <span className="text-sm text-gray-500">{mapModalRound.city.country}</span>
                                         </div>
                                     </Popup>
                                 </Marker>

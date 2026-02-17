@@ -77,8 +77,8 @@ service cloud.firestore {
 
       // Game Bets: Gebruikers kunnen hun eigen inzetten beheren binnen een ronde
       match /bets/{userId} {
-        // Je mag alleen je eigen bets zien (check op doc ID of userId veld voor collectionGroup queries)
-        allow read: if isSignedIn() && (request.auth.uid == userId || resource.data.userId == request.auth.uid);
+        // Iedereen mag de bets zien (nodig voor statistieken en leaderboard)
+        allow read: if isSignedIn();
         // Je mag een bet aanmaken en bijwerken als het voor jezelf is (pad én data moeten matchen)
         allow create, update: if isSignedIn() && 
                                request.auth.uid == userId && 

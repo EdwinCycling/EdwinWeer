@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { AppSettings, ViewState, Location, TempUnit, WindUnit } from '../types';
+import { AppSettings, ViewState, Location, TempUnit, WindUnit, AppLanguage } from '../types';
 import { throttledFetch, mapWmoCodeToIcon, mapWmoCodeToText, getTempLabel, convertTemp, convertWind } from '../services/weatherService';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
@@ -1056,7 +1056,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
     );
 };
 
-function getWindDirection(degree: number, language: string = 'nl'): string {
+function getWindDirection(degree: number, language: AppLanguage = 'nl'): string {
     const sectors = [
         getTranslation('ambient.wind.n', language),
         getTranslation('ambient.wind.ne', language),
