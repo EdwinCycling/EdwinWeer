@@ -44,6 +44,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
     const [showDetailedStats, setShowDetailedStats] = useState(false);
     
     // Betting form
+    const [betMax, setBetMax] = useState<string>('');
     const [betMin, setBetMin] = useState<string>('');
     const [submitting, setSubmitting] = useState(false);
     const [showBaroDetails, setShowBaroDetails] = useState(false);
