@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Label } from 'recharts';
 import { AppSettings } from '../types';
+import { getTranslation } from '../services/translations';
 
 interface Props {
   data: {
@@ -12,25 +13,32 @@ interface Props {
   lat: number;
 }
 
-// Season definitions (meteorological)
-const SEASONS = ['Winter', 'Lente', 'Zomer', 'Herfst'];
-
-const RANGES = [
-    { key: 'freezing', label: '< 0°C', min: -Infinity, max: 0, color: '#0000FF' },
-    { key: 'cold', label: '0 - 10°C', min: 0, max: 10, color: '#90EE90' },
-    { key: 'moderate', label: '10 - 20°C', min: 10, max: 20, color: '#FFA500' },
-    { key: 'warm', label: '20 - 30°C', min: 20, max: 30, color: '#FF4500' },
-    { key: 'hot', label: '> 30°C', min: 30, max: Infinity, color: '#FF0000' },
-];
-
 export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat }) => {
-    const { chartData, seasonStats } = useMemo(() => {
+    const t = (key: string) => getTranslation(key, settings.language);
+
+    const { chartData, seasonStats, ranges } = useMemo(() => {
+        const SEASONS = ['Winter', 'Lente', 'Zomer', 'Herfst'];
+        const SEASON_LABELS: Record<string, string> = {
+            'Winter': t('season.winter'),
+            'Lente': t('season.spring'),
+            'Zomer': t('season.summer'),
+            'Herfst': t('season.autumn')
+        };
+
+        const RANGES = [
+            { key: 'freezing', label: t('season.range_freezing'), min: -Infinity, max: 0, color: '#0000FF' },
+            { key: 'cold', label: t('season.range_cold'), min: 0, max: 10, color: '#90EE90' },
+            { key: 'moderate', label: t('season.range_moderate'), min: 10, max: 20, color: '#FFA500' },
+            { key: 'warm', label: t('season.range_warm'), min: 20, max: 30, color: '#FF4500' },
+            { key: 'hot', label: t('season.range_hot'), min: 30, max: Infinity, color: '#FF0000' },
+        ];
+
         // Initialize structure
         const seasonData = {
-            'Winter': { name: 'Winter', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
-            'Lente': { name: 'Lente', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
-            'Zomer': { name: 'Zomer', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
-            'Herfst': { name: 'Herfst', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
+            'Winter': { name: SEASON_LABELS['Winter'], key: 'Winter', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
+            'Lente': { name: SEASON_LABELS['Lente'], key: 'Lente', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
+            'Zomer': { name: SEASON_LABELS['Zomer'], key: 'Zomer', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
+            'Herfst': { name: SEASON_LABELS['Herfst'], key: 'Herfst', freezing: 0, cold: 0, moderate: 0, warm: 0, hot: 0, maxSum: 0, minSum: 0, count: 0 },
         };
 
         const isSouth = lat < 0;
@@ -63,25 +71,27 @@ export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat
             }
         });
 
-        // Convert to array in correct order
+        // Convert to array in correct order (Standard order: Winter, Spring, Summer, Autumn)
+        // Or maybe adapt order based on hemisphere? Usually charts follow calendar order.
+        // Let's keep it standard.
         const finalData = SEASONS.map(s => seasonData[s as keyof typeof seasonData]);
         
         // Calculate stats
         const stats = SEASONS.map(s => {
             const d = seasonData[s as keyof typeof seasonData];
             return {
-                name: s,
+                name: d.name,
                 avgMax: d.count > 0 ? d.maxSum / d.count : null,
                 avgMin: d.count > 0 ? d.minSum / d.count : null
             };
         });
 
-        return { chartData: finalData, seasonStats: stats };
-    }, [data, lat]);
+        return { chartData: finalData, seasonStats: stats, ranges: RANGES };
+    }, [data, lat, settings.language]);
 
     return (
         <div className="w-full flex flex-col items-center bg-bg-card rounded-2xl p-4 border border-border-color">
-            <h3 className="text-lg font-bold text-text-main mb-4">Seizoensverdeling</h3>
+            <h3 className="text-lg font-bold text-text-main mb-4">{t('season.distribution')}</h3>
             <div className="w-full h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -103,7 +113,7 @@ export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat
                             axisLine={{ stroke: 'var(--border-color)' }}
                             tickLine={{ stroke: 'var(--border-color)' }}
                         >
-                             <Label value="Aantal dagen" angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fill: 'var(--text-muted)', fontSize: 12 }} />
+                             <Label value={t('season.days')} angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fill: 'var(--text-muted)', fontSize: 12 }} />
                         </YAxis>
                         <Tooltip
                             contentStyle={{ 
@@ -118,7 +128,7 @@ export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat
                         <Legend 
                             wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }} 
                             // @ts-ignore
-                            payload={RANGES.map(range => ({
+                            payload={ranges.map(range => ({
                                 value: range.label,
                                 type: 'rect',
                                 id: range.key,
@@ -126,7 +136,7 @@ export const SeasonalDistributionChart: React.FC<Props> = ({ data, settings, lat
                             })) as any}
                         />
                         
-                        {RANGES.map((range) => (
+                        {ranges.map((range) => (
                             <Bar 
                                 key={range.key} 
                                 dataKey={range.key} 

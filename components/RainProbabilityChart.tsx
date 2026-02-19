@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, Label } from 'recharts';
 import { AppSettings } from '../types';
+import { getTranslation } from '../services/translations';
 
 interface Props {
   data: {
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export const RainProbabilityChart: React.FC<Props> = ({ data, settings }) => {
+    const t = (key: string) => getTranslation(key, settings.language);
+
     const chartData = useMemo(() => {
         const monthlyRain: number[] = new Array(12).fill(0);
         
@@ -22,21 +25,30 @@ export const RainProbabilityChart: React.FC<Props> = ({ data, settings }) => {
         });
 
         const maxRain = Math.max(...monthlyRain);
-        const monthNames = [
-            'Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 
-            'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'
-        ];
+        
+        const localeMap: Record<string, string> = {
+            nl: 'nl-NL',
+            de: 'de-DE',
+            fr: 'fr-FR',
+            es: 'es-ES',
+            en: 'en-GB'
+        };
+        const locale = localeMap[settings.language] || 'en-GB';
+        
+        const monthNames = Array.from({length: 12}, (_, i) => {
+             return new Date(2000, i, 1).toLocaleString(locale, { month: 'short' });
+        });
 
         return monthlyRain.map((rain, i) => ({
             month: monthNames[i],
             probability: maxRain > 0 ? (rain / maxRain) * 100 : 0,
             actualRain: rain
         }));
-    }, [data]);
+    }, [data, settings.language]);
 
     return (
         <div className="w-full flex flex-col items-center bg-bg-card rounded-2xl p-4 border border-border-color">
-            <h3 className="text-lg font-bold text-text-main mb-4">Neerslagverdeling per Maand</h3>
+            <h3 className="text-lg font-bold text-text-main mb-4">{t('records.rain_distribution_month')}</h3>
             <div className="w-full h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -59,7 +71,7 @@ export const RainProbabilityChart: React.FC<Props> = ({ data, settings }) => {
                             domain={[0, 100]}
                             unit="%"
                         >
-                             <Label value="Regenmaand kans" angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fill: 'var(--text-muted)', fontSize: 12 }} />
+                             <Label value={t('precipitation')} angle={-90} position="insideLeft" style={{ textAnchor: 'middle', fill: 'var(--text-muted)', fontSize: 12 }} />
                         </YAxis>
                         <Tooltip
                             contentStyle={{ 
@@ -71,8 +83,8 @@ export const RainProbabilityChart: React.FC<Props> = ({ data, settings }) => {
                             }}
                             cursor={{ fill: 'var(--bg-secondary)', opacity: 0.4 }}
                             formatter={(value: number, name: string, props: any) => [
-                                `${value.toFixed(1)}% (${props.payload.actualRain.toFixed(1)} mm)`,
-                                'Kans'
+                                `${value.toFixed(1)}% (${props.payload.actualRain.toFixed(1)} ${settings.precipUnit || 'mm'})`,
+                                t('precipitation')
                             ]}
                         />
                         <Bar 

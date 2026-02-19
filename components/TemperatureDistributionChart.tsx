@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { AppSettings } from '../types';
+import { getTranslation } from '../services/translations';
 
 interface Props {
   data: {
@@ -26,6 +27,8 @@ const BINS = [
 ];
 
 export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }) => {
+    const t = (key: string) => getTranslation(key, settings.language);
+
     const chartData = useMemo(() => {
         // Initialize counts
         const counts = BINS.map(b => ({ ...b, count: 0 }));
@@ -45,7 +48,7 @@ export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }
 
     return (
         <div className="w-full h-[400px] flex flex-col items-center bg-bg-card rounded-2xl p-4 border border-border-color">
-            <h3 className="text-lg font-bold text-text-main mb-4">Temperatuur Verdeling</h3>
+            <h3 className="text-lg font-bold text-text-main mb-4">{t('records.temp_distribution')}</h3>
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie
@@ -73,7 +76,7 @@ export const TemperatureDistributionChart: React.FC<Props> = ({ data, settings }
                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                             color: 'var(--text-main)'
                         }}
-                        formatter={(value: number, name: string) => [`${value} dagen`, name]}
+                        formatter={(value: number, name: string) => [`${value} ${t('season.days')}`, name]}
                         itemStyle={{ color: 'var(--text-main)' }}
                     />
                     <Legend 

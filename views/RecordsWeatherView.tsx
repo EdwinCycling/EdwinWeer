@@ -40,6 +40,10 @@ import { MonthlyBoxPlotChart } from '../components/MonthlyBoxPlotChart';
 import { MonthlyRainChart } from '../components/MonthlyRainChart';
 import { MonthlySunChart } from '../components/MonthlySunChart';
 import { ProgressBar } from '../components/ProgressBar';
+import { ClimateClassificationCard, BaroSeasonalIndexCard } from '../components/ClimateCards';
+import { RainSeasonCard } from '../components/RainSeasonCard';
+import { MonthlyAverage } from '../services/climateService';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface Props {
   onNavigate: (view: ViewState, params?: any) => void;
@@ -206,6 +210,18 @@ interface MonthlyStats {
     rainDays: number;
 }
 
+interface SeasonStat {
+    name: string;
+    months: string;
+    avgMax: number;
+    avgMin: number;
+    totalRain: number;
+    isWettest: boolean;
+    isDriest: boolean;
+    absoluteMax: { value: number, date: string };
+    absoluteMin: { value: number, date: string };
+}
+
 export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
 
@@ -259,6 +275,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   }, [initialParams]);
 
   const [loading, setLoading] = useState(false);
+  useScrollLock(loading);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -306,9 +323,30 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [rainMax, setRainMax] = useState<RecordEntry[]>([]);
   const [maxAmplitude, setMaxAmplitude] = useState<RecordEntry[]>([]);
   const [minAmplitude, setMinAmplitude] = useState<RecordEntry[]>([]);
-  const [monthAmplitude, setMonthAmplitude] = useState<{ value: number, max: number, min: number } | null>(null);
+  const [monthAmplitudes, setMonthAmplitudes] = useState<{ value: number, max: number, min: number, maxDate: string, minDate: string, month: string }[]>([]);
+
+  const calculateDaysAgo = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    // Reset times to compare dates only
+    d.setHours(0,0,0,0);
+    const today = new Date(now);
+    today.setHours(0,0,0,0);
+    
+    const diffTime = Math.abs(today.getTime() - d.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays;
+  };
   const [colderAt13Than22, setColderAt13Than22] = useState<TimeTempDiffEntry[]>([]);
-  const [yearlyCounts, setYearlyCounts] = useState<YearlyCounts | null>(null);
+    const [seasonStats, setSeasonStats] = useState<SeasonStat[]>([]);
+
+    // New Monthly Records
+    const [wettestMonths, setWettestMonths] = useState<{ month: string, totalRain: number }[]>([]);
+    const [driestMonths, setDriestMonths] = useState<{ month: string, totalRain: number }[]>([]);
+    const [warmestMonth, setWarmestMonth] = useState<{ month: string, avgTemp: number, dailyTemps: { day: number, temp: number }[] } | null>(null);
+    const [coldestMonth, setColdestMonth] = useState<{ month: string, avgTemp: number, dailyTemps: { day: number, temp: number }[] } | null>(null);
+
+    const [yearlyCounts, setYearlyCounts] = useState<YearlyCounts | null>(null);
   const [frostInfo, setFrostInfo] = useState<FrostInfo | null>(null);
   const [yearlySequences, setYearlySequences] = useState<YearlySequences | null>(null);
   const [diverseRecords, setDiverseRecords] = useState<DiverseRecords | null>(null);
@@ -317,6 +355,41 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showHeatwaveInfo, setShowHeatwaveInfo] = useState(false);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
+  const monthlyAverages: MonthlyAverage[] = useMemo(() => {
+        if (!dailyData || dailyData.length === 0) return [];
+
+        const months = new Map<number, { sumTemp: number, count: number, rain: number }>();
+        
+        dailyData.forEach(d => {
+            if (d.maxTemp === null || d.minTemp === null) return;
+            
+            const date = new Date(d.date);
+            const m = date.getMonth();
+            
+            if (!months.has(m)) {
+                months.set(m, { sumTemp: 0, count: 0, rain: 0 });
+            }
+            
+            const entry = months.get(m)!;
+            entry.sumTemp += (d.maxTemp + d.minTemp) / 2;
+            entry.count++;
+            if (d.rain) entry.rain += d.rain;
+        });
+        
+        const result: MonthlyAverage[] = [];
+        months.forEach((val, key) => {
+            if (val.count > 0) {
+                result.push({
+                    month: key,
+                    avgTemp: val.sumTemp / val.count,
+                    totalRain: val.rain
+                });
+            }
+        });
+        
+        return result;
+    }, [dailyData]);
+
   const [currentWeather, setCurrentWeather] = useState<any>(null);
   const [climateNumbers, setClimateNumbers] = useState<ClimateNumbers | null>(null);
   const [showComfortModal, setShowComfortModal] = useState(false);
@@ -327,6 +400,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   useEffect(() => {
     const loadCurrent = async () => {
       try {
+        // Skip fetch if location is not set or valid
+        if (!location || !location.lat || !location.lon) return;
+        
         const data = await fetchForecast(location.lat, location.lon);
         setCurrentWeather(data);
       } catch (e) {
@@ -334,7 +410,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       }
     };
     loadCurrent();
-  }, [location]);
+  }, [location.lat, location.lon]); // Only reload if coordinates change, not the whole location object
 
   const cycleFavorite = (direction: 'next' | 'prev') => {
       if (settings.favorites.length === 0) return;
@@ -490,8 +566,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setMinTempLow([]);
     setRainMax([]);
     setMinAmplitude([]);
-    setMonthAmplitude(null);
+    setMonthAmplitudes([]);
+    setWettestMonths([]);
+    setDriestMonths([]);
+    setWarmestMonth(null);
+    setColdestMonth(null);
     setColderAt13Than22([]);
+    setSeasonStats([]);
      setYearlyCounts(null);
     setFrostInfo(null);
     setYearlySequences(null);
@@ -874,20 +955,100 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       setMaxAmplitude(sortDesc(amplitudeEntries));
       setMinAmplitude(sortAsc(amplitudeEntries));
 
-      // Calculate Month Amplitude (Max of month - Min of month)
-      // We use the absolute max and absolute min from the sorted lists
-      // maxTempHigh is sorted Desc (index 0 is highest)
-      // minTempLow is sorted Asc (index 0 is lowest)
-      const highestMax = maxTempEntries.length > 0 ? Math.max(...maxTempEntries.map(e => e.value)) : null;
-      const lowestMin = minTempEntries.length > 0 ? Math.min(...minTempEntries.map(e => e.value)) : null;
+      // Calculate Largest Monthly Amplitude (Month with biggest difference between Max and Min)
+      const monthAmplitudesMap = new Map<string, { max: number, min: number, maxDate: string, minDate: string }>();
       
-      if (highestMax !== null && lowestMin !== null) {
-          setMonthAmplitude({
-              value: highestMax - lowestMin,
-              max: highestMax,
-              min: lowestMin
-          });
+      for (let i = 0; i < times.length; i++) {
+          const d = times[i];
+          const tMax = maxTemps[i];
+          const tMin = minTemps[i];
+          
+          if (!d || typeof tMax !== 'number' || typeof tMin !== 'number' || Number.isNaN(tMax) || Number.isNaN(tMin)) continue;
+          
+          const monthKey = d.substring(0, 7); // "YYYY-MM"
+          
+          const current = monthAmplitudesMap.get(monthKey) || { max: -Infinity, min: Infinity, maxDate: '', minDate: '' };
+          
+          if (tMax > current.max) {
+              current.max = tMax;
+              current.maxDate = d;
+          }
+          if (tMin < current.min) {
+              current.min = tMin;
+              current.minDate = d;
+          }
+          monthAmplitudesMap.set(monthKey, current);
       }
+      
+      const allMonthAmplitudes: { value: number, max: number, min: number, maxDate: string, minDate: string, month: string }[] = [];
+      
+      for (const [key, data] of monthAmplitudesMap.entries()) {
+          const amp = data.max - data.min;
+          if (data.max > -Infinity && data.min < Infinity) {
+              allMonthAmplitudes.push({ ...data, value: amp, month: key });
+          }
+      }
+      
+      // Sort desc and take top 3
+      allMonthAmplitudes.sort((a, b) => b.value - a.value);
+      setMonthAmplitudes(allMonthAmplitudes.slice(0, 3));
+
+      // Calculate Monthly Records (Wettest, Driest, Warmest, Coldest)
+      const monthlyDataMap = new Map<string, { totalRain: number, rainDays: number, maxTemps: { day: number, temp: number }[], sumMaxTemp: number, countMaxTemp: number }>();
+      
+      for (let i = 0; i < times.length; i++) {
+          const d = times[i];
+          const tMax = maxTemps[i];
+          const rain = rainValues ? rainValues[i] : 0;
+          
+          if (!d) continue;
+          
+          const monthKey = d.substring(0, 7); // "YYYY-MM"
+          const day = new Date(d).getDate();
+          
+          const current = monthlyDataMap.get(monthKey) || { totalRain: 0, rainDays: 0, maxTemps: [], sumMaxTemp: 0, countMaxTemp: 0 };
+          
+          if (typeof rain === 'number' && !Number.isNaN(rain)) {
+              current.totalRain += rain;
+              if (rain >= 0.2) current.rainDays++;
+          }
+          
+          if (typeof tMax === 'number' && !Number.isNaN(tMax)) {
+              current.maxTemps.push({ day, temp: tMax });
+              current.sumMaxTemp += tMax;
+              current.countMaxTemp++;
+          }
+          
+          monthlyDataMap.set(monthKey, current);
+      }
+      
+      const allWettestMonths: { month: string, totalRain: number }[] = [];
+      const allWarmestMonths: { month: string, avgTemp: number, dailyTemps: { day: number, temp: number }[] }[] = [];
+      
+      for (const [key, data] of monthlyDataMap.entries()) {
+          allWettestMonths.push({ month: key, totalRain: data.totalRain });
+          
+          if (data.countMaxTemp > 0) {
+              const avg = data.sumMaxTemp / data.countMaxTemp;
+              allWarmestMonths.push({ month: key, avgTemp: avg, dailyTemps: data.maxTemps.sort((a,b) => a.day - b.day) });
+          }
+      }
+      
+      // Wettest: Sort desc
+      const sortedWettest = [...allWettestMonths].sort((a, b) => b.totalRain - a.totalRain).slice(0, 3);
+      setWettestMonths(sortedWettest);
+      
+      // Driest: Sort asc
+      const sortedDriest = [...allWettestMonths].sort((a, b) => a.totalRain - b.totalRain).slice(0, 3);
+      setDriestMonths(sortedDriest);
+      
+      // Warmest: Sort desc
+      const sortedWarmest = [...allWarmestMonths].sort((a, b) => b.avgTemp - a.avgTemp);
+      if (sortedWarmest.length > 0) setWarmestMonth(sortedWarmest[0]);
+      
+      // Coldest: Sort asc
+      const sortedColdest = [...allWarmestMonths].sort((a, b) => a.avgTemp - b.avgTemp);
+      if (sortedColdest.length > 0) setColdestMonth(sortedColdest[0]);
 
 
 
@@ -1658,6 +1819,149 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             coldestWeekendMin: findExtremePeriod(fullWeekends, 'min', 'coldest')
         });
 
+        // Calculate Season Stats
+        const seasonMap = new Map<string, { max: number, min: number, rain: number }>();
+        
+        // Populate with current year data
+        for(let i=0; i<times.length; i++) {
+            const d = times[i];
+            const tMax = maxTemps[i];
+            const tMin = minTemps[i];
+            const rain = rainValues ? rainValues[i] : 0;
+            if (typeof tMax === 'number' && typeof tMin === 'number') {
+                seasonMap.set(d, { max: tMax, min: tMin, rain: rain || 0 });
+            }
+        }
+
+        // Fetch prev year Dec for Winter
+        const prevYear = selectedYear - 1;
+        const decStart = `${prevYear}-12-01`;
+        const decEnd = `${prevYear}-12-31`;
+        
+        try {
+            const decData = await fetchHistorical(location.lat, location.lon, decStart, decEnd);
+            if (decData && decData.daily && decData.daily.time) {
+                 const daily = decData.daily;
+                 for(let i=0; i<daily.time.length; i++) {
+                     const d = daily.time[i];
+                     const tMax = daily.temperature_2m_max[i];
+                     const tMin = daily.temperature_2m_min[i];
+                     const rain = daily.precipitation_sum[i];
+                     if (typeof tMax === 'number' && typeof tMin === 'number') {
+                         seasonMap.set(d, { max: tMax, min: tMin, rain: rain || 0 });
+                     }
+                 }
+            }
+        } catch (e) {
+            console.error("Failed to fetch Dec prev year for season stats", e);
+        }
+
+        const calcSeason = (name: string, months: number[], monthNames: string, isCrossYear: boolean = false) => {
+             let sumMax = 0;
+             let sumMin = 0;
+             let sumRain = 0;
+             let count = 0;
+             let absMaxVal = -Infinity;
+             let absMaxDate = '';
+             let absMinVal = Infinity;
+             let absMinDate = '';
+             
+             // Iterate through map to find matching months
+             for (const [dateStr, data] of seasonMap.entries()) {
+                 const d = new Date(dateStr);
+                 const m = d.getMonth(); // 0-11
+                 const y = d.getFullYear();
+                 
+                 let include = false;
+                 if (isCrossYear) {
+                     // e.g. Dec of prevYear OR Jan/Feb of selectedYear
+                     // months array: [11, 0, 1]
+                     if ((m === 11 && y === prevYear) || (months.includes(m) && m !== 11 && y === selectedYear)) {
+                         include = true;
+                     }
+                 } else {
+                     // Other seasons: must be selectedYear
+                     if (y === selectedYear && months.includes(m)) {
+                         include = true;
+                     }
+                 }
+                 
+                 if (include) {
+                     sumMax += data.max;
+                     sumMin += data.min;
+                     sumRain += data.rain;
+                     count++;
+                     
+                     if (data.max > absMaxVal) {
+                         absMaxVal = data.max;
+                         absMaxDate = dateStr;
+                     }
+                     if (data.min < absMinVal) {
+                         absMinVal = data.min;
+                         absMinDate = dateStr;
+                     }
+                 }
+             }
+             
+             if (count === 0) return null;
+             
+             return {
+                 name,
+                 months: monthNames,
+                 avgMax: sumMax / count,
+                 avgMin: sumMin / count,
+                 totalRain: sumRain,
+                 isWettest: false,
+                 isDriest: false,
+                 absoluteMax: { value: absMaxVal, date: absMaxDate },
+                 absoluteMin: { value: absMinVal, date: absMinDate }
+             };
+        };
+        
+        const isNorth = location.lat >= 0;
+        const seasons: SeasonStat[] = [];
+        
+        const getMonthNames = (monthIndexes: number[], isCrossYear: boolean) => {
+             return monthIndexes.map(m => {
+                 if (isCrossYear && m === 11) {
+                     return new Date(prevYear, 11, 1).toLocaleString(getLocale(), { month: 'short' }) + " '" + prevYear.toString().slice(-2);
+                 }
+                 return new Date(selectedYear, m, 1).toLocaleString(getLocale(), { month: 'short' });
+             }).join(', ');
+        };
+
+        let winter, spring, summer, autumn;
+
+        if (isNorth) {
+            winter = calcSeason(t('season.winter'), [11, 0, 1], getMonthNames([11, 0, 1], true), true);
+            spring = calcSeason(t('season.spring'), [2, 3, 4], getMonthNames([2, 3, 4], false), false);
+            summer = calcSeason(t('season.summer'), [5, 6, 7], getMonthNames([5, 6, 7], false), false);
+            autumn = calcSeason(t('season.autumn'), [8, 9, 10], getMonthNames([8, 9, 10], false), false);
+        } else {
+            summer = calcSeason(t('season.summer'), [11, 0, 1], getMonthNames([11, 0, 1], true), true);
+            autumn = calcSeason(t('season.autumn'), [2, 3, 4], getMonthNames([2, 3, 4], false), false);
+            winter = calcSeason(t('season.winter'), [5, 6, 7], getMonthNames([5, 6, 7], false), false);
+            spring = calcSeason(t('season.spring'), [8, 9, 10], getMonthNames([8, 9, 10], false), false);
+        }
+        
+        if (winter) seasons.push(winter);
+        if (spring) seasons.push(spring);
+        if (summer) seasons.push(summer);
+        if (autumn) seasons.push(autumn);
+        
+        if (seasons.length > 0) {
+            const maxRain = Math.max(...seasons.map(s => s.totalRain));
+            const minRain = Math.min(...seasons.map(s => s.totalRain));
+            
+            seasons.forEach(s => {
+                if (s.totalRain === maxRain) s.isWettest = true;
+                if (s.totalRain === minRain) s.isDriest = true;
+            });
+            setSeasonStats(seasons);
+        } else {
+            setSeasonStats([]);
+        }
+
         // Climate Numbers Calculation
         if (recordType === 'yearly') {
             const isNorth = location.lat >= 0;
@@ -1961,7 +2265,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     icon: string,
     iconColor: string,
     entries: RecordEntry[],
-    formatValue: (value: number) => React.ReactNode
+    formatValue: (value: number) => React.ReactNode,
+    showDaysAgo: boolean = false
   ) => {
     const medalClasses = [
       'bg-amber-500 text-text-inverse',
@@ -1979,7 +2284,10 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         </div>
         {entries.length ? (
           <ul className="mt-2 space-y-2">
-            {entries.map((entry, index) => (
+            {entries.map((entry, index) => {
+              const daysAgo = showDaysAgo ? calculateDaysAgo(entry.date) : null;
+              
+              return (
               <li key={`${entry.date}-${index}`} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button
@@ -1994,9 +2302,16 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     >
                       {index + 1}
                     </div>
-                    <span className="text-sm text-text-muted underline-offset-2 hover:underline">
-                      {formatDateLabel(entry.date)}
-                    </span>
+                    <div className="flex flex-col">
+                        <span className="text-sm text-text-muted underline-offset-2 hover:underline">
+                        {formatDateLabel(entry.date)}
+                        </span>
+                        {daysAgo !== null && (
+                            <span className="text-[10px] text-text-muted font-medium">
+                                {t('time.days_ago', { count: daysAgo })}
+                            </span>
+                        )}
+                    </div>
                   </button>
                 </div>
                 <div className="flex flex-col items-end">
@@ -2010,7 +2325,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   )}
                 </div>
               </li>
-            ))}
+            );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-text-muted">{t('no_data_available')}</p>
@@ -2888,50 +3204,32 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   'trending_up',
                   'text-red-500',
                   maxTempHigh,
-                  value => `${formatTempValue(value)}°`
+                  value => `${formatTempValue(value)}°`,
+                  selectedYear === new Date().getFullYear()
                 )}
                 {renderRecordCard(
                   'records.max_temp_low',
                   'trending_down',
                   'text-blue-500',
                   maxTempLow,
-                  value => `${formatTempValue(value)}°`
+                  value => `${formatTempValue(value)}°`,
+                  selectedYear === new Date().getFullYear()
                 )}
                 {renderRecordCard(
                   'records.min_temp_high',
                   'thermostat',
                   'text-orange-500',
                   minTempHigh,
-                  value => `${formatTempValue(value)}°`
+                  value => `${formatTempValue(value)}°`,
+                  selectedYear === new Date().getFullYear()
                 )}
                 {renderRecordCard(
                   'records.min_temp_low',
                   'ac_unit',
                   'text-sky-500',
                   minTempLow,
-                  value => `${formatTempValue(value)}°`
-                )}
-                {monthAmplitude && (
-                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
-                        <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xl font-bold flex items-center gap-2">
-                            <Icon name="expand" className="text-purple-600" />
-                            {t('records.month_amplitude')}
-                        </h3>
-                        </div>
-                        <ul className="mt-2 space-y-2">
-                            <li className="flex items-center justify-between">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-text-main">
-                                        {formatTempDeltaValue(monthAmplitude.value)}°
-                                    </span>
-                                    <span className="text-xs text-text-muted">
-                                        (Max: {formatTempValue(monthAmplitude.max)}° - Min: {formatTempValue(monthAmplitude.min)}°)
-                                    </span>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
+                  value => `${formatTempValue(value)}°`,
+                  selectedYear === new Date().getFullYear()
                 )}
                 {renderRecordCard(
                   'records.max_amplitude',
@@ -2980,9 +3278,294 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                   rainMax,
                   value => `${convertPrecip(value, settings.precipUnit)}\u00a0${settings.precipUnit}`
                 )}
+                {monthAmplitudes.length > 0 && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <Icon name="expand" className="text-purple-600" />
+                            {t('records.month_amplitude')}
+                        </h3>
+                        </div>
+                        <ul className="mt-2 space-y-2">
+                            {monthAmplitudes.map((amp, idx) => (
+                                <li key={idx} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-border-color/40 shadow-sm ${
+                                            idx === 0 ? 'bg-amber-500 text-text-inverse' : 
+                                            idx === 1 ? 'bg-gray-400 text-white' : 
+                                            'bg-orange-700 text-white'
+                                        }`}>
+                                            {idx + 1}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm text-text-muted">
+                                                {new Date(amp.maxDate).toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-sm font-bold text-text-main">
+                                            {formatTempDeltaValue(amp.value)}°
+                                        </span>
+                                        <div className="text-[10px] text-text-muted flex flex-col items-end">
+                                            <span>Max: {formatTempValue(amp.max)}° ({formatDateLabel(amp.maxDate)})</span>
+                                            <span>Min: {formatTempValue(amp.min)}° ({formatDateLabel(amp.minDate)})</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                     </div>
+                 )}
+
+                {wettestMonths.length > 0 && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="water_drop" className="text-blue-500" />
+                                {t('records.wettest_month')}
+                            </h3>
+                        </div>
+                        <ul className="mt-2 space-y-2">
+                            {wettestMonths.map((month, idx) => (
+                                <li key={idx} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-border-color/40 shadow-sm ${
+                                            idx === 0 ? 'bg-amber-500 text-text-inverse' : 
+                                            idx === 1 ? 'bg-gray-400 text-white' : 
+                                            'bg-orange-700 text-white'
+                                        }`}>
+                                            {idx + 1}
+                                        </div>
+                                        <span className="text-sm font-medium text-text-muted">
+                                            {new Date(month.month + '-01').toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    <span className="text-lg font-bold text-text-main">
+                                        {convertPrecip(month.totalRain, settings.precipUnit)} {settings.precipUnit}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {driestMonths.length > 0 && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="water_drop" className="text-amber-500" />
+                                {t('records.driest_month')}
+                            </h3>
+                        </div>
+                        <ul className="mt-2 space-y-2">
+                            {driestMonths.map((month, idx) => (
+                                <li key={idx} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border border-border-color/40 shadow-sm ${
+                                            idx === 0 ? 'bg-amber-500 text-text-inverse' : 
+                                            idx === 1 ? 'bg-gray-400 text-white' : 
+                                            'bg-orange-700 text-white'
+                                        }`}>
+                                            {idx + 1}
+                                        </div>
+                                        <span className="text-sm font-medium text-text-muted">
+                                            {new Date(month.month + '-01').toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    <span className="text-lg font-bold text-text-main">
+                                        {convertPrecip(month.totalRain, settings.precipUnit)} {settings.precipUnit}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {warmestMonth && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="thermostat" className="text-red-500" />
+                                {t('records.warmest_month')}
+                            </h3>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                             <span className="text-sm font-medium text-text-muted">
+                                {new Date(warmestMonth.month + '-01').toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-lg font-bold text-text-main">
+                                Gem. Max: {formatTempValue(warmestMonth.avgTemp)}°
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                            {warmestMonth.dailyTemps.map((d, i) => (
+                                 <div key={i} className="flex flex-col items-center bg-bg-page px-1 py-0.5 rounded border border-border-color min-w-[28px]">
+                                    <span className="text-[9px] text-text-muted">{d.day}</span>
+                                    <span className={`text-[10px] font-bold ${d.temp >= 25 ? 'text-red-500' : d.temp >= 20 ? 'text-orange-500' : 'text-text-main'}`}>
+                                        {Math.round(d.temp)}°
+                                    </span>
+                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {coldestMonth && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="ac_unit" className="text-blue-500" />
+                                {t('records.coldest_month')}
+                            </h3>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                             <span className="text-sm font-medium text-text-muted">
+                                {new Date(coldestMonth.month + '-01').toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-lg font-bold text-text-main">
+                                Gem. Max: {formatTempValue(coldestMonth.avgTemp)}°
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                            {coldestMonth.dailyTemps.map((d, i) => (
+                                 <div key={i} className="flex flex-col items-center bg-bg-page px-1 py-0.5 rounded border border-border-color min-w-[28px]">
+                                    <span className="text-[9px] text-text-muted">{d.day}</span>
+                                    <span className={`text-[10px] font-bold ${d.temp <= 0 ? 'text-blue-500' : 'text-text-main'}`}>
+                                        {Math.round(d.temp)}°
+                                    </span>
+                                 </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Season Stats */}
+                {(recordType === 'yearly' || recordType === '12month') && seasonStats.length > 0 && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="category" className="text-accent-primary" />
+                                {t('season.title')}
+                            </h3>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            {seasonStats.map((season, idx) => (
+                                <div key={idx} className={`p-4 rounded-xl border ${season.isWettest ? 'bg-blue-50/5 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' : season.isDriest ? 'bg-amber-50/5 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800' : 'bg-bg-page border-border-color'}`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-text-main">{season.name}</span>
+                                            <span className="text-[10px] text-text-muted">{season.months}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {season.isWettest && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
+                                                    {t('season.wettest')}
+                                                </span>
+                                            )}
+                                            {season.isDriest && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
+                                                    {t('season.driest')}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-text-muted">{t('season.avg_max')}</span>
+                                            <span className="font-bold text-red-500">{formatTempValue(season.avgMax)}°</span>
+                                            <div className="flex flex-col mt-1">
+                                                <span className="text-[9px] text-text-muted">{t('season.highest')}</span>
+                                                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{formatTempValue(season.absoluteMax.value)}°</span>
+                                                <span className="text-[9px] text-text-muted">{formatDateLabel(season.absoluteMax.date)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-text-muted">{t('season.avg_min')}</span>
+                                            <span className="font-bold text-blue-500">{formatTempValue(season.avgMin)}°</span>
+                                            <div className="flex flex-col mt-1">
+                                                <span className="text-[9px] text-text-muted">{t('season.lowest')}</span>
+                                                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">{formatTempValue(season.absoluteMin.value)}°</span>
+                                                <span className="text-[9px] text-text-muted">{formatDateLabel(season.absoluteMin.date)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-text-muted">{t('season.total_rain')}</span>
+                                            <span className="font-bold text-text-main">{convertPrecip(season.totalRain, settings.precipUnit)} {settings.precipUnit}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Year Amplitudes Section */}
+                {(recordType === 'yearly' || recordType === '12month') && maxTempHigh.length > 0 && minTempLow.length > 0 && maxTempLow.length > 0 && minTempHigh.length > 0 && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="unfold_more" className="text-purple-500" />
+                                {t('season.year_amplitudes')}
+                            </h3>
+                        </div>
+                        <ul className="mt-2 space-y-4">
+                            {/* Lowest Min - Highest Max */}
+                            <li className="flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-text-muted">{t('season.diff_low_min_high_max')}</span>
+                                    <div className="text-[10px] text-text-muted flex flex-col mt-1">
+                                        <span>Min: {formatTempValue(minTempLow[0].value)}° ({formatDateLabel(minTempLow[0].date)})</span>
+                                        <span>Max: {formatTempValue(maxTempHigh[0].value)}° ({formatDateLabel(maxTempHigh[0].date)})</span>
+                                    </div>
+                                </div>
+                                <span className="text-lg font-bold text-text-main">
+                                    {formatTempDeltaValue(maxTempHigh[0].value - minTempLow[0].value)}°
+                                </span>
+                            </li>
+
+                            {/* Lowest Max - Highest Max */}
+                            <li className="flex items-center justify-between border-t border-border-color/50 pt-2">
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-text-muted">{t('season.diff_low_max_high_max')}</span>
+                                    <div className="text-[10px] text-text-muted flex flex-col mt-1">
+                                        <span>Laagste Max: {formatTempValue(maxTempLow[0].value)}° ({formatDateLabel(maxTempLow[0].date)})</span>
+                                        <span>Hoogste Max: {formatTempValue(maxTempHigh[0].value)}° ({formatDateLabel(maxTempHigh[0].date)})</span>
+                                    </div>
+                                </div>
+                                <span className="text-lg font-bold text-text-main">
+                                    {formatTempDeltaValue(maxTempHigh[0].value - maxTempLow[0].value)}°
+                                </span>
+                            </li>
+
+                            {/* Lowest Min - Highest Min */}
+                            <li className="flex items-center justify-between border-t border-border-color/50 pt-2">
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-text-muted">{t('season.diff_low_min_high_min')}</span>
+                                    <div className="text-[10px] text-text-muted flex flex-col mt-1">
+                                        <span>Laagste Min: {formatTempValue(minTempLow[0].value)}° ({formatDateLabel(minTempLow[0].date)})</span>
+                                        <span>Hoogste Min: {formatTempValue(minTempHigh[0].value)}° ({formatDateLabel(minTempHigh[0].date)})</span>
+                                    </div>
+                                </div>
+                                <span className="text-lg font-bold text-text-main">
+                                    {formatTempDeltaValue(minTempHigh[0].value - minTempLow[0].value)}°
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                )}
               </div>
 
-              {/* Climate Numbers */}
+              {/* Climate Classification & BSI */}
+              {(recordType === 'yearly' || recordType === '12month') && monthlyAverages.length > 0 && (
+                  <div className="w-full max-w-2xl grid grid-cols-1 gap-6 mb-6">
+                      <ClimateClassificationCard monthlyData={monthlyAverages} />
+                      <BaroSeasonalIndexCard monthlyData={monthlyAverages} />
+                      <RainSeasonCard monthlyData={monthlyAverages} selectedYear={recordType === 'yearly' ? selectedYear : undefined} />
+                  </div>
+              )}
+
+              {/* Climate Numbers */ }
               {recordType === 'yearly' && climateNumbers && (
                   <div className="w-full max-w-2xl bg-bg-card rounded-2xl p-6 border border-border-color mb-6">
                       <div className="flex items-center justify-between mb-4">
