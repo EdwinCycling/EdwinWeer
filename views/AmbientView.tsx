@@ -776,6 +776,7 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
             <CreditFloatingButton 
                 onNavigate={onNavigate} 
                 settings={settings} 
+                currentView={ViewState.AMBIENT}
                 className={`fixed right-4 z-50 transition-all duration-300 ${showBottomBar ? 'bottom-20 md:bottom-32' : 'bottom-20'}`}
             />
 

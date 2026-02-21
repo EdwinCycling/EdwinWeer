@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Icon } from './Icon';
 import { ViewState, AppSettings } from '../types';
@@ -8,9 +9,10 @@ interface Props {
     onNavigate: (view: ViewState) => void;
     settings: AppSettings;
     className?: string; // Allow custom positioning
+    currentView?: ViewState;
 }
 
-export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, className }) => {
+export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, className, currentView }) => {
     const [stats, setStats] = useState<UsageStats | null>(null);
     const [showPopup, setShowPopup] = useState(false);
     

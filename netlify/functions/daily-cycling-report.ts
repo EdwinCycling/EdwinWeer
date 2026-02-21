@@ -22,10 +22,8 @@ if (brevoApi.setApiKey) {
     brevoApi.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
 }
 
-// Schedule: Run daily at 07:40
-export const config = {
-    schedule: "40 7 * * *"
-};
+// Schedule: Configured in netlify.toml (06:00 UTC)
+
 async function sendTelegramNotification(chatId: string, text: string) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) return;
@@ -209,6 +207,17 @@ async function getRaceLocationFromAI(raceName: string, date: string, info: strin
 
 // Main Function
 export const handler = async (event: any, context: any) => {
+    // Support HTTP trigger with JSON body for testing
+    if (event.body) {
+        try {
+            const body = JSON.parse(event.body);
+            if (body.testEmail) event.testEmail = body.testEmail;
+            if (body.isTest) event.isTest = body.isTest;
+        } catch (e) {
+            console.error("Failed to parse body", e);
+        }
+    }
+
     console.log("--------------------------------------------------");
     console.log("DAILY CYCLING REPORT HANDLER START");
     console.log("Time:", new Date().toISOString());
@@ -319,7 +328,8 @@ export const handler = async (event: any, context: any) => {
         const raceReports = [];
         for (const race of races) {
             // Rate limit between races to prevent AI overload
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            const raceDelay = event.isTest ? 100 : 5000;
+            await new Promise(resolve => setTimeout(resolve, raceDelay));
 
             const props = (race as any).properties;
             const fullTitle = props.Koers?.title?.[0]?.plain_text || 
@@ -355,8 +365,7 @@ export const handler = async (event: any, context: any) => {
 
             // Fallback: Als locatie niet in het weer-veld staat, of als het een lange rittenkoers is, gebruik AI
             // CHANGE: Verbeterde logica. Als het een rittenkoers is (> 1 dag), verandert de locatie dagelijks.
-            // Dus we moeten ALTIJD AI vragen waar de rit vandaag finisht, tenzij de HTML widget heel specifiek is (wat zelden zo is voor hele tour).
-            // Ook als geocoding faalt, proberen we AI.
+            // Dus we moeten ALTIJD AI vragen waar de rit vandaag finisht, tenzij de HTML widget heel specifiek is.
             let useAI = !locationName || durationDays > 1;
             
             // Check eerst of we de locatie kunnen geocoden als we die hebben
@@ -379,6 +388,15 @@ export const handler = async (event: any, context: any) => {
                 }
             }
             
+            // SUPER FALLBACK: Als we nog steeds geen geo hebben, gebruik het land of de regio
+            if (!geo && country) {
+                 console.log(`Still no location for ${nameTitle}, falling back to country: ${country}`);
+                 geo = await geocodeLocation(country);
+                 if (geo) {
+                     locationName = `${geo.name} (Regio)`;
+                 }
+            }
+
             let weatherTexts: Record<string, string> = {};
             let locationDisplay = locationName || "Onbekend";
 
@@ -411,7 +429,8 @@ export const handler = async (event: any, context: any) => {
                             // Generate for all unique languages found
                             for (const lang of Array.from(uniqueLanguages)) {
                                 // RATE LIMITING: Enforce max 5 calls per minute to Gemini AI (12s interval)
-                                await new Promise(resolve => setTimeout(resolve, 12000));
+                                const aiDelay = event.isTest ? 1000 : 12000;
+                                await new Promise(resolve => setTimeout(resolve, aiDelay));
                                 weatherTexts[lang] = await generateWeatherText(
                                     nameTitle, 
                                     locationDisplay, 

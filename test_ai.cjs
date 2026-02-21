@@ -10,7 +10,7 @@ async function testAI() {
   };
 
   try {
-    console.log('Testing AI endpoint with model:', process.env.GEMINI_MODEL);
+    console.log('Testing AI endpoint with model:', process.env.CEREBRAS_MODEL || 'default');
     const response = await fetch(url, {
       method: 'POST',
       headers: {

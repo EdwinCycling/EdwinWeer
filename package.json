@@ -1,7 +1,7 @@
 {
   "name": "baro",
   "private": true,
-  "version": "0.260219.1",
+  "version": "1.260221.1",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",
@@ -16,7 +16,6 @@
     "@cerebras/cerebras_cloud_sdk": "^1.64.1",
     "@geoman-io/leaflet-geoman-free": "^2.19.0",
     "@getbrevo/brevo": "^3.0.1",
-    "@google/generative-ai": "^0.24.1",
     "@notionhq/client": "^5.6.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@turf/turf": "^7.3.2",

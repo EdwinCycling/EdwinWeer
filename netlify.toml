@@ -51,7 +51,7 @@
   schedule = "36 * * * *"
 
 [functions."daily-cycling-report"]
-  schedule = "48 * * * *"
+  schedule = "0 6 * * *"
 
 [functions."game-master"]
   schedule = "0 9 * * 1"

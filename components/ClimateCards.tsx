@@ -2,15 +2,15 @@
 import React from 'react';
 import { Icon } from './Icon';
 import { determineClimateType, calculateBSI, MonthlyAverage } from '../services/climateService';
-import { useAuth } from '../hooks/useAuth';
 import { getTranslation } from '../services/translations';
+import { AppSettings } from '../types';
 
 interface ClimateProps {
     monthlyData: MonthlyAverage[];
+    settings: AppSettings;
 }
 
-export const ClimateClassificationCard: React.FC<ClimateProps> = ({ monthlyData }) => {
-    const { settings } = useAuth();
+export const ClimateClassificationCard: React.FC<ClimateProps> = ({ monthlyData, settings }) => {
     const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, settings.language, params);
     
     const climate = determineClimateType(monthlyData);
@@ -35,9 +35,9 @@ export const ClimateClassificationCard: React.FC<ClimateProps> = ({ monthlyData 
             <div className="relative z-10">
                 <h3 className="text-xl font-bold flex items-center gap-2 mb-2 text-text-main">
                     <Icon name="public" className="text-accent-primary" />
-                    {t('climate.title')}
+                    {t('climate.classification.title')}
                 </h3>
-                <p className="text-xs text-text-muted mb-4">{t('climate.subtitle')}</p>
+                <p className="text-xs text-text-muted mb-4">{t('climate.classification.subtitle')}</p>
             </div>
             
             <div className="flex flex-col items-center justify-center py-2 text-center relative z-10 my-auto">
@@ -63,8 +63,7 @@ export const ClimateClassificationCard: React.FC<ClimateProps> = ({ monthlyData 
     );
 };
 
-export const BaroSeasonalIndexCard: React.FC<ClimateProps> = ({ monthlyData }) => {
-    const { settings } = useAuth();
+export const BaroSeasonalIndexCard: React.FC<ClimateProps> = ({ monthlyData, settings }) => {
     const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, settings.language, params);
     
     const bsi = calculateBSI(monthlyData);
@@ -99,15 +98,14 @@ export const BaroSeasonalIndexCard: React.FC<ClimateProps> = ({ monthlyData }) =
     );
 };
 
-const WaveAnimation = ({ score }: { score: number }) => {
-    // Amplitude is 0 to 50 based on score
-    const amplitude = Math.max(2, (score / 100) * 50); 
-    const yMin = 60 - amplitude;
-    const yMax = 60 + amplitude;
-
+const WaveAnimation: React.FC<{ score: number }> = ({ score }) => {
+    // Determine wave properties based on score (volatility)
+    // Low score = stable = calm waves
+    // High score = extreme = wild waves
+    
     return (
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
-            <path d={`M0,50 Q25,${yMin} 50,50 T100,50 V100 H0 Z`} fill="currentColor" />
+        <svg viewBox="0 0 1440 320" className="w-full h-full" preserveAspectRatio="none">
+            <path fill="currentColor" fillOpacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,197.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
         </svg>
     );
-};
+}

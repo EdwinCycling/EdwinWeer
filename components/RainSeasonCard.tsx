@@ -4,14 +4,15 @@ import { Icon } from './Icon';
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, Tooltip } from 'recharts';
 import { useAuth } from '../hooks/useAuth';
 import { getTranslation } from '../services/translations';
+import { AppSettings } from '../types';
 
 interface RainSeasonProps {
     monthlyData: MonthlyAverage[];
     selectedYear?: number;
+    settings: AppSettings;
 }
 
-export const RainSeasonCard: React.FC<RainSeasonProps> = ({ monthlyData, selectedYear }) => {
-    const { settings } = useAuth();
+export const RainSeasonCard: React.FC<RainSeasonProps> = ({ monthlyData, selectedYear, settings }) => {
     const t = (key: string, params?: Record<string, string | number>) => getTranslation(key, settings.language, params);
     
     // Check if selected year is current year

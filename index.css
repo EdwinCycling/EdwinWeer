@@ -12,6 +12,7 @@
   --color-bg-page: var(--bg-page);
   --color-bg-card: var(--bg-card);
   --color-bg-input: var(--bg-input);
+  --color-bg-subtle: var(--bg-subtle);
   --color-text-main: var(--text-main);
   --color-text-muted: var(--text-muted);
   --color-text-inverse: var(--text-inverse);
@@ -32,9 +33,10 @@
   --bg-page: #f8f9fa;       /* Achtergrond van de hele app */
   --bg-card: #ffffff;       /* Achtergrond van kaartjes/blokken */
   --bg-input: #ffffff;      /* Achtergrond van invulvelden */
+  --bg-subtle: #f3f4f6;     /* Lichte achtergrond voor tabs/secundaire elementen */
   
   --text-main: #1a1a1a;     /* Hoofdtekst (bijna zwart) */
-  --text-muted: #6c757d;    /* Subtekst (grijs) */
+  --text-muted: #4b5563;    /* Subtekst (donkergrijs voor beter contrast) */
   --text-inverse: #ffffff;  /* Tekst op knoppen */
   
   --border-color: #e9ecef;  /* Lichte lijntjes */
@@ -59,6 +61,7 @@
   --bg-page: #121212;       /* Diep donkergrijs (niet puur zwart) */
   --bg-card: #1e1e1e;       /* Iets lichter voor contrast */
   --bg-input: #2c2c2c;
+  --bg-subtle: #334155;     /* Donkere achtergrond voor tabs */
   
   --text-main: #e0e0e0;     /* Off-white (leest fijner) */
   --text-muted: #a0a0a0;

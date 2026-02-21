@@ -41,6 +41,7 @@ export const VisualStatsBlocks: React.FC<Props> = ({
             const hasTempMin = !!data.temperature_2m_min;
             const hasPrecip = !!data.precipitation_sum;
             const hasWind = !!data.wind_gusts_10m_max;
+            const hasWindMax = !!data.wind_speed_10m_max;
 
             const categories = [
                 { 
@@ -162,10 +163,16 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     color: 'bg-orange-700', 
                     textColor: 'text-orange-700', 
                     check: (i: number) => {
+                        // Priority: Max Wind Speed (Sustained) >= 6 Bft
+                        if (hasWindMax) {
+                            const val = data.wind_speed_10m_max[i];
+                            return val !== null && val !== undefined && getBeaufort(val) >= 6;
+                        }
+                        // Fallback: Gusts >= 8 Bft (to avoid showing too many blocks)
                         if (!hasWind) return false;
                         const value = data.wind_gusts_10m_max?.[i];
                         if (value === null || value === undefined) return false;
-                        return getBeaufort(value) >= 6;
+                        return getBeaufort(value) >= 8;
                     }
                 },
             ];
@@ -267,7 +274,12 @@ export const VisualStatsBlocks: React.FC<Props> = ({
                     icon: 'air', 
                     color: 'bg-orange-700', 
                     textColor: 'text-orange-700', 
-                    check: (d: any) => d.windGust !== null && getBeaufort(d.windGust) >= 6 
+                    check: (d: any) => {
+                        if (d.maxWindSpeed !== undefined && d.maxWindSpeed !== null) {
+                            return getBeaufort(d.maxWindSpeed) >= 6;
+                        }
+                        return d.windGust !== null && getBeaufort(d.windGust) >= 8;
+                    }
                 },
             ];
 

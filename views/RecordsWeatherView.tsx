@@ -64,6 +64,7 @@ export interface DailyData {
     cloudCover: number | null;
     windGust: number | null;
     windSpeed: number | null;
+    maxWindSpeed: number | null;
     isWeekend: boolean;
 }
 
@@ -222,7 +223,8 @@ interface SeasonStat {
     absoluteMin: { value: number, date: string };
 }
 
-export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings, initialParams }) => {
+export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: propSettings, onUpdateSettings, initialParams }) => {
+  const settings = propSettings || DEFAULT_SETTINGS;
   const [location, setLocation] = useState<Location>(loadCurrentLocation());
 
   const formatDateTime = () => {
@@ -324,6 +326,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [maxAmplitude, setMaxAmplitude] = useState<RecordEntry[]>([]);
   const [minAmplitude, setMinAmplitude] = useState<RecordEntry[]>([]);
   const [monthAmplitudes, setMonthAmplitudes] = useState<{ value: number, max: number, min: number, maxDate: string, minDate: string, month: string }[]>([]);
+  const [maxMonthAmplitude, setMaxMonthAmplitude] = useState<{ value: number, max: number, min: number, maxDate: string, minDate: string, month: string } | null>(null);
+  const [minMonthAmplitude, setMinMonthAmplitude] = useState<{ value: number, max: number, min: number, maxDate: string, minDate: string, month: string } | null>(null);
 
   const calculateDaysAgo = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -567,6 +571,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     setRainMax([]);
     setMinAmplitude([]);
     setMonthAmplitudes([]);
+    setMaxMonthAmplitude(null);
+    setMinMonthAmplitude(null);
     setWettestMonths([]);
     setDriestMonths([]);
     setWarmestMonth(null);
@@ -680,6 +686,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       const minTemps: number[] | undefined = daily?.temperature_2m_min;
       const windGustValues: number[] | undefined = daily?.wind_gusts_10m_max;
       const windSpeedValues: number[] | undefined = daily?.wind_speed_10m_mean;
+      const maxWindSpeedValues: number[] | undefined = daily?.wind_speed_10m_max;
       const rainValues: number[] | undefined = daily?.precipitation_sum;
       const sunshineValues: number[] | undefined = daily?.sunshine_duration;
       const daylightValues: number[] | undefined = daily?.daylight_duration;
@@ -749,6 +756,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       cloudCover: cloudCover,
                       windGust: windGust,
                       windSpeed: windSpeed,
+                      maxWindSpeed: maxWindSpeed,
                       isWeekend: new Date(d).getDay() === 0 || new Date(d).getDay() === 6
                   });
               }
@@ -783,7 +791,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           
           const dailyDataList: DailyData[] = [];
 
-          const dataMap = new Map<string, { tMax: number, tMin: number, rain: number, sun: number, cloudCover: number | null, daylight: number, windGust: number, windSpeed: number }>();
+          const dataMap = new Map<string, { tMax: number, tMin: number, rain: number, sun: number, cloudCover: number | null, daylight: number, windGust: number, windSpeed: number, maxWindSpeed: number }>();
           if (times && maxTemps && minTemps) {
               for(let i=0; i<times.length; i++) {
                   const d = times[i];
@@ -814,7 +822,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       cloudCover: cloudCover,
                       daylight: daylightValues ? daylightValues[i] : 0,
                       windGust: windGustValues ? windGustValues[i] : 0,
-                      windSpeed: windSpeedValues ? windSpeedValues[i] : 0
+                      windSpeed: windSpeedValues ? windSpeedValues[i] : 0,
+                      maxWindSpeed: maxWindSpeedValues ? maxWindSpeedValues[i] : 0
                   });
               }
           }
@@ -829,7 +838,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               const entry = dataMap.get(dateStr);
               
               if (entry && typeof entry.tMax === 'number' && typeof entry.tMin === 'number') {
-                  const { tMax, tMin, rain, sun, cloudCover, daylight, windGust, windSpeed } = entry;
+                  const { tMax, tMin, rain, sun, cloudCover, daylight, windGust, windSpeed, maxWindSpeed } = entry;
 
                   if (tMax > maxTempHighVal) { maxTempHighVal = tMax; maxTempHighDate = dateStr; }
                   if (tMax < maxTempLowVal) { maxTempLowVal = tMax; maxTempLowDate = dateStr; }
@@ -879,6 +888,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                       cloudCover: null,
                       windGust: null,
                       windSpeed: null,
+                      maxWindSpeed: null,
                       isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6
                   });
               }
@@ -955,7 +965,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       setMaxAmplitude(sortDesc(amplitudeEntries));
       setMinAmplitude(sortAsc(amplitudeEntries));
 
-      // Calculate Largest Monthly Amplitude (Month with biggest difference between Max and Min)
+      // Calculate Largest Monthly Amplitude (Month with biggest difference between Max(Tmax) and Min(Tmin))
       const monthAmplitudesMap = new Map<string, { max: number, min: number, maxDate: string, minDate: string }>();
       
       for (let i = 0; i < times.length; i++) {
@@ -963,7 +973,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           const tMax = maxTemps[i];
           const tMin = minTemps[i];
           
-          if (!d || typeof tMax !== 'number' || typeof tMin !== 'number' || Number.isNaN(tMax) || Number.isNaN(tMin)) continue;
+          if (!d || typeof tMax !== 'number' || Number.isNaN(tMax) || typeof tMin !== 'number' || Number.isNaN(tMin)) continue;
           
           const monthKey = d.substring(0, 7); // "YYYY-MM"
           
@@ -992,6 +1002,8 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       // Sort desc and take top 3
       allMonthAmplitudes.sort((a, b) => b.value - a.value);
       setMonthAmplitudes(allMonthAmplitudes.slice(0, 3));
+      setMaxMonthAmplitude(allMonthAmplitudes.length > 0 ? allMonthAmplitudes[0] : null);
+      setMinMonthAmplitude(allMonthAmplitudes.length > 0 ? allMonthAmplitudes[allMonthAmplitudes.length - 1] : null);
 
       // Calculate Monthly Records (Wettest, Driest, Warmest, Coldest)
       const monthlyDataMap = new Map<string, { totalRain: number, rainDays: number, maxTemps: { day: number, temp: number }[], sumMaxTemp: number, countMaxTemp: number }>();
@@ -2404,7 +2416,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         </div>
       )}
 
-      <CreditFloatingButton onNavigate={onNavigate as any} settings={settings} />
+      <CreditFloatingButton onNavigate={onNavigate as any} settings={settings} currentView={ViewState.RECORDS} />
 
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
 
@@ -3440,6 +3452,52 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                     </div>
                 )}
 
+                {maxMonthAmplitude && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="expand" className="text-purple-600" />
+                                {t('records.max_month_amplitude')}
+                            </h3>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                             <span className="text-sm font-medium text-text-muted">
+                                {new Date(maxMonthAmplitude.month + '-01').toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-lg font-bold text-text-main">
+                                {formatTempDeltaValue(maxMonthAmplitude.value)}°
+                            </span>
+                        </div>
+                        <div className="text-xs text-text-muted flex flex-col items-end gap-1">
+                            <span>{t('max')}: {formatTempValue(maxMonthAmplitude.max)}° ({formatDateLabel(maxMonthAmplitude.maxDate)})</span>
+                            <span>{t('min')}: {formatTempValue(maxMonthAmplitude.min)}° ({formatDateLabel(maxMonthAmplitude.minDate)})</span>
+                        </div>
+                    </div>
+                )}
+
+                {minMonthAmplitude && (
+                    <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Icon name="compress" className="text-purple-400" />
+                                {t('records.min_month_amplitude')}
+                            </h3>
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                             <span className="text-sm font-medium text-text-muted">
+                                {new Date(minMonthAmplitude.month + '-01').toLocaleString(getLocale(), { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-lg font-bold text-text-main">
+                                {formatTempDeltaValue(minMonthAmplitude.value)}°
+                            </span>
+                        </div>
+                        <div className="text-xs text-text-muted flex flex-col items-end gap-1">
+                            <span>{t('max')}: {formatTempValue(minMonthAmplitude.max)}° ({formatDateLabel(minMonthAmplitude.maxDate)})</span>
+                            <span>{t('min')}: {formatTempValue(minMonthAmplitude.min)}° ({formatDateLabel(minMonthAmplitude.minDate)})</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Season Stats */}
                 {(recordType === 'yearly' || recordType === '12month') && seasonStats.length > 0 && (
                     <div className="w-full bg-bg-card rounded-2xl p-6 border border-border-color">
@@ -3559,9 +3617,9 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               {/* Climate Classification & BSI */}
               {(recordType === 'yearly' || recordType === '12month') && monthlyAverages.length > 0 && (
                   <div className="w-full max-w-2xl grid grid-cols-1 gap-6 mb-6">
-                      <ClimateClassificationCard monthlyData={monthlyAverages} />
-                      <BaroSeasonalIndexCard monthlyData={monthlyAverages} />
-                      <RainSeasonCard monthlyData={monthlyAverages} selectedYear={recordType === 'yearly' ? selectedYear : undefined} />
+                      <ClimateClassificationCard monthlyData={monthlyAverages} settings={settings} />
+                      <BaroSeasonalIndexCard monthlyData={monthlyAverages} settings={settings} />
+                      <RainSeasonCard monthlyData={monthlyAverages} selectedYear={recordType === 'yearly' ? selectedYear : undefined} settings={settings} />
                   </div>
               )}
 

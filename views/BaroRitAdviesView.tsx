@@ -2062,7 +2062,7 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
             </div>
 
             {/* Floating Credit Counter */}
-            {onNavigate && <CreditFloatingButton onNavigate={onNavigate} settings={settings} />}
+            {onNavigate && <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.BARO_RIT_ADVIES} />}
 
             {showFilenameModal && (
                 <Modal

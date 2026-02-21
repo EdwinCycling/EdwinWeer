@@ -1274,7 +1274,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
                                 className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                                     viewMode === mode.id 
                                         ? 'bg-white dark:bg-white/20 shadow-sm text-primary dark:text-white' 
-                                        : 'text-slate-500 dark:text-white/40 hover:text-slate-700 dark:hover:text-white/60'
+                                        : 'text-text-muted hover:text-text-main hover:bg-white/50 dark:hover:text-white/60 dark:hover:bg-white/10'
                                 }`}
                             >
                                 {mode.label}
@@ -1307,7 +1307,7 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
         />
       )}
         {/* Floating Credits Button */}
-        <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
+        <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.ENSEMBLE} />
     </div>
   );
 };

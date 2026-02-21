@@ -532,7 +532,7 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
             
             {/* Floating Credits Button */}
             <div className="absolute bottom-6 right-6 z-[100]">
-                 <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
+                 <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.GLOBE} />
             </div>
 
             {/* Weather Detail Panel - Full Width as requested */}

@@ -3,8 +3,23 @@ import Cerebras from '@cerebras/cerebras_cloud_sdk';
 
 // Configuration
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
-export const CEREBRAS_MODEL = process.env.CEREBRAS_MODEL || "llama-3.3-70b";
-const CEREBRAS_MODEL_FALLBACK = process.env.CEREBRAS_MODEL_FALLBACK || "llama-3.1-8b";
+
+// Safe Model Selection
+let primaryModel = process.env.CEREBRAS_MODEL || "llama-3.3-70b";
+// Force switch if deprecated Qwen model is detected in env
+if (primaryModel.includes("qwen")) {
+    console.warn(`[Config] Detected unsupported model '${primaryModel}' in env. Switching to 'llama-3.3-70b'.`);
+    primaryModel = "llama-3.3-70b";
+}
+
+export const CEREBRAS_MODEL = primaryModel;
+
+let fallbackModel = process.env.CEREBRAS_MODEL_FALLBACK || "llama-3.1-8b";
+if (fallbackModel.includes("qwen")) {
+    console.warn(`[Config] Detected unsupported fallback model '${fallbackModel}'. Switching to 'llama-3.1-8b'.`);
+    fallbackModel = "llama-3.1-8b";
+}
+const CEREBRAS_MODEL_FALLBACK = fallbackModel;
 
 if (!CEREBRAS_API_KEY) {
     console.warn("WARNING: CEREBRAS_API_KEY is missing. AI will be skipped.");

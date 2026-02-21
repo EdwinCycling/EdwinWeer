@@ -22,6 +22,7 @@ import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
+import { BeatBaroFloatingButton } from '../components/BeatBaroFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { StarMapModal } from '../components/StarMapModal';
 import { AuroraCard } from '../components/AuroraCard';
@@ -1039,7 +1040,8 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         </div>
       )}
 
-      <CreditFloatingButton onNavigate={onNavigate} settings={settings} />
+      <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.CURRENT} />
+      <BeatBaroFloatingButton onNavigate={onNavigate} settings={settings} />
 
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
       
@@ -1151,7 +1153,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                              <span className="font-medium text-text-main">{t('search')}</span>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center bg-bg-card/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color shadow-lg">
+                        <div 
+                            onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
+                            className="flex flex-col items-center bg-bg-card/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-border-color shadow-lg cursor-pointer hover:scale-105 transition-transform group"
+                        >
                             <h2 className="text-2xl font-bold leading-tight flex items-center gap-2 drop-shadow-xl text-text-main">
                                 <span className="md:hidden">{location.name.length > 15 ? location.name.slice(0, 15) + '...' : location.name}</span>
                                 <span className="hidden md:inline">{location.name}, {location.country}</span>
@@ -1304,7 +1309,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             <>
                 <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main">
                     <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
-                        <div className="bg-bg-card backdrop-blur-md px-4 rounded-xl border border-border-color shadow-sm flex items-center justify-center h-[85px] md:h-[100px] min-w-[140px]">
+                        <div 
+                            onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
+                            className="bg-bg-card backdrop-blur-md px-4 rounded-xl border border-border-color shadow-sm flex items-center justify-center h-[85px] md:h-[100px] min-w-[140px] cursor-pointer hover:scale-105 transition-transform group"
+                        >
                             <h1 className="text-[50px] md:text-[70px] font-bold leading-none tracking-tighter drop-shadow-xl font-display text-text-main">
                                 {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
                             </h1>

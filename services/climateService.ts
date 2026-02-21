@@ -1,6 +1,3 @@
-import { MonthlyAverage } from '../services/climateService'; // Self-reference for type, but usually defined here. 
-// Actually, interfaces should be exported from here.
-
 export interface MonthlyAverage {
     month: number;
     avgTemp: number;
@@ -111,148 +108,59 @@ export const calculateBSI = (monthlyData: MonthlyAverage[]): BSIResult => {
 
 export const detectRainSeason = (monthlyData: MonthlyAverage[]): RainSeasonResult => {
     if (!monthlyData || monthlyData.length === 0) {
-        return { 
-            hasSeason: false, intensity: 'rain_season.intensity.flat', months: '', percentage: 0, 
-            startMonth: 0, endMonth: 0, maxQuarterSum: 0, totalYearlyRain: 0 
-        };
+        return { hasSeason: false, intensity: '', months: '', percentage: 0, startMonth: 0, endMonth: 0, maxQuarterSum: 0, totalYearlyRain: 0 };
     }
 
-    // Sort data by month to be sure
-    const sortedData = [...monthlyData].sort((a, b) => a.month - b.month);
-    const totalYearlyRain = sortedData.reduce((sum, d) => sum + d.totalRain, 0);
-
-    // Edge case: Zeer weinig regen (Woestijn) - maar we willen nog steeds detecteren
-    if (totalYearlyRain === 0) {
-        return {
-            hasSeason: false,
-            intensity: 'rain_season.intensity.flat',
-            months: '',
-            percentage: 0,
-            startMonth: 0,
-            endMonth: 0,
-            maxQuarterSum: 0,
-            totalYearlyRain
-        };
+    const totalRain = monthlyData.reduce((acc, curr) => acc + curr.totalRain, 0);
+    if (totalRain < 50) {
+        return { hasSeason: false, intensity: 'low_rain', months: '', percentage: 0, startMonth: 0, endMonth: 0, maxQuarterSum: 0, totalYearlyRain: totalRain };
     }
 
-    // Stap B: Het "Glijdende Kwartaal"
-    let maxQuarterSum = -1;
-    let bestStartMonth = -1;
+    // Find wettest 3 consecutive months
+    let maxSum = -1;
+    let maxStartIndex = -1;
 
-    // Maak een map voor snelle lookup van regen per maand
-    const rainMap = new Map<number, number>();
-    sortedData.forEach(d => rainMap.set(d.month, d.totalRain));
-    
-    const monthlyAvg = totalYearlyRain / 12;
-
-    // 1. Vind de beste 3 aaneengesloten maanden
+    // We loop through 12 months, considering wrapping (e.g. Nov-Dec-Jan)
+    // monthlyData is usually 0-11 index.
     for (let i = 0; i < 12; i++) {
-        const m1 = i;
-        const m2 = (i + 1) % 12;
-        const m3 = (i + 2) % 12;
-
-        const rain1 = rainMap.get(m1) || 0;
-        const rain2 = rainMap.get(m2) || 0;
-        const rain3 = rainMap.get(m3) || 0;
-
-        const sum = rain1 + rain2 + rain3;
-        
-        if (sum > maxQuarterSum) {
-            maxQuarterSum = sum;
-            bestStartMonth = m1;
+        let sum = 0;
+        for (let j = 0; j < 3; j++) {
+            const index = (i + j) % 12;
+            const monthData = monthlyData.find(d => d.month === index + 1); // d.month is 1-12
+            if (monthData) {
+                sum += monthData.totalRain;
+            }
+        }
+        if (sum > maxSum) {
+            maxSum = sum;
+            maxStartIndex = i;
         }
     }
 
-    // 2. Probeer uit te breiden naar links en rechts (max 1 stap elk)
-    let currentStart = bestStartMonth;
-    let currentEnd = (bestStartMonth + 2) % 12;
-    let currentSum = maxQuarterSum;
-    let length = 3;
+    const percentage = (maxSum / totalRain) * 100;
+    const hasSeason = percentage >= 40; // If 3 months have 40% of rain
 
-    // Check vorige maand
-    const prevMonth = (currentStart - 1 + 12) % 12;
-    const prevRain = rainMap.get(prevMonth) || 0;
-    
-    // Check volgende maand
-    const nextMonth = (currentEnd + 1) % 12;
-    const nextRain = rainMap.get(nextMonth) || 0;
-
-    // Uitbreidingslogica: Drempel 0.8 * monthlyAvg
-    const threshold = monthlyAvg * 0.8;
-
-    if (prevRain > threshold) {
-        currentStart = prevMonth;
-        currentSum += prevRain;
-        length++;
-    }
-
-    if (nextRain > threshold) {
-        currentEnd = nextMonth;
-        currentSum += nextRain;
-        length++;
-    }
-
-    // 3. Probeer in te krimpen (Shrink) - voor korte seizoenen (1 of 2 maanden)
-    let shrunk = true;
-    while (shrunk && length > 1) {
-        shrunk = false;
-        
-        const firstMonthRain = rainMap.get(currentStart) || 0;
-        const lastMonthRain = rainMap.get(currentEnd) || 0;
-        
-        if (firstMonthRain < (currentSum * 0.15)) {
-            currentSum -= firstMonthRain;
-            currentStart = (currentStart + 1) % 12;
-            length--;
-            shrunk = true;
-            continue;
-        }
-        
-        if (lastMonthRain < (currentSum * 0.15)) {
-            currentSum -= lastMonthRain;
-            currentEnd = (currentEnd - 1 + 12) % 12;
-            length--;
-            shrunk = true;
-        }
-    }
-
-    // Stap C: De Concentratie Score
-    const score = (currentSum / totalYearlyRain) * 100;
-    
-    // Dynamische drempelwaarde voor detectie
-    const minPercentage = (length / 12 * 100) + 8;
-    const hasSeason = score > minPercentage;
-
-    let intensity = 'rain_season.intensity.flat';
-    if (hasSeason) {
-        const uniform = length / 12 * 100;
-        if (score > uniform * 1.8) {
-            intensity = 'rain_season.intensity.monsoon';
-        } else {
-            intensity = 'rain_season.intensity.seasonal';
-        }
-    }
-
-    const monthNames = [
-        'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 
-        'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
-    ];
-    
     let monthsStr = '';
-    if (length === 1) {
-        monthsStr = monthNames[currentStart];
-    } else {
-        monthsStr = `${monthNames[currentStart]} - ${monthNames[currentEnd]}`;
+    if (hasSeason) {
+        const m1 = maxStartIndex + 1;
+        const m3 = (maxStartIndex + 2) % 12 + 1;
+        monthsStr = `${getMonthName(m1)}-${getMonthName(m3)}`;
     }
 
     return {
         hasSeason,
-        intensity,
+        intensity: percentage > 60 ? 'strong' : 'moderate',
         months: monthsStr,
-        percentage: score,
-        startMonth: currentStart,
-        endMonth: currentEnd,
-        maxQuarterSum: currentSum,
-        totalYearlyRain
+        percentage,
+        startMonth: maxStartIndex + 1,
+        endMonth: (maxStartIndex + 2) % 12 + 1,
+        maxQuarterSum: maxSum,
+        totalYearlyRain: totalRain
     };
+};
+
+const getMonthName = (m: number) => {
+    const d = new Date();
+    d.setMonth(m - 1);
+    return d.toLocaleString('default', { month: 'short' });
 };
