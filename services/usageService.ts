@@ -384,15 +384,20 @@ export const decrementLocalBaroCredit = (): boolean => {
     return false;
 };
 
-export const deductBaroCredit = (): boolean => {
+export const deductBaroCredit = (force: boolean = false): boolean => {
     const stats = getUsage();
-    if (stats.baroCredits > 0) {
+    if (stats.baroCredits > 0 || force) {
         stats.baroCredits--;
         saveUsage(stats);
         consumeCredit('baro', 1);
         return true;
     }
     return false;
+};
+
+export const hasSufficientBaroCredits = (min: number): boolean => {
+    const stats = getUsage();
+    return stats.baroCredits > min;
 };
 
 export const updateUsage = (newStats: Partial<UsageStats>) => {

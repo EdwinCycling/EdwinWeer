@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { getUsage, deductBaroCredit } from '../services/usageService';
+import { getUsage, deductBaroCredit, hasSufficientBaroCredits } from '../services/usageService';
 import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
@@ -207,6 +207,8 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const [feedback, setFeedback] = useState<{ correct: boolean, points: number } | null>(null);
     const [canPlayToday, setCanPlayToday] = useState(true);
     const [loadingUser, setLoadingUser] = useState(true);
+    
+    const [showCreditWarning, setShowCreditWarning] = useState(false);
     
     // Game Log State
     const [gameLog, setGameLog] = useState<GameLogEntry[]>([]);
@@ -471,13 +473,14 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
         
         isEndingRef.current = false;
 
-        // Deduct Credit
-        if (!deductBaroCredit()) {
-            alert(t('planner.no_credits_desc')); // Or show modal
+        // Check if user has sufficient credits (> 10) to start
+        if (!hasSufficientBaroCredits(10)) {
+            setShowCreditWarning(true);
             return;
         }
-        // Force update if possible, but usageService usually handles localStorage. 
-        // Ideally we sync with Firestore too if credits are server-side managed properly.
+
+        // Deduct 1 credit for the first question
+        deductBaroCredit(true);
         
         setGameState('loading');
         const newQuestions = await generateQuiz();
@@ -603,6 +606,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
             setTimeout(() => {
                 setFeedback(null);
                 if (currentIndex < questions.length - 1) {
+                    deductBaroCredit(true); // Deduct credit for next question
                     setCurrentIndex(prev => prev + 1);
                     // Timer is reset by useEffect when currentIndex changes
                 } else {
@@ -1636,6 +1640,37 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
             </div>
             
             <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.HIGHLOW_GAME} />
+            
+            {/* Insufficient Credits Warning */}
+            {showCreditWarning && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowCreditWarning(false)}>
+                    <div className="bg-bg-card border border-border-color rounded-2xl p-6 max-w-md w-full shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
+                        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Icon name="cloud_off" className="text-3xl text-red-500" />
+                        </div>
+                        <h2 className="text-xl font-bold text-text-main mb-2">
+                            {t('game.highlow.insufficient_credits_title')}
+                        </h2>
+                        <p className="text-text-muted mb-6">
+                            {t('game.highlow.insufficient_credits_desc')}
+                        </p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setShowCreditWarning(false)}
+                                className="flex-1 py-3 bg-bg-subtle hover:bg-bg-page border border-border-color text-text-main font-bold rounded-xl transition-colors"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button 
+                                onClick={() => onNavigate(ViewState.PRICING)}
+                                className="flex-1 py-3 bg-accent-primary hover:bg-accent-secondary text-white font-bold rounded-xl transition-colors"
+                            >
+                                {t('game.highlow.buy_credits')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
