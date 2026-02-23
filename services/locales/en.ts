@@ -2271,6 +2271,8 @@ export const en: Dictionary = {
     'game.highlow.question.solo.min': 'Was the Min Temp yesterday ({date}) higher or lower than {value}°C?',
     'game.highlow.question.duel.max': 'Was it warmer in {cityA} than in {cityB} yesterday ({date})?',
     'game.highlow.question.duel.min': 'Was the night ({date}) warmer in {cityA} than in {cityB}?',
+    'game.highlow.reference_temp': 'Reference',
+    'game.highlow.actual_temp': 'Actual',
     'game.highlow.floating_button': 'Higher/Lower',
     'game.highlow.settings_title': 'Higher/Lower Game',
     'game.highlow.settings_desc': 'Show Higher/Lower button in weather overview',

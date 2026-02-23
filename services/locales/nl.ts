@@ -2249,6 +2249,8 @@ export const nl: Dictionary = {
     'game.highlow.question.solo.min': 'Was de Minimum Temperatuur gisteren ({date}) hoger of lager dan {value}°C?',
     'game.highlow.question.duel.max': 'Was het gisteren ({date}) in {cityA} warmer dan in {cityB}?',
     'game.highlow.question.duel.min': 'Was de nacht ({date}) in {cityA} warmer dan in {cityB}?',
+    'game.highlow.reference_temp': 'Referentie',
+    'game.highlow.actual_temp': 'Werkelijk',
     'game.highlow.floating_button': 'Hoger/Lager',
     'game.highlow.settings_title': 'Hoger/Lager Spel',
     'game.highlow.settings_desc': 'Toon de Hoger/Lager knop in het weeroverzicht',

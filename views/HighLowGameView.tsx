@@ -970,7 +970,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     </div>
                                     <div className="h-2 bg-bg-card rounded-full overflow-hidden border border-border-color">
                                         <div 
-                                            className={`h-full transition-all duration-100 ease-linear ${(questionTimer / getQuestionTime(currentIndex)) < 0.25 ? 'bg-red-500' : 'bg-accent-secondary'}`}
+                                            className={`h-full transition-all duration-100 ease-linear ${(questionTimer / getQuestionTime(currentIndex)) < 0.25 ? 'bg-red-500' : 'bg-blue-500'}`}
                                             style={{ width: `${(questionTimer / getQuestionTime(currentIndex)) * 100}%` }}
                                         />
                                     </div>
@@ -1389,15 +1389,27 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                                 </div>
                                                                 
                                                                 {q.type === 'solo' && (
-                                                                    <div className="col-span-3 mt-1 pt-1 border-t border-border-color/50 flex justify-between text-[10px] text-text-muted">
-                                                                         <span>Target: {Math.round(q.targetValue || 0)}°</span>
-                                                                         <span>Werkelijk: {Math.round(q.actualValueA || 0)}°</span>
+                                                                    <div className="col-span-3 mt-2 pt-2 border-t border-border-color/50 flex justify-between text-xs">
+                                                                         <div className="flex flex-col items-start">
+                                                                             <span className="text-text-muted">{t('game.highlow.reference_temp')}</span>
+                                                                             <span className="font-bold text-sm">{Math.round(q.targetValue || 0)}°C</span>
+                                                                         </div>
+                                                                         <div className="flex flex-col items-end">
+                                                                             <span className="text-text-muted">{t('game.highlow.actual_temp')}</span>
+                                                                             <span className="font-bold text-sm">{Math.round(q.actualValueA || 0)}°C</span>
+                                                                         </div>
                                                                     </div>
                                                                 )}
                                                                 {q.type === 'duel' && (
-                                                                    <div className="col-span-3 mt-1 pt-1 border-t border-border-color/50 flex justify-between text-[10px] text-text-muted">
-                                                                         <span>{q.cityA.name}: {Math.round(q.actualValueA || 0)}°</span>
-                                                                         <span>{q.cityB?.name}: {Math.round(q.actualValueB || 0)}°</span>
+                                                                    <div className="col-span-3 mt-2 pt-2 border-t border-border-color/50 flex justify-between text-xs">
+                                                                         <div className="flex flex-col items-start">
+                                                                             <span className="text-text-muted">{q.cityA.name}</span>
+                                                                             <span className="font-bold text-sm">{Math.round(q.actualValueA || 0)}°C</span>
+                                                                         </div>
+                                                                         <div className="flex flex-col items-end">
+                                                                             <span className="text-text-muted">{q.cityB?.name}</span>
+                                                                             <span className="font-bold text-sm">{Math.round(q.actualValueB || 0)}°C</span>
+                                                                         </div>
                                                                     </div>
                                                                 )}
                                                             </div>
