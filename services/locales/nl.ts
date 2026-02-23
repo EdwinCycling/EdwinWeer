@@ -2290,7 +2290,12 @@ export const nl: Dictionary = {
     'game.leaderboard.year': 'Jaar {year}',
     'game.leaderboard.quarter': 'Kwartaal {quarter}',
     'game.leaderboard.empty': 'Nog geen scores beschikbaar.',
-    'game.leaderboard.footer': 'Punten worden berekend na elke ronde.',
+    'game.leaderboard.footer': 'Top 50 • Dagklassement reset om 00:00 UTC',
+    'game.your_best_score': 'Jouw beste score',
+    'game.today': 'Vandaag',
+    'game.this_month': 'Deze maand',
+    'game.this_year': 'Dit jaar',
+    'game.all_time': 'Aller tijden',
 
     // Game Status
     'game.open': 'Open',
@@ -2324,6 +2329,13 @@ export const nl: Dictionary = {
     'game.bet_button': 'Zet in!',
     'game.submitted_at': 'Ingediend op',
     'game.no_bets_yet': 'Je hebt nog geen inzetten gedaan.',
+    
+    'game.perfect': 'Perfect',
+    'game.too_warm': 'Te warm',
+    'game.too_cold': 'Te koud',
+    'game.rank': 'Rang',
+    'game.results_expected': 'Uitslag verwacht op',
+    'game.deviation': 'Afwijking',
     
     // Results
     'game.result': 'Resultaat',

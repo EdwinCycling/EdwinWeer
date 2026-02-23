@@ -2318,7 +2318,12 @@ export const en: Dictionary = {
     'game.leaderboard.year': 'Year {year}',
     'game.leaderboard.quarter': 'Quarter {quarter}',
     'game.leaderboard.empty': 'No scores available yet.',
-    'game.leaderboard.footer': 'Points are calculated after each round.',
+    'game.leaderboard.footer': 'Top 50 • Daily leaderboard resets at 00:00 UTC',
+    'game.your_best_score': 'Your best score',
+    'game.today': 'Today',
+    'game.this_month': 'This Month',
+    'game.this_year': 'This Year',
+    'game.all_time': 'All Time',
 
     // Game Status
     'game.open': 'Open',
@@ -2352,6 +2357,13 @@ export const en: Dictionary = {
     'game.bet_button': 'Place Bet!',
     'game.submitted_at': 'Submitted on',
     'game.no_bets_yet': 'You haven\'t placed any bets yet.',
+    
+    'game.perfect': 'Perfect',
+    'game.too_warm': 'Too warm',
+    'game.too_cold': 'Too cold',
+    'game.rank': 'Rank',
+    'game.results_expected': 'Results expected on',
+    'game.deviation': 'Deviation',
     
     // Results
     'game.result': 'Result',

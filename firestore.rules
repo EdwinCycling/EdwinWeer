@@ -92,9 +92,11 @@ service cloud.firestore {
         // Iedereen mag de bets zien (nodig voor statistieken en leaderboard)
         allow read: if isSignedIn();
         // Je mag een bet aanmaken en bijwerken als het voor jezelf is (pad én data moeten matchen)
+        // EN de ronde moet nog 'open' zijn.
         allow create, update: if isSignedIn() && 
                                request.auth.uid == userId && 
-                               request.resource.data.userId == request.auth.uid;
+                               request.resource.data.userId == request.auth.uid &&
+                               get(/databases/$(database)/documents/game_rounds/$(roundId)).data.status == 'open';
         // Deletes blokkeren we
         allow delete: if false;
       }

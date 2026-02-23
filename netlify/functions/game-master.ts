@@ -287,10 +287,47 @@ const handler: Handler = async (event, context) => {
              
              // If less than 13 days away (e.g. next week or week after), open it
              if (diffDays <= 14) {
-                 scheduleBatch.update(doc.ref, { status: 'open' });
+                 const updates: any = { status: 'open' };
+                 
+                 // ALWAYS fetch fresh prediction when opening a round
+                 console.log(`Opening round ${doc.id} - Fetching Baro prediction...`);
+                 const prediction = await fetchWeather(round.city.lat, round.city.lon, round.targetDate, 'forecast');
+                 
+                 if (prediction) {
+                     updates.baroPrediction = {
+                         ...prediction,
+                         timestamp: Date.now()
+                     };
+                 } else {
+                     console.error(`Failed to fetch prediction for round ${doc.id} upon opening.`);
+                     // Fallback: If we really can't get data, maybe don't open it? 
+                     // Or open it without prediction and let self-healing fix it later?
+                     // For now we proceed, self-healing will try again on next run.
+                 }
+
+                 scheduleBatch.update(doc.ref, updates);
                  scheduleChanges++;
                  console.log(`Promoted round ${doc.id} to open`);
              }
+        }
+
+        // Fix: Check already OPEN rounds for missing predictions (Self-healing)
+        const openRoundsCheck = await db.collection('game_rounds').where('status', '==', 'open').get();
+        for (const doc of openRoundsCheck.docs) {
+            const round = doc.data();
+            if (!round.baroPrediction || (round.baroPrediction.max === 0 && round.baroPrediction.min === 0)) {
+                console.log(`Self-healing: Fetching missing prediction for OPEN round ${doc.id}`);
+                const prediction = await fetchWeather(round.city.lat, round.city.lon, round.targetDate, 'forecast');
+                if (prediction) {
+                     scheduleBatch.update(doc.ref, {
+                         baroPrediction: {
+                             ...prediction,
+                             timestamp: Date.now()
+                         }
+                     });
+                     scheduleChanges++;
+                }
+            }
         }
 
         // B. Create missing rounds
@@ -322,18 +359,15 @@ const handler: Handler = async (event, context) => {
                  
                  const randomCity = candidates[Math.floor(Math.random() * candidates.length)];
                  
-                 // Fetch Baro prediction (forecast)
-                 // Note: If date is > 16 days, Open-Meteo forecast might not be accurate or available.
-                 // Ideally we fetch the "real" forecast closer to date.
-                 // For now, we create the round as 'scheduled' and maybe fetch prediction later?
-                 // OR we just fetch what we can (Open-Meteo gives 16 days).
-                 // If it's far future, we might save it without prediction and fetch it when opening?
-                 // Let's fetch if possible, otherwise null (and fetch in step A when opening).
-                 
-                 let baroPrediction = null;
                  const diffDays = (futureDate.getTime() - today.getTime()) / (1000 * 3600 * 24);
                  
-                 if (diffDays <= 16) {
+                 // IMPORTANT: Do NOT fetch prediction here for far future rounds.
+                 // We explicitly set baroPrediction to null for 'scheduled' rounds.
+                 // It will be fetched when the round is promoted to 'open' (<= 14 days before target).
+                 
+                 let baroPrediction = null;
+                 if (diffDays <= 14) {
+                      // If we are creating a round that opens IMMEDIATELY (rare, but possible if DB is empty), fetch now.
                       baroPrediction = await fetchWeather(randomCity.lat, randomCity.lon, dateStr, 'forecast');
                  }
 
@@ -348,7 +382,7 @@ const handler: Handler = async (event, context) => {
                     baroPrediction: baroPrediction ? {
                         ...baroPrediction,
                         timestamp: Date.now()
-                    } : null, // If null, must be fetched when status becomes open
+                    } : null, 
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                     resultsProcessed: false
                 });
@@ -383,5 +417,6 @@ const handler: Handler = async (event, context) => {
 // Netlify Schedule
 // export const handler = schedule('0 9 * * 1', handler); // Note: handler name conflict
 // Correct way:
-const scheduledHandler = schedule('0 9 * * 1', handler);
+// Changed to daily check (was weekly on Monday) to ensure self-healing works faster (within 24h)
+const scheduledHandler = schedule('0 9 * * *', handler);
 export { scheduledHandler as handler };

@@ -13,6 +13,146 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import GameStatsCharts from '../components/GameStatsCharts';
 
+const COUNTRY_NAMES: Record<string, { nl: string, en: string }> = {
+    'NL': { nl: 'Nederland', en: 'Netherlands' },
+    'BE': { nl: 'België', en: 'Belgium' },
+    'DE': { nl: 'Duitsland', en: 'Germany' },
+    'FR': { nl: 'Frankrijk', en: 'France' },
+    'GB': { nl: 'Verenigd Koninkrijk', en: 'United Kingdom' },
+    'UK': { nl: 'Verenigd Koninkrijk', en: 'United Kingdom' },
+    'IE': { nl: 'Ierland', en: 'Ireland' },
+    'ES': { nl: 'Spanje', en: 'Spain' },
+    'IT': { nl: 'Italië', en: 'Italy' },
+    'CH': { nl: 'Zwitserland', en: 'Switzerland' },
+    'AT': { nl: 'Oostenrijk', en: 'Austria' },
+    'DK': { nl: 'Denemarken', en: 'Denmark' },
+    'SE': { nl: 'Zweden', en: 'Sweden' },
+    'NO': { nl: 'Noorwegen', en: 'Norway' },
+    'FI': { nl: 'Finland', en: 'Finland' },
+    'PL': { nl: 'Polen', en: 'Poland' },
+    'CZ': { nl: 'Tsjechië', en: 'Czech Republic' },
+    'HU': { nl: 'Hongarije', en: 'Hungary' },
+    'HR': { nl: 'Kroatië', en: 'Croatia' },
+    'TR': { nl: 'Turkije', en: 'Turkey' },
+    'LU': { nl: 'Luxemburg', en: 'Luxembourg' },
+    'CA': { nl: 'Canada', en: 'Canada' },
+    'AU': { nl: 'Australië', en: 'Australia' },
+    'US': { nl: 'Verenigde Staten', en: 'United States' },
+    'JP': { nl: 'Japan', en: 'Japan' },
+    'PT': { nl: 'Portugal', en: 'Portugal' },
+    'GR': { nl: 'Griekenland', en: 'Greece' },
+    'ZA': { nl: 'Zuid-Afrika', en: 'South Africa' },
+    'BR': { nl: 'Brazilië', en: 'Brazil' },
+    'AR': { nl: 'Argentinië', en: 'Argentina' },
+    'CL': { nl: 'Chili', en: 'Chile' },
+    'MX': { nl: 'Mexico', en: 'Mexico' },
+    'TH': { nl: 'Thailand', en: 'Thailand' },
+    'CN': { nl: 'China', en: 'China' },
+    'IN': { nl: 'India', en: 'India' },
+    'RU': { nl: 'Rusland', en: 'Russia' },
+    'KR': { nl: 'Zuid-Korea', en: 'South Korea' },
+    'AE': { nl: 'Verenigde Arabische Emiraten', en: 'United Arab Emirates' },
+    'EG': { nl: 'Egypte', en: 'Egypt' },
+    'MA': { nl: 'Marokko', en: 'Morocco' },
+    'UA': { nl: 'Oekraïne', en: 'Ukraine' },
+    'PE': { nl: 'Peru', en: 'Peru' },
+    'CO': { nl: 'Colombia', en: 'Colombia' },
+    'VN': { nl: 'Vietnam', en: 'Vietnam' },
+    'ID': { nl: 'Indonesië', en: 'Indonesia' },
+    'MY': { nl: 'Maleisië', en: 'Malaysia' },
+    'NZ': { nl: 'Nieuw-Zeeland', en: 'New Zealand' },
+    'KE': { nl: 'Kenia', en: 'Kenya' },
+    'NG': { nl: 'Nigeria', en: 'Nigeria' },
+    'SA': { nl: 'Saoedi-Arabië', en: 'Saudi Arabia' },
+    'IL': { nl: 'Israël', en: 'Israel' },
+    'IS': { nl: 'IJsland', en: 'Iceland' },
+    'EE': { nl: 'Estland', en: 'Estonia' },
+    'LV': { nl: 'Letland', en: 'Latvia' },
+    'LT': { nl: 'Litouwen', en: 'Lithuania' },
+    'RO': { nl: 'Roemenië', en: 'Romania' },
+    'BG': { nl: 'Bulgarije', en: 'Bulgaria' },
+    'RS': { nl: 'Servië', en: 'Serbia' },
+    'AL': { nl: 'Albanië', en: 'Albania' },
+    'BA': { nl: 'Bosnië en Herzegovina', en: 'Bosnia and Herzegovina' },
+    'MK': { nl: 'Noord-Macedonië', en: 'North Macedonia' },
+    'SI': { nl: 'Slovenië', en: 'Slovenia' },
+    'SK': { nl: 'Slowakije', en: 'Slovakia' },
+    'BY': { nl: 'Wit-Rusland', en: 'Belarus' },
+    'MD': { nl: 'Moldavië', en: 'Moldova' },
+    'GE': { nl: 'Georgië', en: 'Georgia' },
+    'AM': { nl: 'Armenië', en: 'Armenia' },
+    'AZ': { nl: 'Azerbeidzjan', en: 'Azerbaijan' },
+    'MT': { nl: 'Malta', en: 'Malta' },
+    'CY': { nl: 'Cyprus', en: 'Cyprus' },
+    'AD': { nl: 'Andorra', en: 'Andorra' },
+    'MC': { nl: 'Monaco', en: 'Monaco' },
+    'BS': { nl: 'Bahama\'s', en: 'Bahamas' },
+    'CU': { nl: 'Cuba', en: 'Cuba' },
+    'DO': { nl: 'Dominicaanse Republiek', en: 'Dominican Republic' },
+    'PR': { nl: 'Puerto Rico', en: 'Puerto Rico' },
+    'JM': { nl: 'Jamaica', en: 'Jamaica' },
+    'VE': { nl: 'Venezuela', en: 'Venezuela' },
+    'EC': { nl: 'Ecuador', en: 'Ecuador' },
+    'HK': { nl: 'Hongkong', en: 'Hong Kong' },
+    'TW': { nl: 'Taiwan', en: 'Taiwan' },
+    'SG': { nl: 'Singapore', en: 'Singapore' },
+    'PH': { nl: 'Filipijnen', en: 'Philippines' },
+    'NP': { nl: 'Nepal', en: 'Nepal' },
+    'QA': { nl: 'Qatar', en: 'Qatar' },
+    'IR': { nl: 'Iran', en: 'Iran' },
+    'MV': { nl: 'Malediven', en: 'Maldives' },
+    'MN': { nl: 'Mongolië', en: 'Mongolia' },
+    'KZ': { nl: 'Kazachstan', en: 'Kazakhstan' },
+    'UZ': { nl: 'Oezbekistan', en: 'Uzbekistan' },
+    'KG': { nl: 'Kirgizië', en: 'Kyrgyzstan' },
+    'TJ': { nl: 'Tadzjikistan', en: 'Tajikistan' },
+    'TM': { nl: 'Turkmenistan', en: 'Turkmenistan' },
+    'AF': { nl: 'Afghanistan', en: 'Afghanistan' },
+    'PK': { nl: 'Pakistan', en: 'Pakistan' },
+    'BD': { nl: 'Bangladesh', en: 'Bangladesh' },
+    'LK': { nl: 'Sri Lanka', en: 'Sri Lanka' },
+    'MM': { nl: 'Myanmar', en: 'Myanmar' },
+    'LA': { nl: 'Laos', en: 'Laos' },
+    'KH': { nl: 'Cambodja', en: 'Cambodia' },
+    'JO': { nl: 'Jordanië', en: 'Jordan' },
+    'LB': { nl: 'Libanon', en: 'Lebanon' },
+    'IQ': { nl: 'Irak', en: 'Iraq' },
+    'KW': { nl: 'Koeweit', en: 'Kuwait' },
+    'BH': { nl: 'Bahrein', en: 'Bahrain' },
+    'OM': { nl: 'Oman', en: 'Oman' },
+    'YE': { nl: 'Jemen', en: 'Yemen' },
+    'TN': { nl: 'Tunesië', en: 'Tunisia' },
+    'ET': { nl: 'Ethiopië', en: 'Ethiopia' },
+    'TZ': { nl: 'Tanzania', en: 'Tanzania' },
+    'SC': { nl: 'Seychellen', en: 'Seychelles' },
+    'SN': { nl: 'Senegal', en: 'Senegal' },
+    'GH': { nl: 'Ghana', en: 'Ghana' },
+    'CI': { nl: 'Ivoorkust', en: 'Ivory Coast' },
+    'AO': { nl: 'Angola', en: 'Angola' },
+    'CD': { nl: 'Congo-Kinshasa', en: 'DR Congo' },
+    'SD': { nl: 'Soedan', en: 'Sudan' },
+    'DZ': { nl: 'Algerije', en: 'Algeria' },
+    'LY': { nl: 'Libië', en: 'Libya' },
+    'UG': { nl: 'Oeganda', en: 'Uganda' },
+    'RW': { nl: 'Rwanda', en: 'Rwanda' },
+    'MZ': { nl: 'Mozambique', en: 'Mozambique' },
+    'ZW': { nl: 'Zimbabwe', en: 'Zimbabwe' },
+    'NA': { nl: 'Namibië', en: 'Namibia' },
+    'BW': { nl: 'Botswana', en: 'Botswana' },
+    'MG': { nl: 'Madagaskar', en: 'Madagascar' },
+    'MU': { nl: 'Mauritius', en: 'Mauritius' },
+    'FJ': { nl: 'Fiji', en: 'Fiji' },
+    'PF': { nl: 'Frans-Polynesië', en: 'French Polynesia' }
+};
+
+const getCountryName = (code: string, lang: 'nl' | 'en' = 'nl') => {
+    const country = COUNTRY_NAMES[code];
+    if (country) {
+        return lang === 'nl' ? country.nl : country.en;
+    }
+    return code;
+};
+
 const customIcon = L.divIcon({
   html: '<span class="material-symbols-outlined" style="font-size: 40px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">location_on</span>',
   className: 'custom-map-icon bg-transparent border-none',
@@ -675,7 +815,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         <Icon name="location_on" className="text-accent-primary" />
                                         <div>
                                             <p className="text-xs text-text-muted uppercase font-bold tracking-wider">Locatie</p>
-                                            <p className="font-bold">{openRound.city.name}, {openRound.city.country}</p>
+                                            <p className="font-bold">{openRound.city.name}, {getCountryName(openRound.city.country, settings.language === 'nl' ? 'nl' : 'en')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -748,7 +888,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     <div className="relative z-10">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-2xl">{openRound.city.country}</span>
+                                                <span className="text-2xl">{getCountryName(openRound.city.country, settings.language === 'nl' ? 'nl' : 'en')}</span>
                                                 <h2 className="text-3xl font-bold">{openRound.city.name}</h2>
                                                 <button
                                                     onClick={(e) => {
@@ -861,11 +1001,27 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                         <div className="flex flex-col items-center">
                                             <span className="text-text-muted text-sm">{t('game.max_temp')}</span>
                                             <span className="text-3xl font-bold text-red-500">{(openRound.baroPrediction?.max || 0).toFixed(1)}°</span>
+                                            {userBet && (
+                                                <div className="mt-2 text-center border-t border-border-color pt-1 w-full">
+                                                    <span className="text-xs text-text-muted uppercase block mb-0.5">{t('game.you')}</span>
+                                                    <span className="text-lg font-bold text-red-400">
+                                                        {userBet.prediction.max.toFixed(1)}°
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="w-px h-12 bg-border-color mx-4"></div>
                                         <div className="flex flex-col items-center">
                                             <span className="text-text-muted text-sm">{t('game.min_temp')}</span>
                                             <span className="text-3xl font-bold text-blue-500">{(openRound.baroPrediction?.min || 0).toFixed(1)}°</span>
+                                            {userBet && (
+                                                <div className="mt-2 text-center border-t border-border-color pt-1 w-full">
+                                                    <span className="text-xs text-text-muted uppercase block mb-0.5">{t('game.you')}</span>
+                                                    <span className="text-lg font-bold text-blue-400">
+                                                        {userBet.prediction.min.toFixed(1)}°
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     
@@ -1231,7 +1387,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                 >
                                                     <Icon name="public" className="text-lg" />
                                                 </button>
-                                                <span className="text-sm text-text-muted font-normal">{round.city.country}</span>
+                                                <span className="text-sm text-text-muted font-normal">{getCountryName(round.city.country, settings.language === 'nl' ? 'nl' : 'en')}</span>
                                             </div>
                                             <p className="text-text-muted text-sm mt-1">
                                                 {t('game.prediction_target', { date: targetDate.toLocaleDateString(settings.language, { day: 'numeric', month: 'short' }) })}
@@ -1367,7 +1523,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
 
                                         return (
                                             <div key={index} className="bg-bg-card p-4 rounded-xl border border-border-color">
-                                                <div className="flex justify-between items-start mb-4 border-b border-border-color pb-3">
+                                                <div className="flex justify-between items-start mb-2 border-b border-border-color pb-3">
                                                     <div>
                                                         <h3 className="font-bold text-lg text-text-main flex items-center gap-2">
                                                             {round.city.name}
@@ -1390,46 +1546,124 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                         {isCompleted ? t('game.completed') : t(`game.${round.status}`)}
                                                     </div>
                                                 </div>
-                                                
-                                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                                    <div className="bg-bg-page p-3 rounded-lg">
-                                                        <span className="text-xs text-text-muted uppercase block mb-1">{t('game.your_prediction')}</span>
-                                                        <span className="font-bold text-text-main block">
-                                                            {item.bet.prediction.max.toFixed(1)}° / {item.bet.prediction.min.toFixed(1)}°
-                                                        </span>
+
+                                                {/* Announcement Date for Locked Rounds */}
+                                                {!isCompleted && round.status === 'locked' && (
+                                                    <div className="mb-4 text-xs text-text-muted italic bg-bg-page p-2 rounded-lg text-center">
+                                                        {t('game.results_expected', { defaultValue: 'Results expected on' })} {(() => {
+                                                            const d = new Date(round.targetDate);
+                                                            d.setDate(d.getDate() + 1);
+                                                            return d.toLocaleDateString(settings.language, { weekday: 'long', day: 'numeric', month: 'long' });
+                                                        })()}
                                                     </div>
-                                                    <div className="bg-bg-page p-3 rounded-lg">
-                                                        <span className="text-xs text-text-muted uppercase block mb-1">{t('game.result')}</span>
-                                                        <span className="font-bold text-text-main block">
-                                                            {isCompleted ? `${round.actualResult?.max.toFixed(1)}° / ${round.actualResult?.min.toFixed(1)}°` : '-'}
+                                                )}
+                                                
+                                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                                    {/* User Prediction */}
+                                                    <div className="bg-bg-page p-2 rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase block mb-1 truncate">{t('game.your_prediction')}</span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <span className="font-bold text-text-main text-sm">{item.bet.prediction.max.toFixed(1)}°</span>
+                                                                <span className="text-[10px] text-text-muted">MAX</span>
+                                                            </div>
+                                                            <div className="border-t border-border-color pt-1 flex items-center justify-center gap-1">
+                                                                <span className="font-bold text-text-main text-sm">{item.bet.prediction.min.toFixed(1)}°</span>
+                                                                <span className="text-[10px] text-text-muted">MIN</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Baro Prediction */}
+                                                    <div className="bg-bg-page p-2 rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase block mb-1 truncate">{t('game.baro_predicts')}</span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <span className="font-bold text-text-main text-sm">{round.baroPrediction?.max.toFixed(1)}°</span>
+                                                                <span className="text-[10px] text-text-muted">MAX</span>
+                                                            </div>
+                                                            <div className="border-t border-border-color pt-1 flex items-center justify-center gap-1">
+                                                                <span className="font-bold text-text-main text-sm">{round.baroPrediction?.min.toFixed(1)}°</span>
+                                                                <span className="text-[10px] text-text-muted">MIN</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Result */}
+                                                    <div className="bg-bg-page p-2 rounded-lg text-center">
+                                                        <span className="text-[10px] text-text-muted uppercase block mb-1 truncate">
+                                                            {t('game.result')} <span className="font-normal opacity-75">
+                                                                ({new Date(round.targetDate).toLocaleDateString(settings.language, { day: 'numeric', month: 'short' })})
+                                                            </span>
                                                         </span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <span className="font-bold text-text-main text-sm">
+                                                                    {isCompleted ? `${round.actualResult?.max.toFixed(1)}°` : '-'}
+                                                                </span>
+                                                                <span className="text-[10px] text-text-muted">MAX</span>
+                                                            </div>
+                                                            <div className="border-t border-border-color pt-1 flex items-center justify-center gap-1">
+                                                                <span className="font-bold text-text-main text-sm">
+                                                                    {isCompleted ? `${round.actualResult?.min.toFixed(1)}°` : '-'}
+                                                                </span>
+                                                                <span className="text-[10px] text-text-muted">MIN</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 {isCompleted && dev && baroDev && (
-                                                    <div className="bg-bg-page p-3 rounded-lg">
-                                                        <div className="flex justify-between items-center text-sm mb-1">
-                                                            <span className="text-text-muted">{t('game.deviation_you')}</span>
-                                                            <span className={`font-bold ${dev.total < baroDev.total ? 'text-green-500' : 'text-red-500'}`}>
-                                                                {dev.total.toFixed(1)}°
-                                                            </span>
+                                                    <div className="bg-bg-page p-3 rounded-lg space-y-3">
+                                                        {/* Max Deviation */}
+                                                        <div className="flex justify-between items-center">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm text-text-muted">Max {t('game.deviation')}</span>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className={`font-bold ${
+                                                                    dev.devMax === 0 ? 'text-green-500' : 
+                                                                    item.bet.prediction.max > round.actualResult!.max ? 'text-red-500' : 'text-blue-500'
+                                                                }`}>
+                                                                    {dev.devMax.toFixed(1)}°
+                                                                </span>
+                                                                <span className="text-[10px] text-text-muted block">
+                                                                    {item.bet.prediction.max > round.actualResult!.max ? t('game.too_warm', { defaultValue: 'Too warm' }) : item.bet.prediction.max < round.actualResult!.max ? t('game.too_cold', { defaultValue: 'Too cold' }) : t('game.perfect', { defaultValue: 'Perfect' })}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-between items-center text-sm mb-2">
-                                                            <span className="text-text-muted">{t('game.deviation_baro')}</span>
-                                                            <span className="font-bold text-text-main">
-                                                                {baroDev.total.toFixed(1)}°
-                                                            </span>
+
+                                                        {/* Min Deviation */}
+                                                        <div className="flex justify-between items-center border-t border-border-color pt-2 border-dashed">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm text-text-muted">Min {t('game.deviation')}</span>
+                                                                <span className="text-[10px] text-text-muted opacity-70">{t('game.min_explanation')}</span>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className={`font-bold ${
+                                                                    dev.devMin === 0 ? 'text-green-500' : 
+                                                                    item.bet.prediction.min > round.actualResult!.min ? 'text-red-500' : 'text-blue-500'
+                                                                }`}>
+                                                                    {dev.devMin.toFixed(1)}°
+                                                                </span>
+                                                                <span className="text-[10px] text-text-muted block">
+                                                                    {item.bet.prediction.min > round.actualResult!.min ? t('game.too_warm', { defaultValue: 'Too warm' }) : item.bet.prediction.min < round.actualResult!.min ? t('game.too_cold', { defaultValue: 'Too cold' }) : t('game.perfect', { defaultValue: 'Perfect' })}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                         
-                                                        {item.bet.score !== undefined && (
-                                                            <div className="mt-3 pt-2 border-t border-border-color flex justify-between items-center">
-                                                                <span className="font-bold text-accent-primary">{t('game.points_earned')}</span>
+                                                        {/* Rank & Points */}
+                                                        <div className="mt-3 pt-2 border-t border-border-color flex justify-between items-center">
+                                                            <span className="font-bold text-text-main flex items-center gap-1">
+                                                                {t('game.rank', { defaultValue: 'Rank' })} <span className="text-lg text-accent-primary">#{item.bet.rank || '-'}</span>
+                                                            </span>
+                                                            {item.bet.score !== undefined && (
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-xl font-bold text-accent-primary">{item.bet.score}</span>
                                                                     <Icon name="military_tech" className="text-yellow-500" />
                                                                 </div>
-                                                            </div>
-                                                        )}
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -1477,7 +1711,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                     <div className="flex justify-between items-start mb-4">
                                                         <div>
                                                             <h3 className="font-bold text-lg text-text-main flex items-center gap-2">
-                                                                {r.city.name}, {r.city.country}
+                                                                {r.city.name}, {getCountryName(r.city.country, settings.language === 'nl' ? 'nl' : 'en')}
                                                                 <button
                                                                     onClick={() => setMapModalRound(r)}
                                                                     className="p-1 rounded-full bg-bg-card hover:bg-bg-page border border-border-color transition-all text-text-muted hover:text-text-main shadow-sm"
@@ -1559,10 +1793,14 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                                     <p className={`font-bold truncate ${isMe ? 'text-accent-primary' : 'text-text-main'}`}>
                                                                         {getAnonymizedName(bet.userName, bet.userName.includes('@') ? bet.userName : undefined)} {isMe && t('game.you')}
                                                                     </p>
-                                                                    <div className="flex items-center gap-2 text-xs text-text-muted">
-                                                                        <span>Max Δ {bet.deviation?.devMax.toFixed(1)}°</span>
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        <span className="text-xs text-text-muted">
+                                                                            Max Δ {bet.deviation?.devMax.toFixed(1)}°
+                                                                        </span>
                                                                         {bet.deviation && bet.deviation.devMin > 0 && (
-                                                                            <span className="opacity-50">Min Δ {bet.deviation.devMin.toFixed(1)}°</span>
+                                                                            <span className="text-[10px] text-text-muted opacity-70">
+                                                                                (Tie-breaker: Min Δ {bet.deviation.devMin.toFixed(1)}°)
+                                                                            </span>
                                                                         )}
                                                                     </div>
                                                                 </div>
@@ -1573,7 +1811,7 @@ export const GameDashboardView: React.FC<Props> = ({ onNavigate, settings }) => 
                                                                         </span>
                                                                     )}
                                                                     <span className="text-xs text-text-muted">
-                                                                        Total Δ {bet.deviation?.total.toFixed(1)}°
+                                                                        Totaal Δ {bet.deviation?.total.toFixed(1)}°
                                                                     </span>
                                                                 </div>
                                                             </div>

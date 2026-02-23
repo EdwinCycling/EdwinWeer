@@ -423,6 +423,7 @@ export interface GameBet {
     };
     timestamp: number;
     score?: number;
+    rank?: number;
 }
 
 export interface GameStats {

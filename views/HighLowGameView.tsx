@@ -830,6 +830,15 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
         return formatDate(d);
     };
 
+    // Convert to F if needed
+    const formatTemp = (celsius: number) => {
+        if (settings.tempUnit === 'fahrenheit') {
+            return Math.round((celsius * 9/5) + 32);
+        }
+        return Math.round(celsius);
+    };
+    const tempUnit = settings.tempUnit === 'fahrenheit' ? '°F' : '°C';
+
     return (
         <div className="min-h-screen bg-bg-page text-text-main pb-24">
             {/* Header */}
@@ -998,7 +1007,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                 {settings.language === 'nl' 
                                                     ? currentQ.questionText.nl
                                                         .replace('{date}', getYesterdayDate())
-                                                        .replace('{value}', Math.round(currentQ.targetValue || 0).toString())
+                                                        .replace('{value}', formatTemp(currentQ.targetValue || 0).toString() + tempUnit)
                                                         .replace('{city}', currentQ.cityA.name)
                                                         .replace('{cityA}', currentQ.cityA.name)
                                                         .replace('{cityB}', currentQ.cityB?.name || '')
@@ -1006,7 +1015,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                         .replace(currentQ.cityB?.name || 'NONEXISTENT', `${currentQ.cityB?.name} (${getCountryName(currentQ.cityB?.country || '', 'nl')})`)
                                                     : currentQ.questionText.en
                                                         .replace('{date}', getYesterdayDate())
-                                                        .replace('{value}', Math.round(currentQ.targetValue || 0).toString())
+                                                        .replace('{value}', formatTemp(currentQ.targetValue || 0).toString() + tempUnit)
                                                         .replace('{city}', currentQ.cityA.name)
                                                         .replace('{cityA}', currentQ.cityA.name)
                                                         .replace('{cityB}', currentQ.cityB?.name || '')
@@ -1308,9 +1317,9 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                 
                                                 let deviation = '-';
                                                 if (q.type === 'solo' && q.actualValueA !== undefined && q.targetValue !== undefined) {
-                                                    deviation = Math.round(Math.abs(q.actualValueA - q.targetValue)) + '°';
+                                                    deviation = Math.round(Math.abs(formatTemp(q.actualValueA) - formatTemp(q.targetValue))) + tempUnit;
                                                 } else if (q.type === 'duel' && q.actualValueA !== undefined && q.actualValueB !== undefined) {
-                                                    deviation = Math.round(Math.abs(q.actualValueA - q.actualValueB)) + '°';
+                                                    deviation = Math.round(Math.abs(formatTemp(q.actualValueA) - formatTemp(q.actualValueB))) + tempUnit;
                                                 }
 
                                                 // Determine correct answer display
@@ -1357,7 +1366,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                                 {settings.language === 'nl' 
                                                                     ? q.questionText.nl
                                                                         .replace('{date}', 'gisteren')
-                                                                        .replace('{value}', Math.round(q.targetValue || 0).toString())
+                                                                        .replace('{value}', formatTemp(q.targetValue || 0).toString() + tempUnit)
                                                                         .replace('{city}', q.cityA.name)
                                                                         .replace('{cityA}', q.cityA.name)
                                                                         .replace('{cityB}', q.cityB?.name || '')
@@ -1365,7 +1374,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                                         .replace(q.cityB?.name || 'NONEXISTENT', `${q.cityB?.name} (${getCountryName(q.cityB?.country || '', 'nl')})`)
                                                                     : q.questionText.en
                                                                         .replace('{date}', 'yesterday')
-                                                                        .replace('{value}', Math.round(q.targetValue || 0).toString())
+                                                                        .replace('{value}', formatTemp(q.targetValue || 0).toString() + tempUnit)
                                                                         .replace('{city}', q.cityA.name)
                                                                         .replace('{cityA}', q.cityA.name)
                                                                         .replace('{cityB}', q.cityB?.name || '')
@@ -1396,11 +1405,11 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                                     <div className="col-span-3 mt-2 pt-2 border-t border-border-color/50 flex justify-between text-xs">
                                                                          <div className="flex flex-col items-start">
                                                                              <span className="text-text-muted">{t('game.highlow.reference_temp')}</span>
-                                                                             <span className="font-bold text-sm">{Math.round(q.targetValue || 0)}°C</span>
+                                                                             <span className="font-bold text-sm">{formatTemp(q.targetValue || 0)}{tempUnit}</span>
                                                                          </div>
                                                                          <div className="flex flex-col items-end">
                                                                              <span className="text-text-muted">{t('game.highlow.actual_temp')}</span>
-                                                                             <span className="font-bold text-sm">{Math.round(q.actualValueA || 0)}°C</span>
+                                                                             <span className="font-bold text-sm">{formatTemp(q.actualValueA || 0)}{tempUnit}</span>
                                                                          </div>
                                                                     </div>
                                                                 )}
@@ -1408,11 +1417,11 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                                     <div className="col-span-3 mt-2 pt-2 border-t border-border-color/50 flex justify-between text-xs">
                                                                          <div className="flex flex-col items-start">
                                                                              <span className="text-text-muted">{q.cityA.name}</span>
-                                                                             <span className="font-bold text-sm">{Math.round(q.actualValueA || 0)}°C</span>
+                                                                             <span className="font-bold text-sm">{formatTemp(q.actualValueA || 0)}{tempUnit}</span>
                                                                          </div>
                                                                          <div className="flex flex-col items-end">
                                                                              <span className="text-text-muted">{q.cityB?.name}</span>
-                                                                             <span className="font-bold text-sm">{Math.round(q.actualValueB || 0)}°C</span>
+                                                                             <span className="font-bold text-sm">{formatTemp(q.actualValueB || 0)}{tempUnit}</span>
                                                                          </div>
                                                                     </div>
                                                                 )}
@@ -1512,7 +1521,9 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                         onChange={(e) => setLeaderboardYear(Number(e.target.value))}
                                         className="bg-bg-page border border-border-color rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-accent-primary"
                                     >
-                                        {[2023, 2024, 2025].map(y => <option key={y} value={y}>{y}</option>)}
+                                        {Array.from({ length: new Date().getFullYear() - 2023 + 1 }, (_, i) => 2023 + i).map(y => (
+                                            <option key={y} value={y}>{y}</option>
+                                        ))}
                                     </select>
                                 )}
 
@@ -1547,12 +1558,53 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                 {leaderboardType === 'year' && `${t('game.filter.year')} ${leaderboardYear}`}
                                 {leaderboardType === 'quarter' && `${t('game.filter.year')} ${leaderboardYear} - Q${leaderboardQuarter}`}
                                 {leaderboardType === 'month' && `${t('game.filter.year')} ${leaderboardYear} - ${new Date(2000, leaderboardMonth - 1).toLocaleString(settings.language, { month: 'long' })}`}
-                                {leaderboardType === 'day' && t('game.day')}
+                                {leaderboardType === 'day' && (
+                                    <span>
+                                        {t('game.day')} <span className="opacity-60 text-sm">({new Date().toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' })})</span>
+                                        <span className="block text-xs font-normal text-text-muted mt-1 opacity-60">
+                                            (UTC Timezone)
+                                        </span>
+                                    </span>
+                                )}
                             </h3>
                         </div>
 
                         {/* List */}
                         <div className="bg-bg-card rounded-xl border border-border-color overflow-hidden">
+                            {/* User's own score header (if applicable) */}
+                            {user && (
+                                <div className="bg-accent-primary/5 p-4 border-b border-border-color">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-accent-primary text-white flex items-center justify-center font-bold shadow-sm">
+                                            <Icon name="person" className="text-lg" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-text-main">{t('game.your_best_score')}</p>
+                                            <p className="text-xs text-text-muted">
+                                                {leaderboardType === 'day' ? t('game.today') : 
+                                                 leaderboardType === 'month' ? t('game.this_month') : 
+                                                 leaderboardType === 'year' ? t('game.this_year') : 
+                                                 leaderboardType === 'all_time' ? t('game.all_time') : ''}
+                                            </p>
+                                        </div>
+                                        <div className="font-bold text-accent-primary text-xl">
+                                            {/* Logic to find user's max score in this specific list or fetch it separately? 
+                                                Ideally we fetch it separately or find it in the list. 
+                                                For now, if it's 'all_time', we have `highScore`. 
+                                                For others, we might need to filter `historyData` or assume it's in the list.
+                                                Let's show `highScore` if type is 'all_time', else maybe just show if found in list?
+                                                Actually user wants it ALWAYS shown. 
+                                                We can use `highScore` for all_time. 
+                                                For day, we check `lastPlayed` date match?
+                                            */}
+                                            {leaderboardType === 'all_time' ? highScore : 
+                                             leaderboardData.find(e => e.userId === user.uid)?.score || '-'} 
+                                            <span className="text-[10px] text-text-muted uppercase font-normal ml-1">pts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {leaderboardLoading ? (
                                 <div className="text-center py-8"><LoadingSpinner /></div>
                             ) : leaderboardData.length > 0 ? (
@@ -1585,9 +1637,11 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                     <p>{t('game.leaderboard.empty')}</p>
                                 </div>
                             )}
-                            <div className="bg-bg-page/50 p-2 text-center text-[10px] text-text-muted border-t border-border-color">
-                                {t('game.leaderboard.footer')}
-                            </div>
+                            {leaderboardType === 'day' && (
+                                <div className="bg-bg-page/50 p-2 text-center text-[10px] text-text-muted border-t border-border-color">
+                                    {t('game.leaderboard.footer')}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

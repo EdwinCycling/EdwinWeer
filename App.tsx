@@ -577,7 +577,7 @@ const App: React.FC = () => {
         <WinnerConfetti settings={settings} />
 
         <WhatsNewButton 
-            visible={hasUnreadUpdates && !showWhatsNewModal} 
+            visible={hasUnreadUpdates && !showWhatsNewModal && (currentView === ViewState.CURRENT || currentView === ViewState.FORECAST)} 
             onClick={() => { setShowWhatsNewModal(true); markAsSeen(); }} 
         />
         
