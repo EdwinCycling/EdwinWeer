@@ -347,7 +347,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
           const targetDateTime = `${customDate}T${customTime}`;
           const hourIndex = data.hourly?.time.findIndex((t: string) => t.startsWith(targetDateTime.substring(0, 13))); 
 
-          let max = 0, min = 0, gusts = 0, rain = 0, sun = 0, rainDur = 0;
+          let max = 0, min = 0, gusts = 0, rain = 0, rainDur = 0;
           let sunriseStr = '', sunsetStr = '';
           
           if (dateIndex !== -1 && data.daily) {
@@ -709,8 +709,8 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
           const sourceCloud = clouds[Math.floor(Math.random() * clouds.length)];
           
           // Start point (somewhere in the bottom half of the cloud)
-          let bx = sourceCloud.x + 50 * sourceCloud.s * scale + (Math.random() - 0.5) * 80 * scale;
-          let by = sourceCloud.y + 20 * sourceCloud.s * scale; 
+          const bx = sourceCloud.x + 50 * sourceCloud.s * scale + (Math.random() - 0.5) * 80 * scale;
+          const by = sourceCloud.y + 20 * sourceCloud.s * scale; 
           
           const drawBolt = (x: number, y: number, thickness: number, length: number) => {
               ctx.lineWidth = thickness;
@@ -977,7 +977,7 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
         if (visibleFields.cloud_cover) list.push(`Cloud: ${weatherData.cloud_cover}%`);
         if (visibleFields.sunrise) list.push(`Sun ↑: ${weatherData.sunrise}`);
         if (visibleFields.sunset) list.push(`Sun ↓: ${weatherData.sunset}`);
-        if (visibleFields.feels_like) list.push(`Feels: ${weatherData.feels_like}°`);
+        if (visibleFields.feels_like) list.push(`${t('share.fields.feels_like')}: ${weatherData.feels_like}°`);
         if (visibleFields.heat_index) list.push(`Heat Index: ${weatherData.heat_index}°`);
 
         if (singleLine) {
@@ -1047,10 +1047,10 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             ctx.fillStyle = textColor;
             
             // Auto-scale text to fit
-            let newsText = `${loc}: ${mainTemp}° ${mainLabel}`;
+            const newsText = `${loc}: ${mainTemp}° ${mainLabel}`;
             let fontSize = 80 * scale;
             ctx.font = getFont(fontSize, true);
-            let textWidth = ctx.measureText(newsText).width;
+            const textWidth = ctx.measureText(newsText).width;
             const maxWidth = w - 80 * scale;
             
             if (textWidth > maxWidth) {
@@ -1066,8 +1066,8 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             ctx.fillText(stats.join('   |   '), 40 * scale, h - 30 * scale);
         } else {
             // Data Nerd Grid
-            let startY = h - barHeight + 60 * scale;
-            let startX = 40 * scale;
+            const startY = h - barHeight + 60 * scale;
+            const startX = 40 * scale;
             ctx.textAlign = "left";
             ctx.font = getFont(80 * scale, true);
             if (visibleFields.temp) ctx.fillText(`${mainTemp}° ${loc}`, startX, startY);
@@ -1077,8 +1077,8 @@ export const ShareWeatherView: React.FC<Props> = ({ onNavigate, settings }) => {
             // Grid stats
             const stats = drawStats(0, 0, 'left', textColor, true); // Get list
             ctx.font = getFont(35 * scale);
-            let gridX = 40 * scale;
-            let gridY = startY + 140 * scale;
+            const gridX = 40 * scale;
+            const gridY = startY + 140 * scale;
             // 3 columns fits 1080 well (350px each)
             stats.forEach((item, i) => {
                 ctx.fillText(item, gridX + (i % 3) * (350 * scale), gridY + Math.floor(i / 3) * (50 * scale * fontSizeScale));

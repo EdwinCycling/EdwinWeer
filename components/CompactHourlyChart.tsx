@@ -3,6 +3,7 @@ import { ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis, CartesianG
 import { AppSettings, WindUnit } from '../types';
 import { Icon } from './Icon';
 import { mapWmoCodeToIcon } from '../services/weatherService';
+import { getTranslation, getLocale } from '../services/translations';
 
 interface Props {
     data: any[];
@@ -23,11 +24,13 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
     const [showWind, setShowWind] = useState(true);
     const [showRain, setShowRain] = useState(true);
 
+    const t = (key: string) => getTranslation(key, settings.language);
+
     // Prepare data
     const chartData = data.map((d, i) => {
         const date = new Date(d.timestamp);
         // Format Day Label: e.g. "Do. 15 Jan."
-        const dayName = date.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+        const dayName = date.toLocaleDateString(getLocale(settings.language), { weekday: 'short', day: 'numeric', month: 'short' });
         
         const prevDate = i > 0 ? new Date(data[i-1].timestamp) : null;
         const isNewDay = !prevDate || date.getDate() !== prevDate.getDate();
@@ -214,7 +217,7 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                                 xAxisId="wind"
                             >
                                 <Label 
-                                    value={settings.language === 'nl' ? 'Nieuwe dag' : 'New day'} 
+                                    value={t('new_day')} 
                                     position="insideTopLeft" 
                                     fill="#1e293b" 
                                     fontSize={11} 
@@ -297,7 +300,7 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                             width={50}
                         >
                             <Label 
-                                value={settings.language === 'nl' ? 'Temperatuur (°C)' : 'Temperature (°C)'} 
+                                value={`${t('temp')} (°C)`} 
                                 angle={-90} 
                                 position="insideLeft" 
                                 style={{ textAnchor: 'middle', fill: '#ef4444', fontSize: 12, fontWeight: 'bold' }} 
@@ -319,7 +322,7 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                             hide={!showRain}
                         >
                             <Label 
-                                value={settings.language === 'nl' ? 'Regen' : 'Rain'} 
+                                value={t('rain')} 
                                 angle={90} 
                                 position="insideRight" 
                                 style={{ textAnchor: 'middle', fill: '#3b82f6', fontSize: 10, fontWeight: 'bold' }} 
@@ -341,7 +344,7 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                             hide={!showWind}
                         >
                             <Label 
-                                value={settings.language === 'nl' ? 'Wind' : 'Wind'} 
+                                value={t('wind')} 
                                 angle={90} 
                                 position="insideRight" 
                                 style={{ textAnchor: 'middle', fill: '#a855f7', fontSize: 10, fontWeight: 'bold' }} 
@@ -360,9 +363,9 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                             }}
                             labelStyle={{ color: '#64748b', marginBottom: '4px' }}
                             formatter={(value: any, name: string) => {
-                                if (name === 'Temp') return [`${value}°`, settings.language === 'nl' ? 'Temperatuur' : 'Temperature'];
-                                if (name === 'Wind') return [`${value} ${settings.windUnit}`, 'Wind'];
-                                if (name === 'Neerslag') return [`${value} mm`, settings.language === 'nl' ? 'Neerslag' : 'Precipitation'];
+                                if (name === 'Temp') return [`${value}°`, t('temp')];
+                                if (name === 'Wind') return [`${value} ${settings.windUnit}`, t('wind')];
+                                if (name === 'Neerslag') return [`${value} mm`, t('precip')];
                                 return [value, name];
                             }}
                             labelFormatter={(idx) => {
@@ -483,7 +486,7 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                         className="w-4 h-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span className={`text-sm font-medium ${showRain ? 'text-blue-600' : 'text-slate-400'}`}>
-                        {settings.language === 'nl' ? 'Neerslag tonen' : 'Show Rain'}
+                        {t('chart.show_rain')}
                     </span>
                 </label>
                 
@@ -495,7 +498,7 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
                         className="w-4 h-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span className={`text-sm font-medium ${showWind ? 'text-purple-600' : 'text-slate-400'}`}>
-                        {settings.language === 'nl' ? 'Wind tonen' : 'Show Wind'}
+                        {t('chart.show_wind')}
                     </span>
                 </label>
             </div>
@@ -503,18 +506,18 @@ export const CompactHourlyChart = React.memo(({ data, settings }: Props) => {
             {/* Detailed Legend */}
             <div className="grid grid-cols-3 gap-4 mt-4 px-4 pt-4 border-t border-slate-100">
                 <div className="flex flex-col items-center justify-center">
-                    <span className="text-xs text-slate-500 mb-1">{settings.language === 'nl' ? 'Temperatuur' : 'Temperature'}</span>
+                    <span className="text-xs text-slate-500 mb-1">{t('temp')}</span>
                     <div className="h-1 w-8 bg-red-500 rounded-full"></div>
                 </div>
                 {showWind && (
                     <div className="flex flex-col items-center justify-center">
-                        <span className="text-xs text-slate-500 mb-1">Wind ({settings.windUnit})</span>
+                        <span className="text-xs text-slate-500 mb-1">{t('wind')} ({settings.windUnit})</span>
                         <div className="h-3 w-8 bg-purple-500/50 rounded-sm border border-purple-500"></div>
                     </div>
                 )}
                 {showRain && (
                     <div className="flex flex-col items-center justify-center">
-                        <span className="text-xs text-slate-500 mb-1">{settings.language === 'nl' ? 'Neerslag' : 'Precipitation'}</span>
+                        <span className="text-xs text-slate-500 mb-1">{t('precip')}</span>
                         <div className="h-3 w-8 bg-blue-500/50 rounded-sm border border-blue-500"></div>
                     </div>
                 )}

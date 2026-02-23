@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import { fetchHistorical, convertTemp, convertWind, convertPrecip, mapWmoCodeToIcon, mapWmoCodeToText, calculateComfortScore } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, saveHistoricalLocation } from '../services/storageService';
 import { searchCityByName, reverseGeocode } from '../services/geoService';
-import { getTranslation } from '../services/translations';
+import { getTranslation, getLocale } from '../services/translations';
 import { HistoricalDashboard } from './HistoricalDashboard';
 import { VintageNewspaper } from '../components/VintageNewspaper';
 import { generateVintageNewspaper } from '../services/geminiService';
@@ -221,7 +221,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
 
 
   const formatCardDate = (date: Date) => {
-    const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+    const locales: Record<string, string> = { 
+        nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES',
+        it: 'it-IT', pt: 'pt-PT', no: 'no-NO', sv: 'sv-SE', da: 'da-DK', fi: 'fi-FI', pl: 'pl-PL'
+    };
     const locale = locales[settings.language] || 'en-GB';
     const y = date.getFullYear();
     const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z\u00C0-\u00FF]/g, '').slice(0, 3);
@@ -231,7 +234,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   };
 
   const formatLegendDate = (date: Date) => {
-    const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+    const locales: Record<string, string> = { 
+        nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES',
+        it: 'it-IT', pt: 'pt-PT', no: 'no-NO', sv: 'sv-SE', da: 'da-DK', fi: 'fi-FI', pl: 'pl-PL'
+    };
     const locale = locales[settings.language] || 'en-GB';
     const y = date.getFullYear();
     const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z\u00C0-\u00FF]/g, '').slice(0, 3);
@@ -240,7 +246,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
   };
 
   const formatUnderSlider = (date: Date) => {
-    const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+    const locales: Record<string, string> = { 
+        nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES',
+        it: 'it-IT', pt: 'pt-PT', no: 'no-NO', sv: 'sv-SE', da: 'da-DK', fi: 'fi-FI', pl: 'pl-PL'
+    };
     const locale = locales[settings.language] || 'en-GB';
     const y = date.getFullYear();
     const monShort = date.toLocaleDateString(locale, { month: 'short' }).replace(/[^a-zA-Z\u00C0-\u00FF]/g, '').slice(0, 3);
@@ -730,7 +739,10 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
    };
 
   const getLocale = () => {
-      const locales: Record<string, string> = { nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES' };
+      const locales: Record<string, string> = { 
+        nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES',
+        it: 'it-IT', pt: 'pt-PT', no: 'no-NO', sv: 'sv-SE', da: 'da-DK', fi: 'fi-FI', pl: 'pl-PL'
+      };
       return locales[settings.language] || 'en-GB';
   };
 

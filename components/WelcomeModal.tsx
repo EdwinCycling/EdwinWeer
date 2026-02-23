@@ -3,7 +3,7 @@ import { Modal } from './Modal';
 import { Icon } from './Icon';
 import { AppSettings, AppLanguage } from '../types';
 import { FlagIcon } from './FlagIcon';
-import { getTranslation } from '../services/translations';
+import { getTranslation, loadLanguage } from '../services/translations';
 
 interface WelcomeModalProps {
     isOpen: boolean;
@@ -19,7 +19,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose, set
     const language = settings?.language || 'nl';
     const t = (key: string) => getTranslation(key, language);
 
-    const changeLanguage = (lang: AppLanguage) => {
+    const changeLanguage = async (lang: AppLanguage) => {
+        await loadLanguage(lang);
         if (onUpdateSettings && settings) {
             onUpdateSettings({
                 ...settings,
@@ -61,8 +62,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose, set
                             </button>
 
                             {isLangOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                    {(['nl', 'en', 'fr', 'de', 'es'] as AppLanguage[]).map((lang) => (
+                                <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-60 overflow-y-auto custom-scrollbar">
+                                    {(['nl', 'en', 'fr', 'de', 'es', 'it', 'pt', 'no', 'sv', 'da', 'fi', 'pl'] as AppLanguage[]).map((lang) => (
                                         <button
                                             key={lang}
                                             onClick={() => changeLanguage(lang)}

@@ -178,13 +178,13 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
                         
                         <p className="text-text-muted mb-4">
                             {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER 
-                                ? t('pricing.confirm.desc_weather', { amount: '10.000' })
+                                ? t('pricing.confirm.desc_weather', { amount: '5.000' })
                                 : t('pricing.confirm.desc_baro', { amount: '500' })}
                         </p>
 
                         {confirmModal.priceId === import.meta.env.VITE_STRIPE_PRICE_WEATHER && (
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-4 text-sm">
-                                <p className="font-bold text-blue-800 dark:text-blue-200 whitespace-pre-line">
+                            <div className="bg-bg-subtle p-4 rounded-xl mb-4 text-sm border border-border-color">
+                                <p className="font-bold text-text-main whitespace-pre-line">
                                     {t('pricing.confirm.limits')}
                                 </p>
                             </div>
@@ -192,7 +192,13 @@ export const PricingView: React.FC<Props> = ({ onNavigate, settings }) => {
 
                         <p className="text-xs text-text-muted/60 mb-6 flex items-start gap-2">
                              <Icon name="lock" className="text-sm shrink-0 mt-0.5" />
-                             {t('pricing.confirm.stripe_info')}
+                             <span>
+                                {t('pricing.confirm.stripe_info').split(/(stripe(?:\.com)?)/i).map((part, i) => 
+                                    part.toLowerCase().startsWith('stripe') ? (
+                                        <a key={i} href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-text-main">Stripe.com</a>
+                                    ) : part
+                                )}
+                             </span>
                         </p>
 
                         <div className="flex gap-3">

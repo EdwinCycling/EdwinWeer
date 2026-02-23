@@ -1,5 +1,5 @@
 
-import { WeatherData, TempUnit, WindUnit, PrecipUnit, PressureUnit, AppLanguage, EnsembleModel, AppSettings } from "../types";
+import { TempUnit, WindUnit, PrecipUnit, PressureUnit, AppLanguage, EnsembleModel, AppSettings } from "../types";
 import { checkLimit, trackCall } from "./usageService";
 import * as Astronomy from "astronomy-engine";
 
@@ -72,19 +72,11 @@ export interface Holiday {
     types: string[];
 }
 
+import { getCountryCode } from './countries';
+
 export const fetchHolidays = async (year: number, countryCode: string): Promise<Holiday[]> => {
     // Fix common country code issues
-    let code = countryCode;
-    // Map full names to ISO codes if needed
-    if (code.toUpperCase() === 'NIEDERLANDE' || code.toUpperCase() === 'NETHERLANDS') {
-        code = 'NL';
-    } else if (code.toUpperCase() === 'DEUTSCHLAND' || code.toUpperCase() === 'GERMANY') {
-        code = 'DE';
-    } else if (code.toUpperCase() === 'BELGIUM' || code.toUpperCase() === 'BELGIEN' || code.toUpperCase() === 'BELGIË') {
-        code = 'BE';
-    } else if (code.toUpperCase() === 'FRANCE' || code.toUpperCase() === 'FRANKREICH' || code.toUpperCase() === 'FRANKRIJK') {
-        code = 'FR';
-    }
+    const code = getCountryCode(countryCode);
 
     // Nager Date API
     // GET /api/v3/PublicHolidays/{Year}/{CountryCode}
@@ -271,44 +263,45 @@ export const mapWmoCodeToIcon = (code: number | null | undefined, isNight = fals
 export const mapWmoCodeToText = (code: number, lang: AppLanguage = 'en'): string => {
     const isNl = lang === 'nl';
     const isDe = lang === 'de';
+    const isFi = lang === 'fi';
     
     switch (code) {
-      case 0: return isNl ? 'Onbewolkt' : isDe ? 'Klarer Himmel' : 'Clear Sky';
-      case 1: return isNl ? 'Licht bewolkt' : isDe ? 'Leicht bewölkt' : 'Mainly Clear';
-      case 2: return isNl ? 'Half bewolkt' : isDe ? 'Teilweise bewölkt' : 'Partly Cloudy';
-      case 3: return isNl ? 'Zwaar bewolkt' : isDe ? 'Bedeckt' : 'Overcast';
-      case 45: return isNl ? 'Mist' : isDe ? 'Nebel' : 'Fog';
-      case 48: return isNl ? 'Rijp' : isDe ? 'Nebelreiff' : 'Depositing Rime Fog';
-      case 51: return isNl ? 'Lichte motregen' : isDe ? 'Leichter Nieselregen' : 'Light Drizzle';
-      case 53: return isNl ? 'Motregen' : isDe ? 'Nieselregen' : 'Drizzle';
-      case 55: return isNl ? 'Zware motregen' : isDe ? 'Starker Nieselregen' : 'Dense Drizzle';
-      case 56: return isNl ? 'Lichte ijzel' : isDe ? 'Leichter gefrierender Niesel' : 'Light Freezing Drizzle';
-      case 57: return isNl ? 'Zware ijzel' : isDe ? 'Starker gefrierender Niesel' : 'Dense Freezing Drizzle';
-      case 61: return isNl ? 'Lichte regen' : isDe ? 'Leichter Regen' : 'Light Rain';
-      case 63: return isNl ? 'Regen' : isDe ? 'Regen' : 'Rain';
-      case 65: return isNl ? 'Zware regen' : isDe ? 'Starker Regen' : 'Heavy Rain';
-      case 66: return isNl ? 'Lichte ijzelregen' : isDe ? 'Leichter Eisregen' : 'Freezing Rain';
-      case 67: return isNl ? 'Zware ijzelregen' : isDe ? 'Starker Eisregen' : 'Heavy Freezing Rain';
-      case 71: return isNl ? 'Lichte sneeuw' : isDe ? 'Leichter Schneefall' : 'Light Snow';
-      case 73: return isNl ? 'Sneeuw' : isDe ? 'Schneefall' : 'Snow';
-      case 75: return isNl ? 'Zware sneeuw' : isDe ? 'Starker Schneefall' : 'Heavy Snow';
-      case 77: return isNl ? 'Sneeuwkorrels' : isDe ? 'Schneegriesel' : 'Snow Grains';
-      case 80: return isNl ? 'Lichte buien' : isDe ? 'Leichte Schauer' : 'Light Showers';
-      case 81: return isNl ? 'Buien' : isDe ? 'Schauer' : 'Showers';
-      case 82: return isNl ? 'Zware buien' : isDe ? 'Heftige Schauer' : 'Violent Showers';
-      case 85: return isNl ? 'Lichte sneeuwbuien' : isDe ? 'Leichte Schneeschauer' : 'Light Snow Showers';
-      case 86: return isNl ? 'Zware sneeuwbuien' : isDe ? 'Starke Schneeschauer' : 'Heavy Snow Showers';
-      case 95: return isNl ? 'Onweer' : isDe ? 'Gewitter' : 'Thunderstorm';
-      case 96: return isNl ? 'Onweer & Hagel' : isDe ? 'Gewitter mit Hagel' : 'Thunderstorm with Hail';
-      case 99: return isNl ? 'Zwaar Onweer' : isDe ? 'Starkes Gewitter' : 'Heavy Thunderstorm';
-      default: return isNl ? 'Onbekend' : isDe ? 'Unbekannt' : 'Unknown';
+      case 0: return isNl ? 'Onbewolkt' : isDe ? 'Klarer Himmel' : isFi ? 'Selkeä' : 'Clear Sky';
+      case 1: return isNl ? 'Licht bewolkt' : isDe ? 'Leicht bewölkt' : isFi ? 'Melkein selkeä' : 'Mainly Clear';
+      case 2: return isNl ? 'Half bewolkt' : isDe ? 'Teilweise bewölkt' : isFi ? 'Puolipilvinen' : 'Partly Cloudy';
+      case 3: return isNl ? 'Zwaar bewolkt' : isDe ? 'Bedeckt' : isFi ? 'Pilvinen' : 'Overcast';
+      case 45: return isNl ? 'Mist' : isDe ? 'Nebel' : isFi ? 'Sumu' : 'Fog';
+      case 48: return isNl ? 'Rijp' : isDe ? 'Nebelreiff' : isFi ? 'Kuura' : 'Depositing Rime Fog';
+      case 51: return isNl ? 'Lichte motregen' : isDe ? 'Leichter Nieselregen' : isFi ? 'Kevyttä tihkusadetta' : 'Light Drizzle';
+      case 53: return isNl ? 'Motregen' : isDe ? 'Nieselregen' : isFi ? 'Tihkusadetta' : 'Drizzle';
+      case 55: return isNl ? 'Zware motregen' : isDe ? 'Starker Nieselregen' : isFi ? 'Tiheää tihkusadetta' : 'Dense Drizzle';
+      case 56: return isNl ? 'Lichte ijzel' : isDe ? 'Leichter gefrierender Niesel' : isFi ? 'Kevyttä jäätävää tihkua' : 'Light Freezing Drizzle';
+      case 57: return isNl ? 'Zware ijzel' : isDe ? 'Starker gefrierender Niesel' : isFi ? 'Tiheää jäätävää tihkua' : 'Dense Freezing Drizzle';
+      case 61: return isNl ? 'Lichte regen' : isDe ? 'Leichter Regen' : isFi ? 'Heikkoa sadetta' : 'Light Rain';
+      case 63: return isNl ? 'Regen' : isDe ? 'Regen' : isFi ? 'Sadetta' : 'Rain';
+      case 65: return isNl ? 'Zware regen' : isDe ? 'Starker Regen' : isFi ? 'Voimakasta sadetta' : 'Heavy Rain';
+      case 66: return isNl ? 'Lichte ijzelregen' : isDe ? 'Leichter Eisregen' : isFi ? 'Kevyttä jäätävää sadetta' : 'Freezing Rain';
+      case 67: return isNl ? 'Zware ijzelregen' : isDe ? 'Starker Eisregen' : isFi ? 'Voimakasta jäätävää sadetta' : 'Heavy Freezing Rain';
+      case 71: return isNl ? 'Lichte sneeuw' : isDe ? 'Leichter Schneefall' : isFi ? 'Heikkoa lumisadetta' : 'Slight Snow Fall';
+      case 73: return isNl ? 'Sneeuw' : isDe ? 'Schneefall' : isFi ? 'Lumisadetta' : 'Snow Fall';
+      case 75: return isNl ? 'Zware sneeuw' : isDe ? 'Starker Schneefall' : isFi ? 'Voimakasta lumisadetta' : 'Heavy Snow Fall';
+      case 77: return isNl ? 'Sneeuwkorrels' : isDe ? 'Schneegriesel' : isFi ? 'Lumijyväsiä' : 'Snow Grains';
+      case 80: return isNl ? 'Lichte buien' : isDe ? 'Leichte Regenschauer' : isFi ? 'Heikkoja sadekuuroja' : 'Slight Rain Showers';
+      case 81: return isNl ? 'Buien' : isDe ? 'Regenschauer' : isFi ? 'Sadekuuroja' : 'Rain Showers';
+      case 82: return isNl ? 'Zware buien' : isDe ? 'Starke Regenschauer' : isFi ? 'Voimakkaita sadekuuroja' : 'Violent Rain Showers';
+      case 85: return isNl ? 'Lichte sneeuwbuien' : isDe ? 'Leichte Schneeschauer' : isFi ? 'Heikkoja lumikuuroja' : 'Slight Snow Showers';
+      case 86: return isNl ? 'Zware sneeuwbuien' : isDe ? 'Starke Schneeschauer' : isFi ? 'Voimakkaita lumikuuroja' : 'Heavy Snow Showers';
+      case 95: return isNl ? 'Onweer' : isDe ? 'Gewitter' : isFi ? 'Ukkosta' : 'Thunderstorm';
+      case 96: return isNl ? 'Onweer met hagel' : isDe ? 'Gewitter mit Hagel' : isFi ? 'Ukkosta ja rakeita' : 'Thunderstorm with Hail';
+      case 99: return isNl ? 'Zwaar onweer' : isDe ? 'Starkes Gewitter' : isFi ? 'Voimakasta ukkosta' : 'Thunderstorm with Heavy Hail';
+      default: return 'Unknown';
     }
-  };
+};
 
 export const calculateMoonPhase = (date: Date): number => {
     let year = date.getFullYear();
     let month = date.getMonth() + 1;
-    let day = date.getDate();
+    const day = date.getDate();
 
     if (month < 3) {
         year--;
@@ -317,8 +310,8 @@ export const calculateMoonPhase = (date: Date): number => {
 
     ++month;
 
-    let c = 365.25 * year;
-    let e = 30.6 * month;
+    const c = 365.25 * year;
+    const e = 30.6 * month;
     let jd = c + e + day - 694039.09; 
     jd /= 29.5305882; 
     let b = parseInt(jd.toString()); 

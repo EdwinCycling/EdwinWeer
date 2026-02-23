@@ -14,7 +14,7 @@ import { WeatherPhotoShowcase } from "./WeatherPhotoShowcase";
 import { useAuth } from "../../hooks/useAuth";
 import { Icon } from "../../components/Icon";
 import { FlagIcon } from "../../components/FlagIcon";
-import { getTranslation } from "../../services/translations";
+import { getTranslation, loadLanguage } from "../../services/translations";
 import { loadSettings, saveSettings } from "../../services/storageService";
 import { AppLanguage, ViewState } from "../../types";
 import { twitterProvider, facebookProvider, microsoftProvider, db } from "../../services/firebase";
@@ -191,6 +191,13 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       { code: 'fr', label: 'FR' },
       { code: 'de', label: 'DE' },
       { code: 'es', label: 'ES' },
+      { code: 'it', label: 'IT' },
+      { code: 'pt', label: 'PT' },
+      { code: 'no', label: 'NO' },
+      { code: 'sv', label: 'SV' },
+      { code: 'da', label: 'DA' },
+      { code: 'fi', label: 'FI' },
+      { code: 'pl', label: 'PL' },
   ];
 
   // Data Arrays (Mocked/Inferred)
@@ -279,11 +286,12 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                     </button>
                     
                     {langOpen && (
-                        <div className="absolute top-full right-0 mt-2 bg-bg-card backdrop-blur-xl rounded-xl shadow-xl border border-border-color p-2 min-w-[150px] z-50">
+                        <div className="absolute top-full right-0 mt-2 bg-bg-card backdrop-blur-xl rounded-xl shadow-xl border border-border-color p-2 min-w-[150px] z-50 max-h-60 overflow-y-auto custom-scrollbar">
                             {languages.map(l => (
                                 <button 
                                     key={l.code}
-                                    onClick={() => {
+                                    onClick={async () => {
+                                        await loadLanguage(l.code);
                                         setLang(l.code);
                                         const currentSettings = loadSettings();
                                         saveSettings({ ...currentSettings, language: l.code });

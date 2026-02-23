@@ -53,7 +53,7 @@ const HighLowGameView = React.lazy(() => import('./views/HighLowGameView').then(
 const AmbientView = React.lazy(() => import('./views/AmbientView').then(module => ({ default: module.AmbientView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
-import { getTranslation } from './services/translations';
+import { getTranslation, loadLanguage } from './services/translations';
 import { Icon } from './components/Icon';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './contexts/ThemeContext';
@@ -87,8 +87,17 @@ const App: React.FC = () => {
   // Gamification Button Logic
   const [openRoundId, setOpenRoundId] = useState<string | null>(null);
   const [hasBetOnOpenRound, setHasBetOnOpenRound] = useState(false);
+  const [languageLoaded, setLanguageLoaded] = useState(false);
 
   useEffect(() => {
+      // Load initial language
+      const settings = loadSettings();
+      const initialLang = settings?.language || 'en';
+      
+      loadLanguage(initialLang).then(() => {
+          setLanguageLoaded(true);
+      });
+
       const q = query(collection(db, 'game_rounds'), where('status', '==', 'open'));
       return onSnapshot(q, (snapshot) => {
           if (!snapshot.empty) {
@@ -376,13 +385,14 @@ const App: React.FC = () => {
       }
   }, [user]);
 
-  if (loading || geoLoading || isFinishingEmailSignIn) {
+  if (loading || geoLoading || isFinishingEmailSignIn || !languageLoaded) {
     return (
       <>
         <GlobalBanner />
         <div className="min-h-screen w-full bg-slate-50 dark:bg-background-dark flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            {!languageLoaded && <p className="text-text-muted animate-pulse">Talen laden...</p>}
             {isFinishingEmailSignIn && (
               <p className="text-text-muted animate-pulse">Bezig met inloggen via e-mail link...</p>
             )}
@@ -557,7 +567,7 @@ const App: React.FC = () => {
             ViewState.BARO_RIT_ADVIES,
             ViewState.WEATHER_FINDER,
             ViewState.LANDING_V2
-        ].includes(currentView) && (
+        ].includes(currentView) && (settings.enableBeatBaro !== false) && (
             <button
                 onClick={() => navigate(ViewState.GAME_DASHBOARD)}
                 className={`fixed bottom-[154px] md:bottom-40 right-4 z-[100] h-12 md:h-14 w-12 md:w-auto md:px-6 rounded-full shadow-lg flex items-center justify-center gap-3 hover:scale-110 transition-transform border border-white/20 group overflow-hidden ${

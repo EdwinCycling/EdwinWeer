@@ -1,7 +1,7 @@
 {
   "name": "baro",
   "private": true,
-  "version": "1.260223.2",
+  "version": "1.260223.3",
   "type": "module",
   "scripts": {
     "dev": "run-p dev:vite dev:netlify",

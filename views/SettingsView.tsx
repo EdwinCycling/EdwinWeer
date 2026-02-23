@@ -5,7 +5,7 @@ import { Icon } from '../components/Icon';
 import { Tooltip } from '../components/Tooltip';
 import { Modal } from '../components/Modal';
 import { CountrySelector } from '../components/CountrySelector';
-import { getTranslation } from '../services/translations';
+import { getTranslation, loadLanguage } from '../services/translations';
 import { searchCityByName, reverseGeocodeFull } from '../services/geoService';
 import { getUsage, UsageStats, getLimit } from '../services/usageService';
 import { useAuth } from '../hooks/useAuth';
@@ -216,7 +216,10 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
         updateSetting('heatwave', next);
     };
 
-    const updateSetting = (key: keyof AppSettings, value: any) => {
+    const updateSetting = async (key: keyof AppSettings, value: any) => {
+        if (key === 'language') {
+             await loadLanguage(value as AppLanguage);
+        }
         onUpdateSettings({ ...settings, [key]: value });
     };
 
@@ -517,22 +520,44 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                 </div>
 
                                 {/* Language Toggle */}
-                                <div className="p-4 flex items-center justify-between">
+                                <div className="p-4 flex flex-col gap-3">
                                     <div className="flex items-center gap-3">
                                         <Icon name="language" className="text-text-main" />
                                         <span className="font-medium text-text-main">{t('settings.language')}</span>
                                     </div>
-                                    <div className="flex bg-bg-page rounded-lg p-1 overflow-x-auto max-w-[200px] scrollbar-hide">
-                                        {(['en', 'nl', 'fr', 'de', 'es'] as AppLanguage[]).map((lang) => (
+                                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-bg-page rounded-lg p-2">
+                                        {(['en', 'nl', 'fr', 'de', 'es', 'it', 'pt', 'no', 'sv', 'da', 'fi', 'pl'] as AppLanguage[]).map((lang) => (
                                             <button 
                                                 key={lang}
                                                 onClick={() => updateSetting('language', lang)} 
-                                                className={`px-3 py-1 rounded-md text-sm font-bold transition-colors uppercase ${settings.language === lang ? 'bg-accent-primary text-text-inverse shadow-sm' : 'text-text-muted hover:text-text-main'}`}
+                                                className={`py-2 rounded-md text-sm font-bold transition-colors uppercase text-center w-full ${settings.language === lang ? 'bg-accent-primary text-text-inverse shadow-sm' : 'text-text-muted hover:text-text-main bg-bg-card'}`}
                                             >
                                                 {lang}
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                {/* Beat Baro Toggle */}
+                                <div className="p-4 flex items-center justify-between border-t border-border-color">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-accent-primary/10 rounded-lg">
+                                            <span className="text-xl">🥊</span>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-text-main">{t('game.beatbaro.settings_title')}</p>
+                                            <p className="text-xs text-text-muted">{t('game.beatbaro.settings_desc')}</p>
+                                        </div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer"
+                                            checked={settings.enableBeatBaro !== false}
+                                            onChange={(e) => updateSetting('enableBeatBaro', e.target.checked)}
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-primary"></div>
+                                    </label>
                                 </div>
 
                                 {/* High/Low Game Toggle */}
@@ -625,8 +650,8 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                         <div className="flex items-center gap-3">
                                             <Icon name="solar_power" className="text-text-main/80" />
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-text-main">Zonne-energie</span>
-                                                <span className="text-xs text-text-muted">Toon zonne-energie widget</span>
+                                                <span className="font-medium text-text-main">{t('settings.solar.title')}</span>
+                                                <span className="text-xs text-text-muted">{t('settings.solar.show_widget')}</span>
                                             </div>
                                         </div>
                                         <button 
@@ -643,7 +668,7 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
 
                                     {settings.enableSolar && (
                                         <div className="mt-4 flex items-center justify-between pl-9 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <span className="text-sm text-text-muted">Totaal vermogen (Wp)</span>
+                                            <span className="text-sm text-text-muted">{t('settings.solar.total_power')}</span>
                                             <div className="flex items-center gap-2">
                                                 <input
                                                     type="number"

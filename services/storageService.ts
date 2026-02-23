@@ -88,7 +88,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     calendar: {
         showHeatmap: true,
         showDetails: true
-    }
+    },
+    enableHighLowGame: true,
+    enableBeatBaro: true
 };
 
 // --- Remote Sync Helpers ---

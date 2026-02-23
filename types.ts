@@ -7,6 +7,7 @@ export interface SystemConfig {
   disable_app: boolean;
   include_landing_page?: boolean;
     enableHighLowGame: boolean;
+    enableBeatBaro?: boolean;
 }
 
 export interface HighLowQuestion {
@@ -192,7 +193,7 @@ export enum PressureUnit {
 }
 
 export type AppTheme = 'dark' | 'light' | 'neuro' | 'iceland' | 'retro' | 'forest';
-export type AppLanguage = 'en' | 'nl' | 'fr' | 'de' | 'es';
+export type AppLanguage = 'en' | 'nl' | 'fr' | 'de' | 'es' | 'it' | 'pt' | 'no' | 'sv' | 'da' | 'fi' | 'pl';
 export type TimeFormat = '12h' | '24h';
 export type MapBaseLayer = 'light' | 'dark' | 'satellite';
 export type UserRole = 'user' | 'admin';
@@ -287,6 +288,7 @@ export interface AppSettings {
         clockType?: 'analogue' | 'weather_station' | 'digital_round';
     };
     enableHighLowGame: boolean;
+    enableBeatBaro?: boolean;
 }
 
 export interface TripPlannerSettings {

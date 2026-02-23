@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ViewState, AppSettings, HighLowQuestion, Location } from '../types';
+import { ViewState, AppSettings, HighLowQuestion, Location, TempUnit } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { generateQuiz, submitHighLowScore } from '../services/highLowGameService';
@@ -223,7 +223,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const [hasMoreHistory, setHasMoreHistory] = useState(true);
 
     // Leaderboard Filter State
-    const [leaderboardType, setLeaderboardType] = useState<'all_time' | 'year' | 'quarter' | 'month' | 'day'>('day');
+    const [leaderboardType, setLeaderboardType] = useState<'all_time' | 'year' | 'quarter' | 'month' | 'day' | 'yesterday' | 'day_before'>('day');
     const [leaderboardYear, setLeaderboardYear] = useState<number>(new Date().getFullYear());
     const [leaderboardMonth, setLeaderboardMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
     const [leaderboardQuarter, setLeaderboardQuarter] = useState<number>(Math.floor((new Date().getMonth() + 3) / 3)); // 1-4
@@ -372,6 +372,14 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
         } else if (leaderboardType === 'day') {
              const now = new Date();
              docId = now.toISOString().split('T')[0];
+        } else if (leaderboardType === 'yesterday') {
+             const d = new Date();
+             d.setDate(d.getDate() - 1);
+             docId = d.toISOString().split('T')[0];
+        } else if (leaderboardType === 'day_before') {
+             const d = new Date();
+             d.setDate(d.getDate() - 2);
+             docId = d.toISOString().split('T')[0];
         }
 
         const q = query(
@@ -832,12 +840,12 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
     // Convert to F if needed
     const formatTemp = (celsius: number) => {
-        if (settings.tempUnit === 'fahrenheit') {
+        if (settings.tempUnit === TempUnit.FAHRENHEIT) {
             return Math.round((celsius * 9/5) + 32);
         }
         return Math.round(celsius);
     };
-    const tempUnit = settings.tempUnit === 'fahrenheit' ? '°F' : '°C';
+    const tempUnit = settings.tempUnit === TempUnit.FAHRENHEIT ? '°F' : '°C';
 
     return (
         <div className="min-h-screen bg-bg-page text-text-main pb-24">
@@ -1202,7 +1210,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                                 disabled={isSavingUsername}
                                                                 className="w-full bg-accent-primary hover:bg-accent-hover text-white font-bold py-4 rounded-2xl shadow-lg shadow-accent-primary/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
                                                             >
-                                                                {isSavingUsername ? <LoadingSpinner size="sm" color="white" /> : <><Icon name="save" /> {t('game.username.save')}</>}
+                                                                {isSavingUsername ? <LoadingSpinner className="h-4 w-4 border-white" /> : <><Icon name="save" /> {t('game.username.save')}</>}
                                                             </button>
                                                          </div>
                                                     </div>
@@ -1499,7 +1507,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                         {/* Filters */}
                         <div className="bg-bg-card p-4 rounded-xl border border-border-color space-y-4">
                             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                                {['all_time', 'year', 'quarter', 'month', 'day'].map((type) => (
+                                {['day', 'yesterday', 'day_before', 'month', 'quarter', 'year', 'all_time'].map((type) => (
                                     <button
                                         key={type}
                                         onClick={() => setLeaderboardType(type as any)}
@@ -1509,7 +1517,10 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                 : 'bg-bg-page text-text-muted hover:bg-bg-subtle hover:text-text-main'
                                         }`}
                                     >
-                                        {type === 'day' ? t('game.day') : t(`game.filter.${type}`)}
+                                        {type === 'day' ? t('game.day') : 
+                                         type === 'yesterday' ? t('time.yesterday') :
+                                         type === 'day_before' ? t('time.ereyesterday') :
+                                         t(`game.filter.${type}`)}
                                     </button>
                                 ))}
                             </div>
@@ -1566,6 +1577,22 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                         </span>
                                     </span>
                                 )}
+                                {leaderboardType === 'yesterday' && (
+                                    <span>
+                                        {t('time.yesterday')} <span className="opacity-60 text-sm">({(() => { const d = new Date(); d.setDate(d.getDate()-1); return d.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' }); })()})</span>
+                                        <span className="block text-xs font-normal text-text-muted mt-1 opacity-60">
+                                            (UTC Timezone)
+                                        </span>
+                                    </span>
+                                )}
+                                {leaderboardType === 'day_before' && (
+                                    <span>
+                                        {t('time.ereyesterday')} <span className="opacity-60 text-sm">({(() => { const d = new Date(); d.setDate(d.getDate()-2); return d.toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' }); })()})</span>
+                                        <span className="block text-xs font-normal text-text-muted mt-1 opacity-60">
+                                            (UTC Timezone)
+                                        </span>
+                                    </span>
+                                )}
                             </h3>
                         </div>
 
@@ -1582,6 +1609,8 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                             <p className="font-bold text-text-main">{t('game.your_best_score')}</p>
                                             <p className="text-xs text-text-muted">
                                                 {leaderboardType === 'day' ? t('game.today') : 
+                                                 leaderboardType === 'yesterday' ? t('time.yesterday') :
+                                                 leaderboardType === 'day_before' ? t('time.ereyesterday') :
                                                  leaderboardType === 'month' ? t('game.this_month') : 
                                                  leaderboardType === 'year' ? t('game.this_year') : 
                                                  leaderboardType === 'all_time' ? t('game.all_time') : ''}

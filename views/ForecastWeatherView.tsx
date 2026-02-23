@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ViewState, AppSettings, Location, OpenMeteoResponse, ActivityType } from '../types';
 import { Icon } from '../components/Icon';
-import { fetchHolidaysSmart, Holiday, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint, calculateComfortScore, ComfortScore, calculateSolarOutput } from '../services/weatherService';
+import { fetchHolidaysSmart, Holiday, fetchForecast, mapWmoCodeToIcon, mapWmoCodeToText, getActivityIcon, getScoreColor, convertTemp, convertWind, convertPrecip, convertPressure, getWindDirection, calculateMoonPhase, getMoonPhaseText, calculateHeatIndex, calculateDewPoint, calculateComfortScore, ComfortScore, calculateSolarOutput } from '../services/weatherService';
 import { loadCurrentLocation, saveCurrentLocation, loadForecastActivitiesMode, saveForecastActivitiesMode, loadForecastViewMode, saveForecastViewMode, loadForecastTrendArrowsMode, saveForecastTrendArrowsMode, ForecastViewMode, loadEnsembleModel } from '../services/storageService';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
 import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { YrInteractiveMap } from '../components/YrInteractiveMap';
-import { getTranslation } from '../services/translations';
+import { getTranslation, getLocale } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
 import { BaroWeatherReport } from '../components/BaroWeatherReport';
@@ -187,16 +187,6 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
 
   const getDailyForecast = () => {
       if (!weatherData) return [];
-      
-      const getLocale = (lang: string) => {
-        switch (lang) {
-            case 'nl': return 'nl-NL';
-            case 'de': return 'de-DE';
-            case 'fr': return 'fr-FR';
-            case 'es': return 'es-ES';
-            default: return 'en-GB';
-        }
-      };
 
       return weatherData.daily.time.map((ts, i) => {
           const date = new Date(ts);
@@ -239,6 +229,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
           const cloudCover = getAvg(weatherData.hourly.cloud_cover || []);
           const visibility = getMin(weatherData.hourly.visibility || []);
           const humidity = getAvg(weatherData.hourly.relative_humidity_2m || []);
+          const pressureRaw = getAvg(weatherData.hourly.pressure_msl || []);
+          const pressure = convertPressure(pressureRaw, settings.pressureUnit);
 
           // Moon Phase & Precip 24h
           const moonPhase = calculateMoonPhase(date);
@@ -264,6 +256,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                   cloudCover,
                   visibility,
                   humidity,
+                  pressure: pressureRaw, // Pass raw pressure for activity calculation if needed
                   moonPhaseText,
                   precip24h,
                   hourlyPrecip // Pass the hourly precip array
@@ -332,6 +325,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               windMax,
               windDir,
               windDirRaw,
+              pressure,
               activityScores,
               comfort,
               dayParts,
@@ -420,6 +414,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
        if (!data) return null;
        return (
            <g transform={`translate(${x},${y})`}>
+                <foreignObject x={-15} y={-45} width={30} height={22}>
+                    <button
+                        onClick={() => setShowComfortModal(true)}
+                        className={`flex justify-center items-center h-full w-full rounded-lg text-sm font-bold shadow-sm ${data.comfort.colorClass} hover:opacity-80 transition-opacity cursor-pointer`}
+                    >
+                        {data.comfort.score}
+                    </button>
+               </foreignObject>
                 <text x={5} y={-5} textAnchor="start" fill={colors.textMuted} fontSize={12} className="font-bold uppercase" transform="rotate(-45)">
                     {data.dayShort}
                 </text>
@@ -449,14 +451,17 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
        if (!data) return null;
        return (
            <g transform={`translate(${x},${y})`}>
-               <circle cx={0} cy={15} r={12} fill={colors.bgCard} stroke={colors.borderColor || '#e2e8f0'} strokeWidth={1} />
-               <text x={0} y={19} textAnchor="middle" fontSize={10} fontWeight="bold" fill={colors.textMain}>{data.windMax}</text>
-               <g transform={`translate(0, 15) rotate(${data.windDirRaw})`}>
-                    <path d="M0,-12 L-4,-18 L4,-18 Z" fill={colors.textMain} /> 
-               </g>
+               <circle cx={0} cy={15} r={16} fill={colors.bgCard} stroke={colors.borderColor || '#e2e8f0'} strokeWidth={1} />
+               <text x={0} y={19} textAnchor="middle" fontSize={8} fontWeight="bold" fill={colors.textMain}>{data.windMax} {settings.windUnit}</text>
                <text x={0} y={40} textAnchor="middle" fill={colors.textMuted} fontSize={10} className="uppercase">
                    {data.windDir}
                </text>
+               <text x={0} y={55} textAnchor="middle" fill={colors.textMuted} fontSize={9} fontWeight="bold">
+                   {data.pressure} {settings.pressureUnit}
+               </text>
+               <g transform={`translate(0, 15) rotate(${data.windDirRaw})`}>
+                    <path d="M0,-16 L-4,-22 L4,-22 Z" fill={colors.textMain} /> 
+               </g>
            </g>
        );
    };
@@ -693,7 +698,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                         )}
                         <div onClick={() => setShowMapModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                              <Icon name="public" className="text-3xl text-green-500 dark:text-green-300 mb-1" />
-                             <span className="text-[9px] font-bold uppercase text-text-muted text-center leading-tight">Interactieve<br/>Kaart</span>
+                             <span className="text-[9px] font-bold uppercase text-text-muted text-center leading-tight whitespace-pre-line">{t('forecast.header.interactive_map')}</span>
                         </div>
                     </div>
                 </div>
@@ -732,7 +737,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                     <div className="flex flex-wrap gap-2 items-center justify-start sm:justify-end">
                         {expandedMode && (
                             <div className="flex items-center gap-2 bg-bg-page rounded-lg p-1 flex-grow sm:flex-grow-0">
-                                <span className="text-[10px] font-medium text-text-muted ml-1">Activiteiten</span>
+                                <span className="text-[10px] font-medium text-text-muted ml-1">{t('forecast.activities')}</span>
                                 <div className="flex bg-bg-card rounded-md p-0.5 text-[10px] flex-grow sm:flex-grow-0">
                                     <button
                                         type="button"
@@ -743,7 +748,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                 : 'text-text-muted hover:bg-bg-page'
                                         }`}
                                     >
-                                        Uit
+                                        {t('forecast.activities.off')}
                                     </button>
                                     <button
                                         type="button"
@@ -765,7 +770,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                                 : 'text-text-muted hover:bg-bg-page'
                                         }`}
                                     >
-                                        Alle
+                                        {t('forecast.activities.all')}
                                     </button>
                                 </div>
                             </div>
@@ -778,7 +783,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                     onChange={(e) => setTrendArrows(e.target.checked)}
                                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
-                                <span className="text-xs font-medium text-text-muted">Trend</span>
+                                <span className="text-xs font-medium text-text-muted">{t('forecast.trend')}</span>
                             </label>
                         )}
                         
@@ -787,48 +792,48 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 onClick={() => setViewMode('expanded')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'expanded' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Uitgebreid 1
+                                {t('forecast.view.expanded1')}
                             </button>
                             {!isMobile && (
                                 <button  
                                     onClick={() => setViewMode('expanded2')}
                                     className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'expanded2' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                                 >
-                                    Uitgebreid 2
+                                    {t('forecast.view.expanded2')}
                                 </button>
                             )}
                             <button 
                                 onClick={() => setViewMode('compact')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'compact' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Compact
+                                {t('forecast.view.compact')}
                             </button>
                              <button  
                                 onClick={() => setViewMode('graph')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'graph' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Grafiek 1
+                                {t('forecast.view.graph1')}
                             </button>
                             {!isMobile && (
                                 <button  
                                     onClick={() => setViewMode('graph2')}
                                     className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'graph2' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                                 >
-                                    Grafiek 2
+                                    {t('forecast.view.graph2')}
                                 </button>
                             )}
                              <button  
                                 onClick={() => setViewMode('table')}
                                 className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'table' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                             >
-                                Tabel 1
+                                {t('forecast.view.table1')}
                             </button>
                             {!isMobile && (
                                 <button  
                                     onClick={() => setViewMode('table2')}
                                     className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap ${viewMode === 'table2' ? 'bg-bg-card text-text-main shadow-sm' : 'text-text-muted hover:text-text-main'}`}
                                 >
-                                    Tabel 2
+                                    {t('forecast.view.table2')}
                                 </button>
                             )}
                         </div>
@@ -846,7 +851,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                     <th className="px-2 py-1 font-medium text-center">{t('morning')}</th>
                                     <th className="px-2 py-1 font-medium text-center">{t('afternoon')}</th>
                                     <th className="px-2 py-1 font-medium text-center">{t('evening')}</th>
-                                    <th className="px-2 py-1 font-medium text-center">Temp.</th>
+                                    <th className="px-2 py-1 font-medium text-center">{t('forecast.header.temp_short')}</th>
                                     <th className="px-2 py-1 font-medium text-center">{t('precip')}</th>
                                     <th className="px-2 py-1 font-medium text-right">{t('wind')}</th>
                                 </tr>
@@ -921,20 +926,20 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : visibleDays <= 14 ? 16 : 7)}
                                 className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
                             >
-                                {visibleDays <= 7 ? 'Toon 14 dagen' : visibleDays <= 14 ? 'Toon 16 dagen' : 'Toon 7 dagen'}
+                                {visibleDays <= 7 ? t('forecast.show_14_days') : visibleDays <= 14 ? t('forecast.show_16_days') : t('forecast.show_7_days')}
                             </button>
 
                             {visibleDays >= 14 && (
                                 <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
                                     <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
-                                        Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                        {t('forecast.holiday_link_text')}
                                     </p>
                                     <button 
                                         onClick={() => onNavigate(ViewState.HOLIDAY)}
                                         className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                                     >
                                         <Icon name="flight" className="text-lg" />
-                                        6-Maanden / Vakantieweer
+                                        {t('forecast.view.holiday')}
                                     </button>
                                 </div>
                             )}
@@ -959,7 +964,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             return (
                                 <div key={offset} className="mb-8">
                                     <h3 className="text-sm font-bold text-text-muted mb-4 px-2">
-                                        {offset === 0 ? 'Komende 7 dagen' : 'Week erna'}
+                                        {offset === 0 ? t('forecast.next_7_days') : t('forecast.next_week')}
                                     </h3>
                                     <div className="bg-bg-card border border-border-color rounded-xl overflow-hidden shadow-sm">
                                         <div className="grid grid-cols-7 divide-x divide-border-color">
@@ -1075,20 +1080,20 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : visibleDays <= 14 ? 16 : 7)}
                                 className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
                             >
-                                {visibleDays <= 7 ? 'Toon 14 dagen' : visibleDays <= 14 ? 'Toon 16 dagen' : 'Toon 7 dagen'}
+                                {visibleDays <= 7 ? t('forecast.show_14_days') : visibleDays <= 14 ? t('forecast.show_16_days') : t('forecast.show_7_days')}
                             </button>
 
                             {visibleDays >= 14 && (
                                 <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
                                     <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
-                                        Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                        {t('forecast.holiday_link_text')}
                                     </p>
                                     <button 
                                         onClick={() => onNavigate(ViewState.HOLIDAY)}
                                         className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                                     >
                                         <Icon name="flight" className="text-lg" />
-                                        6-Maanden / Vakantieweer
+                                        {t('forecast.view.holiday')}
                                     </button>
                                 </div>
                             )}
@@ -1097,12 +1102,12 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                 ) : viewMode === 'expanded2' ? (
                     <div className="flex flex-col w-full mt-4 gap-2">
                         <div className="hidden sm:grid grid-cols-12 gap-2 px-4 py-2 text-xs font-bold text-text-muted uppercase tracking-wider">
-                            <div className="col-span-3">Datum / Weer</div>
-                            <div className="col-span-1 text-center">Score</div>
-                            <div className="col-span-3 text-center">Temperatuur</div>
-                            <div className="col-span-2 text-center">Neerslag</div>
-                            <div className="col-span-2 text-center">Wind</div>
-                            <div className="col-span-1 text-center">Zon</div>
+                            <div className="col-span-3">{t('forecast.header.date_weather')}</div>
+                            <div className="col-span-1 text-center">{t('forecast.header.score')}</div>
+                            <div className="col-span-3 text-center">{t('forecast.header.temp')}</div>
+                            <div className="col-span-2 text-center">{t('forecast.header.precip')}</div>
+                            <div className="col-span-2 text-center">{t('forecast.header.wind')}</div>
+                            <div className="col-span-1 text-center">{t('forecast.header.sun')}</div>
                         </div>
 
                         {dailyForecast.map((d, i) => (
@@ -1189,14 +1194,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                             {visibleDays >= 14 && (
                                 <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
                                     <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
-                                        Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                        {t('forecast.holiday_link_text')}
                                     </p>
                                     <button 
                                         onClick={() => onNavigate(ViewState.HOLIDAY)}
                                         className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                                     >
                                         <Icon name="flight" className="text-lg" />
-                                        6-Maanden / Vakantieweer
+                                        {t('forecast.view.holiday')}
                                     </button>
                                 </div>
                             )}
@@ -1230,7 +1235,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                             tick={viewMode === 'graph2' ? <CustomBottomTickGraph2 /> : <CustomBottomTick />} 
                                             orientation="bottom"
                                             interval={0}
-                                            height={60}
+                                            height={viewMode === 'graph2' ? 80 : 60}
                                         />
                                         <YAxis yAxisId="temp" hide domain={['dataMin - 2', 'dataMax + 2']} />
                                         <YAxis yAxisId="precip" hide domain={[0, 10]} />
@@ -1264,21 +1269,21 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 onClick={() => setVisibleDays(visibleDays <= 7 ? 14 : 7)}
                                 className="px-4 py-2 bg-bg-page hover:bg-bg-page/80 rounded-full text-xs font-medium transition-colors border border-border-color shadow-sm text-text-muted"
                             >
-                                {visibleDays <= 7 ? 'Toon 14 dagen' : 'Toon 7 dagen'}
+                                {visibleDays <= 7 ? t('forecast.show_14_days') : t('forecast.show_7_days')}
                             </button>
                         </div>
 
                         {visibleDays === 14 && (
                             <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
                                 <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
-                                    Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                    {t('forecast.holiday_link_text')}
                                 </p>
                                 <button 
                                     onClick={() => onNavigate(ViewState.HOLIDAY)}
                                     className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                                 >
                                     <Icon name="flight" className="text-lg" />
-                                    6-Maanden / Vakantieweer
+                                    {t('forecast.view.holiday')}
                                 </button>
                             </div>
                         )}
@@ -1396,7 +1401,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                             <div className="flex items-center gap-2 min-w-[80px] justify-end">
                                                 <span className="text-[10px] font-bold text-text-main">{d.solar.label}</span>
                                                 <span className="text-[9px] text-text-muted font-medium bg-bg-card px-1.5 py-0.5 rounded border border-border-color">
-                                                    Score {d.solar.score}/10
+                                                    {t('forecast.solar.score')} {d.solar.score}/10
                                                 </span>
                                             </div>
                                         </div>
@@ -1430,7 +1435,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                              >
                                                 <span className="text-lg font-bold leading-none">{d.comfort.score}</span>
                                              </button>
-                                             <span className="text-[9px] text-text-muted mt-0.5">Weercijfer</span>
+                                             <span className="text-[9px] text-text-muted mt-0.5">{t('forecast.header.weather_rating')}</span>
                                          </div>
                                      </div>
                                      <div className="flex items-center gap-1 ml-2">
@@ -1487,14 +1492,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                     {visibleDays === 16 && (
                         <div className="w-full mt-4 flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
                             <p className="text-xs text-slate-500 dark:text-white/60 mb-3 text-center max-w-[80%]">
-                                Voor de zeer lange termijn voorspelling tot 6 maanden vooruit (Vakantieweer), klik hieronder.
+                                {t('forecast.holiday_link_text')}
                             </p>
                             <button 
                                 onClick={() => onNavigate(ViewState.HOLIDAY)}
                                 className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
                             >
                                 <Icon name="flight" className="text-lg" />
-                                6-Maanden / Vakantieweer
+                                {t('forecast.view.holiday')}
                             </button>
                         </div>
                     )}
@@ -1561,16 +1566,15 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
 
                 {/* Hourly Graphs */}
                 <div className="mb-6 pb-6 border-b border-border-color">
-                    <h4 className="text-sm font-bold uppercase text-text-muted mb-3">Temperatuur (24U)</h4>
+                    <h4 className="text-sm font-bold uppercase text-text-muted mb-3">{t('forecast.tooltip.temp')}</h4>
                     
                     {/* Temperature Graph */}
                     <div className="h-48 w-full mb-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart syncId="dayDetails" data={(() => {
                                 const idxs = getDayHourlyIndices(selectedDayIndex);
-                                const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
                                 return idxs.map(i => ({
-                                    time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(locales[settings.language] || 'en-GB', { hour: '2-digit', minute: '2-digit' }),
+                                    time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(getLocale(settings.language), { hour: '2-digit', minute: '2-digit' }),
                                     temp: convertTemp(weatherData.hourly.temperature_2m[i], settings.tempUnit),
                                 }));
                             })()} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -1629,9 +1633,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                     {/* Rain Graph (Precip Chance Only) */}
                     {(() => {
                          const idxs = getDayHourlyIndices(selectedDayIndex);
-                         const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
                          const rainData = idxs.map(i => ({
-                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(locales[settings.language] || 'en-GB', { hour: '2-digit', minute: '2-digit' }),
+                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(getLocale(settings.language), { hour: '2-digit', minute: '2-digit' }),
                              precip: convertPrecip(weatherData.hourly.precipitation[i], settings.precipUnit),
                              prob: weatherData.hourly.precipitation_probability[i] || 0
                          }));
@@ -1657,7 +1660,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                             itemStyle={{ color: '#0ea5e9' }}
                                             labelStyle={{ color: colors.textMuted, marginBottom: '0.25rem' }}
                                         />
-                                        <Line type="monotone" dataKey="prob" stroke="#2563eb" strokeWidth={2} dot={false} name="Kans" unit="%" />
+                                        <Line type="monotone" dataKey="prob" stroke="#2563eb" strokeWidth={2} dot={false} name={t('forecast.rain.chance')} unit="%" />
                                     </ComposedChart>
                                 </ResponsiveContainer>
                             </div>
@@ -1667,9 +1670,8 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                     {/* Sunshine Graph (Duration/Prob) */}
                     {(() => {
                          const idxs = getDayHourlyIndices(selectedDayIndex);
-                         const locales: Record<string, string> = { nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', en: 'en-GB' };
                          const sunData = idxs.map(i => ({
-                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(locales[settings.language] || 'en-GB', { hour: '2-digit', minute: '2-digit' }),
+                             time: new Date(weatherData.hourly.time[i]).toLocaleTimeString(getLocale(settings.language), { hour: '2-digit', minute: '2-digit' }),
                              sunProb: Math.min(100, Math.round((weatherData.hourly.sunshine_duration[i] / 3600) * 100))
                          }));
                          

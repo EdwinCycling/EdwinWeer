@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { searchCityByName } from '../services/geoService';
 import { loadCurrentLocation } from '../services/storageService';
 import { getUsage } from '../services/usageService';
+import { getTranslation } from '../services/translations';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface Props {
@@ -112,6 +113,30 @@ const getUnitLabel = (param: Parameter, settings: AppSettings): string => {
 };
 
 export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => {
+  const t = (key: string) => getTranslation(key, settings.language);
+  
+  const getLocale = () => {
+      const locales: Record<string, string> = { 
+        nl: 'nl-NL', en: 'en-GB', de: 'de-DE', fr: 'fr-FR', es: 'es-ES',
+        it: 'it-IT', pt: 'pt-PT', no: 'no-NO', sv: 'sv-SE', da: 'da-DK', fi: 'fi-FI', pl: 'pl-PL'
+      };
+      return locales[settings.language] || 'en-GB';
+  };
+
+  const getParamLabel = (param: Parameter) => {
+    switch(param) {
+        case 'temperature_2m_max': return t('finder.param.max_temp');
+        case 'temperature_2m_min': return t('finder.param.min_temp');
+        case 'precipitation_sum': return t('finder.param.precip_sum');
+        case 'precipitation_hours': return t('finder.param.precip_hours');
+        case 'wind_speed_10m_max': return t('finder.param.wind_max');
+        case 'wind_gusts_10m_max': return t('finder.param.wind_gusts');
+        case 'sunshine_duration': return t('finder.param.sun_duration');
+        case 'precipDurationPercent': return t('finder.param.precip_duration_percent');
+        default: return param;
+    }
+  };
+
   // State
   const [location, setLocation] = useState<Location | null>(null);
   const [scenarios, setScenarios] = useState<Scenario[]>([
@@ -265,8 +290,8 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
 
         const pushGroup = (group: typeof currentGroup) => {
              groupedPredictions.push({
-                startDate: group.start.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }),
-                endDate: group.days > 1 ? group.end.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) : undefined,
+                startDate: group.start.toLocaleDateString(getLocale(), { day: 'numeric', month: 'long' }),
+                endDate: group.days > 1 ? group.end.toLocaleDateString(getLocale(), { day: 'numeric', month: 'long' }) : undefined,
                 probability: group.maxProb,
                 isSequence: group.days > 1,
                 bonus: historicalSequenceRate > 0.3 // Bonus if >30% of history was sequences
@@ -592,7 +617,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
                 }
             }
             return {
-                name: new Date(2000, monthIdx, 1).toLocaleDateString('nl-NL', { month: 'short' }),
+                name: new Date(2000, monthIdx, 1).toLocaleDateString(getLocale(), { month: 'short' }),
                 percentage: days > 0 ? Math.round(sumProb / days) : 0,
                 precipDurationPercent: days > 0 ? Math.round(sumPrecip / days) : 0
             };
@@ -620,7 +645,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
                 }
             }
             const dateRange = firstDateInWeek && lastDateInWeek 
-                ? `${firstDateInWeek.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })} - ${lastDateInWeek.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}`
+                ? `${firstDateInWeek.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' })} - ${lastDateInWeek.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' })}`
                 : '';
 
             return {
@@ -636,7 +661,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
             if (stat.prob === 0 && stat.precipDurationPercent === 0) return null;
             const date = new Date(2000, 0, doy);
             return {
-                name: date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
+                name: date.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' }),
                 percentage: Math.round(stat.prob),
                 precipDurationPercent: Math.round(stat.precipDurationPercent)
             };
@@ -658,7 +683,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
         if (r.operator === '<') minMaxMap[r.parameter].max = Math.min(minMaxMap[r.parameter].max, r.value);
         if (r.operator === '=') {
             if (r.value < minMaxMap[r.parameter].min || r.value > minMaxMap[r.parameter].max) {
-                setError(`Scenario conflict: ${PARAM_LABELS[r.parameter]} kan niet ${r.value} zijn.`);
+                setError(`${t('finder.error_conflict')}: ${getParamLabel(r.parameter)} ${t('finder.op.eq')} ${r.value}`);
                 return;
             }
             minMaxMap[r.parameter].min = r.value;
@@ -672,7 +697,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
 
       for (const key in minMaxMap) {
         if (minMaxMap[key].min > minMaxMap[key].max) {
-           setError(`Logische fout in scenario: ${PARAM_LABELS[key as Parameter]} kan niet tegelijk > ${minMaxMap[key].min} en < ${minMaxMap[key].max} zijn.`);
+           setError(`${t('finder.error_logic')}: ${getParamLabel(key as Parameter)}`);
            return;
         }
       }
@@ -799,8 +824,8 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     onChange={(e) => updateRule(scenario.id, rule.id, 'parameter', e.target.value)}
                                     className="bg-bg-card border-none rounded-lg p-2 text-sm w-full md:w-auto focus:ring-2 focus:ring-accent-primary text-text-main"
                                 >
-                                    {Object.entries(PARAM_LABELS).map(([key, label]) => (
-                                        <option key={key} value={key}>{label}</option>
+                                    {(['temperature_2m_max', 'temperature_2m_min', 'precipitation_sum', 'precipitation_hours', 'wind_speed_10m_max', 'wind_gusts_10m_max', 'sunshine_duration', 'precipDurationPercent'] as Parameter[]).map((key) => (
+                                        <option key={key} value={key}>{getParamLabel(key)}</option>
                                     ))}
                                 </select>
 
@@ -809,10 +834,10 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     onChange={(e) => updateRule(scenario.id, rule.id, 'operator', e.target.value)}
                                     className="bg-bg-card border-none rounded-lg p-2 text-sm w-full md:w-auto focus:ring-2 focus:ring-accent-primary text-text-main"
                                 >
-                                    <option value=">">Meer dan</option>
-                                    <option value="<">Minder dan</option>
-                                    <option value="=">Gelijk aan</option>
-                                    <option value="between">Tussen</option>
+                                    <option value=">">{t('finder.op.gt')}</option>
+                                    <option value="<">{t('finder.op.lt')}</option>
+                                    <option value="=">{t('finder.op.eq')}</option>
+                                    <option value="between">{t('finder.op.between')}</option>
                                 </select>
 
                                 <div className="flex items-center gap-2 flex-1">
@@ -824,7 +849,7 @@ export const WeatherFinderView: React.FC<Props> = ({ onNavigate, settings }) => 
                                     />
                                     {rule.operator === 'between' && (
                                         <>
-                                            <span className="text-sm text-text-main">en</span>
+                                            <span className="text-sm text-text-main">{t('finder.and')}</span>
                                             <input 
                                                 type="number"
                                                 value={rule.value2 || rule.value + 1}
