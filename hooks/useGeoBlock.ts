@@ -21,25 +21,23 @@ export const useGeoBlock = () => {
       }
 
       try {
-        // Using api.country.is which is free and simple
-        // Returns { "ip": "xx.xx.xx.xx", "country": "US" }
-        const response = await fetch('https://api.country.is');
-        
-        if (!response.ok) {
-           // If API fails, we fail open (allow access)
-           setLoading(false);
-           return;
+        // Try primary service: ipapi.co (free tier, no key needed for basic usage)
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+            const data = await response.json();
+            if (data && data.country_code && BLOCKED_COUNTRIES.includes(data.country_code)) {
+                setIsBlocked(true);
+                sessionStorage.setItem('geo_blocked', 'true');
+            }
+            return;
         }
 
-        const data: GeoData = await response.json();
-        
-        // Check if country is in the blocked list
-        if (data && data.country && BLOCKED_COUNTRIES.includes(data.country)) {
-          setIsBlocked(true);
-          sessionStorage.setItem('geo_blocked', 'true');
-        }
+        // Fallback: ip-api.com (non-SSL only on free tier, might be blocked by mixed content but worth a try if allowed)
+        // Or better fallback: just fail open if primary fails
+        // console.warn('Geo check primary service failed, failing open');
       } catch (error) {
-        console.error('Geo check diagnostics failed:', error);
+        // Silently fail to avoid console noise for users with adblockers
+        // console.warn('Geo check diagnostics failed (adblocker?):', error);
         // Fail open - do not block if we can't verify
       } finally {
         setLoading(false);

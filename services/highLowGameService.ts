@@ -179,10 +179,10 @@ export const generateQuiz = async (): Promise<HighLowQuestion[]> => {
 
 export const submitHighLowScore = async (userId: string, username: string, score: number, gameLog: any[]) => {
     try {
-        // Simple client-side hash for basic integrity check (Security by Obscurity, but adds friction)
-        // Real security is on the server (replaying the log)
-        const salt = "baro-secure-salt-v1"; // Ideally env var, but client-side code is public anyway
-        const data = `${userId}-${score}-${JSON.stringify(gameLog)}-${salt}`;
+        // Simple client-side hash for basic integrity check
+        const salt = "baro-secure-salt-v1"; 
+        const logString = JSON.stringify(gameLog);
+        const data = `${userId}-${score}-${logString}-${salt}`;
         
         // Use SHA-256
         const msgBuffer = new TextEncoder().encode(data);
@@ -206,13 +206,19 @@ export const submitHighLowScore = async (userId: string, username: string, score
 
         if (!response.ok) {
             const contentType = response.headers.get("content-type");
-            let error;
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                error = await response.json();
-            } else {
-                error = { message: await response.text() };
+            let errorMsg = 'Failed to submit score';
+            
+            try {
+                if (contentType && contentType.includes("application/json")) {
+                    const errorJson = await response.json();
+                    errorMsg = errorJson.message || errorJson.error || errorMsg;
+                } else {
+                    errorMsg = await response.text();
+                }
+            } catch (e) {
+                // Parsing failed, use default
             }
-            throw new Error(error.message || 'Failed to submit score');
+            throw new Error(errorMsg);
         }
 
         return await response.json();
