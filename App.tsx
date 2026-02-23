@@ -49,6 +49,7 @@ import { WinnerConfetti } from './components/WinnerConfetti';
 import { LandingPageV2 } from './views/LandingPageV2';
 const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').then(module => ({ default: module.BaroRitAdviesView })));
 const GameDashboardView = React.lazy(() => import('./views/GameDashboardView').then(module => ({ default: module.GameDashboardView })));
+const HighLowGameView = React.lazy(() => import('./views/HighLowGameView').then(module => ({ default: module.HighLowGameView })));
 const AmbientView = React.lazy(() => import('./views/AmbientView').then(module => ({ default: module.AmbientView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
@@ -67,12 +68,19 @@ import { GlobalBanner } from './components/GlobalBanner';
 import { useGeoBlock } from './hooks/useGeoBlock';
 import { AccessDenied } from './components/AccessDenied';
 import packageJson from './package.json';
+import { WhatsNewButton } from './src/components/WhatsNew/WhatsNewButton';
+import { WhatsNewModal } from './src/components/WhatsNew/WhatsNewModal';
+import { useWhatsNew } from './src/hooks/useWhatsNew';
 
 const App: React.FC = () => {
   const { isBlocked, loading: geoLoading } = useGeoBlock();
   const { user, loading, sessionExpiry, finishEmailSignIn } = useAuth();
   const { theme, setTheme } = useTheme();
   const appVersion = packageJson.version;
+
+  // What's New Logic
+  const { hasUnreadUpdates, markAsSeen, updates: newUpdates } = useWhatsNew();
+  const [showWhatsNewModal, setShowWhatsNewModal] = useState(false);
 
   const [isFinishingEmailSignIn, setIsFinishingEmailSignIn] = useState(false);
 
@@ -405,6 +413,17 @@ const App: React.FC = () => {
     );
   }
 
+  const handleWhatsNewNavigate = (link: string) => {
+      if (link === 'game') navigate(ViewState.GAME_DASHBOARD);
+      else if (link === 'stars') navigate(ViewState.CURRENT);
+      else if (link === 'map') navigate(ViewState.MAP);
+      else if (link === 'cycling') navigate(ViewState.CYCLING);
+      else {
+           const state = Object.values(ViewState).find(v => v === link || v === link.toUpperCase());
+           if (state) navigate(state as ViewState);
+      }
+  };
+
   const renderView = () => {
     switch (currentView) {
       case ViewState.CURRENT:
@@ -498,6 +517,8 @@ const App: React.FC = () => {
         return <BigBenView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.GAME_DASHBOARD:
         return <GameDashboardView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.HIGHLOW_GAME:
+        return <HighLowGameView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       default:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }
@@ -554,6 +575,18 @@ const App: React.FC = () => {
         )}
 
         <WinnerConfetti settings={settings} />
+
+        <WhatsNewButton 
+            visible={hasUnreadUpdates && !showWhatsNewModal} 
+            onClick={() => { setShowWhatsNewModal(true); markAsSeen(); }} 
+        />
+        
+        <WhatsNewModal 
+            isOpen={showWhatsNewModal} 
+            onClose={() => setShowWhatsNewModal(false)}
+            updates={newUpdates}
+            onNavigate={handleWhatsNewNavigate}
+        />
 
         <FloatingRadioPlayer visible={currentView !== ViewState.BIG_BEN} />
 
@@ -1055,6 +1088,15 @@ const App: React.FC = () => {
                                 <Icon name="account_circle" className="text-xl" />
                             </div>
                             <span className="font-bold text-sm text-text-main">{t('nav.user_account')}</span>
+                         </button>
+                         <button onClick={() => { setShowWhatsNewModal(true); setMenuOpen(false); markAsSeen(); }} className="relative flex flex-col items-center justify-center bg-bg-page hover:bg-bg-page/80 p-3 md:p-4 rounded-2xl gap-2 transition-colors border border-border-color">
+                            <div className="size-10 rounded-full bg-pink-100 dark:bg-pink-500/20 flex items-center justify-center text-pink-600 dark:text-pink-400">
+                                <Icon name="campaign" className="text-xl" />
+                            </div>
+                            <span className="font-bold text-sm text-text-main">What&apos;s New</span>
+                            {hasUnreadUpdates && (
+                                <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-bg-page"></span>
+                            )}
                          </button>
                     </div>
                     

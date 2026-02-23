@@ -396,8 +396,6 @@ export const HistoricalDashboard: React.FC<Props> = ({ date, location, settings,
                 </div>
             </div>
 
-
-
         </div>
       </div>
     </div>

@@ -395,6 +395,12 @@ export const deductBaroCredit = (): boolean => {
     return false;
 };
 
+export const updateUsage = (newStats: Partial<UsageStats>) => {
+    const current = getUsage();
+    const updated = { ...current, ...newStats };
+    saveUsage(updated);
+};
+
 export const trackCall = async () => {
     const stats = getUsage();
     const now = Date.now();

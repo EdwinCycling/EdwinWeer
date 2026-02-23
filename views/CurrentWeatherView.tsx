@@ -14,6 +14,7 @@ import { MoonPhaseVisual } from '../components/MoonPhaseVisual';
 import { SolarPowerWidget } from '../components/SolarPowerWidget';
 import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { Tooltip } from '../components/Tooltip';
+import { HighLowFloatingButton } from '../components/HighLowFloatingButton';
 import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
 import { HumidexCard } from '../components/HumidexCard';
@@ -2079,6 +2080,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             language={settings.language}
           />
       )}
+      <HighLowFloatingButton 
+          onClick={() => onNavigate(ViewState.HIGHLOW_GAME)} 
+          settings={settings} 
+      />
     </div>
   );
 };

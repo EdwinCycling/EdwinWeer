@@ -55,15 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Handle redirect result (for mobile logins)
   useEffect(() => {
     const initAuth = async () => {
-        console.log("AuthContext: Starting ultimate robust auth initialization...");
-        
         // Helper for retrying redirect result
         const tryGetRedirectResult = async (retries = 3, delay = 1000): Promise<any> => {
             for (let i = 0; i < retries; i++) {
                 try {
                     const result = await getRedirectResult(auth);
                     if (result) return result;
-                    console.log(`AuthContext: Redirect attempt ${i + 1} returned no result, waiting...`);
                 } catch (error: any) {
                     console.error(`AuthContext: Redirect attempt ${i + 1} failed:`, error.message);
                     // Certain errors like 'auth/redirect-cancelled-by-user' should stop retries
@@ -85,11 +82,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const result = await tryGetRedirectResult(isRedirecting ? 4 : 1, 800);
             
             if (result && result.user) {
-                console.log("AuthContext: Successfully logged in via Redirect!", result.user.uid);
                 logAuthEvent(result.user.uid, 'login');
                 sessionStorage.setItem(`session_logged_${result.user.uid}`, 'true');
-            } else {
-                console.log("AuthContext: No redirect result found after retries.");
             }
         } catch (error: any) {
             console.error("AuthContext: Final redirect check error:", error);
@@ -97,7 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // IMPORTANT: Only remove flag if we are sure we're done or if it's been too long
             localStorage.removeItem('firebase_auth_in_progress');
             setIsRedirectChecking(false);
-            console.log("AuthContext: Redirect check finished.");
         }
     };
 
@@ -118,13 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // This gives the slow mobile browser time to finish the auth background tasks.
         const delay = user ? 300 : (isRedirecting ? 10000 : 3500); 
         
-        console.log(`AuthContext: Planning to end loading in ${delay}ms. RedirectInProgress: ${isRedirecting}, User: ${user?.uid || 'none'}`);
-
         const timer = setTimeout(() => {
             // Final check: if we still have no user but the flag is STILL there, 
             // it means Firebase might have failed silently.
             setLoading(false);
-            console.log(`AuthContext: Finalizing loading state (User: ${user?.uid || 'none'})`);
         }, delay);
         return () => clearTimeout(timer);
     } else {
@@ -134,8 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log("AuthContext: Auth state changed:", currentUser?.uid || 'null');
-      
       // Mark as not initialized while we process the new auth state
       setIsAuthInitialized(false);
       
@@ -148,7 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (storedExpiry) {
               const expiryDate = new Date(storedExpiry);
               if (expiryDate < now) {
-                  console.log("AuthContext: Session expired");
                   await signOut(auth);
                   setStorageUserId(null);
                   setUsageUserId(null);

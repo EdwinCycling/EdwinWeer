@@ -917,8 +917,8 @@ export const es: Dictionary = {
     'records.12month': 'Últimos 12 meses',
     'records.warmest_month': 'Mes más cálido',
     'records.coldest_month': 'Mes más frío',
-    'records.max_month_amplitude': 'Amplitud mensual (Tmax - Tmin)',
-    'records.min_month_amplitude': 'Amplitud mensual temp máx (baja)',
+    'records.max_month_amplitude': 'Amplitud mensual (Tmax - Tmax) máxima',
+    'records.min_month_amplitude': 'Amplitud mensual (Tmax - Tmax) mínima',
     'max': 'Máx',
     'min': 'Mín',
     'records.max_temp_high': 'Temperatura máxima más alta',
@@ -2252,7 +2252,7 @@ export const es: Dictionary = {
     'climate.months.may': 'May',
     'climate.months.oct': 'Oct',
     'climate.months.dec': 'Dic',
-    'records.month_amplitude': 'Amplitud mensual',
+    'records.month_amplitude': 'Amplitud mensual Tmax con Tmin',
 
     // Aurora
     'aurora_nihil': 'Ninguno',

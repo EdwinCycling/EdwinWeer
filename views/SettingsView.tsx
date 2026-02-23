@@ -535,6 +535,25 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     </div>
                                 </div>
 
+                                {/* High/Low Game Toggle */}
+                                <div className="p-4 flex items-center justify-between border-t border-border-color">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-accent-primary/10 rounded-lg">
+                                            <Icon name="casino" className="text-accent-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-text-main">{t('game.highlow.settings_title')}</p>
+                                            <p className="text-xs text-text-muted">{t('game.highlow.settings_desc')}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => updateSetting('enableHighLowGame', settings.enableHighLowGame === false ? true : false)}
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${settings.enableHighLowGame !== false ? 'bg-accent-primary' : 'bg-border-color'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${settings.enableHighLowGame !== false ? 'left-7' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
                                 {/* Time Format Toggle */}
                                 <div className="p-4 flex items-center justify-between border-t border-border-color">
                                     <div className="flex items-center gap-3">

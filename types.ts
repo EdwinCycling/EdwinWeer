@@ -6,6 +6,28 @@ export interface SystemConfig {
   end_time?: string;
   disable_app: boolean;
   include_landing_page?: boolean;
+    enableHighLowGame: boolean;
+}
+
+export interface HighLowQuestion {
+    id: string;
+    type: 'solo' | 'duel';
+    cityA: Location;
+    cityB?: Location;
+    variable: 'max' | 'min';
+    targetValue?: number; // For solo
+    correctAnswer: 'higher' | 'lower' | 'true' | 'false'; // 'true' means A > B (Yes/Green), 'false' means A < B (No/Red)
+    questionText: {
+        nl: string;
+        en: string;
+    };
+    actualValueA?: number;
+    actualValueB?: number;
+}
+
+export interface HighLowScore {
+    score: number;
+    date: string; // YYYY-MM-DD
 }
 
 export type Dictionary = Record<string, string>;
@@ -264,6 +286,7 @@ export interface AppSettings {
         modeType?: 'video' | 'photo';
         clockType?: 'analogue' | 'weather_station' | 'digital_round';
     };
+    enableHighLowGame: boolean;
 }
 
 export interface TripPlannerSettings {
@@ -369,7 +392,8 @@ export enum ViewState {
   BARO_RIT_ADVIES = 'BARO_RIT_ADVIES',
     SONG_WRITER = 'SONG_WRITER',
     BIG_BEN = 'BIG_BEN',
-    GAME_DASHBOARD = 'GAME_DASHBOARD'
+    GAME_DASHBOARD = 'GAME_DASHBOARD',
+    HIGHLOW_GAME = 'HIGHLOW_GAME'
 }
 
 export interface GameRound {

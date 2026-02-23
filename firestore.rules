@@ -56,6 +56,18 @@ service cloud.firestore {
         allow delete: if isOwner(userId) || isAdmin(); // Sta verwijderen toe voor opschoning
         allow update: if false;
       }
+      
+      // High/Low Results (Geschiedenis) - Alleen lezen, schrijven via server
+      match /highlow_results/{resultId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if false; // Via server
+      }
+      
+      // High/Low Last Game (Details laatste spel) - Alleen lezen, schrijven via server
+      match /highlow/{docId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow write: if false; // Via server
+      }
     }
 
     // --- Usernames Collectie (Voor uniekheidscheck zonder privacy-lek) ---
@@ -111,6 +123,12 @@ service cloud.firestore {
     match /leaderboards/{boardId}/entries/{entryId} {
       allow read: if isSignedIn();
       allow write: if false; // Alleen via backend (Game Master)
+    }
+
+    // High/Low Leaderboards (Lezen: iedereen, Schrijven: NIEMAND, alleen server)
+    match /highlow_leaderboards/{periodId}/entries/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Alleen via submit-highlow-score function
     }
 
     // Specifieke regel voor collectionGroup queries op 'bets'

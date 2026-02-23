@@ -1,0 +1,15 @@
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.gift-button {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%); /* Opvallend roze/goud */
+  animation: wiggle 2s ease-in-out infinite;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.gift-button:hover {
+  animation: none;
+  transform: scale(1.1);
+}

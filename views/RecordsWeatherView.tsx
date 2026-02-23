@@ -39,6 +39,7 @@ import { VisualStatsBlocks } from '../components/VisualStatsBlocks';
 import { MonthlyBoxPlotChart } from '../components/MonthlyBoxPlotChart';
 import { MonthlyRainChart } from '../components/MonthlyRainChart';
 import { MonthlySunChart } from '../components/MonthlySunChart';
+import { BaroYearOverview } from '../components/BaroYearOverview';
 import { ProgressBar } from '../components/ProgressBar';
 import { ClimateClassificationCard, BaroSeasonalIndexCard } from '../components/ClimateCards';
 import { RainSeasonCard } from '../components/RainSeasonCard';
@@ -716,6 +717,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
                   const daylight = daylightValues ? daylightValues[i] : 0;
                   const windGust = windGustValues ? windGustValues[i] : 0;
                   const windSpeed = windSpeedValues ? windSpeedValues[i] : 0;
+                  const maxWindSpeed = maxWindSpeedValues ? maxWindSpeedValues[i] : 0;
                   
                   let cloudCover = cloudCoverMeanValues ? cloudCoverMeanValues[i] : null;
                   
@@ -873,6 +875,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
                       cloudCover: cloudCover,
                       windGust: windGust,
                       windSpeed: windSpeed,
+                      maxWindSpeed: maxWindSpeed,
                       isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6
                   });
               } else {
@@ -965,29 +968,45 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
       setMaxAmplitude(sortDesc(amplitudeEntries));
       setMinAmplitude(sortAsc(amplitudeEntries));
 
-      // Calculate Largest Monthly Amplitude (Month with biggest difference between Max(Tmax) and Min(Tmin))
+      // Calculate Largest Monthly Amplitude (Month with biggest difference between Max(Tmax) and Min(Tmax))
       const monthAmplitudesMap = new Map<string, { max: number, min: number, maxDate: string, minDate: string }>();
+      const standardMonthAmplitudesMap = new Map<string, { max: number, min: number, maxDate: string, minDate: string }>();
       
       for (let i = 0; i < times.length; i++) {
           const d = times[i];
           const tMax = maxTemps[i];
           const tMin = minTemps[i];
           
-          if (!d || typeof tMax !== 'number' || Number.isNaN(tMax) || typeof tMin !== 'number' || Number.isNaN(tMin)) continue;
+          if (!d || typeof tMax !== 'number' || Number.isNaN(tMax)) continue;
           
           const monthKey = d.substring(0, 7); // "YYYY-MM"
           
+          // Tmax - Tmax (for single record cards)
           const current = monthAmplitudesMap.get(monthKey) || { max: -Infinity, min: Infinity, maxDate: '', minDate: '' };
           
           if (tMax > current.max) {
               current.max = tMax;
               current.maxDate = d;
           }
-          if (tMin < current.min) {
-              current.min = tMin;
+          if (tMax < current.min) {
+              current.min = tMax;
               current.minDate = d;
           }
           monthAmplitudesMap.set(monthKey, current);
+
+          // Tmax - Tmin (for Top 3 list)
+          if (typeof tMin === 'number' && !Number.isNaN(tMin)) {
+              const currentStd = standardMonthAmplitudesMap.get(monthKey) || { max: -Infinity, min: Infinity, maxDate: '', minDate: '' };
+              if (tMax > currentStd.max) {
+                  currentStd.max = tMax;
+                  currentStd.maxDate = d;
+              }
+              if (tMin < currentStd.min) {
+                  currentStd.min = tMin;
+                  currentStd.minDate = d;
+              }
+              standardMonthAmplitudesMap.set(monthKey, currentStd);
+          }
       }
       
       const allMonthAmplitudes: { value: number, max: number, min: number, maxDate: string, minDate: string, month: string }[] = [];
@@ -998,10 +1017,21 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
               allMonthAmplitudes.push({ ...data, value: amp, month: key });
           }
       }
+
+      const allStandardMonthAmplitudes: { value: number, max: number, min: number, maxDate: string, minDate: string, month: string }[] = [];
+      
+      for (const [key, data] of standardMonthAmplitudesMap.entries()) {
+          const amp = data.max - data.min;
+          if (data.max > -Infinity && data.min < Infinity) {
+              allStandardMonthAmplitudes.push({ ...data, value: amp, month: key });
+          }
+      }
       
       // Sort desc and take top 3
       allMonthAmplitudes.sort((a, b) => b.value - a.value);
-      setMonthAmplitudes(allMonthAmplitudes.slice(0, 3));
+      allStandardMonthAmplitudes.sort((a, b) => b.value - a.value);
+
+      setMonthAmplitudes(allStandardMonthAmplitudes.slice(0, 3));
       setMaxMonthAmplitude(allMonthAmplitudes.length > 0 ? allMonthAmplitudes[0] : null);
       setMinMonthAmplitude(allMonthAmplitudes.length > 0 ? allMonthAmplitudes[allMonthAmplitudes.length - 1] : null);
 
@@ -4746,6 +4776,11 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
               {(recordType === 'yearly' || recordType === '12month') && dailyData.length > 0 && (
                   <div className="w-full max-w-2xl mt-6">
                       <MonthlySunChart data={dailyData} settings={settings} />
+                  </div>
+              )}
+              {(recordType === 'yearly' || recordType === '12month') && dailyData.length > 0 && (
+                  <div className="w-full max-w-2xl mt-6">
+                      <BaroYearOverview dailyDataList={dailyData} settings={settings} />
                   </div>
               )}
             </div>
