@@ -46,4 +46,6 @@ export const pl: Dictionary = {
     'welcome.title': 'Witaj w Baro!',
     'error': 'Błąd',
     'cancel': 'Anuluj',
+    'records.wettest_month': 'Najbardziej mokry miesiąc',
+    'records.driest_month': 'Najbardziej suchy miesiąc',
 };

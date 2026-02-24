@@ -744,6 +744,8 @@ export const pt: Dictionary = {
     'records.12month': '12 meses contínuos',
     'records.warmest_month': 'Mês mais quente',
     'records.coldest_month': 'Mês mais frio',
+    'records.wettest_month': 'Mês mais chuvoso',
+    'records.driest_month': 'Mês mais seco',
     'records.max_month_amplitude': 'Amplitude mensal (Tmax - Tmax) máxima',
     'records.min_month_amplitude': 'Amplitude mensal (Tmax - Tmax) mínima',
     'max': 'Mais alto',

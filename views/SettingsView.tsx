@@ -9,7 +9,7 @@ import { getTranslation, loadLanguage } from '../services/translations';
 import { searchCityByName, reverseGeocodeFull } from '../services/geoService';
 import { getUsage, UsageStats, getLimit } from '../services/usageService';
 import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../hooks/useTheme';
 
 const TIMEZONES = [
     "Europe/Amsterdam", "Europe/Brussels", "Europe/London", "Europe/Paris", "Europe/Berlin", 

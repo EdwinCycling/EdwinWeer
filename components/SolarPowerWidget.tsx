@@ -155,7 +155,6 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
         }
     }
 
-    const remainingWatts = totalWattsToday - receivedWattsSoFar;
     const percentReceived = totalWattsToday > 0 ? Math.round((receivedWattsSoFar / totalWattsToday) * 100) : 0;
     const percentRemaining = 100 - percentReceived;
 
@@ -211,7 +210,7 @@ export const SolarPowerWidget: React.FC<Props> = ({ weatherData, settings, targe
                     </div>
 
                     {/* Chart */}
-                    <div className="h-48 w-full mt-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="h-48 w-full mt-2 animate-in fade-in slide-in-from-top-2" style={{ minWidth: '100px', minHeight: '192px' }}>
                         <ResponsiveContainer width="100%" height="100%" minHeight={0} minWidth={0}>
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>

@@ -999,6 +999,8 @@ export const fr: Dictionary = {
     'records.max_wind': 'Vent le plus fort',
     'records.max_gust': 'Rafale la plus forte',
     'records.max_rain': 'Plus de précipitations',
+    'records.wettest_month': 'Mois le plus humide',
+    'records.driest_month': 'Mois le plus sec',
     'records.total_rain': 'Précipitations totales',
     'records.total_sun': 'Heures de soleil totales',
     'records.monthly_summary': 'Résumé mensuel',

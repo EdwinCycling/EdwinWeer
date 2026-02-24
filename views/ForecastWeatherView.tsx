@@ -297,7 +297,7 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
               evening: getIconForHour(21)
           };
 
-          let color = 'from-yellow-400 to-amber-400';
+          const color = 'from-yellow-400 to-amber-400';
 
           // Find holiday
           const dateStr = date.toISOString().split('T')[0];
@@ -689,6 +689,14 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
                                 className="min-w-[70px] w-auto"
                             />
                         )}
+                        <div 
+                            onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
+                            className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                        >
+                            <Icon name="schedule" className="text-xl text-text-main" />
+                            <span className="text-lg font-bold text-text-main">48u</span>
+                            <span className="text-[9px] uppercase text-text-muted text-center leading-tight">{t('forecast')}</span>
+                        </div>
                         <div onClick={() => setShowMapModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[70px] h-[100px] cursor-pointer hover:scale-105 transition-transform">
                              <Icon name="public" className="text-3xl text-green-500 dark:text-green-300 mb-1" />
                              <span className="text-[9px] font-bold uppercase text-text-muted text-center leading-tight whitespace-pre-line">{t('forecast.header.interactive_map')}</span>

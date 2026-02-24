@@ -46,4 +46,6 @@ export const sv: Dictionary = {
     'welcome.title': 'Välkommen till Baro!',
     'error': 'Fel',
     'cancel': 'Avbryt',
+    'records.wettest_month': 'Våtaste månaden',
+    'records.driest_month': 'Torraste månaden',
 };

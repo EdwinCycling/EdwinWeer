@@ -781,6 +781,8 @@ export const en: Dictionary = {
     'records.12month': 'Rolling 12 months',
     'records.warmest_month': 'Warmest month',
     'records.coldest_month': 'Coldest month',
+    'records.wettest_month': 'Wettest month',
+    'records.driest_month': 'Driest month',
     'records.max_month_amplitude': 'Month amplitude (Tmax - Tmax) maximum',
     'records.min_month_amplitude': 'Month amplitude (Tmax - Tmax) minimum',
     'max': 'Highest',

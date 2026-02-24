@@ -933,6 +933,8 @@ export const de: Dictionary = {
     'records.max_wind': 'Stärkster Wind',
     'records.max_gust': 'Stärkste Windböe',
     'records.max_rain': 'Meister Niederschlag',
+    'records.wettest_month': 'Nassester Monat',
+    'records.driest_month': 'Trockenster Monat',
     'records.total_rain': 'Gesamtniederschlag',
     'records.total_sun': 'Gesamte Sonnenstunden',
     'records.monthly_summary': 'Monatsübersicht',

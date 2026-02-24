@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppSettings, Location, ViewState, WindUnit, WeatherData } from '../types';
 import { Icon } from './Icon';
 import { fetchHistorical, convertTemp, convertPrecip, convertWind } from '../services/weatherService';
 import { getTranslation } from '../services/translations';
 import { MonthStatsModal } from './MonthStatsModal';
-import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, ResponsiveContainer } from 'recharts';
 
 interface Props {
     location: Location;
@@ -416,8 +416,8 @@ export const MonthStatsCard: React.FC<Props> = ({ location, settings, onNavigate
 
                             <div className="flex flex-col gap-1 p-3 rounded-xl bg-bg-page/50 border border-border-color/50 relative overflow-hidden">
                                 <span className="text-xs text-text-muted uppercase font-bold z-10">Max Verloop</span>
-                                <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50" style={{ minWidth: '100px', minHeight: '48px' }}>
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                         <BarChart data={stats.miniChartMax}>
                                             <Bar dataKey="val" fill="#ef4444" radius={[2, 2, 0, 0]} />
                                         </BarChart>
@@ -426,8 +426,8 @@ export const MonthStatsCard: React.FC<Props> = ({ location, settings, onNavigate
                             </div>
                             <div className="flex flex-col gap-1 p-3 rounded-xl bg-bg-page/50 border border-border-color/50 relative overflow-hidden">
                                 <span className="text-xs text-text-muted uppercase font-bold z-10">Min Verloop</span>
-                                <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50">
-                                    <ResponsiveContainer width="100%" height="100%">
+                                <div className="absolute bottom-0 left-0 right-0 h-12 opacity-50" style={{ minWidth: '100px', minHeight: '48px' }}>
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                         <BarChart data={stats.miniChartMin}>
                                             <Bar dataKey="val" fill="#3b82f6" radius={[2, 2, 0, 0]} />
                                         </BarChart>

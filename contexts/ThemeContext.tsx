@@ -3,6 +3,7 @@ import { AppTheme } from '../types';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
+import { ThemeContext } from '../hooks/useTheme';
 
 // Debounce helper
 const debounce = (func: Function, wait: number) => {
@@ -12,13 +13,6 @@ const debounce = (func: Function, wait: number) => {
         timeout = setTimeout(() => func(...args), wait);
     };
 };
-
-interface ThemeContextType {
-    theme: AppTheme;
-    setTheme: (theme: AppTheme) => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [theme, setThemeState] = useState<AppTheme>('light');
@@ -117,12 +111,4 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             {children}
         </ThemeContext.Provider>
     );
-};
-
-export const useTheme = () => {
-    const context = useContext(ThemeContext);
-    if (context === undefined) {
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
-    return context;
 };

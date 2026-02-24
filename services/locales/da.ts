@@ -44,6 +44,8 @@ export const da: Dictionary = {
     'landing.login_google': 'Log ind med Google',
     'landing.login_email_button': 'Send mig et login-link',
     'welcome.title': 'Velkommen til Baro!',
-    'error': 'Fejl',
+    'error': 'Feil',
     'cancel': 'Annuller',
+    'records.wettest_month': 'Vådeste måned',
+    'records.driest_month': 'Tørreste måned',
 };

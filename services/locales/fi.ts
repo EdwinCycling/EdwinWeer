@@ -740,6 +740,8 @@ export const fi: Dictionary = {
     'records.12month': 'Liukuva 12 kuukautta',
     'records.warmest_month': 'Lämpimin kuukausi',
     'records.coldest_month': 'Kylmin kuukausi',
+    'records.wettest_month': 'Sateisin kuukausi',
+    'records.driest_month': 'Kuivin kuukausi',
     'records.max_month_amplitude': 'Kuukauden amplitudi (Tmax - Tmax) maksimi',
     'records.min_month_amplitude': 'Kuukauden amplitudi (Tmax - Tmax) minimi',
     'max': 'Korkein',

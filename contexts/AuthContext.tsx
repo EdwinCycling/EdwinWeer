@@ -23,22 +23,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { loadSettings } from '../services/storageService';
+import { AuthContext } from '../hooks/useAuth';
 
 const SESSION_DURATION_DAYS = 30;
-
-interface AuthContextType {
-  user: AppUser | null;
-  loading: boolean;
-  sessionExpiry: Date | null;
-  signInWithGoogle: () => Promise<void>;
-  signInWithProvider: (provider: FirebaseAuthProvider) => Promise<void>;
-  sendEmailLink: (email: string) => Promise<void>;
-  finishEmailSignIn: (email: string, href: string) => Promise<void>;
-  logout: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);

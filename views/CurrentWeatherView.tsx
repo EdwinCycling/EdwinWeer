@@ -219,7 +219,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           // Match current hour (e.g. "2023-10-27T14")
           const nowIsoPrefix = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
           
-          let startIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIsoPrefix));
+          const startIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIsoPrefix));
           
           if (startIndex !== -1) {
               // Look ahead 16 intervals (4 hours) for high precision
@@ -418,7 +418,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
       const pad = (n: number) => n.toString().padStart(2, '0');
       const nowIsoPrefix = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}`;
       
-      let hourStartIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIsoPrefix));
+      const hourStartIndex = weatherData.minutely_15.time.findIndex(timeStr => timeStr.startsWith(nowIsoPrefix));
       let startIndex = hourStartIndex;
       
       if (hourStartIndex !== -1) {
@@ -448,56 +448,59 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
 
 
-  // --- Sun Graph Widget Component ---
-  const SunElevationGraph = () => {
-    if (!weatherData) return null;
-    const isDay = weatherData.current.is_day === 1;
+    // --- Sun Graph Widget Component ---
+     const SunElevationGraph = () => {
+         const [isReady, setIsReady] = useState(false);
+         
+         useEffect(() => {
+             const t = setTimeout(() => setIsReady(true), 100);
+             return () => clearTimeout(t);
+         }, []);
 
-    const storageKey = isDay ? 'sun_graph_expanded' : 'moon_info_expanded';
-    const [isExpanded, setIsExpanded] = useState(() => {
-        const saved = localStorage.getItem(storageKey);
-        return saved !== null ? saved === 'true' : true;
-    });
+         const isDay = weatherData?.current.is_day === 1;
+         const storageKey = isDay ? 'sun_graph_expanded' : 'moon_info_expanded';
+         
+         const [isExpanded, setIsExpanded] = useState(() => {
+             const saved = localStorage.getItem(storageKey);
+             return saved !== null ? saved === 'true' : true;
+         });
+  
+         useEffect(() => {
+             localStorage.setItem(storageKey, String(isExpanded));
+         }, [isExpanded, storageKey]);
 
-    useEffect(() => {
-        localStorage.setItem(storageKey, String(isExpanded));
-    }, [isExpanded, storageKey]);
+         if (!weatherData) return null;
 
-    // If it's night, show the Moon card instead of graph
-    if (!isDay) {
-        const daysToFull = Math.round((moonPhase < 0.5 ? 0.5 - moonPhase : 1.5 - moonPhase) * 29.53);
-        const illumination = Math.round((1 - Math.cos(moonPhase * 2 * Math.PI)) / 2 * 100);
+        // If it's night, show the Moon card instead of graph
+        if (!isDay) {
+            const daysToFull = Math.round((moonPhase < 0.5 ? 0.5 - moonPhase : 1.5 - moonPhase) * 29.53);
+            const illumination = Math.round((1 - Math.cos(moonPhase * 2 * Math.PI)) / 2 * 100);
 
-        // Moonrise and Moonset
-        const moonrise = weatherData.daily.moonrise?.[0];
-        const moonset = weatherData.daily.moonset?.[0];
+            // Moonrise and Moonset
+            const moonrise = weatherData.daily.moonrise?.[0];
+            const moonset = weatherData.daily.moonset?.[0];
 
-        const formatTime = (timeStr?: string) => {
-            if (!timeStr) return '--:--';
-            const date = new Date(timeStr);
-            return date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: settings.timeFormat === '12h' 
-            });
-        };
+            const formatTime = (timeStr?: string) => {
+                if (!timeStr) return '--:--';
+                const date = new Date(timeStr);
+                return date.toLocaleTimeString(settings.language === 'nl' ? 'nl-NL' : 'en-GB', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    hour12: settings.timeFormat === '12h' 
+                });
+            };
 
-        // Calculate visible planets
-        const now = new Date();
-        const currentLocation = location;
-        const lat = currentLocation?.lat || 52.1;
-        const lon = currentLocation?.lon || 5.2;
-        
-        const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
-        
-        // Defer heavy components (charts etc)
-        const [isReady, setIsReady] = useState(false);
-        useEffect(() => {
-            const t = setTimeout(() => setIsReady(true), 100);
-            return () => clearTimeout(t);
-        }, []);
-
-        return (
+            // Calculate visible planets
+            const now = new Date();
+            const currentLocation = location;
+            const lat = currentLocation?.lat || 52.1;
+            const lon = currentLocation?.lon || 5.2;
+            
+            const visiblePlanets = getVisiblePlanets(now, lat, lon, weatherData || undefined);
+            
+            if (!isReady) return <div className="bg-bg-card border border-border-color rounded-2xl p-4 min-h-[100px] animate-pulse" />;
+            
+            return (
             <div className={`bg-bg-card border border-border-color rounded-2xl p-4 relative overflow-hidden transition-colors ${isExpanded ? 'min-h-[180px] md:min-h-[180px]' : ''}`}>
                 <div className="flex items-center justify-between mb-1 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
                     <div className="flex items-center gap-2">
@@ -776,16 +779,14 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const highTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_max[0], settings.tempUnit) : 0;
   const lowTemp = weatherData ? convertTemp(weatherData.daily.temperature_2m_min[0], settings.tempUnit) : 0;
   
-  // Use JAG/TI for feels like if applicable, otherwise fallback to apparent_temperature
   const jagTi = weatherData ? calculateJagTi(weatherData.current.temperature_2m, weatherData.current.wind_speed_10m) : null;
   const feelsLike = weatherData 
     ? (jagTi !== null ? convertTempPrecise(jagTi, settings.tempUnit) : convertTempPrecise(weatherData.current.apparent_temperature, settings.tempUnit))
     : 0;
 
-  // Significant difference for feels like display
-  const isFeelsLikeSignificant = Math.abs(feelsLike - currentTemp) >= 1;
-  
   const windSpeed = weatherData ? convertWind(weatherData.current.wind_speed_10m, settings.windUnit) : 0;
+  const pastWindDir = weatherData ? weatherData.current.wind_direction_10m : 0;
+  const pastWindBft = weatherData ? getBeaufort(weatherData.current.wind_speed_10m) : 0;
   
   const dewPoint = weatherData ? calculateDewPointMagnus(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
   const heatIndexRaw = weatherData ? calculateHeatIndex(weatherData.current.temperature_2m, weatherData.current.relative_humidity_2m) : 0;
@@ -830,7 +831,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const todayExtremes = React.useMemo(() => {
     if (!weatherData) return null;
 
-    const now = getLocationTime();
     // Use the date from weatherData.current.time or now to find "today" in the hourly data
     const currentTime = weatherData.current.time;
     const todayStr = currentTime.split('T')[0];
@@ -863,11 +863,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     const formatTime = (isoTime: string) => {
       const timePart = isoTime.split('T')[1]; // "HH:MM"
       if (settings.timeFormat === '12h') {
-        let [hours, minutes] = timePart.split(':').map(Number);
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12; // the hour '0' should be '12'
-        return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        const [hoursPart, minutesPart] = timePart.split(':').map(Number);
+        const ampm = hoursPart >= 12 ? 'PM' : 'AM';
+        const hours = hoursPart % 12 || 12; // the hour '0' should be '12'
+        return `${hours}:${minutesPart.toString().padStart(2, '0')} ${ampm}`;
       }
       return timePart;
     };
@@ -1027,14 +1026,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         if (score >= 4) return "text-orange-500 dark:text-orange-400";
         return "text-red-500 dark:text-red-400";
     };
-
-    const pastHourIndex = weatherData ? Math.max(0, getLocationTime().getHours() - 1) : 0;
-    const pastWindSpeed = weatherData ? convertWind(weatherData.hourly.wind_speed_10m[pastHourIndex], settings.windUnit) : 0;
-    const pastWindSpeedRaw = weatherData ? weatherData.hourly.wind_speed_10m[pastHourIndex] : 0;
-    const pastWindBft = getBeaufort(pastWindSpeedRaw);
-    const pastWindGust = weatherData ? convertWind(weatherData.hourly.wind_gusts_10m[pastHourIndex], settings.windUnit) : 0;
-    const pastWindDir = weatherData ? weatherData.hourly.wind_direction_10m[pastHourIndex] : 0;
-    const pastWindDirText = getWindDirection(pastWindDir, settings.language);
 
   return (
     <div 
@@ -1526,7 +1517,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                 </h3>
                                 <span className="text-[10px] sm:text-xs text-blue-400 dark:text-blue-200/60">{t('coming_2_hours')}</span>
                             </div>
-                            <div className="h-32 w-full">
+                            <div className="h-32 w-full" style={{ minWidth: '100px', minHeight: '128px' }}>
                                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                     <AreaChart data={rainGraph.data}>
                                         <defs>
@@ -1685,7 +1676,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                                                         </div>
                                                         <div className="min-w-0">
                                                             <p className="font-bold text-xs sm:text-sm capitalize truncate">{t('activity.' + score.type)}</p>
-                                                            <p className="text-[9px] sm:text-[10px] text-text-muted italic truncate">"{score.text}"</p>
+                                                            <p className="text-[9px] sm:text-[10px] text-text-muted italic truncate">&quot;{score.text}&quot;</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-end shrink-0">

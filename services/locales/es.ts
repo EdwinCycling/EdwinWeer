@@ -1025,6 +1025,8 @@ export const es: Dictionary = {
     'records.max_wind': 'Viento más fuerte',
     'records.max_gust': 'Ráfaga más fuerte',
     'records.max_rain': 'Mayor precipitacióN',
+    'records.wettest_month': 'Mes más lluvioso',
+    'records.driest_month': 'Mes más seco',
     'records.total_rain': 'PrecipitacióN total',
     'records.total_sun': 'Horas de sol totales',
     'records.monthly_summary': 'Resumen mensual',

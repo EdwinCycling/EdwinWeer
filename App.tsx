@@ -56,7 +56,7 @@ import { loadSettings, saveSettings, saveCurrentLocation } from './services/stor
 import { getTranslation, loadLanguage } from './services/translations';
 import { Icon } from './components/Icon';
 import { useAuth } from './hooks/useAuth';
-import { useTheme } from './contexts/ThemeContext';
+import { useTheme } from './hooks/useTheme';
 import { LimitReachedModal } from './components/LimitReachedModal';
 import { CreditMonitor } from './components/CreditMonitor';
 import ReloadPrompt from './components/ReloadPrompt';
