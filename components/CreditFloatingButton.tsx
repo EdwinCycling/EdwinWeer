@@ -45,14 +45,14 @@ export const CreditFloatingButton: React.FC<Props> = ({ onNavigate, settings, cl
         <>
             <button
                 onClick={() => setShowPopup(!showPopup)}
-                className={className || "fixed bottom-24 right-4 z-40 bg-bg-card text-text-main rounded-full shadow-lg border border-border-color flex items-center justify-center hover:scale-105 transition-transform w-12 h-12 md:w-auto md:h-auto md:px-2 md:py-2"}
+                className={className || "fixed bottom-24 right-4 z-40 bg-bg-card text-text-main rounded-full shadow-lg border border-border-color flex items-center justify-center hover:scale-105 transition-transform w-12 h-12 lg:w-auto lg:h-auto lg:px-2 lg:py-2"}
             >
                 {hasCredits ? (
                     <>
                          <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full p-1 flex items-center justify-center">
                             <Icon name="stars" className="text-lg" />
                         </div>
-                        <span className="hidden md:inline text-xs font-bold pr-1 pl-1">
+                        <span className="hidden lg:inline text-xs font-bold pr-1 pl-1">
                             {stats.weatherCredits + stats.baroCredits}
                         </span>
                     </>

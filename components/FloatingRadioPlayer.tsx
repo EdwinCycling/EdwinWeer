@@ -22,15 +22,15 @@ export const FloatingRadioPlayer: React.FC<Props> = ({ visible, className }) => 
                 </div>
             </button>
 
-            <div className="hidden md:flex flex-col pr-1">
+            <div className="hidden lg:flex flex-col pr-1">
                 <span className="text-[10px] font-bold text-[#E5C100] uppercase tracking-wider leading-none">ON</span>
             </div>
 
-            <div className="hidden md:block h-4 w-px bg-white/10 mx-1"></div>
+            <div className="hidden lg:block h-4 w-px bg-white/10 mx-1"></div>
 
             <button 
                 onClick={pause}
-                className="hidden md:block p-1 rounded-full bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 transition-colors"
+                className="hidden lg:block p-1 rounded-full bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 transition-colors"
                 title="Stop Radio"
             >
                 <Icon name="stop" className="text-lg" />

@@ -63,7 +63,7 @@ export const FloatingActionButtons: React.FC<Props> = ({ currentView, settings, 
     const showRadio = currentView !== ViewState.BIG_BEN && isPlaying;
 
     // Common styling for buttons to ensure they are same size/shape
-    const btnClass = "bg-bg-card/90 backdrop-blur-md text-text-main rounded-full shadow-lg border border-border-color flex items-center justify-center hover:scale-105 transition-transform w-12 h-12 md:w-auto md:h-auto md:px-4 md:py-2 md:gap-2";
+    const btnClass = "bg-bg-card/90 backdrop-blur-md text-text-main rounded-full shadow-lg border border-border-color flex items-center justify-center hover:scale-105 transition-transform w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2 lg:gap-2";
     
     // Specific overrides for active states/colors are handled inside the components, 
     // but we pass the base positioning/sizing class to override their default 'fixed' positioning.
@@ -80,7 +80,7 @@ export const FloatingActionButtons: React.FC<Props> = ({ currentView, settings, 
                         onNavigate={onNavigate} 
                         settings={settings} 
                         currentView={currentView}
-                        className={btnClass.replace('md:px-4 md:py-2', 'md:px-2 md:py-2')} // Credit button is slightly different
+                        className={btnClass.replace('lg:px-4 lg:py-2', 'lg:px-2 lg:py-2')} // Credit button is slightly different
                     />
                 </div>
             )}
@@ -123,7 +123,7 @@ export const FloatingActionButtons: React.FC<Props> = ({ currentView, settings, 
                 <div className="pointer-events-auto">
                     <FloatingRadioPlayer 
                         visible={true}
-                        className={`${btnClass.replace('bg-bg-card/90', 'bg-black/80').replace('border-border-color', 'border-[#E5C100]/30')} md:p-2 gap-2`}
+                        className={`${btnClass.replace('bg-bg-card/90', 'bg-black/80').replace('border-border-color', 'border-[#E5C100]/30')} lg:p-2 gap-2`}
                     />
                 </div>
             )}

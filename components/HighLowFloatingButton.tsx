@@ -18,12 +18,12 @@ export const HighLowFloatingButton: React.FC<Props> = ({ onClick, settings, clas
     return (
         <button
             onClick={onClick}
-            className={className || `fixed bottom-72 right-4 z-50 bg-gradient-to-r from-accent-primary to-accent-secondary text-white rounded-full shadow-lg shadow-accent-primary/40 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group w-12 h-12 md:w-auto md:h-auto md:p-3`}
+            className={className || `fixed bottom-72 right-4 z-50 bg-gradient-to-r from-accent-primary to-accent-secondary text-white rounded-full shadow-lg shadow-accent-primary/40 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 group w-12 h-12 lg:w-auto lg:h-auto lg:p-3`}
         >
             <div className="bg-white/20 p-1.5 rounded-full flex items-center justify-center">
                 <Icon name="casino" className="text-xl" />
             </div>
-            <span className="hidden md:inline font-bold text-sm pr-1">
+            <span className="hidden lg:inline font-bold text-sm pr-1">
                 {t('game.highlow.floating_button')}
             </span>
         </button>
