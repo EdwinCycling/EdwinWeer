@@ -40,7 +40,6 @@ import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, 
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 import { useThemeColors } from '../hooks/useThemeColors';
 
@@ -1306,8 +1305,6 @@ export const EnsembleWeatherView: React.FC<Props> = ({ onNavigate, settings }) =
             apparentTemp={currentWeather.current.apparent_temperature}
         />
       )}
-        {/* Floating Credits Button */}
-        <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.ENSEMBLE} />
     </div>
   );
 };

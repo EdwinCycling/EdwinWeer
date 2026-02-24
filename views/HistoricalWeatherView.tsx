@@ -2000,7 +2000,6 @@ export const HistoricalWeatherView: React.FC<Props> = ({ onNavigate, settings, o
               </div>
           </div>
       )}
-      <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.HISTORICAL} />
     </div>
   );
 };

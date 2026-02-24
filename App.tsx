@@ -44,7 +44,7 @@ const ImmersiveForecastView = React.lazy(() => import('./views/ImmersiveForecast
 const GlobeView = React.lazy(() => import('./views/GlobeView').then(module => ({ default: module.GlobeView })));
 import { BigBenView } from './views/BigBenView';
 import { RadioProvider } from './contexts/RadioContext';
-import { FloatingRadioPlayer } from './components/FloatingRadioPlayer';
+import { FloatingActionButtons } from './components/FloatingActionButtons';
 import { WinnerConfetti } from './components/WinnerConfetti';
 import { LandingPageV2 } from './views/LandingPageV2';
 const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').then(module => ({ default: module.BaroRitAdviesView })));
@@ -68,7 +68,6 @@ import { GlobalBanner } from './components/GlobalBanner';
 import { useGeoBlock } from './hooks/useGeoBlock';
 import { AccessDenied } from './components/AccessDenied';
 import packageJson from './package.json';
-import { WhatsNewButton } from './src/components/WhatsNew/WhatsNewButton';
 import { WhatsNewModal } from './src/components/WhatsNew/WhatsNewModal';
 import { useWhatsNew } from './src/hooks/useWhatsNew';
 
@@ -548,57 +547,22 @@ const App: React.FC = () => {
             </ErrorBoundary>
         </div>
 
-        {/* Game FAB */}
-        {[
-            ViewState.CURRENT, 
-            ViewState.FORECAST, 
-            ViewState.MAP, 
-            ViewState.ENSEMBLE, 
-            ViewState.RECORDS, 
-            ViewState.HISTORICAL, 
-            ViewState.HOURLY_DETAIL, 
-            ViewState.THIS_DAY, 
-            ViewState.YOUR_DAY,
-            ViewState.IMMERSIVE_FORECAST,
-            ViewState.BARO_WEERMAN,
-            ViewState.BARO_STORYTELLER,
-            ViewState.ACTIVITY_PLANNER,
-            ViewState.CYCLING,
-            ViewState.BARO_RIT_ADVIES,
-            ViewState.WEATHER_FINDER,
-            ViewState.LANDING_V2
-        ].includes(currentView) && (settings.enableBeatBaro !== false) && (
-            <button
-                onClick={() => navigate(ViewState.GAME_DASHBOARD)}
-                className={`fixed bottom-[154px] md:bottom-40 right-4 z-[100] h-12 md:h-14 w-12 md:w-auto md:px-6 rounded-full shadow-lg flex items-center justify-center gap-3 hover:scale-110 transition-transform border border-white/20 group overflow-hidden ${
-                    openRoundId && !hasBetOnOpenRound 
-                        ? 'bg-purple-600 text-white' 
-                        : (openRoundId && hasBetOnOpenRound 
-                            ? 'bg-white text-purple-600' 
-                            : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white')
-                }`}
-                aria-label="Play Beat Baro"
-            >
-                <span className="text-2xl transition-transform group-hover:rotate-12">🥊</span>
-                <span className="hidden md:inline font-bold whitespace-nowrap tracking-wide">Beat Baro</span>
-            </button>
-        )}
+        <FloatingActionButtons 
+            currentView={currentView} 
+            settings={settings} 
+            onNavigate={navigate} 
+            whatsNewVisible={hasUnreadUpdates && !showWhatsNewModal && (currentView === ViewState.CURRENT || currentView === ViewState.FORECAST)}
+            onWhatsNewClick={() => { setShowWhatsNewModal(true); markAsSeen(); }}
+        />
 
         <WinnerConfetti settings={settings} />
 
-        <WhatsNewButton 
-            visible={hasUnreadUpdates && !showWhatsNewModal && (currentView === ViewState.CURRENT || currentView === ViewState.FORECAST)} 
-            onClick={() => { setShowWhatsNewModal(true); markAsSeen(); }} 
-        />
-        
         <WhatsNewModal 
             isOpen={showWhatsNewModal} 
             onClose={() => setShowWhatsNewModal(false)}
             updates={newUpdates}
             onNavigate={handleWhatsNewNavigate}
         />
-
-        <FloatingRadioPlayer visible={currentView !== ViewState.BIG_BEN} />
 
         {showLoginToast && user && (
             <LoginToast userEmail={user.email} onClose={() => setShowLoginToast(false)} />

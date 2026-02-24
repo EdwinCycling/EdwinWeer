@@ -12,9 +12,6 @@ import { getTranslation, getLocale } from '../services/translations';
 import { reverseGeocode } from '../services/geoService';
 import { calculateActivityScore } from '../services/activityService';
 import { BaroWeatherReport } from '../components/BaroWeatherReport';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
-import { BeatBaroFloatingButton } from '../components/BeatBaroFloatingButton';
-import { HighLowFloatingButton } from '../components/HighLowFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { useLocationSwipe } from '../hooks/useLocationSwipe';
 import { useThemeColors } from '../hooks/useThemeColors';
@@ -566,10 +563,6 @@ export const ForecastWeatherView: React.FC<Props> = ({ onNavigate, settings, onU
             />
         </div>
       )}
-
-      <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.FORECAST} />
-      <BeatBaroFloatingButton onNavigate={onNavigate} settings={settings} />
-      <HighLowFloatingButton onClick={() => onNavigate(ViewState.HIGHLOW_GAME)} settings={settings} />
 
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
       

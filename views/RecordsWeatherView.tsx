@@ -10,7 +10,6 @@ import { SeasonalDistributionChart } from '../components/SeasonalDistributionCha
 import { TemperatureFrequencyChart } from '../components/TemperatureFrequencyChart';
 import { RainProbabilityChart } from '../components/RainProbabilityChart';
 import { StaticWeatherBackground } from '../components/StaticWeatherBackground';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
@@ -2445,8 +2444,6 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
             />
         </div>
       )}
-
-      <CreditFloatingButton onNavigate={onNavigate as any} settings={settings} currentView={ViewState.RECORDS} />
 
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
 

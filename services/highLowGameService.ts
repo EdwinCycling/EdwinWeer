@@ -205,20 +205,29 @@ export const submitHighLowScore = async (userId: string, username: string, score
         });
 
         if (!response.ok) {
-            const contentType = response.headers.get("content-type");
-            let errorMsg = 'Failed to submit score';
-            
+            const contentType = response.headers.get("content-type") || "";
+            let rawText = "";
+            let errorObj: any = null;
             try {
-                if (contentType && contentType.includes("application/json")) {
-                    const errorJson = await response.json();
-                    errorMsg = errorJson.message || errorJson.error || errorMsg;
+                if (contentType.includes("application/json")) {
+                    const json = await response.json();
+                    errorObj = {
+                        error: json.error || 'HTTP_ERROR',
+                        message: json.message || 'Failed to submit score',
+                        status: response.status
+                    };
                 } else {
-                    errorMsg = await response.text();
+                    rawText = await response.text();
                 }
-            } catch (e) {
-                // Parsing failed, use default
+            } catch {}
+            if (!errorObj) {
+                errorObj = {
+                    error: 'HTTP_ERROR',
+                    message: rawText || 'Failed to submit score',
+                    status: response.status
+                };
             }
-            throw new Error(errorMsg);
+            throw new Error(JSON.stringify(errorObj));
         }
 
         return await response.json();

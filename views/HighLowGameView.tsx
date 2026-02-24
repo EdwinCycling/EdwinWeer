@@ -10,7 +10,6 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { getUsage, deductBaroCredit, hasSufficientBaroCredits } from '../services/usageService';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 // Fix Leaflet marker icons
@@ -1506,7 +1505,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     <div className="space-y-4">
                         {/* Filters */}
                         <div className="bg-bg-card p-4 rounded-xl border border-border-color space-y-4">
-                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar flex-wrap md:flex-nowrap justify-center md:justify-start">
                                 {['day', 'yesterday', 'day_before', 'month', 'quarter', 'year', 'all_time'].map((type) => (
                                     <button
                                         key={type}
@@ -1517,7 +1516,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                                 : 'bg-bg-page text-text-muted hover:bg-bg-subtle hover:text-text-main'
                                         }`}
                                     >
-                                        {type === 'day' ? t('game.day') : 
+                                        {type === 'day' ? t('game.today') : 
                                          type === 'yesterday' ? t('time.yesterday') :
                                          type === 'day_before' ? t('time.ereyesterday') :
                                          t(`game.filter.${type}`)}
@@ -1571,7 +1570,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                                 {leaderboardType === 'month' && `${t('game.filter.year')} ${leaderboardYear} - ${new Date(2000, leaderboardMonth - 1).toLocaleString(settings.language, { month: 'long' })}`}
                                 {leaderboardType === 'day' && (
                                     <span>
-                                        {t('game.day')} <span className="opacity-60 text-sm">({new Date().toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' })})</span>
+                                        {t('game.today')} <span className="opacity-60 text-sm">({new Date().toLocaleDateString(settings.language === 'nl' ? 'nl-NL' : 'en-US', { day: 'numeric', month: 'short' })})</span>
                                         <span className="block text-xs font-normal text-text-muted mt-1 opacity-60">
                                             (UTC Timezone)
                                         </span>
@@ -1721,8 +1720,6 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                     </div>
                 )}
             </div>
-            
-            <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.HIGHLOW_GAME} />
             
             {/* Insufficient Credits Warning */}
             {showCreditWarning && (

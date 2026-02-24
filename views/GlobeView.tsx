@@ -13,7 +13,6 @@ import {
     calculateMoonPhase
 } from '../services/weatherService';
 import { reverseGeocodeFull } from '../services/geoService';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { useScrollLock } from '../hooks/useScrollLock';
 
 // Fix for Leaflet marker icons in React
@@ -530,11 +529,6 @@ export const GlobeView: React.FC<Props> = ({ settings, onNavigate, onSelectLocat
                 </div>
             </div>
             
-            {/* Floating Credits Button */}
-            <div className="absolute bottom-6 right-6 z-[100]">
-                 <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.GLOBE} />
-            </div>
-
             {/* Weather Detail Panel - Full Width as requested */}
             {selectedPoint && (
                 <div className="bg-bg-card/95 backdrop-blur-2xl border-t border-border-color p-6 pb-32 overflow-y-auto z-[150] animate-in slide-in-from-bottom-full duration-500 fixed bottom-0 left-0 right-0 h-[50dvh] sm:h-[40vh] md:h-[35vh]">

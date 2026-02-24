@@ -15,7 +15,6 @@ import { hasBaroCredits, trackBaroCall, getUsage } from '../services/usageServic
 import { Location, ViewState, WindUnit, PrecipUnit } from '../types';
 import { convertWind, throttledFetch } from '../services/weatherService';
 import { RouteDetailModal } from '../components/RouteDetailModal';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { Modal } from '../components/Modal';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 
@@ -2060,9 +2059,6 @@ export const BaroRitAdviesView: React.FC<Props> = ({ onNavigate }) => {
                     </div>
                 </div>
             </div>
-
-            {/* Floating Credit Counter */}
-            {onNavigate && <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.BARO_RIT_ADVIES} />}
 
             {showFilenameModal && (
                 <Modal

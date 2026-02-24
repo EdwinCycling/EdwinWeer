@@ -221,7 +221,6 @@ export const en: Dictionary = {
     'cancel': 'Cancel',
     'update': 'Update',
     'share': 'Share',
-    'share.fields.feels_like': 'Feels like',
     'copy': 'Copy',
     'pdf': 'Pdf download',
     'copied_to_clipboard': 'Copied to clipboard',
@@ -1718,7 +1717,6 @@ export const en: Dictionary = {
     // Comfort Labels
 
     // Forecast Buttons
-    'forecast.activities': 'Activities',
     'forecast.mode_off': 'Off',
     'forecast.mode_7plus': '7+',
     'forecast.mode_all': 'All',

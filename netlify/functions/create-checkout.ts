@@ -59,7 +59,7 @@ export const handler = async (event) => {
       },
       // Optional: Customer creation if you want to track customers in Stripe
       // customer_email: userEmail, 
-    });
+    } as any);
 
     return {
       statusCode: 200,

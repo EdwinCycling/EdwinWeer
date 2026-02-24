@@ -14,7 +14,6 @@ import { MoonPhaseVisual } from '../components/MoonPhaseVisual';
 import { SolarPowerWidget } from '../components/SolarPowerWidget';
 import { Tooltip as RechartsTooltip, AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { Tooltip } from '../components/Tooltip';
-import { HighLowFloatingButton } from '../components/HighLowFloatingButton';
 import { FavoritesList } from '../components/FavoritesList';
 import { getTranslation } from '../services/translations';
 import { HumidexCard } from '../components/HumidexCard';
@@ -22,8 +21,6 @@ import { WelcomeModal } from '../components/WelcomeModal';
 import { Modal } from '../components/Modal';
 import { FeelsLikeInfoModal } from '../components/FeelsLikeInfoModal';
 import { ComfortScoreModal } from '../components/ComfortScoreModal';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
-import { BeatBaroFloatingButton } from '../components/BeatBaroFloatingButton';
 import { WeatherRatingButton } from '../components/WeatherRatingButton';
 import { StarMapModal } from '../components/StarMapModal';
 import { AuroraCard } from '../components/AuroraCard';
@@ -73,8 +70,10 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [limitError, setLimitError] = useState('');
   const [auroraResult, setAuroraResult] = useState<AuroraResult | null>(null);
+  const [bigBenIconTime, setBigBenIconTime] = useState<Date>(() => new Date());
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bigBenIconIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
   
   // Defer rendering of heavy components below the fold
@@ -131,6 +130,24 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
     // When we display this date, we must treat it as UTC to see the city's local time.
     return new Date(now.getTime() + (weatherData.utc_offset_seconds * 1000));
   };
+
+  useEffect(() => {
+    const updateIconTime = () => setBigBenIconTime(getLocationTime());
+    updateIconTime();
+    const now = getLocationTime();
+    const msToNextMinute = ((60 - now.getSeconds()) % 60) * 1000 - now.getMilliseconds();
+    const delay = msToNextMinute <= 0 ? 60000 : msToNextMinute;
+    const timeout = window.setTimeout(() => {
+      updateIconTime();
+      if (bigBenIconIntervalRef.current) clearInterval(bigBenIconIntervalRef.current);
+      bigBenIconIntervalRef.current = setInterval(updateIconTime, 60000);
+    }, delay);
+    return () => {
+      clearTimeout(timeout);
+      if (bigBenIconIntervalRef.current) clearInterval(bigBenIconIntervalRef.current);
+      bigBenIconIntervalRef.current = null;
+    };
+  }, [weatherData]);
 
   useEffect(() => {
     if (!weatherData) return;
@@ -259,6 +276,11 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           setRainAlert(null);
       }
   };
+
+  const iconHours = bigBenIconTime.getUTCHours();
+  const iconMinutes = bigBenIconTime.getUTCMinutes();
+  const iconHourRotation = ((iconHours % 12) + iconMinutes / 60) * 30;
+  const iconMinuteRotation = iconMinutes * 6;
 
     const loadWeather = async () => {
     console.debug('CurrentWeatherView: loadWeather started', { location });
@@ -1041,9 +1063,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
         </div>
       )}
 
-      <CreditFloatingButton onNavigate={onNavigate} settings={settings} currentView={ViewState.CURRENT} />
-      <BeatBaroFloatingButton onNavigate={onNavigate} settings={settings} />
-
       <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent dark:from-black/60 dark:via-black/5 dark:to-bg-page/90 z-0 pointer-events-none" />
       
       <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none flex justify-center">
@@ -1051,17 +1070,38 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
           
           {/* Language Selector removed as requested */}
 
-          {/* Left Aligned Big Ben Button */}
-          <div className="absolute top-14 left-4 sm:left-6 flex items-center gap-1 sm:gap-3 z-50">
-               <Tooltip content="Big Ben" position="bottom">
-                  <button
-                      onClick={() => onNavigate(ViewState.BIG_BEN)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
-                      aria-label="Big Ben"
-                  >
-                      <Icon name="schedule" className="text-xl sm:text-2xl" />
-                  </button>
-              </Tooltip>
+          {/* Top Left Big Ben Button */}
+          <div className="absolute top-14 left-4 sm:left-6 z-50">
+            <Tooltip content="Big Ben" position="bottom">
+                <button
+                    onClick={() => onNavigate(ViewState.BIG_BEN)}
+                    className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center overflow-hidden"
+                    aria-label="Big Ben"
+                >
+                    <svg viewBox="0 0 100 100" className="w-full h-full p-1" aria-hidden="true">
+                        <line
+                            x1="50"
+                            y1="50"
+                            x2="50"
+                            y2="15"
+                            stroke="#111111"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            transform={`rotate(${iconHourRotation} 50 50)`}
+                        />
+                        <line
+                            x1="50"
+                            y1="50"
+                            x2="50"
+                            y2="0"
+                            stroke="#111111"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            transform={`rotate(${iconMinuteRotation} 50 50)`}
+                        />
+                    </svg>
+                </button>
+            </Tooltip>
           </div>
 
           <div className="absolute top-14 right-4 sm:right-6 flex items-center gap-1 sm:gap-3 flex-row-reverse z-50">
@@ -1069,7 +1109,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('refresh')} position="bottom">
                   <button 
                       onClick={loadWeather} 
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label={t('refresh')}
                   >
                       <Icon name="refresh" className={`text-xl sm:text-2xl ${loadingWeather ? 'animate-spin' : ''}`} />
@@ -1079,7 +1119,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('search')} position="bottom">
                   <button
                       onClick={() => setIsSearchOpen(v => !v)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label={t('search')}
                   >
                       <Icon name="search" className="text-xl sm:text-2xl" />
@@ -1089,7 +1129,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={isFavorite(location) ? t('remove_favorite') : t('add_favorite')} position="bottom">
                   <button
                       onClick={toggleFavorite}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label="Toggle Favorite"
                   >
                       <Icon name={isFavorite(location) ? "favorite" : "favorite_border"} className={`text-xl sm:text-2xl ${isFavorite(location) ? 'text-red-500' : ''}`} />
@@ -1099,7 +1139,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('nav.country_map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.COUNTRY_MAP)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label="Country Map"
                   >
                       <Icon name="public" className="text-xl sm:text-2xl" />
@@ -1109,7 +1149,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('nav.barometer')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.BAROMETER)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label={t('nav.barometer')}
                   >
                       <Icon name="speed" className="text-xl sm:text-2xl" />
@@ -1119,7 +1159,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('nav.map')} position="bottom">
                   <button
                       onClick={() => onNavigate(ViewState.MAP)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label={t('nav.map')}
                   >
                       <Icon name="map" className="text-xl sm:text-2xl" />
@@ -1129,7 +1169,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
               <Tooltip content={t('favorites_list') || 'Favorietenlijst'} position="bottom">
                   <button
                       onClick={() => setShowFavorites(true)}
-                      className="p-2 sm:p-3 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color"
+                      className="w-10 h-10 sm:w-12 sm:h-12 bg-bg-card/80 backdrop-blur-md rounded-full text-text-muted hover:text-text-main hover:bg-bg-card transition-all active:scale-95 shadow-sm ring-1 ring-border-color flex items-center justify-center"
                       aria-label="Favorites List"
                   >
                       <Icon name="list" className="text-xl sm:text-2xl" />
@@ -2080,10 +2120,6 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             language={settings.language}
           />
       )}
-      <HighLowFloatingButton 
-          onClick={() => onNavigate(ViewState.HIGHLOW_GAME)} 
-          settings={settings} 
-      />
     </div>
   );
 };

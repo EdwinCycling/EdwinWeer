@@ -6,7 +6,6 @@ import { getTranslation } from '../services/translations';
 import { loadCurrentLocation } from '../services/storageService';
 import { MAJOR_CITIES } from '../services/cityData';
 import { AnalogueClock } from '../components/AnalogueClock';
-import { CreditFloatingButton } from '../components/CreditFloatingButton';
 import { WeatherStationClock } from '../components/WeatherStationClock';
 import { DigitalRoundClock } from '../components/DigitalRoundClock';
 
@@ -771,14 +770,6 @@ export const AmbientView: React.FC<AmbientViewProps> = ({ onNavigate, settings, 
                      </marquee>
                 </div>
             )}
-
-            {/* Floating Credit Button */}
-            <CreditFloatingButton 
-                onNavigate={onNavigate} 
-                settings={settings} 
-                currentView={ViewState.AMBIENT}
-                className={`fixed right-4 z-50 transition-all duration-300 ${showBottomBar ? 'bottom-20 md:bottom-32' : 'bottom-20'}`}
-            />
 
             {/* Controls - Toggleable */}
             <div 

@@ -1,35 +1,6 @@
 import { Handler } from '@netlify/functions';
-import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
-
-// Initialize Firebase Admin if not already
-const initFirebase = () => {
-    if (admin.apps.length) {
-        return admin.firestore();
-    }
-
-    const serviceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-    };
-
-    if (serviceAccount.projectId) {
-        try {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
-        } catch (e) {
-            console.error('Firebase Admin Init Error:', e);
-            throw e;
-        }
-    } else {
-        console.error("Firebase Env Vars missing");
-        throw new Error("Firebase configuration missing");
-    }
-    
-    return admin.firestore();
-};
+import { initFirebase, getDb, admin } from './config/firebaseAdmin.js';
 
 interface GameLogEntry {
     question: any;
@@ -45,13 +16,13 @@ export const handler: Handler = async (event, context) => {
         return { statusCode: 405, body: JSON.stringify({ error: 'METHOD_NOT_ALLOWED', message: 'Method Not Allowed' }) };
     }
 
-    let db;
-    try {
-        db = initFirebase();
-    } catch (e: any) {
-        return { 
-            statusCode: 500, 
-            body: JSON.stringify({ error: 'CONFIG_ERROR', message: 'Server configuration error: ' + e.message }) 
+    // Initialize Firebase using shared config (supports both individual keys and FIREBASE_SERVICE_ACCOUNT)
+    initFirebase();
+    const db = getDb();
+    if (!db) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'CONFIG_ERROR', message: 'Server configuration error: Firebase not initialized' })
         };
     }
 
@@ -69,11 +40,16 @@ export const handler: Handler = async (event, context) => {
         return { statusCode: 400, body: 'Missing required fields' };
     }
 
-    // 0. Verify Hash (Integrity Check)
+        // 0. Verify Hash (Integrity Check)
     // Note: The salt must match the client-side salt.
-    // In a real production app, client code is visible, so this is obfuscation/integrity, not strong auth.
-    // Strong auth is done via replaying the log (step 2) and Firebase Auth tokens (not implemented here yet).
     const salt = "baro-secure-salt-v1";
+    
+    // Fix: Handle undefined verificationHash gracefully
+    if (!verificationHash) {
+        console.warn(`Missing verificationHash for user ${userId}.`);
+        return { statusCode: 400, body: JSON.stringify({ error: 'INTEGRITY_CHECK_FAILED', message: 'Missing verification hash.' }) };
+    }
+
     const data = `${userId}-${score}-${JSON.stringify(gameLog)}-${salt}`;
     const expectedHash = crypto.createHash('sha256').update(data).digest('hex');
 
@@ -137,19 +113,21 @@ export const handler: Handler = async (event, context) => {
 
         // Tolerance check: The submitted score should match the sum of log points
         // We allow a tiny difference if floating point math, but these are integers.
-        if (calculatedScore !== score) {
-            console.warn(`Score mismatch for user ${userId}. Submitted: ${score}, Calculated: ${calculatedScore}`);
-            // We can choose to use the calculated score instead to prevent manipulation
-            // body.score = calculatedScore; 
-            // OR reject
-            return { 
-                statusCode: 400, 
-                body: JSON.stringify({ error: 'INVALID_SCORE', message: 'Score validation failed.' }) 
-            };
-        }
-
+        // if (calculatedScore !== score) {
+        //     console.warn(`Score mismatch for user ${userId}. Submitted: ${score}, Calculated: ${calculatedScore}`);
+        //     // We can choose to use the calculated score instead to prevent manipulation
+        //     // body.score = calculatedScore; 
+        //     // OR reject
+        //     return { 
+        //         statusCode: 400, 
+        //         body: JSON.stringify({ error: 'INVALID_SCORE', message: 'Score validation failed.' }) 
+        //     };
+        // }
+        // For now, let's use the calculated score as the source of truth to prevent any manipulation
+        const finalScore = calculatedScore;
+        
         // Max possible score check (15 questions * 60 points = 900)
-        if (score > 900) {
+        if (finalScore > 900) {
              return { 
                 statusCode: 400, 
                 body: JSON.stringify({ error: 'INVALID_SCORE', message: 'Score exceeds maximum possible.' }) 
@@ -170,11 +148,11 @@ export const handler: Handler = async (event, context) => {
                 last_played_highlow: today
             };
             
-            if (score > currentHigh) {
-                updateData.highlow_highscore = score;
+            if (finalScore > currentHigh) {
+                updateData.highlow_highscore = finalScore;
                 updateData.highlow_highscore_date = today;
             } else if (!tUserSnap.data()?.highlow_highscore) {
-                 updateData.highlow_highscore = score;
+                 updateData.highlow_highscore = finalScore;
                  updateData.highlow_highscore_date = today;
             }
             // Also ensure username is synced if provided
@@ -221,7 +199,7 @@ export const handler: Handler = async (event, context) => {
                     transaction.set(entryRef, {
                         userId,
                         name: username,
-                        score: score,
+                        score: finalScore,
                         timestamp: admin.firestore.FieldValue.serverTimestamp()
                     });
                 } else {
@@ -229,7 +207,7 @@ export const handler: Handler = async (event, context) => {
                     transaction.set(entryRef, {
                         userId,
                         name: username,
-                        score: admin.firestore.FieldValue.increment(score),
+                        score: admin.firestore.FieldValue.increment(finalScore),
                         timestamp: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
                 }
@@ -238,13 +216,13 @@ export const handler: Handler = async (event, context) => {
             // Save Game History & Last Game (Securely)
             const historyRef = db.collection('users').doc(userId).collection('highlow_results').doc();
             transaction.set(historyRef, {
-                score: score,
+                score: finalScore,
                 timestamp: admin.firestore.FieldValue.serverTimestamp()
             });
 
             const lastGameRef = db.collection('users').doc(userId).collection('highlow').doc('last_game');
             transaction.set(lastGameRef, {
-                score: score,
+                score: finalScore,
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),
                 questions: gameLog
             });
@@ -252,7 +230,7 @@ export const handler: Handler = async (event, context) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ success: true, score })
+            body: JSON.stringify({ success: true, score: finalScore })
         };
 
     } catch (error: any) {
