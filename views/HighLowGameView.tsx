@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ViewState, AppSettings, HighLowQuestion, Location, TempUnit } from '../types';
+import { ViewState, AppSettings, HighLowQuestion, TempUnit } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { generateQuiz, submitHighLowScore } from '../services/highLowGameService';
-import { doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp, startAfter, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, orderBy, limit, onSnapshot, startAfter, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { getUsage, deductBaroCredit, hasSufficientBaroCredits } from '../services/usageService';
+import { deductBaroCredit, hasSufficientBaroCredits } from '../services/usageService';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 // Fix Leaflet marker icons
@@ -29,15 +29,6 @@ interface Props {
     settings: AppSettings;
     onUpdateSettings?: (settings: AppSettings) => void;
 }
-
-// Map Updater Component
-const MapUpdater: React.FC<{ center: [number, number], zoom: number }> = ({ center, zoom }) => {
-    const map = useMap();
-    useEffect(() => {
-        map.setView(center, zoom);
-    }, [center, zoom, map]);
-    return null;
-};
 
 interface GameLogEntry {
     question: HighLowQuestion;
@@ -187,7 +178,7 @@ const getCountryName = (code: string, lang: 'nl' | 'en' = 'nl') => {
     return code;
 };
 
-export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdateSettings }) => {
+export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings }) => {
     const { user } = useAuth();
     const t = (key: string, params?: any) => getTranslation(key, settings.language, params);
     
@@ -199,7 +190,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const [score, setScore] = useState(0);
     const [globalTimer, setGlobalTimer] = useState(90);
     const [questionTimer, setQuestionTimer] = useState(5);
-    const [lastPlayed, setLastPlayed] = useState<string | null>(null);
+    const [, setLastPlayed] = useState<string | null>(null);
     const [highScore, setHighScore] = useState(0);
     const [highScoreDate, setHighScoreDate] = useState<string | null>(null);
     const [highScoreQuestions, setHighScoreQuestions] = useState(0);
@@ -210,7 +201,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
     const [showCreditWarning, setShowCreditWarning] = useState(false);
     
     // Game Log State
-    const [gameLog, setGameLog] = useState<GameLogEntry[]>([]);
+    const [, setGameLog] = useState<GameLogEntry[]>([]);
     const gameLogRef = useRef<GameLogEntry[]>([]);
 
     // Scores Tab State
@@ -245,11 +236,11 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
 
     // Helper for Question Time
     const getQuestionTime = (index: number) => {
-        if (index < 5) return 15;   // 1-5 (Very easy)
-        if (index < 8) return 12;   // 6-8 (Easy)
-        if (index < 11) return 10;  // 9-11 (Medium)
-        if (index < 13) return 7;   // 12-13 (Hard)
-        return 5;                   // 14-15 (Expert)
+        if (index < 3) return 15;   // Q1-3 (Very easy)
+        if (index < 6) return 12;   // Q4-6 (Easy)
+        if (index < 9) return 10;   // Q7-9 (Medium)
+        if (index < 12) return 7;   // Q10-12 (Hard)
+        return 5;                   // Q13-15 (Expert)
     };
 
     // Load User Data
@@ -446,7 +437,9 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                 try {
                     const errObj = JSON.parse(scoreErr.message);
                     if (errObj.error === 'CONFIG_ERROR') isConfigError = true;
-                } catch {}
+                } catch {
+                    // Ignore parsing error
+                }
                 
                 if (isConfigError) {
                     console.warn("Leaderboard update skipped due to missing server config");
@@ -748,7 +741,9 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                 try {
                     const errObj = JSON.parse(e.message);
                     if (errObj.error === 'CONFIG_ERROR') isConfigError = true;
-                } catch {}
+                } catch {
+                    // Ignore parsing error
+                }
 
                 if (isConfigError && user) {
                     console.warn("Falling back to client-side save due to server config error");
@@ -1683,7 +1678,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings, onUpdat
                         <div className="bg-bg-card p-6 rounded-2xl border border-border-color shadow-sm">
                             <h2 className="text-2xl font-bold mb-4 text-text-main">{t('game.explanation_title')}</h2>
                             <p className="text-text-main mb-6 leading-relaxed">
-                                Speel elke dag gratis mee met Baro's Hoog/Laag expert! We stellen je 15 vragen over het weer van gisteren op verschillende plekken in de wereld. Weet jij of het warmer of kouder was?
+                                Speel elke dag gratis mee met Baro&apos;s Hoog/Laag expert! We stellen je 15 vragen over het weer van gisteren op verschillende plekken in de wereld. Weet jij of het warmer of kouder was?
                             </p>
                             
                             <div className="grid gap-6 md:grid-cols-2">

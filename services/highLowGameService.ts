@@ -1,7 +1,5 @@
-import { Location, HighLowQuestion } from '../types';
+import { HighLowQuestion } from '../types';
 import { MAJOR_CITIES } from './cityData';
-import { db } from './firebase';
-import { doc, setDoc, updateDoc, increment, runTransaction, serverTimestamp } from 'firebase/firestore';
 
 // Helper to get random item
 const getRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -55,7 +53,6 @@ export const generateQuiz = async (): Promise<HighLowQuestion[]> => {
         // 4. Generate 15 Questions
         // Use a loop counter with safety break
         let attempts = 0;
-        let soloCount = 0;
 
         while (questions.length < 15 && attempts < 100) {
             attempts++;
@@ -111,7 +108,6 @@ export const generateQuiz = async (): Promise<HighLowQuestion[]> => {
                 }
             } else {
                 // Solo
-                soloCount++;
                 const city = getRandom(selectedCities);
                 const data = cityDataMap.get(city.name);
                 
@@ -125,11 +121,11 @@ export const generateQuiz = async (): Promise<HighLowQuestion[]> => {
                     
                     let minDiff, maxDiff;
                     if (qIndex < 2) { minDiff = 8; maxDiff = 12; }      // Q1-2: Very Easy
-                    else if (qIndex < 5) { minDiff = 6; maxDiff = 10; } // Q3-5: Easy
-                    else if (qIndex < 8) { minDiff = 5; maxDiff = 8; }  // Q6-8: Medium
-                    else if (qIndex < 11) { minDiff = 3; maxDiff = 5; } // Q9-11: Harder
-                    else if (qIndex < 13) { minDiff = 2; maxDiff = 3; } // Q12-13: Hard
-                    else { minDiff = 1; maxDiff = 2; }                  // Q14-15: Expert
+                    else if (qIndex < 5) { minDiff = 4; maxDiff = 7; }  // Q3-5: Easy (Tighter, was 6-10)
+                    else if (qIndex < 8) { minDiff = 3; maxDiff = 5; }  // Q6-8: Medium (Was 5-8)
+                    else if (qIndex < 11) { minDiff = 2; maxDiff = 3; } // Q9-11: Harder (Was 3-5)
+                    else if (qIndex < 13) { minDiff = 1; maxDiff = 2; } // Q12-13: Hard (Was 2-3)
+                    else { minDiff = 0.5; maxDiff = 1.5; }              // Q14-15: Expert (Was 1-2)
 
                     const diff = getRandomInRange(minDiff, maxDiff);
                     const sign = Math.random() > 0.5 ? 1 : -1;
@@ -141,8 +137,6 @@ export const generateQuiz = async (): Promise<HighLowQuestion[]> => {
                     const isHigher = roundedVal > roundedTarget;
                     // If equal (unlikely with diff >= 1), skip
                     if (roundedVal === roundedTarget) {
-                        // Revert soloCount increment if we skip
-                        soloCount--;
                         continue;
                     }
 
@@ -163,8 +157,6 @@ export const generateQuiz = async (): Promise<HighLowQuestion[]> => {
                         },
                         actualValueA: roundedVal
                     });
-                } else {
-                     soloCount--;
                 }
             }
         }
@@ -219,7 +211,9 @@ export const submitHighLowScore = async (userId: string, username: string, score
                 } else {
                     rawText = await response.text();
                 }
-            } catch {}
+            } catch {
+                // Ignore parsing error
+            }
             if (!errorObj) {
                 errorObj = {
                     error: 'HTTP_ERROR',
