@@ -7,6 +7,7 @@ export interface SystemConfig {
   disable_app: boolean;
   include_landing_page?: boolean;
     enableHighLowGame: boolean;
+    enableGuessWho?: boolean;
     enableBeatBaro?: boolean;
 }
 
@@ -288,6 +289,7 @@ export interface AppSettings {
         clockType?: 'analogue' | 'weather_station' | 'digital_round';
     };
     enableHighLowGame: boolean;
+    enableGuessWho?: boolean;
     enableBeatBaro?: boolean;
 }
 
@@ -395,7 +397,8 @@ export enum ViewState {
     SONG_WRITER = 'SONG_WRITER',
     BIG_BEN = 'BIG_BEN',
     GAME_DASHBOARD = 'GAME_DASHBOARD',
-    HIGHLOW_GAME = 'HIGHLOW_GAME'
+    HIGHLOW_GAME = 'HIGHLOW_GAME',
+    GUESS_WHO = 'GUESS_WHO'
 }
 
 export interface GameRound {

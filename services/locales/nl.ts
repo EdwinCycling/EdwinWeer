@@ -2502,4 +2502,7 @@ export const nl: Dictionary = {
     'rain_season.intensity.seasonal': 'Seizoensgebonden',
     'rain_season.intensity.monsoon': 'Moesson',
     'rain_season.not_available_current_year': 'Niet beschikbaar voor het lopende jaar.',
+    'game.guesswho.settings_title': "Baro's Wie is Het?",
+    'game.guesswho.settings_desc': "Speel het klassieke raadspel met weerdata van gisteren",
+    'game.guesswho.floating_button': "Wie is Het?",
 };

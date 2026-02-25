@@ -579,6 +579,25 @@ export const SettingsView: React.FC<Props> = ({ settings, onUpdateSettings, onNa
                                     </button>
                                 </div>
 
+                                {/* Guess Who Game Toggle */}
+                                <div className="p-4 flex items-center justify-between border-t border-border-color">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                                            <Icon name="face" className="text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-text-main">{t('game.guesswho.settings_title')}</p>
+                                            <p className="text-xs text-text-muted">{t('game.guesswho.settings_desc')}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => updateSetting('enableGuessWho', settings.enableGuessWho === false ? true : false)}
+                                        className={`w-12 h-6 rounded-full transition-colors relative ${settings.enableGuessWho !== false ? 'bg-blue-500' : 'bg-border-color'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${settings.enableGuessWho !== false ? 'left-7' : 'left-1'}`} />
+                                    </button>
+                                </div>
+
                                 {/* Time Format Toggle */}
                                 <div className="p-4 flex items-center justify-between border-t border-border-color">
                                     <div className="flex items-center gap-3">

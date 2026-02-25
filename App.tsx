@@ -1,7 +1,5 @@
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
-import { db } from './services/firebase';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { CurrentWeatherView } from './views/CurrentWeatherView';
 import { FAQView } from './views/FAQView';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -51,13 +49,13 @@ const BaroRitAdviesView = React.lazy(() => import('./views/BaroRitAdviesView').t
 const GameDashboardView = React.lazy(() => import('./views/GameDashboardView').then(module => ({ default: module.GameDashboardView })));
 const HighLowGameView = React.lazy(() => import('./views/HighLowGameView').then(module => ({ default: module.HighLowGameView })));
 const AmbientView = React.lazy(() => import('./views/AmbientView').then(module => ({ default: module.AmbientView })));
+const GuessWhoView = React.lazy(() => import('./views/GuessWhoView').then(module => ({ default: module.GuessWhoView })));
 import { ViewState, AppSettings } from './types';
 import { loadSettings, saveSettings, saveCurrentLocation } from './services/storageService';
 import { getTranslation, loadLanguage } from './services/translations';
 import { Icon } from './components/Icon';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
-import { LimitReachedModal } from './components/LimitReachedModal';
 import { CreditMonitor } from './components/CreditMonitor';
 import ReloadPrompt from './components/ReloadPrompt';
 import { useScrollLock } from './hooks/useScrollLock';
@@ -74,7 +72,7 @@ import { useWhatsNew } from './src/hooks/useWhatsNew';
 const App: React.FC = () => {
   const { isBlocked, loading: geoLoading } = useGeoBlock();
   const { user, loading, sessionExpiry, finishEmailSignIn } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const appVersion = packageJson.version;
 
   // What's New Logic
@@ -84,8 +82,6 @@ const App: React.FC = () => {
   const [isFinishingEmailSignIn, setIsFinishingEmailSignIn] = useState(false);
 
   // Gamification Button Logic
-  const [openRoundId, setOpenRoundId] = useState<string | null>(null);
-  const [hasBetOnOpenRound, setHasBetOnOpenRound] = useState(false);
   const [languageLoaded, setLanguageLoaded] = useState(false);
 
   useEffect(() => {
@@ -96,26 +92,7 @@ const App: React.FC = () => {
       loadLanguage(initialLang).then(() => {
           setLanguageLoaded(true);
       });
-
-      const q = query(collection(db, 'game_rounds'), where('status', '==', 'open'));
-      return onSnapshot(q, (snapshot) => {
-          if (!snapshot.empty) {
-              setOpenRoundId(snapshot.docs[0].id);
-          } else {
-              setOpenRoundId(null);
-          }
-      });
   }, []);
-
-  useEffect(() => {
-      if (!user || !openRoundId) {
-          setHasBetOnOpenRound(false);
-          return;
-      }
-      return onSnapshot(doc(db, 'game_rounds', openRoundId, 'bets', user.uid), (snap) => {
-          setHasBetOnOpenRound(snap.exists());
-      });
-  }, [user, openRoundId]);
 
   // Handle Email Magic Link Finish
   useEffect(() => {
@@ -154,7 +131,7 @@ const App: React.FC = () => {
     };
 
     handleFinishEmailSignIn();
-  }, []);
+  }, [finishEmailSignIn]);
 
   const [currentView, setCurrentView] = useState<ViewState>(() => {
       // Check for persisted view from session (to handle first-load jumps)
@@ -197,7 +174,7 @@ const App: React.FC = () => {
     if (theme && theme !== settings.theme) {
         setSettings(prev => ({ ...prev, theme }));
     }
-  }, [theme]);
+  }, [theme, settings.theme]);
 
   // RELOAD SETTINGS WHEN USER CHANGES (Fix for account switching issue)
   useEffect(() => {
@@ -229,7 +206,7 @@ const App: React.FC = () => {
   const [isRefreshingLimit, setIsRefreshingLimit] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const verifyLimit = async (forceRefresh: boolean = false) => {
+  const verifyLimit = useCallback(async (forceRefresh: boolean = false) => {
       setIsRefreshingLimit(true);
       try {
           if (user) {
@@ -242,7 +219,7 @@ const App: React.FC = () => {
           if (forceRefresh) {
               setRefreshKey(prev => prev + 1);
           }
-      } catch (e) {
+      } catch {
           // Event listener will handle setting limitReached
           // But we can also set it manually here if needed
           const stats = getUsage();
@@ -254,7 +231,7 @@ const App: React.FC = () => {
       } finally {
           setIsRefreshingLimit(false);
       }
-  };
+  }, [user]);
 
   const navigate = (view: ViewState, params?: any) => {
       verifyLimit();
@@ -271,7 +248,7 @@ const App: React.FC = () => {
   // Initial Limit Check
   useEffect(() => {
       verifyLimit();
-  }, []);
+  }, [verifyLimit]);
 
   // PWA Logic
   useEffect(() => {
@@ -319,7 +296,7 @@ const App: React.FC = () => {
   };
 
   // Helper for translations in this component
-  const t = (key: string) => getTranslation(key, settings.language);
+  const t = useCallback((key: string) => getTranslation(key, settings.language), [settings.language]);
 
   const getUsageScopeLabel = (scope: 'minute' | 'hour' | 'day' | 'month') => {
       if (scope === 'minute') return t('usage.scope.minute');
@@ -375,7 +352,7 @@ const App: React.FC = () => {
       
       const viewName = t(viewKey) || currentView; // Fallback if translation missing
       document.title = `${t('app.title_prefix')} - ${viewName}`;
-  }, [currentView, settings.language]);
+  }, [currentView, t]);
 
   // Reload settings when user logs in to capture any changes made on Landing Page (e.g. language)
   useEffect(() => {
@@ -528,6 +505,8 @@ const App: React.FC = () => {
         return <GameDashboardView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
       case ViewState.HIGHLOW_GAME:
         return <HighLowGameView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
+      case ViewState.GUESS_WHO:
+        return <GuessWhoView onNavigate={navigate} settings={settings} />;
       default:
         return <CurrentWeatherView onNavigate={navigate} settings={settings} onUpdateSettings={setSettings} />;
     }

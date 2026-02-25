@@ -2546,4 +2546,7 @@ export const en: Dictionary = {
     'rain_season.intensity.seasonal': 'Seasonal',
     'rain_season.intensity.monsoon': 'Monsoon',
     'rain_season.not_available_current_year': 'Not available for the current year.',
+    'game.guesswho.settings_title': "Baro's Guess Who?",
+    'game.guesswho.settings_desc': "Play the classic guessing game with yesterday's weather data",
+    'game.guesswho.floating_button': "Guess Who?",
 };

@@ -3,6 +3,7 @@ import { ViewState, AppSettings } from '../types';
 import { CreditFloatingButton } from './CreditFloatingButton';
 import { BeatBaroFloatingButton } from './BeatBaroFloatingButton';
 import { HighLowFloatingButton } from './HighLowFloatingButton';
+import { GuessWhoFloatingButton } from './GuessWhoFloatingButton';
 import { FloatingRadioPlayer } from './FloatingRadioPlayer';
 import { useRadio } from '../contexts/RadioContext';
 import { WhatsNewButton } from '../src/components/WhatsNew/WhatsNewButton';
@@ -41,6 +42,7 @@ export const FloatingActionButtons: React.FC<Props> = ({ currentView, settings, 
 
     const showBeatBaro = mainViews.includes(currentView) && settings.enableBeatBaro !== false;
     const showHighLow = [ViewState.CURRENT, ViewState.FORECAST].includes(currentView) && settings.enableHighLowGame !== false;
+    const showGuessWho = [ViewState.CURRENT, ViewState.FORECAST].includes(currentView) && settings.enableGuessWho !== false;
     const showCredits = [
         ViewState.CURRENT, 
         ViewState.FORECAST, 
@@ -103,6 +105,17 @@ export const FloatingActionButtons: React.FC<Props> = ({ currentView, settings, 
                         onClick={() => onNavigate(ViewState.HIGHLOW_GAME)} 
                         settings={settings} 
                         className={btnClass.replace('bg-bg-card/90', 'bg-gradient-to-r from-accent-primary to-accent-secondary text-white')}
+                    />
+                </div>
+            )}
+
+            {/* 4. Guess Who */}
+            {showGuessWho && (
+                <div className="pointer-events-auto">
+                    <GuessWhoFloatingButton 
+                        onClick={() => onNavigate(ViewState.GUESS_WHO)} 
+                        settings={settings} 
+                        className={btnClass.replace('bg-bg-card/90', 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white')}
                     />
                 </div>
             )}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ViewState, AppSettings, HighLowQuestion, TempUnit } from '../types';
 import { Icon } from '../components/Icon';
 import { getTranslation } from '../services/translations';
 import { generateQuiz, submitHighLowScore } from '../services/highLowGameService';
-import { doc, getDoc, updateDoc, collection, query, orderBy, limit, onSnapshot, startAfter, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, orderBy, limit, onSnapshot, startAfter, getDocs, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../hooks/useAuth';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -497,131 +497,7 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings }) => {
         isFlaggedRef.current = false;
     };
 
-    // Game Loop - Global Timer
-    useEffect(() => {
-        if (gameState === 'playing') {
-            globalIntervalRef.current = setInterval(() => {
-                setGlobalTimer(prev => {
-                    if (prev <= 1) {
-                        endGame();
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        } else {
-            if (globalIntervalRef.current) clearInterval(globalIntervalRef.current);
-        }
-        return () => {
-            if (globalIntervalRef.current) clearInterval(globalIntervalRef.current);
-        };
-    }, [gameState]);
-
-    // Game Loop - Question Timer
-    useEffect(() => {
-        if (gameState === 'playing' && !feedback) {
-            setQuestionTimer(getQuestionTime(currentIndex));
-            questionIntervalRef.current = setInterval(() => {
-                setQuestionTimer(prev => {
-                    if (prev <= 0.1) {
-                        // Time's up for question -> Game Over
-                        endGame();
-                        return 0;
-                    }
-                    return parseFloat((prev - 0.1).toFixed(1));
-                });
-            }, 100);
-        } else {
-            if (questionIntervalRef.current) clearInterval(questionIntervalRef.current);
-        }
-        return () => {
-            if (questionIntervalRef.current) clearInterval(questionIntervalRef.current);
-        };
-    }, [gameState, currentIndex, feedback]);
-
-    const handleAnswer = (answer: 'higher' | 'lower' | 'true' | 'false') => {
-        if (gameState !== 'playing' || feedback) return;
-
-        const currentQ = questions[currentIndex];
-        const isCorrect = answer === currentQ.correctAnswer;
-        
-        let points = 0;
-        const maxTime = getQuestionTime(currentIndex);
-        const timeSpent = parseFloat((maxTime - questionTimer).toFixed(1));
-
-        // Anti-Cheat Check
-        if (isCorrect && timeSpent < 1.0) {
-            suspiciousStreakRef.current += 1;
-        } else {
-            suspiciousStreakRef.current = 0;
-        }
-
-        if (suspiciousStreakRef.current >= 5) {
-            isFlaggedRef.current = true;
-            console.log("Activity flagged");
-        }
-
-        if (isCorrect) {
-            // Calculate points: 
-            // Base score: 10
-            // Time bonus: (maxTime - timeSpent) / maxTime * 50
-            // Speed bonus (Exponential):
-            // If answered within 1s: +30
-            // If answered within 2s: +20
-            // If answered within 3s: +10
-            
-            const timeBonus = (questionTimer / maxTime) * 50;
-            let speedBonus = 0;
-            
-            if (timeSpent <= 1.0) speedBonus = 30;
-            else if (timeSpent <= 2.0) speedBonus = 25;
-            else if (timeSpent <= 3.0) speedBonus = 20;
-            else if (timeSpent <= 4.0) speedBonus = 15;
-            else if (timeSpent <= 5.0) speedBonus = 10;
-            else if (timeSpent <= 7.0) speedBonus = 5;
-            else if (timeSpent <= 10.0) speedBonus = 1;
-            
-            points = Math.round(10 + timeBonus + speedBonus);
-            
-            setScore(prev => prev + points);
-            setFeedback({ correct: true, points });
-        } else {
-            setFeedback({ correct: false, points: 0 });
-        }
-
-        // Log entry
-        const entry: GameLogEntry = {
-            question: currentQ,
-            answer,
-            correct: isCorrect,
-            points,
-            timeSpent: timeSpent
-        };
-        
-        setGameLog(prev => [...prev, entry]);
-        gameLogRef.current.push(entry);
-        
-        if (isCorrect) {
-            // Wait briefly then next question
-            setTimeout(() => {
-                setFeedback(null);
-                if (currentIndex < questions.length - 1) {
-                    deductBaroCredit(true); // Deduct credit for next question
-                    setCurrentIndex(prev => prev + 1);
-                    // Timer is reset by useEffect when currentIndex changes
-                } else {
-                    // Finished all questions (rare!)
-                    endGame(true, score + points); 
-                }
-            }, 1000);
-        } else {
-            setTimeout(() => {
-                endGame(false, score);
-            }, 1500);
-        }
-    };
-
-    const endGame = async (completedAll = false, overrideScore?: number) => {
+    const endGame = useCallback(async (completedAll = false, overrideScore?: number) => {
         if (isEndingRef.current) return;
         isEndingRef.current = true;
         
@@ -791,6 +667,137 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings }) => {
                     }
                 }
             }
+        }
+    }, [
+        currentIndex,
+        highScore,
+        questionTimer,
+        questions,
+        score,
+        user
+    ]);
+
+    // Game Loop - Global Timer
+    useEffect(() => {
+        if (gameState === 'playing') {
+            globalIntervalRef.current = setInterval(() => {
+                setGlobalTimer(prev => {
+                    if (prev <= 1) {
+                        endGame();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else {
+            if (globalIntervalRef.current) clearInterval(globalIntervalRef.current);
+        }
+        return () => {
+            if (globalIntervalRef.current) clearInterval(globalIntervalRef.current);
+        };
+    }, [gameState, endGame]);
+
+    // Game Loop - Question Timer
+    useEffect(() => {
+        if (gameState === 'playing' && !feedback) {
+            setQuestionTimer(getQuestionTime(currentIndex));
+            questionIntervalRef.current = setInterval(() => {
+                setQuestionTimer(prev => {
+                    if (prev <= 0.1) {
+                        // Time's up for question -> Game Over
+                        endGame();
+                        return 0;
+                    }
+                    return parseFloat((prev - 0.1).toFixed(1));
+                });
+            }, 100);
+        } else {
+            if (questionIntervalRef.current) clearInterval(questionIntervalRef.current);
+        }
+        return () => {
+            if (questionIntervalRef.current) clearInterval(questionIntervalRef.current);
+        };
+    }, [gameState, currentIndex, feedback, endGame]);
+
+    const handleAnswer = (answer: 'higher' | 'lower' | 'true' | 'false') => {
+        if (gameState !== 'playing' || feedback) return;
+
+        const currentQ = questions[currentIndex];
+        const isCorrect = answer === currentQ.correctAnswer;
+        
+        let points = 0;
+        const maxTime = getQuestionTime(currentIndex);
+        const timeSpent = parseFloat((maxTime - questionTimer).toFixed(1));
+
+        // Anti-Cheat Check
+        if (isCorrect && timeSpent < 1.0) {
+            suspiciousStreakRef.current += 1;
+        } else {
+            suspiciousStreakRef.current = 0;
+        }
+
+        if (suspiciousStreakRef.current >= 5) {
+            isFlaggedRef.current = true;
+            console.log("Activity flagged");
+        }
+
+        if (isCorrect) {
+            // Calculate points: 
+            // Base score: 10
+            // Time bonus: (maxTime - timeSpent) / maxTime * 50
+            // Speed bonus (Exponential):
+            // If answered within 1s: +30
+            // If answered within 2s: +20
+            // If answered within 3s: +10
+            
+            const timeBonus = (questionTimer / maxTime) * 50;
+            let speedBonus = 0;
+            
+            if (timeSpent <= 1.0) speedBonus = 30;
+            else if (timeSpent <= 2.0) speedBonus = 25;
+            else if (timeSpent <= 3.0) speedBonus = 20;
+            else if (timeSpent <= 4.0) speedBonus = 15;
+            else if (timeSpent <= 5.0) speedBonus = 10;
+            else if (timeSpent <= 7.0) speedBonus = 5;
+            else if (timeSpent <= 10.0) speedBonus = 1;
+            
+            points = Math.round(10 + timeBonus + speedBonus);
+            
+            setScore(prev => prev + points);
+            setFeedback({ correct: true, points });
+        } else {
+            setFeedback({ correct: false, points: 0 });
+        }
+
+        // Log entry
+        const entry: GameLogEntry = {
+            question: currentQ,
+            answer,
+            correct: isCorrect,
+            points,
+            timeSpent: timeSpent
+        };
+        
+        setGameLog(prev => [...prev, entry]);
+        gameLogRef.current.push(entry);
+        
+        if (isCorrect) {
+            // Wait briefly then next question
+            setTimeout(() => {
+                setFeedback(null);
+                if (currentIndex < questions.length - 1) {
+                    deductBaroCredit(true); // Deduct credit for next question
+                    setCurrentIndex(prev => prev + 1);
+                    // Timer is reset by useEffect when currentIndex changes
+                } else {
+                    // Finished all questions (rare!)
+                    endGame(true, score + points); 
+                }
+            }, 1000);
+        } else {
+            setTimeout(() => {
+                endGame(false, score);
+            }, 1500);
         }
     };
 

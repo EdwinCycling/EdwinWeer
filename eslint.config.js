@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'node_modules', 'build', '.next', 'coverage', 'public'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -29,6 +29,25 @@ export default tseslint.config(
       ...react.configs['jsx-runtime'].rules,
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+      'react/no-unknown-property': [
+        'error',
+        {
+          ignore: [
+            'position',
+            'rotation',
+            'args',
+            'castShadow',
+            'receiveShadow',
+            'roughness',
+            'metalness',
+            'intensity',
+            'angle',
+            'penumbra',
+            'shadow-mapSize-width',
+            'shadow-mapSize-height',
+          ],
+        },
+      ],
     },
     settings: {
       react: {

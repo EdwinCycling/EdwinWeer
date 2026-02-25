@@ -1,4 +1,6 @@
 
+import { AppLanguage } from '../types';
+
 export interface Country {
     code: string;
     name: string;
@@ -150,4 +152,22 @@ export const getCountryCode = (input: string): string => {
     
     // 4. Default to input if it looks like a code (2 chars), otherwise NL
     return input.length === 2 ? upper : 'NL';
+};
+
+export const getCountryDisplayName = (code: string, language: AppLanguage): string => {
+    const upper = (code || '').toUpperCase();
+    if (!upper) return '';
+
+    try {
+        if (typeof Intl !== 'undefined' && typeof (Intl as any).DisplayNames === 'function') {
+            const display = new Intl.DisplayNames([language === 'nl' ? 'nl' : 'en'], { type: 'region' });
+            const name = display.of(upper);
+            if (name && name !== upper) return name;
+        }
+    } catch {
+        return upper;
+    }
+
+    const match = COUNTRIES.find(c => c.code === upper);
+    return match ? match.name : upper;
 };
