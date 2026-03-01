@@ -9,6 +9,14 @@ export interface AppUpdate {
 
 export const APP_UPDATES: AppUpdate[] = [
   {
+    version: "1.260301.2",
+    date: "2026-03-01",
+    title: "Interactieve Kaart Fix 🗺️",
+    description: "De interactieve weerkaart in de vooruitzicht-tab werkt weer naar behoren. Problemen met geblokkeerde inhoud zijn opgelost door beveiligingsinstellingen te optimaliseren.",
+    link: "FORECAST",
+    linkLabel: "Bekijk Kaart"
+  },
+  {
     version: "1.260301.1",
     date: "2026-03-01",
     title: "Mobiel & Stripe Update 💳",
