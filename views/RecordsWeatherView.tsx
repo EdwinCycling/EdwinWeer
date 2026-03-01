@@ -2070,7 +2070,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
             const calcScore = (start: string, end: string, type: 'hellmann' | 'heat'): ClimateSeasonStats => {
                 let score = 0;
                 const monthly: Record<string, number> = {};
-                let currentDate = new Date(start);
+                const currentDate = new Date(start);
                 const stopDate = new Date(end);
                 const today = new Date();
                 const yesterday = new Date(today);
@@ -2226,7 +2226,7 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
       const dayMap: Record<string, number> = { 'sunday': 0, 'monday': 1, 'saturday': 6 };
       const targetStart = dayMap[weekStart];
 
-      let startDay = (firstDayOfMonth.getDay() - targetStart + 7) % 7;
+      const startDay = (firstDayOfMonth.getDay() - targetStart + 7) % 7;
       
       let currentWeek: (DailyData | null)[] = Array(startDay).fill(null);
       
@@ -3644,8 +3644,13 @@ export const RecordsWeatherView: React.FC<Props> = ({ onNavigate, settings: prop
               {/* Climate Classification & BSI */}
               {(recordType === 'yearly' || recordType === '12month') && monthlyAverages.length > 0 && (
                   <div className="w-full max-w-2xl grid grid-cols-1 gap-6 mb-6">
-                      <ClimateClassificationCard monthlyData={monthlyAverages} settings={settings} />
-                      <BaroSeasonalIndexCard monthlyData={monthlyAverages} settings={settings} />
+                      {/* Hide Climate & BSI for current year as requested */}
+                      {!(recordType === 'yearly' && selectedYear === new Date().getFullYear()) && (
+                          <>
+                              <ClimateClassificationCard monthlyData={monthlyAverages} settings={settings} />
+                              <BaroSeasonalIndexCard monthlyData={monthlyAverages} settings={settings} />
+                          </>
+                      )}
                       <RainSeasonCard monthlyData={monthlyAverages} selectedYear={recordType === 'yearly' ? selectedYear : undefined} settings={settings} />
                   </div>
               )}

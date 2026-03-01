@@ -9,6 +9,14 @@ export interface AppUpdate {
 
 export const APP_UPDATES: AppUpdate[] = [
   {
+    version: "1.260301.1",
+    date: "2026-03-01",
+    title: "Mobiel & Stripe Update 💳",
+    description: "Verbeterde interface voor mobiele apparaten met een nieuwe scrollbare weergave. Stripe Checkout is vernieuwd voor een vlottere betaalervaring met automatische betaalmethoden.",
+    link: "CURRENT",
+    linkLabel: "Bekijk Dashboard"
+  },
+  {
     version: "2.2.0",
     date: "2026-02-21",
     title: "What's New & Records Update 🚀",

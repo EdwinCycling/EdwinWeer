@@ -39,8 +39,6 @@ export const handler = async (event) => {
 
     const session = await stripe.checkout.sessions.create({
       automatic_tax: { enabled: true },
-      // Use automatic payment methods to let Stripe decide the best options based on currency and customer location
-      // Make sure to enable iDEAL, Bancontact, Card, etc. in your Stripe Dashboard settings!
       automatic_payment_methods: { enabled: true },
       line_items: [
         {
@@ -57,9 +55,7 @@ export const handler = async (event) => {
         locale: locale || 'nl',
         type: 'credits_purchase'
       },
-      // Optional: Customer creation if you want to track customers in Stripe
-      // customer_email: userEmail, 
-    } as any);
+    });
 
     return {
       statusCode: 200,

@@ -32,6 +32,7 @@ interface GameHUDProps {
     onExit: () => void;
     settings: AppSettings;
     onResetCamera?: () => void;
+    blockedParams?: Record<string, number>;
 }
 
 const OPERATORS = [
@@ -53,7 +54,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     onRestart,
     onExit,
     settings,
-    onResetCamera
+    onResetCamera,
+    blockedParams = {}
 }) => {
     const parameters = useMemo(() => ([
         { key: 'tempMax', label: 'Max temp', unit: getTempLabel(settings.tempUnit) },
@@ -82,9 +84,22 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     };
 
     const handleParamChange = (nextParam: string) => {
+        if (blockedParams[nextParam]) return;
         setSelectedParam(nextParam);
         setValue(getDefaultValue(nextParam).toString());
     };
+
+    // Calculate score
+    const scoreBreakdown = useMemo(() => {
+        if (gameStatus !== 'won') return null;
+        
+        const questionPoints = Math.max(0, (25 - questionsCount) * 10);
+        const bonusPoints = questionsCount < 10 ? (10 - questionsCount) * 10 : 0;
+        const timePoints = timeLeft;
+        const total = questionPoints + bonusPoints + timePoints;
+        
+        return { questionPoints, bonusPoints, timePoints, total };
+    }, [gameStatus, questionsCount, timeLeft]);
 
     const countryName = (code?: string) => {
         if (!code) return '';
@@ -162,7 +177,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                                     className="bg-bg-input border border-border-color text-text-main text-sm rounded-lg focus:ring-accent-primary focus:border-accent-primary block w-full p-2.5"
                                 >
                                     {parameters.map(p => (
-                                        <option key={p.key} value={p.key}>{p.label} ({p.unit})</option>
+                                        <option key={p.key} value={p.key} disabled={!!blockedParams[p.key]}>
+                                            {p.label} ({p.unit}) {blockedParams[p.key] ? `(wacht ${blockedParams[p.key]})` : ''}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -215,56 +232,72 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                                             <div className="text-sm text-green-600 font-bold uppercase mb-1">De Stad</div>
                                             <div className="text-2xl font-bold text-gray-800">{guessedCity?.name}</div>
                                             <div className="text-sm text-gray-500">{countryName(guessedCity?.country)}</div>
+                                            {targetWeather && (
+                                                <div className="mt-4 text-xs text-left space-y-1 border-t border-green-200 pt-2 text-gray-700">
+                                                    <div className="flex justify-between"><span>Max temp:</span> <b>{convertTemp(targetWeather.tempMax, settings.tempUnit)} {getTempLabel(settings.tempUnit)}</b></div>
+                                                    <div className="flex justify-between"><span>Min temp:</span> <b>{convertTemp(targetWeather.tempMin, settings.tempUnit)} {getTempLabel(settings.tempUnit)}</b></div>
+                                                    <div className="flex justify-between"><span>Neerslag:</span> <b>{convertPrecip(targetWeather.rainSum, settings.precipUnit)} {settings.precipUnit}</b></div>
+                                                    <div className="flex justify-between"><span>Zon:</span> <b>{Math.round(targetWeather.sunPct)} %</b></div>
+                                                    <div className="flex justify-between"><span>Wind:</span> <b>{convertWind(targetWeather.windMax, settings.windUnit)} {getWindUnitLabel(settings.windUnit)}</b></div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="text-2xl font-bold mb-8 text-text-main">
-                                        Score: {Math.max(0, timeLeft * 10 - questionsCount * 50)}
-                                    </div>
+                                    {scoreBreakdown && (
+                                        <div className="bg-bg-page p-4 rounded-xl border border-border-color mb-8 max-w-sm mx-auto">
+                                            <h3 className="font-bold text-lg mb-3 border-b border-border-color pb-2">Score Details</h3>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between text-text-muted">
+                                                    <span>Vragen ({25 - questionsCount} over)</span>
+                                                    <span className="font-mono">+{scoreBreakdown.questionPoints}</span>
+                                                </div>
+                                                {scoreBreakdown.bonusPoints > 0 && (
+                                                    <div className="flex justify-between text-green-500 font-bold">
+                                                        <span>Bonus (&lt;10 vragen)</span>
+                                                        <span className="font-mono">+{scoreBreakdown.bonusPoints}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between text-text-muted">
+                                                    <span>Tijd Bonus ({timeLeft}s)</span>
+                                                    <span className="font-mono">+{scoreBreakdown.timePoints}</span>
+                                                </div>
+                                                <div className="flex justify-between text-xl font-black text-accent-primary border-t border-border-color pt-2 mt-2">
+                                                    <span>Totaal</span>
+                                                    <span>{scoreBreakdown.total}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             ) : (
                                 <>
                                     <h2 className="text-4xl font-black text-red-500 mb-2">HELAAS...</h2>
                                     <p className="text-text-muted mb-4">{timeLeft === 0 ? "De tijd is om!" : "Dat was niet de juiste stad."}</p>
                                     
-                                    <div className="flex justify-center items-center gap-4 mb-8 flex-wrap">
+                                    <div className="flex justify-center items-start gap-4 mb-8 flex-wrap">
                                         {guessedCity && (
-                                            <div className="bg-red-50 p-4 rounded-xl border-2 border-red-200 min-w-[150px]">
+                                            <div className="bg-red-50 p-4 rounded-xl border-2 border-red-200 min-w-[150px] w-48">
                                                 <div className="text-sm text-red-600 font-bold uppercase mb-1">Jouw keuze</div>
                                                 <div className="text-xl font-bold text-gray-800">{guessedCity.name}</div>
                                                 <div className="text-sm text-gray-500">{countryName(guessedCity.country)}</div>
                                             </div>
                                         )}
                                         
-                                        {guessedCity && <div className="text-gray-400 font-bold">VS</div>}
-                                        
-                                        <div className="bg-green-50 p-4 rounded-xl border-2 border-green-200 min-w-[150px]">
+                                        <div className="bg-green-50 p-4 rounded-xl border-2 border-green-200 min-w-[150px] w-48">
                                             <div className="text-sm text-green-600 font-bold uppercase mb-1">Het was</div>
                                             <div className="text-xl font-bold text-gray-800">{targetCity?.name}</div>
                                             <div className="text-sm text-gray-500">{countryName(targetCity?.country)}</div>
+                                            {targetWeather && (
+                                                <div className="mt-4 text-xs text-left space-y-1 border-t border-green-200 pt-2 text-gray-700">
+                                                    <div className="flex justify-between"><span>Max:</span> <b>{convertTemp(targetWeather.tempMax, settings.tempUnit)} {getTempLabel(settings.tempUnit)}</b></div>
+                                                    <div className="flex justify-between"><span>Min:</span> <b>{convertTemp(targetWeather.tempMin, settings.tempUnit)} {getTempLabel(settings.tempUnit)}</b></div>
+                                                    <div className="flex justify-between"><span>Neerslag:</span> <b>{convertPrecip(targetWeather.rainSum, settings.precipUnit)} {settings.precipUnit}</b></div>
+                                                    <div className="flex justify-between"><span>Zon:</span> <b>{Math.round(targetWeather.sunPct)} %</b></div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    {timeLeft === 0 && targetWeather && (
-                                        <div className="bg-bg-page/60 p-4 rounded-xl border border-border-color text-left mb-6">
-                                            <div className="text-sm font-bold text-text-muted uppercase mb-2">Weer van de geheime stad</div>
-                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-text-main">
-                                                <div>Max temp</div>
-                                                <div className="text-right">{convertTemp(targetWeather.tempMax, settings.tempUnit)} {getTempLabel(settings.tempUnit)}</div>
-                                                <div>Min temp</div>
-                                                <div className="text-right">{convertTemp(targetWeather.tempMin, settings.tempUnit)} {getTempLabel(settings.tempUnit)}</div>
-                                                <div>Neerslag</div>
-                                                <div className="text-right">{convertPrecip(targetWeather.rainSum, settings.precipUnit)} {settings.precipUnit}</div>
-                                                <div>Zon</div>
-                                                <div className="text-right">{Math.round(targetWeather.sunPct)} %</div>
-                                                <div>Wind</div>
-                                                <div className="text-right">{convertWind(targetWeather.windMax, settings.windUnit)} {getWindUnitLabel(settings.windUnit)}</div>
-                                                <div>Luchtdruk</div>
-                                                <div className="text-right">
-                                                    {convertPressure(targetWeather.pressure, settings.pressureUnit)} {settings.pressureUnit}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
                                 </>
                             )}
                             

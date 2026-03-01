@@ -30,6 +30,7 @@ export const BeatBaroFloatingButton: React.FC<Props> = ({ onNavigate, settings, 
             aria-label={t('game.title')}
             >
                 <Icon name="sports_mma" className="text-xl" />
+                <span className="hidden lg:inline font-bold text-sm whitespace-nowrap ml-2">Beat Baro</span>
             </button>
         );
     }

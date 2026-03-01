@@ -1339,26 +1339,26 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
             </div>
         ) : weatherData ? (
             <>
-                <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main">
-                    <div className="flex flex-col md:flex-row items-center gap-2 md:gap-8">
+                <div key={location.name} className="flex-grow flex flex-col items-center justify-center py-6 animate-in fade-in zoom-in duration-500 text-text-main w-full overflow-hidden">
+                    <div className="flex flex-row md:flex-row items-center gap-2 md:gap-8 overflow-x-auto scrollbar-hide w-full px-4 justify-start md:justify-center no-swipe" data-no-swipe="true">
                         <div 
                             onClick={() => onNavigate(ViewState.IMMERSIVE_FORECAST)}
-                            className="bg-bg-card backdrop-blur-md px-4 rounded-xl border border-border-color shadow-sm flex items-center justify-center h-[85px] md:h-[100px] min-w-[140px] cursor-pointer hover:scale-105 transition-transform group"
+                            className="bg-bg-card backdrop-blur-md px-4 rounded-xl border border-border-color shadow-sm flex items-center justify-center h-[85px] md:h-[100px] min-w-[140px] shrink-0 cursor-pointer hover:scale-105 transition-transform group"
                         >
                             <h1 className="text-[50px] md:text-[70px] font-bold leading-none tracking-tighter drop-shadow-xl font-display text-text-main">
                                 {typeof currentTemp === 'number' ? currentTemp.toFixed(1) : currentTemp}°
                             </h1>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 md:flex md:flex-row">
+                        <div className="flex flex-row gap-2 shrink-0">
                             {weatherData.current.temperature_2m < 10 && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px] shrink-0">
                                     <Icon name="thermostat" className={`text-lg md:text-xl ${feelsLike < currentTemp ? 'text-blue-600 dark:text-blue-300' : 'text-orange-600 dark:text-orange-300'}`} />
                                     <span className="text-base md:text-lg font-bold text-text-main">{feelsLike.toFixed(1)}°</span>
                                     <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('feels_like')}</span>
                                 </div>
                             )}
                             {weatherData.current.temperature_2m > 25 && (
-                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px]">
+                                <div onClick={() => setShowFeelsLikeModal(true)} className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm cursor-pointer hover:scale-105 transition-transform group relative w-[75px] h-[85px] md:w-[80px] md:h-[100px] shrink-0">
                                     <Icon name="thermostat" className="text-lg md:text-xl text-orange-600 dark:text-orange-300" />
                                     <span className="text-base md:text-lg font-bold text-text-main">{heatIndex}°</span>
                                     <span className="text-[8px] md:text-[9px] uppercase text-text-muted text-center">{t('heat_index')}</span>
@@ -1366,7 +1366,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             )}
 
                             {/* Wind Box (New Compass Style) */}
-                            <div className="relative flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-1 border border-border-color shadow-sm w-[75px] h-[85px] md:w-[80px] md:h-[100px] overflow-hidden">
+                            <div className="relative flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-1 border border-border-color shadow-sm w-[75px] h-[85px] md:w-[80px] md:h-[100px] overflow-hidden shrink-0">
                                 {/* Compass Background */}
                                 <div className="absolute inset-1 rounded-full border-2 border-border-color" />
                                 <div className="absolute top-1 text-[8px] font-bold text-text-muted">N</div>
@@ -1390,7 +1390,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             </div>
 
                             {currentComfort && (
-                                <div className="w-[75px] h-[85px] md:w-auto md:h-auto flex items-center justify-center">
+                                <div className="w-[75px] h-[85px] md:w-auto md:h-auto flex items-center justify-center shrink-0">
                                     <WeatherRatingButton 
                                         score={currentComfort} 
                                         onClick={() => setShowComfortModal(true)} 
@@ -1403,7 +1403,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             {/* 48h Forecast Link (Now also on Mobile) */}
                             <div 
                                 onClick={() => onNavigate(ViewState.HOURLY_DETAIL)}
-                                className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                                className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group shrink-0"
                             >
                                 <Icon name="schedule" className="text-lg md:text-xl text-text-main" />
                                 <span className="text-base md:text-lg font-bold text-text-main">48u</span>
@@ -1413,7 +1413,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
                             {/* Past 24h Link (Terugblik) (Now also on Mobile) */}
                             <div 
                                 onClick={() => onNavigate(ViewState.HOURLY_DETAIL, { mode: 'history', title: t('past_24h'), subtitle: '24 uur' })}
-                                className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group"
+                                className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm w-[75px] h-[85px] md:min-w-[70px] md:h-[100px] cursor-pointer hover:scale-105 transition-transform group shrink-0"
                             >
                                 <Icon name="history" className="text-lg md:text-xl text-text-main" />
                                 <span className="text-base md:text-lg font-bold text-text-main">24u</span>
@@ -1422,7 +1422,7 @@ export const CurrentWeatherView: React.FC<Props> = ({ onNavigate, settings, onUp
 
                             {/* Today's Extremes (Min/Max with time) */}
                             {todayExtremes && (
-                                <div className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px]">
+                                <div className="flex flex-col items-center justify-center bg-bg-card backdrop-blur-md rounded-xl p-2 border border-border-color shadow-sm min-w-[75px] h-[85px] md:min-w-[85px] md:h-[100px] shrink-0">
                                     <div className="flex flex-col items-center gap-1 w-full">
                                         <div className="flex flex-col w-full px-1">
                                             <div className="flex items-center justify-between w-full">

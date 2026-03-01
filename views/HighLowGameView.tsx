@@ -871,10 +871,19 @@ export const HighLowGameView: React.FC<Props> = ({ onNavigate, settings }) => {
                             : 'bg-bg-page text-text-muted hover:bg-bg-subtle hover:text-text-main'
                         }`}
                     >
-                        {t(`game.tab.${tab === 'scores' ? 'my_results' : tab === 'ranking' ? 'leaderboard' : tab}`)}
+                        {t(`game.tab.${tab === 'scores' ? 'last_game' : tab === 'ranking' ? 'history' : tab}`)}
                     </button>
                 ))}
             </div>
+            <style>{`
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
 
             {/* Content */}
             <div className="p-4 max-w-2xl mx-auto">

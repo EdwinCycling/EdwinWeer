@@ -87,8 +87,10 @@ export const GameCard: React.FC<GameCardProps> = ({ position, cityData, isFlippe
                 </mesh>
 
                 {/* Invisible Hit Box - Slightly larger to ensure easy clicking */}
+                {/* eslint-disable-next-line react/no-unknown-property */}
                 <mesh position={[0, 0, 0]} visible={false}>
                     <boxGeometry args={[width, height, depth * 2]} />
+                    {/* eslint-disable-next-line react/no-unknown-property */}
                     <meshBasicMaterial opacity={0} transparent />
                 </mesh>
 
@@ -121,7 +123,14 @@ export const GameCard: React.FC<GameCardProps> = ({ position, cityData, isFlippe
                     }}
                 >
                     <div 
-                        style={{ width: '100%', height: '100%', pointerEvents: 'auto', cursor: 'pointer' }}
+                        style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            pointerEvents: 'auto', 
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                            background: hovered && !isFlipped && mode === 'card' ? '#f0f9ff' : 'transparent'
+                        }}
                         onClick={handleClick} 
                         onMouseEnter={(e) => { e.stopPropagation(); setHovered(true); }}
                         onMouseLeave={(e) => { e.stopPropagation(); setHovered(false); }}
@@ -136,13 +145,30 @@ export const GameCard: React.FC<GameCardProps> = ({ position, cityData, isFlippe
                             </div>
                         </div>
                     ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+                            {hovered && !isFlipped && (
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    top: '50%', 
+                                    left: '50%', 
+                                    transform: 'translate(-50%, -50%)', 
+                                    background: 'rgba(0,0,0,0.05)', 
+                                    padding: '8px 16px', 
+                                    borderRadius: '20px',
+                                    fontWeight: 'bold',
+                                    color: '#0044aa',
+                                    pointerEvents: 'none',
+                                    zIndex: 10
+                                }}>
+                                    KLIK OM TE DRAAIEN
+                                </div>
+                            )}
                             <div style={{ fontSize: '28px', fontWeight: 'bold', textAlign: 'center', color: 'black', lineHeight: '1.1', width: '100%', paddingTop: '4px' }}>
                                 <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cityData.city.name}</div>
                                 <div style={{ fontSize: '20px', fontWeight: 'normal', color: '#555', marginTop: '2px' }}>{countryName}</div>
                             </div>
                             
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', width: '100%', fontSize: '20px', color: '#333', fontWeight: '600', lineHeight: '1.4' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', width: '100%', fontSize: '24px', color: '#333', fontWeight: '700', lineHeight: '1.4' }}>
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                     {tempMax} {getTempLabel(settings.tempUnit)}
                                 </div>
@@ -163,7 +189,7 @@ export const GameCard: React.FC<GameCardProps> = ({ position, cityData, isFlippe
                                 </div>
                             </div>
 
-                            <div style={{ fontSize: '16px', color: '#999', marginTop: '2px', textAlign: 'center' }}>Yesterday</div>
+                            <div style={{ fontSize: '18px', color: '#999', marginTop: '2px', textAlign: 'center' }}>Yesterday</div>
                         </div>
                     )}
                     </div>

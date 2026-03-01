@@ -246,20 +246,18 @@ const handler: Handler = async (event, context) => {
         let lockedCount = 0;
 
         for (const doc of openRoundsSnapshot.docs) {
-            // Logic: Lock if targetDate is close (e.g. within 7 days)
-            // Or just lock the oldest open round?
-            // Existing logic was: lock all open rounds. But that might be too aggressive if we have multiple.
-            // Let's stick to locking rounds that are due.
-            // Target date is Sunday. Today is Monday. Diff is 6 days.
-            // So if targetDate < today + 8 days.
-            
             const round = doc.data();
-            const target = new Date(round.targetDate);
-            const diffDays = (target.getTime() - today.getTime()) / (1000 * 3600 * 24);
+            const targetDate = new Date(round.targetDate);
             
-            if (diffDays < 8) {
+            // Deadline is Monday 09:00 CET BEFORE the target Sunday
+            const deadline = new Date(targetDate);
+            deadline.setDate(deadline.getDate() - 6); // Move to previous Monday
+            deadline.setHours(9, 0, 0, 0);
+            
+            if (today >= deadline) {
                  lockBatch.update(doc.ref, { status: 'locked' });
                  lockedCount++;
+                 console.log(`Locking round ${doc.id} - Deadline ${deadline.toISOString()} passed.`);
             }
         }
 

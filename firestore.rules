@@ -133,6 +133,18 @@ service cloud.firestore {
       allow write: if false; // Alleen via submit-highlow-score function
     }
 
+    // Guess Who History
+    match /users/{userId}/guesswho_results/{gameId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // Alleen via server function
+    }
+
+    // Guess Who Leaderboards (Lezen: iedereen, Schrijven: NIEMAND, alleen server)
+    match /guesswho_leaderboards/{periodId}/entries/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Alleen via submit-guesswho-score function
+    }
+
     // Specifieke regel voor collectionGroup queries op 'bets'
     match /{path=**}/bets/{betId} {
       allow read: if isSignedIn() && (request.auth.uid == betId || resource.data.userId == request.auth.uid);
